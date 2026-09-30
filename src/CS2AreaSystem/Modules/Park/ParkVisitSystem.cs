@@ -150,34 +150,11 @@ namespace CS2AreaSystem.Modules.Park
         }
         private void Dispatch(uint frame)
         {
-            foreach (var e in events)
+            ParkVisitDispatcher.Dispatch(events, activeParks, parks, runtime.Store, tracker, frame, (park, e) =>
             {
-                if (!activeParks.TryGetValue(e.ParkId, out var park))
-                {
-                    // Completed after its Park was suspended/deleted: the visit is closed without new gameplay rewards.
-                    if (e.Kind != ParkVisitEventKind.Completed) continue;
-                    foreach (var p in parks) if (p.StableId == e.ParkId) { park = p; break; }
-                    if (park.Area == Entity.Null) continue;
-                }
-                var snapshot = runtime.Store.GetOrCreate(e.ParkId, park.Area);
-                if (e.Kind == ParkVisitEventKind.Started) ParkVisitRecorder.RecordOccupancy(snapshot, tracker.ActiveCount(e.ParkId));
-                else
-                {
-                    ParkVisitRecorder.RecordRecent(snapshot, e.Tourist, frame);
-                    if (EntityManager.Exists(park.Area) && EntityManager.HasComponent<ParkAreaState>(park.Area))
-                        EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction, e.HasSatisfaction));
-                }
-                bool active = park.State == AreaLifecycleState.Active;
-                foreach (var listener in listeners)
-                {
-                    try
-                    {
-                        if (e.Kind == ParkVisitEventKind.Started) listener.OnVisitStarted(e, park.Area, snapshot, tracker);
-                        else listener.OnVisitCompleted(e, park.Area, snapshot, active);
-                    }
-                    catch (System.Exception error) { Mod.Log.Error(error, "Park visit listener failed"); }
-                }
-            }
+                if (EntityManager.Exists(park.Area) && EntityManager.HasComponent<ParkAreaState>(park.Area))
+                    EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction, e.HasSatisfaction));
+            }, listeners, error => Mod.Log.Error(error, "Park visit listener failed"));
             events.Clear();
             foreach (var park in parks)
                 if (runtime.Store.TryGet(park.StableId, out var snapshot)) snapshot.ActiveVisitors = tracker.ActiveCount(park.StableId);
@@ -208,6 +185,40 @@ namespace CS2AreaSystem.Modules.Park
                     var household = households[i].m_Household;
                     Matches.Add(new ParkVisitMatch { Citizen = entities[i], ParkId = target.ParkId, Facility = target.Facility,
                         Tourist = household != Entity.Null && Tourists.HasComponent(household) });
+                }
+            }
+        }
+    }
+    // Routes visit events to Park statistics and listeners (finance, progression). Started events only for Active
+    // Parks; a completion whose Park became Suspended is still counted but listeners are told it is not active;
+    // events of deleted Parks are dropped. A failing listener never stops the others.
+    public static class ParkVisitDispatcher
+    {
+        public static void Dispatch(IReadOnlyList<ParkVisitEvent> events, IReadOnlyDictionary<ulong, ParkAreaRef> active, IReadOnlyList<ParkAreaRef> all,
+            ParkRuntimeStore store, ParkVisitTracker tracker, uint frame, System.Action<ParkAreaRef, ParkVisitEvent> recordCompleted,
+            IReadOnlyList<IParkVisitListener> listeners, System.Action<System.Exception> report)
+        {
+            foreach (var e in events)
+            {
+                if (!active.TryGetValue(e.ParkId, out var park))
+                {
+                    if (e.Kind != ParkVisitEventKind.Completed) continue;
+                    bool found = false;
+                    foreach (var p in all) if (p.StableId == e.ParkId) { park = p; found = true; break; }
+                    if (!found || park.Area == Entity.Null) continue;
+                }
+                var snapshot = store.GetOrCreate(e.ParkId, park.Area);
+                if (e.Kind == ParkVisitEventKind.Started) ParkVisitRecorder.RecordOccupancy(snapshot, tracker.ActiveCount(e.ParkId));
+                else { ParkVisitRecorder.RecordRecent(snapshot, e.Tourist, frame); recordCompleted(park, e); }
+                bool isActive = park.State == AreaLifecycleState.Active;
+                foreach (var listener in listeners)
+                {
+                    try
+                    {
+                        if (e.Kind == ParkVisitEventKind.Started) listener.OnVisitStarted(e, park.Area, snapshot, tracker);
+                        else listener.OnVisitCompleted(e, park.Area, snapshot, isActive);
+                    }
+                    catch (System.Exception error) { report(error); }
                 }
             }
         }

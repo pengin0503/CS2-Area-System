@@ -33,6 +33,30 @@ check(gitBlobSha(planPath)==='a0176200ec6cb5de73959a44062563fd66e39c03', 'approv
 check(spec.startsWith('# CS2 Area System — Area Core Design\n') && spec.includes('\n## 1. Purpose\n'), 'design spec must remain readable Markdown');
 check(plan.startsWith('# CS2 Area System — Area Core Implementation Plan\n') && plan.includes('### Task 9:'), 'implementation plan must retain all planned tasks');
 
+// Park Area v1: approved spec/plan are immutable; Park observes vanilla simulation and stays within its v1 scope.
+const parkSpecPath='docs/superpowers/specs/2026-09-30-park-area-v1-design.md';
+const parkPlanPath='docs/superpowers/plans/2026-09-30-park-area-v1-implementation.md';
+check(gitBlobSha(parkSpecPath)==='3f8a76d7ff9e03c5a4feffca09d5afc5fb936f3a', 'approved Park v1 design spec must remain byte-identical');
+check(gitBlobSha(parkPlanPath)==='2d6cca5ab9dbc6c73044fb271764dfbf42c5642d', 'approved Park v1 implementation plan must remain byte-identical');
+for (const source of walk('src').filter(p=>p.endsWith('.cs') && !/[\\/](bin|obj)[\\/]/.test(p))) {
+  const text = read(source);
+  if (/\bLeisureEvent\b/.test(text)) failures.push(`${source}: must not access LeisureSystem's private LeisureEvent queue`);
+  if (/<\s*(Game\.Simulation\.)?LeisureSystem\s*>/.test(text)) failures.push(`${source}: must not replace, disable or reorder vanilla LeisureSystem`);
+}
+for (const source of walk('src/CS2AreaSystem/Modules/Park').filter(p=>p.endsWith('.cs'))) {
+  const text = read(source);
+  if (/\bGame\.(Policies|Events)\b/.test(text)) failures.push(`${source}: Park Policies/Events are out of v1 scope`);
+  if (/\b(LandValue|CitizenHappiness|Happiness|ResidentialDemand|DemandSystem|TourismSystem|AttractivenessParameterData)\b/.test(text))
+    failures.push(`${source}: Park v1 must not modify happiness, land value, demand or vanilla tourism`);
+}
+const candidatePolicy = read('src/CS2AreaSystem/Core/Membership/AreaMembershipCandidatePolicy.cs');
+check(/isBuilding\s*&&/.test(candidatePolicy), 'Core membership must stay building-only (no tree/prop/path index)');
+const facade = read('src/CS2AreaSystem/Modules/Park/ParkGameplayFacade.cs');
+const facadeActions = [...facade.matchAll(/case\s+([^:]+?)\s*:/g)].map(m=>m[1].trim()).sort().join(',');
+check(facadeActions==='SetBudget,SetFee', `Park UI actions must be limited to budget and admission fee (found ${facadeActions})`);
+const parkPanelTest = read('UI/src/ParkPanel.test.tsx');
+check(parkPanelTest.includes("./__fixtures__/park-panel.json"), 'Park UI tests must use the fixture generated from the C# payload');
+
 const uiSystem = read('src/CS2AreaSystem/Core/UI/AreaManagementUISystem.cs');
 check(uiSystem.includes('State = "CS2AS.State." + area.State'), 'management view must publish lifecycle localization keys');
 

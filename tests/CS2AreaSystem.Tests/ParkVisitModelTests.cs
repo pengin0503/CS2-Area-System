@@ -197,3 +197,31 @@ public class ParkUncollectedWindowTests {
   Assert.That(snapshot.RecentUncollected.Sum(ParkFinanceModel.FramesPerDay * 2), Is.Zero);
  }
 }
+public class ParkVisitDispatcherTests {
+ private sealed class Listener : IParkVisitListener {
+  public readonly List<string> Calls = new(); public bool Throws;
+  public void OnVisitStarted(in ParkVisitEvent v, Entity area, ParkRuntimeSnapshot s, ParkVisitTracker t) { Calls.Add("start:" + v.ParkId); if (Throws) throw new InvalidOperationException("boom"); }
+  public void OnVisitCompleted(in ParkVisitEvent v, Entity area, ParkRuntimeSnapshot s, bool active) { Calls.Add($"done:{v.ParkId}:{active}"); if (Throws) throw new InvalidOperationException("boom"); }
+ }
+ private static readonly Entity a7 = new() { Index = 7, Version = 1 }, a8 = new() { Index = 8, Version = 1 }, citizen = new() { Index = 50, Version = 1 };
+ [Test] public void ActiveSuspendedAndDeletedParksAreHandledInOrderAndFailuresAreIsolated() {
+  var store = new ParkRuntimeStore();
+  var active = new ParkAreaRef(a7, 7, CS2AreaSystem.Core.Areas.AreaLifecycleState.Active);
+  var suspended = new ParkAreaRef(a8, 8, CS2AreaSystem.Core.Areas.AreaLifecycleState.Suspended);
+  var all = new List<ParkAreaRef> { active, suspended };
+  var activeById = new Dictionary<ulong, ParkAreaRef> { [7] = active };
+  var events = new List<ParkVisitEvent> {
+   new() { Kind = ParkVisitEventKind.Started, Citizen = citizen, ParkId = 7 },
+   new() { Kind = ParkVisitEventKind.Started, Citizen = citizen, ParkId = 8 },
+   new() { Kind = ParkVisitEventKind.Completed, Citizen = citizen, ParkId = 8, HasSatisfaction = true, Satisfaction = 70 },
+   new() { Kind = ParkVisitEventKind.Completed, Citizen = citizen, ParkId = 99 } };
+  var recorded = new List<ulong>(); var errors = new List<Exception>();
+  var failing = new Listener { Throws = true }; var healthy = new Listener();
+  ParkVisitDispatcher.Dispatch(events, activeById, all, store, new ParkVisitTracker(ParkVisitCadence.GraceFrames), 100,
+   (park, e) => recorded.Add(park.StableId), new IParkVisitListener[] { failing, healthy }, errors.Add);
+  Assert.That(healthy.Calls, Is.EqualTo(new[] { "start:7", "done:8:False" }), "no start for a suspended Park; a late completion gets no active rewards");
+  Assert.That(recorded, Is.EqualTo(new ulong[] { 8 }), "completed visit still counted; deleted Park ignored");
+  Assert.That(errors, Has.Count.EqualTo(2), "a failing listener does not stop the others");
+  Assert.That(store.TryGet(7, out var s7) && s7.Area == a7, Is.True);
+ }
+}
