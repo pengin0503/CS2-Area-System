@@ -26,7 +26,7 @@ namespace CS2AreaSystem.Core.UI
             var right = b.Anchors ?? new AreaAnchorView[0];
             if (left.Count != right.Count) return false;
             for (int i = 0; i < left.Count; i++)
-                if (left[i]?.Key != right[i]?.Key || left[i]?.Name != right[i]?.Name) return false;
+                if (left[i]?.Key != right[i]?.Key || left[i]?.Name != right[i]?.Name || left[i]?.Valid != right[i]?.Valid) return false;
             return AreaPanelDocument.Equivalent(a.Panel, b.Panel);
         }
         public void WriteProperties(IJsonWriter writer)
@@ -48,7 +48,8 @@ namespace CS2AreaSystem.Core.UI
             {
                 writer.TypeBegin("CS2AreaSystem.AreaAnchorView");
                 writer.PropertyName("key"); writer.Write(anchor.Key);
-                writer.PropertyName("name"); writer.Write(anchor.Name);
+                writer.PropertyName("name"); if (anchor.Name != null) writer.Write(anchor.Name); else writer.WriteNull();
+                writer.PropertyName("valid"); writer.Write(anchor.Valid);
                 writer.TypeEnd();
             }
             writer.ArrayEnd();
@@ -56,6 +57,8 @@ namespace CS2AreaSystem.Core.UI
     }
     public sealed class AreaAnchorView
     {
+        // Name is null when the anchored building no longer exists; Valid=false marks an ineligible or removed anchor.
         public string Key, Name;
+        public bool Valid;
     }
 }

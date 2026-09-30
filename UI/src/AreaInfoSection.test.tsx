@@ -1,5 +1,5 @@
 import React,{createContext,useContext} from 'react';
-import {render,screen,fireEvent} from '@testing-library/react';
+import {render,screen,fireEvent,within} from '@testing-library/react';
 import {describe,it,expect,vi,afterEach} from 'vitest';
 import type {AreaSectionData} from './bindings';
 const env=vi.hoisted(()=>({trigger:vi.fn(),registryFails:false,dictionaries:{
@@ -8,7 +8,7 @@ const env=vi.hoisted(()=>({trigger:vi.fn(),registryFails:false,dictionaries:{
   'CS2AS.Summary.AnchorRequired':'Assign a required facility to activate this area.','CS2AS.UI.AssignHeadquarters':'Assign headquarters','CS2AS.UI.ChangeHeadquarters':'Change headquarters',
   'CS2AS.UI.AssignEntrance':'Assign entrance','CS2AS.UI.SelectAnchor':'Select an existing building inside this area.','CS2AS.UI.CancelAssignment':'Cancel assignment',
   'CS2AS.UI.EditArea':'Edit area','CS2AS.UI.DeleteArea':'Delete area','CS2AS.UI.DeleteConfirm':'Delete this management boundary?','CS2AS.UI.ConfirmDelete':'Confirm delete','CS2AS.UI.Cancel':'Cancel',
-  'CS2AS.UI.Level':'Level','CS2AS.UI.Entrances':'Entrances','CS2AS.UI.AddEntrance':'Add entrance','CS2AS.UI.RemoveEntrance':'Remove','M.Visitors':'Visitors','M.Budget':'Budget','Module.Tab.Finances':'Finances','CS2AS.UI.Experience':'Experience','Module.Tab.Visitors':'Visitors'},
+  'CS2AS.UI.Level':'Level','CS2AS.UI.Entrances':'Entrances','CS2AS.UI.AddEntrance':'Add entrance','CS2AS.UI.RemoveEntrance':'Remove','CS2AS.UI.AnchorInvalid':'Not eligible','CS2AS.UI.AnchorRemoved':'Building removed','M.Visitors':'Visitors','M.Budget':'Budget','Module.Tab.Finances':'Finances','CS2AS.UI.Experience':'Experience','Module.Tab.Visitors':'Visitors'},
  'ja-JP':{'CS2AS.UI.Type':'種類','CS2AS.UI.Status':'状態','CS2AS.UI.Entrance':'入口','CS2AS.UI.NotAssigned':'未割り当て','CS2AS.Type.Park':'公園エリア','CS2AS.State.Suspended':'停止中',
   'CS2AS.UI.AssignEntrance':'入口を割り当て','Module.Tab.Visitors':'来園者'}
 } as Record<string,Record<string,string>>}));
@@ -94,7 +94,7 @@ describe('managed area selected-info section',()=>{
  });
  it('lists every entrance with remove actions keyed by the opaque link key',()=>{
   const park={...industrial,typeKey:'CS2AS.Type.Park',state:'CS2AS.State.Active',anchorRole:'Entrance' as const,anchorName:'North Gate',
-   anchors:[{key:'30.1',name:'North Gate'},{key:'31.4',name:'South Gate'}]};
+   anchors:[{key:'30.1',name:'North Gate',valid:true},{key:'31.4',name:'South Gate',valid:true}]};
   render(<AreaInfoSection {...park}/>);
   expect(row('Entrances')).toHaveTextContent('2');
   expect(screen.getByText('North Gate')).toBeInTheDocument();expect(screen.getByText('South Gate')).toBeInTheDocument();
@@ -118,5 +118,17 @@ describe('managed area selected-info section',()=>{
   expect(row('Type')).toHaveTextContent('Industrial Area');
   expect(screen.getByRole('button',{name:'Edit area'})).toBeInTheDocument();
   consoleError.mockRestore();
+ });
+ it('marks ineligible or removed entrances and still lets the player remove them',()=>{
+  const park={...industrial,typeKey:'CS2AS.Type.Park',anchorRole:'Entrance' as const,anchorName:null,
+   anchors:[{key:'30.1',name:'Old House',valid:false},{key:'31.4',name:null,valid:false},{key:'32.1',name:'East Gate',valid:true}]};
+  render(<AreaInfoSection {...park}/>);
+  expect(row('Entrances')).toHaveTextContent('1');
+  const items=screen.getAllByRole('listitem');
+  expect(items[0]).toHaveTextContent('Old House');expect(items[0]).toHaveTextContent('Not eligible');
+  expect(items[1]).toHaveTextContent('Building removed');
+  expect(items[2]).not.toHaveTextContent('Not eligible');
+  fireEvent.click(within(items[0]).getByRole('button',{name:'Remove'}));
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','removeAnchor','9007199254740993','30.1');
  });
 });

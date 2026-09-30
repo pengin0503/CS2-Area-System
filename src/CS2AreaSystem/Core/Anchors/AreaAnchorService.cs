@@ -9,6 +9,15 @@ namespace CS2AreaSystem.Core.Anchors
         IReadOnlyList<AreaAnchorLink> Read(Entity area);
         void Write(Entity area, IReadOnlyList<AreaAnchorLink> links);
     }
+    // One persisted link as the UI sees it: Exists = the entity is still a valid game object,
+    // Valid = it also passes the Core + module eligibility (an invalid link no longer activates the area).
+    public readonly struct AreaAnchorLinkState
+    {
+        public Entity Anchor { get; }
+        public bool Exists { get; }
+        public bool Valid { get; }
+        public AreaAnchorLinkState(Entity anchor, bool exists, bool valid) { Anchor = anchor; Exists = exists; Valid = valid; }
+    }
     public sealed class AreaAnchorService
     {
         private readonly IAreaAnchorStore store;
@@ -48,6 +57,25 @@ namespace CS2AreaSystem.Core.Anchors
             foreach (var link in store.Read(area))
                 if (link.Role == role && !result.Contains(link.Anchor) && valid(link.Anchor) && eligible(area, link.Anchor, role)) result.Add(link.Anchor);
             return result;
+        }
+        // Every persisted link of the role (valid or not) in link order without duplicates, so stale links stay
+        // visible and removable instead of silently blocking activation.
+        public IReadOnlyList<AreaAnchorLinkState> GetAnchorLinks(Entity area, AreaAnchorRole role)
+        {
+            var result = new List<AreaAnchorLinkState>();
+            var seen = new HashSet<Entity>();
+            foreach (var link in store.Read(area))
+            {
+                if (link.Role != role || !seen.Add(link.Anchor)) continue;
+                bool exists = valid(link.Anchor);
+                result.Add(new AreaAnchorLinkState(link.Anchor, exists, exists && eligible(area, link.Anchor, role)));
+            }
+            return result;
+        }
+        public bool HasLinks(Entity area, AreaAnchorRole role)
+        {
+            foreach (var link in store.Read(area)) if (link.Role == role) return true;
+            return false;
         }
         public void RebuildReverseIndex(IEnumerable<Entity> areas)
         {

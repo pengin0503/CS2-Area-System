@@ -7,7 +7,7 @@ public class AreaManagementViewModelTests {
         StableId = "7", AnchorName = "Harbor Offices", TypeKey = "CS2AS.Type.Industrial", State = "CS2AS.State.Active",
         Summary = "CS2AS.Summary.Active", AnchorRole = "Headquarters", Level = 2, Experience = "10",
         Panel = AreaPanelModelTests.Document(),
-        Anchors = new[] { new AreaAnchorView { Key = "30.1", Name = "North Gate" } }
+        Anchors = new[] { new AreaAnchorView { Key = "30.1", Name = "North Gate", Valid = true } }
     };
     [Test] public void SectionPropertiesCarryStructuredTabsAndAnchorList() {
         var writer = new CS2AreaSystem.Tests.Support.RecordingJsonWriter();
@@ -17,6 +17,7 @@ public class AreaManagementViewModelTests {
         Assert.That(json.GetProperty("tabs")[1].GetProperty("items")[0].GetProperty("kind").GetString(), Is.EqualTo("slider"));
         Assert.That(json.GetProperty("anchors")[0].GetProperty("key").GetString(), Is.EqualTo("30.1"));
         Assert.That(json.GetProperty("anchors")[0].GetProperty("name").GetString(), Is.EqualTo("North Gate"));
+        Assert.That(json.GetProperty("anchors")[0].GetProperty("valid").GetBoolean(), Is.True);
     }
     [Test] public void IdenticalContentIsEquivalentEvenWithNewTabInstances() {
         Assert.That(AreaManagementViewModel.Equivalent(View(), View()), Is.True);
@@ -30,8 +31,9 @@ public class AreaManagementViewModelTests {
             v => v.Panel = new AreaPanelDocument(),
             v => v.Panel.Tabs[0].Items[0].Value = "13",
             v => v.Anchors = new AreaAnchorView[0],
-            v => v.Anchors = new[] { new AreaAnchorView { Key = "30.1", Name = "South Gate" } },
-            v => v.Anchors = new[] { new AreaAnchorView { Key = "31.1", Name = "North Gate" } }
+            v => v.Anchors = new[] { new AreaAnchorView { Key = "30.1", Name = "South Gate", Valid = true } },
+            v => v.Anchors = new[] { new AreaAnchorView { Key = "31.1", Name = "North Gate", Valid = true } },
+            v => v.Anchors = new[] { new AreaAnchorView { Key = "30.1", Name = "North Gate", Valid = false } }
         };
         foreach (var change in changes) {
             var changed = View(); change(changed);

@@ -57,6 +57,8 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.Entrances"] = ja ? "入口" : "Entrances",
                 ["CS2AS.UI.AddEntrance"] = ja ? "入口を追加" : "Add entrance",
                 ["CS2AS.UI.RemoveEntrance"] = ja ? "解除" : "Remove",
+                ["CS2AS.UI.AnchorInvalid"] = ja ? "条件を満たしていません" : "Not eligible",
+                ["CS2AS.UI.AnchorRemoved"] = ja ? "撤去された建物" : "Building removed",
                 ["CS2AS.UI.ChangeEntrance"] = ja ? "入口を変更" : "Change entrance",
                 ["CS2AS.UI.ChangeHeadquarters"] = ja ? "本部を変更" : "Change headquarters",
                 ["CS2AS.UI.SelectEntrance"] = ja ? "このエリア内の公園・余暇施設・観光名所の建物をクリックして入口に追加してください。" : "Click a park, leisure or attraction building inside this area to add it as an entrance.",

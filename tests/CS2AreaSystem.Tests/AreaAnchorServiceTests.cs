@@ -144,3 +144,34 @@ public class AreaAnchorPolicyTests {
   Assert.That(Run(true,true,true,true,false),Is.False);
  }
 }
+public class AreaAnchorLinkListTests {
+ private sealed class Store : IAreaAnchorStore {
+  public Dictionary<Entity,IReadOnlyList<AreaAnchorLink>> Values = new();
+  public IReadOnlyList<AreaAnchorLink> Read(Entity area) => Values.TryGetValue(area,out var links)?links:Array.Empty<AreaAnchorLink>();
+  public void Write(Entity area,IReadOnlyList<AreaAnchorLink> links) => Values[area]=links.ToArray();
+ }
+ private static readonly Entity area=new(){Index=10,Version=1}, house=new(){Index=30,Version=1}, gate=new(){Index=31,Version=1}, gone=new(){Index=32,Version=1};
+ [Test] public void LinksListIncludesInvalidEntriesSoTheyCanBeShownAndRemoved() {
+  var store=new Store();
+  store.Values[area]=new[]{ new AreaAnchorLink{Anchor=house,Role=AreaAnchorRole.Entrance}, new AreaAnchorLink{Anchor=gate,Role=AreaAnchorRole.Entrance},
+   new AreaAnchorLink{Anchor=gone,Role=AreaAnchorRole.Entrance}, new AreaAnchorLink{Anchor=gate,Role=AreaAnchorRole.Entrance} };
+  var service=new AreaAnchorService(store,e=>e!=gone,(a,e,r)=>e==gate);
+  var links=service.GetAnchorLinks(area,AreaAnchorRole.Entrance);
+  Assert.That(links.Select(l=>l.Anchor),Is.EqualTo(new[]{house,gate,gone}),"link order, no duplicates");
+  Assert.That(links.Select(l=>l.Valid),Is.EqualTo(new[]{false,true,false}));
+  Assert.That(links.Select(l=>l.Exists),Is.EqualTo(new[]{true,true,false}));
+  Assert.That(service.HasLinks(area,AreaAnchorRole.Entrance),Is.True);
+  Assert.That(service.Remove(area,house,AreaAnchorRole.Entrance),Is.True,"an ineligible link can be removed");
+  Assert.That(service.GetAnchorLinks(area,AreaAnchorRole.Entrance).Any(l=>l.Anchor==house),Is.False);
+ }
+ [Test] public void ParkExplainsWhyItIsSuspendedWhenOnlyIneligibleEntrancesRemain() {
+  var store=new Store();
+  var service=new AreaAnchorService(store,e=>true,(a,e,r)=>e==gate);
+  var park=new ParkAreaModule(service);
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.EntranceRequired"));
+  store.Values[area]=new[]{ new AreaAnchorLink{Anchor=house,Role=AreaAnchorRole.Entrance} };
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.EntranceInvalid"));
+  store.Values[area]=new[]{ new AreaAnchorLink{Anchor=house,Role=AreaAnchorRole.Entrance}, new AreaAnchorLink{Anchor=gate,Role=AreaAnchorRole.Entrance} };
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.Active"));
+ }
+}

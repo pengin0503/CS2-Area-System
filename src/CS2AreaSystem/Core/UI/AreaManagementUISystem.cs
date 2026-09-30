@@ -127,6 +127,7 @@ namespace CS2AreaSystem.Core.UI
             var context = new Core.Modules.AreaPanelContext(World, EntityManager);
             var provider = descriptor?.Module?.PanelProvider;
             var anchors = role.HasValue ? services.Anchors.GetValidAnchors(entity, role.Value) : System.Array.Empty<Entity>();
+            var links = role.HasValue ? services.Anchors.GetAnchorLinks(entity, role.Value) : System.Array.Empty<AreaAnchorLinkState>();
             view = new AreaManagementViewModel {
                 StableId = EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value.ToString(CultureInfo.InvariantCulture),
                 TypeKey = known ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
@@ -135,8 +136,8 @@ namespace CS2AreaSystem.Core.UI
                 Panel = BuildPanel(provider, entity, context),
                 AnchorRole = role?.ToString(),
                 AnchorName = anchors.Count > 0 ? names.GetRenderedLabelName(anchors[0]) : null,
-                Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(anchors, anchor =>
-                    new AreaAnchorView { Key = AreaAnchorLinkKey.Format(anchor), Name = names.GetRenderedLabelName(anchor) })),
+                Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link =>
+                    new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })),
                 PendingAnchor = pendingArea == entity,
                 ConfirmDelete = CS2AreaSystem.Core.Settings.AreaSettings.Current.ConfirmAreaDeletion
             };

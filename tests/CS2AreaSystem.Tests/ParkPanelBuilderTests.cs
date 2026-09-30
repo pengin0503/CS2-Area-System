@@ -102,7 +102,7 @@ public class ParkPanelBuilderTests {
   foreach (var model in new[] { Model(1), Model(2, landscape: false, primary: false), Model(4), Model(5), Model(quality: false, entrances: 0) })
    foreach (var item in ParkPanelBuilder.Build(model).Tabs.SelectMany(t => t.Items.Select(i => (t, i)))) {
     keys.Add(item.t.LabelKey); keys.Add(item.i.LabelKey); if (item.i.ValueKey != null) keys.Add(item.i.ValueKey); if (item.i.TooltipKey != null) keys.Add(item.i.TooltipKey); }
-  keys.Add("CS2AS.Park.Summary.Active"); keys.Add("CS2AS.Park.Summary.EntranceRequired");
+  keys.Add("CS2AS.Park.Summary.Active"); keys.Add("CS2AS.Park.Summary.EntranceRequired"); keys.Add("CS2AS.Park.Summary.EntranceInvalid");
   foreach (var key in keys) Assert.That(entries.ContainsKey(key), Is.True, locale + " is missing " + key);
  }
 }

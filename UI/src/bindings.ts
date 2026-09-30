@@ -11,7 +11,7 @@ export interface AreaPanelItem {
  min:number|null;max:number|null;step:number|null;disabled:boolean;tooltipKey:string|null;action:string|null;
 }
 export interface AreaPanelTab {id:string;labelKey:string;items?:AreaPanelItem[];}
-export interface AreaAnchor {key:string;name:string;}
+export interface AreaAnchor {key:string;name:string|null;valid?:boolean;}
 export interface AreaListItem {stableId:string;name:string;typeKey:string;state:string;}
 export interface PendingAssignment {stableId:string;name:string;role:'Entrance'|'Headquarters';}
 type Binding<T>=ReturnType<typeof bindValue<T>>;

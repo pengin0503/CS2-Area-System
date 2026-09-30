@@ -13,6 +13,7 @@ namespace CS2AreaSystem.Modules.Park
             Add("CS2AS.Tab.Progress", "Progress", "進捗");
             Add(P + "Summary.Active", "Open. Visits are measured from real residents' and tourists' leisure trips.", "開園中。来園者は住民と観光客の実際の余暇行動から計測されます。");
             Add(P + "Summary.EntranceRequired", "Assign a park, leisure or attraction building inside this area as an entrance to open the Park.", "エリア内の公園・余暇施設・観光名所の建物を入口に割り当てると開園します。");
+            Add(P + "Summary.EntranceInvalid", "Suspended: none of the assigned entrances qualifies any more. Remove the marked entrances and assign a park, leisure or attraction building inside this area.", "停止中：割り当て済みの入口がどれも条件を満たしていません。印の付いた入口を解除し、エリア内の公園・余暇施設・観光名所の建物を入口に割り当ててください。");
             Add(P + "LevelName.1", "Local Park", "地域公園");
             Add(P + "LevelName.2", "Neighborhood Park", "近隣公園");
             Add(P + "LevelName.3", "City Park", "都市公園");
