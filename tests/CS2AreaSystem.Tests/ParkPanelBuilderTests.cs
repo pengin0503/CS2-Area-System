@@ -9,7 +9,7 @@ public class ParkPanelBuilderTests {
   var inputs = new ParkLandscapeInputs { AreaSquareMeters = 10_000, PathLength = 300, Vegetation = new() { Count = 50, DistinctPrefabs = 10 }, Amenities = new() { Count = 6, DistinctPrefabs = 2 } };
   runtime.Landscape = new ParkLandscapeSnapshot { Available = landscape, Inputs = inputs, Result = ParkLandscapeModel.ComputeLandscape(inputs), TransitPoints = 1, TransitTypes = 1 };
   runtime.Facilities = ParkFacilitySnapshot.Build(new[] { new ParkFacilityTraits { IsBuilding = true, HasPark = true, HasLeisureData = true, LeisureType = Game.Agents.LeisureType.CityPark, LeisureEfficiency = 20 } });
-  runtime.RecentVisitors.Add(100, 40); runtime.RecentAdmission.Add(100, 800); runtime.RecentExpense.Add(100, 300);
+  runtime.RecentVisitors.Add(100, 40); runtime.RecentAdmission.Add(100, 800); runtime.RecentUncollected.Add(100, 13); runtime.RecentExpense.Add(100, 300);
   runtime.ManagementCostPerDay = 900;
   var state = ParkAreaState.CreateDefault(); state.AdmissionFee = 20; state.LifetimeVisitors = 1_000; state.LifetimeTouristVisitors = 200; state.LifetimeResidentVisitors = 800;
   state.LifetimeAdmissionRevenue = 12_345; state.LifetimeManagementExpense = 6_000; state.Satisfaction = new ParkSatisfactionState { Mean = 70, Weight = 40 };
@@ -71,6 +71,8 @@ public class ParkPanelBuilderTests {
   foreach (var id in new[] { "recentAdmission", "lifetimeAdmission", "managementCost", "recentExpense", "lifetimeExpense", "recentNet" })
    Assert.That(f.Items.Any(i => i.Id == id), Is.True, id);
   Assert.That(Item(f, "recentNet").Value, Is.EqualTo("¢500"));
+  Assert.That(Item(f, "recentUncollected").Value, Is.EqualTo("¢13"), "fees households could not pay (last day)");
+  Assert.That(Item(f, "recentUncollected").TooltipKey, Is.EqualTo("CS2AS.Park.RecentUncollected.Tip"));
   Assert.That(f.Items.Any(i => i.Kind == AreaPanelItemKind.Note && i.LabelKey == "CS2AS.Park.Note.VanillaSeparate"), Is.True);
  }
  [Test] public void LandscapeTabShowsScoreAndCategoryContributions() {

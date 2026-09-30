@@ -60,7 +60,8 @@ namespace CS2AreaSystem.Modules.Park
         public readonly ParkRollingWindow RecentTouristVisitors = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
         public readonly ParkRollingWindow RecentAdmission = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
         public readonly ParkRollingWindow RecentExpense = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
-        public long UncollectedAdmissionRecent;
+        // Admission households could not pay (partial/zero collection), last in-game day.
+        public readonly ParkRollingWindow RecentUncollected = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
         // Park-level experienced state used for visit satisfaction samples; Facility comes from the visited building.
         // Neutral until the first Quality evaluation; visit samples are only taken once Quality exists.
         public ParkVisitExperience Experience = new ParkVisitExperience { Facility = 50, Landscape = 50, Comfort = 50, Maintenance = 50, ValueForMoney = 50, Accessibility = 50 };

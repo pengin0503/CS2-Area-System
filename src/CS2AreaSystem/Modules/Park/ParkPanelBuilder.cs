@@ -106,6 +106,7 @@ namespace CS2AreaSystem.Modules.Park
             if (!unlocked) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "feeLocked", LabelKey = P + "Fee.Locked" });
             items.Add(Row("recentAdmission", P + "RecentAdmission", Money(income), tooltip: P + "Recent.Tip"));
             items.Add(Row("lifetimeAdmission", P + "LifetimeAdmission", Money(s.LifetimeAdmissionRevenue)));
+            items.Add(Row("recentUncollected", P + "RecentUncollected", Money(Recent(model.Runtime, r => r.RecentUncollected, frame)), tooltip: P + "RecentUncollected.Tip"));
             items.Add(Row("managementCost", P + "ManagementCost", Money((long)Math.Round(model.Runtime?.ManagementCostPerDay ?? 0)), tooltip: P + "ManagementCost.Tip"));
             items.Add(Row("recentExpense", P + "RecentExpense", Money(expense), tooltip: P + "Recent.Tip"));
             items.Add(Row("lifetimeExpense", P + "LifetimeExpense", Money(s.LifetimeManagementExpense)));

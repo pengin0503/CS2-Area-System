@@ -189,3 +189,11 @@ public class ParkVisitSamplingReadinessTests {
   Assert.That(picked, Is.EqualTo(new ulong[] { 6, 1, 2 }), "catch-up first, remaining budget round-robin");
  }
 }
+public class ParkUncollectedWindowTests {
+ [Test] public void UncollectedAdmissionIsARollingDayNotAnEverGrowingTotal() {
+  var snapshot = new ParkRuntimeSnapshot();
+  snapshot.RecentUncollected.Add(0, 13);
+  Assert.That(snapshot.RecentUncollected.Sum(10), Is.EqualTo(13));
+  Assert.That(snapshot.RecentUncollected.Sum(ParkFinanceModel.FramesPerDay * 2), Is.Zero);
+ }
+}

@@ -142,7 +142,7 @@ namespace CS2AreaSystem.Modules.Park
                     var area = outcome.Request.Area;
                     if (runtime.Store.TryGet(outcome.Request.ParkId, out var snapshot))
                     {
-                        snapshot.UncollectedAdmissionRecent += outcome.Uncollected;
+                        if (outcome.Uncollected > 0) snapshot.RecentUncollected.Add(inFlightFrame, outcome.Uncollected);
                         if (outcome.Collected > 0) snapshot.RecentAdmission.Add(inFlightFrame, outcome.Collected);
                     }
                     if (outcome.Collected > 0 && EntityManager.Exists(area) && EntityManager.HasComponent<ParkAreaState>(area))

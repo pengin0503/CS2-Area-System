@@ -78,6 +78,8 @@ namespace CS2AreaSystem.Modules.Park
             Add(P + "Fee.Locked", "Admission unlocks at Neighborhood Park (level 2).", "入園料は近隣公園（レベル2）で解放されます。");
             Add(P + "Free", "Free", "無料");
             Add(P + "RecentAdmission", "Admission income (last day)", "入園料収入（直近1日）");
+            Add(P + "RecentUncollected", "Unpaid admission (last day)", "未回収の入園料（直近1日）");
+            Add(P + "RecentUncollected.Tip", "Fees visitors' households could not afford. Visitors still entered; a high value suggests the fee is too high for them.", "来園者の世帯が支払えなかった入園料です。来園自体は行われます。多い場合は入園料が高すぎる可能性があります。");
             Add(P + "LifetimeAdmission", "Admission income (total)", "入園料収入（累計）");
             Add(P + "ManagementCost", "Area management cost per day", "エリア管理費（1日あたり）");
             Add(P + "ManagementCost.Tip", "Grounds and administration overhead of the Park Area, paid from city money.", "公園エリアの管理・運営費で、市の資金から支払われます。");
