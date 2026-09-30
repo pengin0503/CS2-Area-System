@@ -33,8 +33,14 @@ namespace CS2AreaSystem.Core.Anchors
             if (links.Length == old.Count) return false;
             store.Write(area, links); Reindex(area, old, links); dirty.Add(area); return true;
         }
-        public bool HasValidAnchor(Entity area, AreaAnchorRole role) => store.Read(area).Any(link =>
-            link.Role == role && valid(link.Anchor) && eligible(area, link.Anchor, role));
+        public bool HasValidAnchor(Entity area, AreaAnchorRole role) => TryGetValidAnchor(area, role, out _);
+        public bool TryGetValidAnchor(Entity area, AreaAnchorRole role, out Entity anchor)
+        {
+            foreach (var link in store.Read(area))
+                if (link.Role == role && valid(link.Anchor) && eligible(area, link.Anchor, role)) { anchor = link.Anchor; return true; }
+            anchor = Entity.Null;
+            return false;
+        }
         public void RebuildReverseIndex(IEnumerable<Entity> areas)
         {
             byAnchor.Clear(); dirty.Clear();

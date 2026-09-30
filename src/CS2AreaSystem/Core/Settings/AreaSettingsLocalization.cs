@@ -29,8 +29,8 @@ namespace CS2AreaSystem.Core.Settings
                 ja ? "一覧から選んだエリアへカメラを移動" : "Move camera to areas picked from the list",
                 ja ? "管理エリア一覧でエリアを選んだときに、カメラをそのエリアへ移動します。" : "When an area is picked in the managed area list, the camera moves to it.");
             Option(entries, nameof(AreaSystemSettings.PanelSide),
-                ja ? "パネルの表示位置" : "Panel position",
-                ja ? "管理エリア一覧と管理パネルを画面の右側・左側のどちらに表示するかを選びます。" : "Chooses the screen side for the managed area list and management panel.");
+                ja ? "管理エリア一覧の表示位置" : "Managed area list position",
+                ja ? "管理エリア一覧（と入口・本部の割り当て案内）を画面の右側・左側のどちらに表示するかを選びます。エリアの詳細はゲーム標準の選択パネルに表示されます。" : "Chooses the screen side for the managed area list and the anchor-assignment hint. Area details appear in the game's selected-info panel.");
             entries[EnumValue(AreaPanelSide.Right)] = ja ? "右" : "Right";
             entries[EnumValue(AreaPanelSide.Left)] = ja ? "左" : "Left";
             Option(entries, nameof(AreaSystemSettings.ConfirmAreaDeletion),

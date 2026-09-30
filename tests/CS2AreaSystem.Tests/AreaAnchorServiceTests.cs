@@ -75,4 +75,14 @@ public class AreaAnchorServiceTests {
         }
         Assert.That(store.Read(other).Single().Anchor,Is.EqualTo(hq));
     }
+ [Test] public void ExposesTheCurrentValidAnchorForTheSectionOnly() {
+  var invalid=new HashSet<Entity>();
+  var store=new Store(); var anchors=new AreaAnchorService(store,e=>e!=Entity.Null&&!invalid.Contains(e),(a,e,r)=>true);
+  Assert.That(anchors.TryGetValidAnchor(area,AreaAnchorRole.Headquarters,out var none),Is.False); Assert.That(none,Is.EqualTo(Entity.Null));
+  anchors.Assign(area,hq,AreaAnchorRole.Headquarters);
+  Assert.That(anchors.TryGetValidAnchor(area,AreaAnchorRole.Headquarters,out var found),Is.True); Assert.That(found,Is.EqualTo(hq));
+  Assert.That(anchors.TryGetValidAnchor(area,AreaAnchorRole.Entrance,out _),Is.False,"other role");
+  invalid.Add(hq);
+  Assert.That(anchors.TryGetValidAnchor(area,AreaAnchorRole.Headquarters,out _),Is.False,"demolished anchor is not shown");
+ }
 }

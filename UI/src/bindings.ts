@@ -1,17 +1,18 @@
 import {bindValue} from 'cs2/api';
-export interface AreaView {
- stableId:string;name:string;typeKey:string;state:string;level:number|null;experience:string|null;
- tabs:{id:string;labelKey:string}[];summary:string;anchorRole:'Entrance'|'Headquarters'|null;pendingAnchor:boolean;
+// Props of the selected-info section, written by CS2AreaSystem.Core.UI.AreaInfoSection.
+export interface AreaSectionData {
+ stableId:string;typeKey:string;state:string;level:number|null;experience:string|null;summary:string;
+ anchorRole:'Entrance'|'Headquarters'|null;anchorName:string|null;pendingAnchor:boolean;confirmDelete:boolean;
+ tabs:{id:string;labelKey:string}[];
 }
 export interface AreaListItem {stableId:string;name:string;typeKey:string;state:string;}
+export interface PendingAssignment {stableId:string;name:string;role:'Entrance'|'Headquarters';}
 type Binding<T>=ReturnType<typeof bindValue<T>>;
-let bindings: {selectedArea:Binding<AreaView|null>;panelVisible:Binding<boolean>;areaList:Binding<AreaListItem[]>;areaListAvailable:Binding<boolean>;areaListOpen:Binding<boolean>;confirmDelete:Binding<boolean>;panelSide:Binding<'left'|'right'>}|undefined;
+let bindings:{areaList:Binding<AreaListItem[]>;areaListAvailable:Binding<boolean>;areaListOpen:Binding<boolean>;panelSide:Binding<'left'|'right'>;pendingAssignment:Binding<PendingAssignment|null>}|undefined;
 export function getBindings(){return bindings??=( {
- selectedArea:bindValue<AreaView|null>('cs2AreaSystem','selectedArea',null),
- panelVisible:bindValue('cs2AreaSystem','panelVisible',false),
  areaList:bindValue<AreaListItem[]>('cs2AreaSystem','areaList',[]),
  areaListAvailable:bindValue('cs2AreaSystem','areaListAvailable',false),
  areaListOpen:bindValue('cs2AreaSystem','areaListOpen',false),
- confirmDelete:bindValue('cs2AreaSystem','confirmDelete',true),
- panelSide:bindValue<'left'|'right'>('cs2AreaSystem','panelSide','right')
+ panelSide:bindValue<'left'|'right'>('cs2AreaSystem','panelSide','right'),
+ pendingAssignment:bindValue<PendingAssignment|null>('cs2AreaSystem','pendingAssignment',null)
 } );}

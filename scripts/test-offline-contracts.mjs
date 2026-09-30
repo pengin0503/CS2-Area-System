@@ -64,14 +64,21 @@ const activation = read('src/CS2AreaSystem/Core/Anchors/AreaActivationSystem.cs'
 check(anchorService.includes('ForgetArea'), 'anchor service must explicitly prune reverse entries for deleted areas');
 check(activation.includes('ForgetArea'), 'area deletion flow must invoke reverse-anchor pruning');
 
-const panel = read('UI/src/AreaManagementPanel.tsx');
+const section = read('UI/src/AreaInfoSection.tsx');
+const uiIndex = read('UI/src/index.tsx');
+const sectionSystem = read('src/CS2AreaSystem/Core/UI/AreaInfoSection.cs');
 const webpack = read('UI/webpack.config.js');
 const dts = read('UI/types/cs2.d.ts');
-check(panel.includes("from 'cs2/l10n'") || panel.includes('from "cs2/l10n"'), 'management panel must use CS2 localization API');
-check(!panel.includes('const labels:'), 'management panel must not hardcode its translation table');
-check(panel.includes('useEffect'), 'management panel must resync editable name state when the backend name changes');
-check(webpack.includes("'cs2/l10n'") || webpack.includes('"cs2/l10n"'), 'webpack must externalize cs2/l10n');
-check(dts.includes("declare module 'cs2/l10n'"), 'local UI typings must declare cs2/l10n');
+check(section.includes("from 'cs2/l10n'") || section.includes('from "cs2/l10n"'), 'area section must use CS2 localization API');
+check(!section.includes('const labels:'), 'area section must not hardcode its translation table');
+// Area details are a section of the vanilla selected-info panel (public extension points only).
+check(sectionSystem.includes('AddMiddleSection(this)') && sectionSystem.includes('InfoSectionBase'), 'C# area section must register through SelectedInfoUISystem.AddMiddleSection');
+check(section.includes("AREA_INFO_SECTION_TYPE='CS2AreaSystem.Core.UI.AreaInfoSection'"), 'UI section key must equal the C# section type name');
+check(uiIndex.includes("'selectedInfoSectionComponents'") && uiIndex.includes('registry.extend('), 'UI must add the section through the public module registry');
+check(section.includes('PanelBoundary'), 'area section failures must be contained inside the section');
+for (const external of ['cs2/l10n','cs2/ui','cs2/modding'])
+  check(webpack.includes(`'${external}'`), `webpack must externalize ${external}`);
+check(dts.includes("declare module 'cs2/l10n'") && dts.includes("declare module 'cs2/ui'"), 'local UI typings must declare the game UI modules used');
 
 const localization = read('src/CS2AreaSystem/Core/UI/NativeAreaLocalization.cs');
 check(localization.includes('CS2AS.UI.EditArea'), 'C# localization source must include management panel actions');

@@ -15,6 +15,10 @@ using Game.UI.InGame;
 using Unity.Entities;
 namespace CS2AreaSystem.Core.UI
 {
+    // Controller of the managed-area UI. Area details render as a section of the vanilla selected-info panel
+    // (AreaInfoSection), whose title section already names/renames the area and whose actions section
+    // provides "locate". This system owns the mutating actions, anchor assignment, the managed area list
+    // (the only route to select a completed Space area) and the pending-assignment banner.
     public partial class AreaManagementUISystem : UISystemBase
     {
         private AreaCoreServicesSystem services;
@@ -25,18 +29,18 @@ namespace CS2AreaSystem.Core.UI
         private AreaToolSystem areaTool;
         private EndFrameBarrier endFrameBarrier;
         private Game.Audio.AudioManager audio;
-        private EntityQuery soundSettings;
-        private RawValueBinding selectedArea, areaList;
-        private ValueBinding<bool> visible, listAvailable, listOpen, confirmDelete;
+        private EntityQuery soundSettings, managedAreas;
+        private RawValueBinding areaList, pendingBinding;
+        private ValueBinding<bool> listAvailable, listOpen;
         private ValueBinding<string> panelSide;
-        private EntityQuery managedAreas;
         private System.Collections.Generic.List<AreaListEntry> listView = new System.Collections.Generic.List<AreaListEntry>();
-        private Entity published, pendingArea;
+        private PendingAssignmentView pendingView;
+        private Entity pendingArea;
         private ulong pendingId;
         private AreaAnchorRole pendingRole;
-        private AreaManagementViewModel view;
         private bool failureLogged;
         public override GameMode gameMode => GameMode.Game;
+        public bool IsReady => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -49,44 +53,39 @@ namespace CS2AreaSystem.Core.UI
             endFrameBarrier = World.GetOrCreateSystemManaged<EndFrameBarrier>();
             audio = World.GetOrCreateSystemManaged<Game.Audio.AudioManager>();
             soundSettings = GetEntityQuery(ComponentType.ReadOnly<ToolUXSoundSettingsData>());
-            AddBinding(selectedArea = new RawValueBinding("cs2AreaSystem", "selectedArea", writer => { if (view == null) writer.WriteNull(); else view.Write(writer); }));
-            AddBinding(visible = new ValueBinding<bool>("cs2AreaSystem", "panelVisible", false));
             managedAreas = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() }
             });
             AddBinding(areaList = new RawValueBinding("cs2AreaSystem", "areaList", writer => AreaListViewModel.Write(writer, listView)));
+            AddBinding(pendingBinding = new RawValueBinding("cs2AreaSystem", "pendingAssignment", writer => PendingAssignmentView.Write(writer, pendingView)));
             AddBinding(listAvailable = new ValueBinding<bool>("cs2AreaSystem", "areaListAvailable", false));
             AddBinding(listOpen = new ValueBinding<bool>("cs2AreaSystem", "areaListOpen", false));
-            AddBinding(confirmDelete = new ValueBinding<bool>("cs2AreaSystem", "confirmDelete", true));
             AddBinding(panelSide = new ValueBinding<string>("cs2AreaSystem", "panelSide", "right"));
             AddBinding(new TriggerBinding<bool>("cs2AreaSystem", "setAreaListOpen", open => { listOpen.Update(open); if (!open) SetList(new System.Collections.Generic.List<AreaListEntry>()); }));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "selectArea", SelectArea));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
-            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "locateArea", id => Act(id, selection.Focus)));
-            AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "renameArea", (id, name) => Act(id, area => {
-                if (!string.IsNullOrWhiteSpace(name) && name.Length <= 128) names.SetCustomName(area, name.Trim());
-            })));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignHeadquarters", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Headquarters))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignEntrance", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Entrance))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", CancelAssignment));
+            // Registers itself as a middle section of the vanilla selected-info panel.
+            World.GetOrCreateSystemManaged<AreaInfoSection>();
         }
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
         {
             base.OnGamePreload(purpose, mode);
-            pendingArea = published = Entity.Null; failureLogged = false;
+            pendingArea = Entity.Null; failureLogged = false;
             // The system is disabled outside gameplay, so clear the UI now instead of on the next update.
-            SetView(null);
+            SetPending(null);
             listAvailable.Update(false); listOpen.Update(false); SetList(new System.Collections.Generic.List<AreaListEntry>());
         }
         protected override void OnUpdate()
         {
             try
             {
-                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) { Publish(Entity.Null); listAvailable.Update(false); return; }
+                if (!IsReady) { listAvailable.Update(false); SetPending(null); return; }
                 var options = CS2AreaSystem.Core.Settings.AreaSettings.Current;
-                confirmDelete.Update(options.ConfirmAreaDeletion);
                 panelSide.Update(options.PanelSide == CS2AreaSystem.Core.Settings.AreaPanelSide.Left ? "left" : "right");
                 listAvailable.Update(options.ShowAreaList);
                 if (!options.ShowAreaList && listOpen.value) { listOpen.Update(false); SetList(new System.Collections.Generic.List<AreaListEntry>()); }
@@ -101,42 +100,46 @@ namespace CS2AreaSystem.Core.UI
                         services.Anchors.Assign(pendingArea, selected, pendingRole))
                     { selection.SetSelection(pendingArea); selected = pendingArea; pendingArea = Entity.Null; }
                 }
-                Publish(pendingArea != Entity.Null ? pendingArea : selected);
+                // The banner guides the player while the selection is on a building rather than the area itself.
+                SetPending(pendingArea != Entity.Null && selected != pendingArea ? new PendingAssignmentView {
+                    StableId = pendingId.ToString(CultureInfo.InvariantCulture), Name = names.GetRenderedLabelName(pendingArea), Role = pendingRole.ToString()
+                } : null);
                 failureLogged = false;
             }
             catch (Exception error)
             {
                 if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Area management UI unavailable"); }
-                published = Entity.Null; if (view != null) SetView(null);
+                SetPending(null);
             }
         }
         private bool IsArea(Entity entity) => services.IsValidEntity(entity) && EntityManager.HasComponent<ManagedArea>(entity) && EntityManager.HasComponent<ManagedAreaStableId>(entity);
-        private void Publish(Entity entity)
+        // Content of the selected-info section for a managed area; false for anything else.
+        public bool TryBuildView(Entity entity, out AreaManagementViewModel view)
         {
-            published = IsArea(entity) ? entity : Entity.Null;
-            AreaManagementViewModel next = null;
-            if (published != Entity.Null)
-            {
-                var area = EntityManager.GetComponentData<ManagedArea>(published);
-                bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
-                next = new AreaManagementViewModel {
-                    StableId = EntityManager.GetComponentData<ManagedAreaStableId>(published).Value.ToString(CultureInfo.InvariantCulture),
-                    Name = names.GetRenderedLabelName(published),
-                    TypeKey = known ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
-                    State = "CS2AS.State." + area.State,
-                    Summary = descriptor?.Module?.PanelProvider?.BuildSummary(published) ?? "CS2AS.Summary.ModuleUnavailable",
-                    Tabs = descriptor?.Module?.PanelProvider?.Tabs ?? new Core.Modules.AreaPanelTab[0],
-                    AnchorRole = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole?.ToString(), PendingAnchor = pendingArea != Entity.Null
-                };
-                if (EntityManager.HasComponent<ManagedAreaProgress>(published))
-                { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(published); next.Level = progress.Level; next.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
-            }
-            if (!AreaManagementViewModel.Equivalent(view, next)) SetView(next);
+            view = null;
+            if (!IsReady || !IsArea(entity)) return false;
+            var area = EntityManager.GetComponentData<ManagedArea>(entity);
+            bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
+            var role = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole;
+            view = new AreaManagementViewModel {
+                StableId = EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value.ToString(CultureInfo.InvariantCulture),
+                TypeKey = known ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
+                State = "CS2AS.State." + area.State,
+                Summary = descriptor?.Module?.PanelProvider?.BuildSummary(entity) ?? "CS2AS.Summary.ModuleUnavailable",
+                Tabs = descriptor?.Module?.PanelProvider?.Tabs ?? new Core.Modules.AreaPanelTab[0],
+                AnchorRole = role?.ToString(),
+                AnchorName = role.HasValue && services.Anchors.TryGetValidAnchor(entity, role.Value, out var anchor) ? names.GetRenderedLabelName(anchor) : null,
+                PendingAnchor = pendingArea == entity,
+                ConfirmDelete = CS2AreaSystem.Core.Settings.AreaSettings.Current.ConfirmAreaDeletion
+            };
+            if (EntityManager.HasComponent<ManagedAreaProgress>(entity))
+            { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(entity); view.Level = progress.Level; view.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
+            return true;
         }
-        private void SetView(AreaManagementViewModel next)
+        private void SetPending(PendingAssignmentView next)
         {
-            view = next;
-            visible.Update(view != null); selectedArea.Update();
+            if (PendingAssignmentView.Equivalent(pendingView, next)) return;
+            pendingView = next; pendingBinding.Update();
         }
         private void PublishList()
         {
@@ -163,7 +166,7 @@ namespace CS2AreaSystem.Core.UI
         {
             try
             {
-                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) return;
+                if (!IsReady) return;
                 var candidates = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<Entity, ulong>>();
                 using (var areas = managedAreas.ToEntityArray(Unity.Collections.Allocator.Temp))
                     foreach (var area in areas)
@@ -175,13 +178,15 @@ namespace CS2AreaSystem.Core.UI
             }
             catch (Exception error) { Mod.Log.Error(error, "Area selection from the list rejected"); }
         }
+        // Actions come from the section of the currently selected area.
         private void Act(string expectedId, Action<Entity> action)
         {
             try
             {
-                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready || !IsArea(published)) return;
-                var id = EntityManager.GetComponentData<ManagedAreaStableId>(published).Value;
-                if (AreaUIActionGuard.Matches(published, selection.selectedEntity, tools.selected, id, expectedId, IsArea(published))) action(published);
+                var area = selection.selectedEntity;
+                if (!IsReady || !IsArea(area)) return;
+                var id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
+                if (AreaUIActionGuard.Matches(area, selection.selectedEntity, tools.selected, id, expectedId, true)) action(area);
             }
             catch (Exception error) { Mod.Log.Error(error, "Area management action rejected"); }
         }
@@ -201,6 +206,7 @@ namespace CS2AreaSystem.Core.UI
                 }
                 pendingArea = Entity.Null;
                 selection.SetSelection(area);
+                selection.SetDirty();
             }
             catch (Exception error) { Mod.Log.Error(error, "Area anchor assignment cancel rejected"); }
         }
@@ -226,6 +232,22 @@ namespace CS2AreaSystem.Core.UI
             if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.RequiredAnchorRole != role) return;
             pendingArea = area; pendingRole = role; pendingId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
             tools.ActivatePrefabTool(null);
+            selection.SetDirty();
+        }
+    }
+    public sealed class PendingAssignmentView
+    {
+        public string StableId, Name, Role;
+        public static bool Equivalent(PendingAssignmentView a, PendingAssignmentView b) =>
+            ReferenceEquals(a, b) || (a != null && b != null && a.StableId == b.StableId && a.Name == b.Name && a.Role == b.Role);
+        public static void Write(IJsonWriter writer, PendingAssignmentView view)
+        {
+            if (view == null) { writer.WriteNull(); return; }
+            writer.TypeBegin("CS2AreaSystem.PendingAssignment");
+            writer.PropertyName("stableId"); writer.Write(view.StableId);
+            writer.PropertyName("name"); writer.Write(view.Name);
+            writer.PropertyName("role"); writer.Write(view.Role);
+            writer.TypeEnd();
         }
     }
 }

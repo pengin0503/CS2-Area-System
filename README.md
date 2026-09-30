@@ -27,7 +27,7 @@ This profile targets net8, uses the actual game references, and deliberately ski
 
 ## Run and required game verification
 
-Use an official-toolchain build in a fresh 1.6.2f1 session. Open **Areas → Area Types**, select one of the three kinds and use native area controls. Completed areas are not selectable with the vanilla default tool, so open **Managed areas** (top right, above the management panel) and pick an area to select it and open its management panel. For Park/Industrial, choose Assign entrance/headquarters, then select an existing vanilla building inside that area. Tourism requires no anchor. Reassign facilities through the same flow. A management boundary does not place or clear normal city assets.
+Use an official-toolchain build in a fresh 1.6.2f1 session. Open **Areas → Area Types**, select one of the three kinds and use native area controls. Completed areas are not selectable with the vanilla default tool, so open **Managed areas** (top right) and pick an area. The game's own selected-info panel opens, like for a district: its header shows and renames the area and offers locate, and the area section below shows type, status, entrance/headquarters and progress with Edit/Delete. For Park/Industrial, choose Assign entrance/headquarters in that section, then click an existing vanilla building inside that area (a hint with Cancel stays on screen meanwhile). Tourism requires no anchor. Reassign facilities through the same flow. A management boundary does not place or clear normal city assets.
 
 Behaviour options (managed area list, camera focus, panel side, delete confirmation, whether managed areas may overlap) are in **Options → CS2 Area System**.
 

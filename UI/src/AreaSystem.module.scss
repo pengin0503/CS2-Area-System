@@ -1,0 +1,27 @@
+// Floating host: managed area list and anchor-assignment banner. Area details use the vanilla panel.
+.host{position:absolute;right:var(--screenPadding,10rem);top:100rem;width:320rem;display:flex;flex-direction:column;pointer-events:none;}
+.host>*{pointer-events:auto;}
+.left{right:auto;left:var(--screenPadding,10rem);}
+%floating{margin-bottom:8rem;color:var(--textColor,#fff);font-family:var(--fontFamily);font-size:var(--fontSizeM,16rem);
+ background:linear-gradient(135deg,var(--panelColorNormal,rgba(42,55,83,.9)),var(--panelColorDark,rgba(24,33,51,.9)));border-radius:var(--panelRadius,4rem);
+ button{padding:8rem 12rem;color:inherit;background:var(--panelColorDark);border:1rem solid rgba(255,255,255,.12);border-radius:var(--panelRadiusInner,3rem);cursor:pointer;}
+ button:hover{background:var(--panelColorDark-hover,rgba(70,85,110,.8));}
+ button:focus-visible{outline:2rem solid #91c6ff;}
+}
+.list{@extend %floating;
+ button{width:100%;text-align:left;}
+ small{display:block;margin-top:2rem;font-size:var(--fontSizeS,14rem);opacity:.8;}
+}
+.items{list-style:none;margin:0;padding:4rem;max-height:30vh;overflow-y:auto;}
+.banner{@extend %floating;display:flex;flex-direction:column;padding:12rem 16rem;
+ span{margin:4rem 0 8rem;}
+}
+// Selected-info section content (inside the vanilla InfoSection).
+.section{padding:0;}
+.summary{margin:8rem 0;font-size:var(--fontSizeS,14rem);opacity:.85;}
+.pending{display:flex;flex-direction:column;margin:4rem 0;}
+.actions{display:flex;flex-wrap:wrap;align-items:center;margin-top:4rem;
+ >*{margin:4rem 8rem 0 0;}
+}
+.tabs{display:flex;margin:4rem 0;}
+.empty{padding:12rem 16rem;}
