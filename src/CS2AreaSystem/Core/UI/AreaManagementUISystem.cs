@@ -56,9 +56,7 @@ namespace CS2AreaSystem.Core.UI
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignHeadquarters", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Headquarters))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignEntrance", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Entrance))));
-            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", id => {
-                if (pendingArea != Entity.Null && id == pendingId.ToString(CultureInfo.InvariantCulture)) { selection.SetSelection(pendingArea); pendingArea = Entity.Null; }
-            }));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", CancelAssignment));
         }
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
         {
@@ -125,9 +123,28 @@ namespace CS2AreaSystem.Core.UI
             {
                 if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready || !IsArea(published)) return;
                 var id = EntityManager.GetComponentData<ManagedAreaStableId>(published).Value;
-                if (AreaUIActionGuard.Matches(published, selection.selectedEntity, id, expectedId, IsArea(published))) action(published);
+                if (AreaUIActionGuard.Matches(published, selection.selectedEntity, tools.selected, id, expectedId, IsArea(published))) action(published);
             }
             catch (Exception error) { Mod.Log.Error(error, "Area management action rejected"); }
+        }
+        private void CancelAssignment(string expectedId)
+        {
+            try
+            {
+                if (pendingArea == Entity.Null) return;
+                var area = pendingArea;
+                bool valid = IsArea(area);
+                ulong current = valid ? EntityManager.GetComponentData<ManagedAreaStableId>(area).Value : 0;
+                if (!AreaUIActionGuard.CanRestorePending(valid, current, pendingId, expectedId))
+                {
+                    // A deleted/recreated area must not be reselected; a mismatched ID is a stale request.
+                    if (!valid || current != pendingId) pendingArea = Entity.Null;
+                    return;
+                }
+                pendingArea = Entity.Null;
+                selection.SetSelection(area);
+            }
+            catch (Exception error) { Mod.Log.Error(error, "Area anchor assignment cancel rejected"); }
         }
         private void Edit(Entity area)
         {
