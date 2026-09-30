@@ -34,7 +34,11 @@ namespace CS2AreaSystem.Core.Anchors
             using var areas = changedAreas.ToEntityArray(Allocator.Temp);
             foreach (var area in areas)
             {
-                if (EntityManager.HasComponent<Deleted>(area)) services.Anchors.ForgetArea(area);
+                if (EntityManager.HasComponent<Deleted>(area))
+                {
+                    if (EntityManager.GetComponentData<ManagedArea>(area).State != AreaLifecycleState.Deleted)
+                        services.Anchors.ForgetArea(area);
+                }
                 else services.Anchors.InvalidateArea(area);
             }
             foreach (var area in services.Anchors.DrainDirty()) ValidateArea(area);

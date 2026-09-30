@@ -113,14 +113,15 @@ namespace CS2AreaSystem.Core.Prefabs
                 geometry.m_Type == ManagedAreaPrefabFactory.NativeGeometryType && geometry.m_Flags == 0 &&
                 NativeAreaCreationPolicy.CanCreate(false, geometry.m_Type, geometry.m_Flags, EntityManager.HasComponent<RenderedAreaData>(entity)));
         }
-        private bool HasReadyType()
+        private bool NeedsToolbarWork()
         {
-            foreach (var type in services.Registry.All) if (IsTypeReady(type.TypeId)) return true;
+            foreach (var type in services.Registry.All)
+                if (IsTypeReady(type.TypeId) && !toolbarTypes.Contains(type.TypeId)) return true;
             return false;
         }
         private void TryAttachToolbar()
         {
-            if (!HasReadyType()) return;
+            if (!NeedsToolbarWork()) return;
             UIToolbarGroupPrefab host = null;
             using var candidates = toolbarGroups.ToEntityArray(Allocator.Temp);
             foreach (var entity in candidates)
