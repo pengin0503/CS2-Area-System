@@ -43,14 +43,14 @@ public class ParkQualityModelTests {
   Assert.That(ParkQualityModel.ComputeComfortableCapacity(big), Is.LessThan(4 * ParkQualityModel.ComputeComfortableCapacity(small)));
  }
  [Test] public void AccessibilityRewardsEntrancesWithDiminishingReturnsAndSpread() {
-  float A(int n, float spread = 1, int stops = 0, float path = 0) => ParkQualityModel.ComputeAccessibility(n, spread, stops, path);
+  float A(int n, float spread = 1, float transit = 0, float path = 0) => ParkQualityModel.ComputeAccessibility(n, spread, transit, path);
   Assert.That(A(0), Is.Zero);
   Assert.That(A(1), Is.EqualTo(40f).Within(0.001), "one valid entrance = baseline 40%");
   Assert.That(A(2), Is.GreaterThan(A(1))); Assert.That(A(3), Is.GreaterThan(A(2)));
   Assert.That(A(3) - A(2), Is.LessThan(A(2) - A(1)));
   Assert.That(A(3, spread: 0.1f), Is.LessThan(A(3, spread: 1f)), "stacked entrances are worth less");
-  Assert.That(A(10, 1, 100, 1), Is.LessThanOrEqualTo(100f));
-  Assert.That(A(1, 1, 3, 0) - A(1), Is.InRange(10f, 20f), "transit up to 20%");
+  Assert.That(A(10, 1, 1, 1), Is.LessThanOrEqualTo(100f));
+  Assert.That(A(1, 1, 1, 0) - A(1), Is.EqualTo(20f).Within(0.001), "transit up to 20%");
   Assert.That(A(1, 1, 0, 1) - A(1), Is.EqualTo(20f).Within(0.001), "internal paths 20%");
  }
  [Test] public void EntranceSpreadIsZeroForStackedAndHighForOppositeEntrances() {
@@ -90,7 +90,7 @@ public class ParkQualityEvaluatorTests {
   var inputs = new ParkLandscapeInputs { AreaSquareMeters = 10_000, PathLength = path,
    Vegetation = new() { Count = 60, DistinctPrefabs = 12 }, Amenities = new() { Count = 8, DistinctPrefabs = 3 },
    Decoration = new() { Count = 5, DistinctPrefabs = 3 }, Lighting = new() { Count = 8, DistinctPrefabs = 2 }, UnknownCount = cluttered ? 5000 : 0 };
-  return new ParkLandscapeSnapshot { Available = available, Inputs = inputs, Result = ParkLandscapeModel.ComputeLandscape(inputs), TransitStops = 2 };
+  return new ParkLandscapeSnapshot { Available = available, Inputs = inputs, Result = ParkLandscapeModel.ComputeLandscape(inputs), TransitPoints = 2, TransitTypes = 1 };
  }
  private static ParkFacilitySnapshot Facilities() => ParkFacilitySnapshot.Build(new[] {
   new ParkFacilityTraits { IsBuilding = true, HasPark = true, HasLeisureProvider = true, HasLeisureData = true, LeisureType = Game.Agents.LeisureType.CityPark, LeisureEfficiency = 30, ParkMaintenance = 700, ParkMaintenancePool = 800 },
@@ -116,7 +116,7 @@ public class ParkQualityEvaluatorTests {
   Assert.That(missing.Attractiveness.Available, Is.False); Assert.That(missing.Variety.Available, Is.False);
   Assert.That(missing.Warnings, Does.Contain("CS2AS.Park.Warning.LowConfidence"));
   var poor = Context(); poor.Landscape = Landscape(path: 0); poor.Landscape.Inputs = new ParkLandscapeInputs { AreaSquareMeters = 10_000 };
-  poor.Landscape.Result = ParkLandscapeModel.ComputeLandscape(poor.Landscape.Inputs); poor.Landscape.TransitStops = 0;
+  poor.Landscape.Result = ParkLandscapeModel.ComputeLandscape(poor.Landscape.Inputs); poor.Landscape.TransitPoints = 0; poor.Landscape.TransitTypes = 0;
   Assert.That(missing.Quality, Is.GreaterThan(Eval(poor).Quality), "neutral sits between a bare and a well-built park");
   Assert.That(missing.Quality, Is.LessThan(good.Quality));
  }
@@ -168,5 +168,23 @@ public class ParkQualityEvaluatorTests {
   Assert.That(free.Experience.Maintenance, Is.EqualTo(free.Maintenance.Value));
   var levelOne = Context(); levelOne.AdmissionFee = 60; levelOne.Level = 1;
   Assert.That(Eval(levelOne).Experience.ValueForMoney, Is.EqualTo(100f), "a stored fee is inactive at Level 1");
+ }
+}
+public class ParkTransitAccessTests {
+ private static readonly Unity.Entities.Entity station = new() { Index = 1, Version = 1 }, road = new() { Index = 2, Version = 1 }, other = new() { Index = 3, Version = 1 };
+ [Test] public void StopsSharingAnOwnerAreOneAccessPoint() {
+  var summary = ParkTransitAccess.Summarize(new[] { (station, 1), (station, 1), (station, 1), (road, 2), (road, 2) });
+  Assert.That(summary.Points, Is.EqualTo(2), "a station's platforms and both sides of one road's bus stops count once");
+  Assert.That(summary.Types, Is.EqualTo(2));
+  Assert.That(ParkTransitAccess.Summarize(new (Unity.Entities.Entity, int)[0]).Points, Is.Zero);
+ }
+ [Test] public void OneStationDoesNotSaturateAndVarietyHelps() {
+  float one = ParkTransitAccess.Score(1, 1);
+  Assert.That(one, Is.LessThan(0.5f), "a single access point is far from the maximum");
+  Assert.That(ParkTransitAccess.Score(3, 1), Is.GreaterThan(one));
+  Assert.That(ParkTransitAccess.Score(3, 2), Is.GreaterThan(ParkTransitAccess.Score(3, 1)));
+  Assert.That(ParkTransitAccess.Score(0, 0), Is.Zero);
+  Assert.That(ParkTransitAccess.Score(100, 10), Is.LessThanOrEqualTo(1f));
+  Assert.That(ParkTransitAccess.Score(5, 1) - ParkTransitAccess.Score(4, 1), Is.LessThan(ParkTransitAccess.Score(2, 1) - ParkTransitAccess.Score(1, 1)), "diminishing returns");
  }
 }

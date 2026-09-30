@@ -36,7 +36,8 @@ namespace CS2AreaSystem.Modules.Park
     {
         public ParkLandscapeInputs Inputs;
         public ParkLandscapeResult Result;
-        public int TransitStops;
+        // Distinct nearby public-transport access points and transport modes (see ParkTransitAccess).
+        public int TransitPoints, TransitTypes;
         public uint ScannedFrame;
         public bool Available;
     }

@@ -70,11 +70,12 @@ namespace CS2AreaSystem.Modules.Park
             return (float)(area + paths + facilities + amenities);
         }
         // 40% baseline entrance, 20% additional/distributed entrances, 20% nearby transit, 20% internal paths (design §11).
-        public static float ComputeAccessibility(int entrances, float spread, int transitStops, float internalPathProvision)
+        // transitScore: 0–1 from ParkTransitAccess.Score (distinct nearby access points and transport modes).
+        public static float ComputeAccessibility(int entrances, float spread, float transitScore, float internalPathProvision)
         {
             if (entrances <= 0) return 0f;
             double extra = entrances > 1 ? (1 - Math.Exp(-(entrances - 1) / 1.5)) * (0.4 + 0.6 * Math.Min(1, Math.Max(0, spread))) : 0;
-            double transit = 1 - Math.Exp(-Math.Max(0, transitStops) / 1.5);
+            double transit = Math.Min(1, Math.Max(0, float.IsNaN(transitScore) ? 0 : transitScore));
             double paths = Math.Min(1, Math.Max(0, internalPathProvision));
             return Clamp((float)(40 + 20 * extra + 20 * transit + 20 * paths));
         }
@@ -170,7 +171,7 @@ namespace CS2AreaSystem.Modules.Park
             // Landscape-dependent metrics stay neutral (unavailable) until the first landscape scan completes.
             q.Attractiveness = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAttractiveness(facilities.AttractivenessSum, c.AreaSquareMeters, landscape.Result.Score)) : ParkMetric.Unavailable;
             q.Variety = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeVariety(facilities.WeightedCategories, landscape.Result.CategoriesPresent)) : ParkMetric.Unavailable;
-            q.Accessibility = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAccessibility(c.Entrances, c.EntranceSpread, landscape.TransitStops, q.PathProvision)) : ParkMetric.Unavailable;
+            q.Accessibility = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAccessibility(c.Entrances, c.EntranceSpread, ParkTransitAccess.Score(landscape.TransitPoints, landscape.TransitTypes), q.PathProvision)) : ParkMetric.Unavailable;
             q.Maintenance = ParkMetric.Of(ParkQualityModel.ComputeMaintenance(facilities.VanillaCondition, ParkFinanceModel.ClampBudget(c.Budget)));
             q.ComfortableCapacity = ParkQualityModel.ComputeComfortableCapacity(new ParkCapacityInputs {
                 AreaSquareMeters = c.AreaSquareMeters, LeisureEfficiencySum = facilities.LeisureEfficiencySum,
@@ -232,6 +233,30 @@ namespace CS2AreaSystem.Modules.Park
             }
             if (parks.Count > 0) nextCursor = (nextCursor + steps) % parks.Count;
             return picked;
+        }
+    }
+}
+namespace CS2AreaSystem.Modules.Park
+{
+    // Nearby public transport as distinct access points: stops sharing a top-level owner (a station's platforms,
+    // both sides of one road's stops) count once; distinct transport modes add breadth (design §11.2).
+    public static class ParkTransitAccess
+    {
+        public struct Summary { public int Points, Types; }
+        // transportType <= 0 means "unknown mode" (e.g. a station building) and adds no mode breadth.
+        public static Summary Summarize(IEnumerable<(Unity.Entities.Entity Root, int TransportType)> stops)
+        {
+            var roots = new HashSet<Unity.Entities.Entity>();
+            var types = new HashSet<int>();
+            foreach (var stop in stops) { roots.Add(stop.Root); if (stop.TransportType > 0) types.Add(stop.TransportType); }
+            return new Summary { Points = roots.Count, Types = types.Count };
+        }
+        public static float Score(int points, int types)
+        {
+            if (points <= 0) return 0f;
+            double access = 1 - Math.Exp(-points / 2.5);
+            double modes = Math.Min(1.0, Math.Max(0, types) / 3.0);
+            return (float)Math.Min(1.0, 0.75 * access + 0.25 * modes);
         }
     }
 }

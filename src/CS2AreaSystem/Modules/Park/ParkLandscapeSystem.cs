@@ -43,7 +43,7 @@ namespace CS2AreaSystem.Modules.Park
             public List<Triangle2> Triangles;
             public ParkLandscapeScan<Entity> Objects;
             public ParkLandscapeTally Tally = new ParkLandscapeTally();
-            public int Transit;
+            public List<(Entity Root, int TransportType)> Transit = new List<(Entity Root, int TransportType)>();
         }
         private ActiveScan current;
         public int ScanCount { get; private set; }
@@ -153,7 +153,9 @@ namespace CS2AreaSystem.Modules.Park
                 var snapshot = scan.Snapshot;
                 snapshot.AreaSquareMeters = scan.Geometry.m_SurfaceArea;
                 var landscape = new ParkLandscapeSnapshot {
-                    Inputs = scan.Tally.ToInputs(scan.Geometry.m_SurfaceArea, pathLength), TransitStops = scan.Transit, ScannedFrame = runtime.SimulationFrame, Available = true };
+                    Inputs = scan.Tally.ToInputs(scan.Geometry.m_SurfaceArea, pathLength), ScannedFrame = runtime.SimulationFrame, Available = true };
+                var transit = ParkTransitAccess.Summarize(scan.Transit);
+                landscape.TransitPoints = transit.Points; landscape.TransitTypes = transit.Types;
                 landscape.Result = ParkLandscapeModel.ComputeLandscape(landscape.Inputs);
                 snapshot.Landscape = landscape;
                 failureLogged = false;
@@ -172,7 +174,7 @@ namespace CS2AreaSystem.Modules.Park
             var position = EntityManager.GetComponentData<Transform>(entity).m_Position.xz;
             if (IsTransit(entity))
             {
-                if (ParkGeometry.Distance(scan.Triangles, position) <= TransitRadius) scan.Transit++;
+                if (ParkGeometry.Distance(scan.Triangles, position) <= TransitRadius) scan.Transit.Add((OwnerRoot(entity), TransportType(entity)));
                 return;
             }
             if (!ParkGeometry.Contains(scan.Triangles, position)) return;
@@ -182,6 +184,24 @@ namespace CS2AreaSystem.Modules.Park
         private bool IsTransit(Entity entity) =>
             !EntityManager.HasComponent<Temp>(entity) && !EntityManager.HasComponent<Deleted>(entity) &&
             (EntityManager.HasComponent<Game.Routes.TransportStop>(entity) || EntityManager.HasComponent<Game.Buildings.PublicTransportStation>(entity));
+        private Entity OwnerRoot(Entity entity)
+        {
+            for (int depth = 0; depth < 8 && EntityManager.HasComponent<Owner>(entity); depth++)
+            {
+                var owner = EntityManager.GetComponentData<Owner>(entity).m_Owner;
+                if (owner == Entity.Null || !EntityManager.Exists(owner)) break;
+                entity = owner;
+            }
+            return entity;
+        }
+        // Transport mode of a stop prefab (+1 so 0 stays "unknown", e.g. a station building).
+        private int TransportType(Entity entity)
+        {
+            if (!EntityManager.HasComponent<PrefabRef>(entity)) return 0;
+            var prefab = EntityManager.GetComponentData<PrefabRef>(entity).m_Prefab;
+            return EntityManager.Exists(prefab) && EntityManager.HasComponent<TransportStopData>(prefab)
+                ? (int)EntityManager.GetComponentData<TransportStopData>(prefab).m_TransportType + 1 : 0;
+        }
         private ParkObjectTraits ReadObject(Entity entity, out int prefabKey)
         {
             var traits = new ParkObjectTraits {

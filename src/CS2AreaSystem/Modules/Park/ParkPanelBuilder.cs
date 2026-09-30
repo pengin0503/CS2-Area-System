@@ -129,7 +129,7 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("diversity", P + "Diversity", Part(r.Diversity, ParkLandscapeModel.DiversityWeight)));
             if (r.Cluttered) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "clutter", LabelKey = P + "Warning.Cluttered", Value = "-" + OneDecimal(r.ClutterPenalty) });
             items.Add(Row("pathLength", P + "PathLength", Number(l.Inputs.PathLength) + " m"));
-            items.Add(Row("transit", P + "TransitStops", Number(l.TransitStops)));
+            items.Add(Row("transit", P + "TransitStops", Number(l.TransitPoints)));
             items.Add(Row("facilityCategories", P + "FacilityCategories", Number(model.Runtime?.Facilities?.DistinctCategories ?? 0)));
             return items;
         }

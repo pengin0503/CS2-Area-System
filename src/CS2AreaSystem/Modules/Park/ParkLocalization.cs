@@ -95,7 +95,7 @@ namespace CS2AreaSystem.Modules.Park
             Add(P + "Paths", "Footpaths", "歩道");
             Add(P + "Diversity", "Category diversity", "カテゴリーの多様性");
             Add(P + "PathLength", "Footpath length", "歩道の長さ");
-            Add(P + "TransitStops", "Nearby transit stops", "近くの公共交通停留所");
+            Add(P + "TransitStops", "Nearby transit access points", "近くの公共交通アクセス地点");
             Add(P + "FacilityCategories", "Facility categories", "施設の種類");
             Add(P + "MaxLevel", "Highest level reached", "最高レベルに到達");
             Add(P + "NextLevel", "Next level", "次のレベル");
