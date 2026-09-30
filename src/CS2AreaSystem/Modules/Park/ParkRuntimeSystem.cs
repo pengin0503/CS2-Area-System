@@ -88,15 +88,55 @@ namespace CS2AreaSystem.Modules.Park
             for (int i = 0; i < triangles.Length; i++) result.Add(AreaUtils.GetTriangle2(nodes, triangles[i]));
             return result;
         }
-        public static bool Contains(List<Triangle2> triangles, float2 point)
+    }
+}
+namespace CS2AreaSystem.Modules.Park
+{
+    // Park triangles with per-triangle bounds: containment/distance queries test only triangles whose bounds can
+    // matter, instead of every triangle for every scanned object.
+    public sealed class ParkPolygon
+    {
+        private const float Epsilon = 1e-3f;
+        private readonly List<Triangle2> triangles;
+        private readonly Bounds2[] bounds;
+        private readonly Bounds2 overall;
+        public int TrianglesTestedLastQuery { get; private set; }
+        public ParkPolygon(List<Triangle2> triangles)
         {
-            foreach (var triangle in triangles) if (NativeMembershipGeometry.Contains(triangle, point)) return true;
+            this.triangles = triangles ?? new List<Triangle2>();
+            bounds = new Bounds2[this.triangles.Count];
+            overall = new Bounds2(new float2(float.MaxValue), new float2(float.MinValue));
+            for (int i = 0; i < bounds.Length; i++)
+            {
+                var t = this.triangles[i];
+                bounds[i] = new Bounds2(math.min(t.a, math.min(t.b, t.c)) - Epsilon, math.max(t.a, math.max(t.b, t.c)) + Epsilon);
+                overall = new Bounds2(math.min(overall.min, bounds[i].min), math.max(overall.max, bounds[i].max));
+            }
+        }
+        private static bool Inside(Bounds2 box, float2 p) => math.all(p >= box.min) && math.all(p <= box.max);
+        private static float BoxDistance(Bounds2 box, float2 p) => math.length(math.max(0f, math.max(box.min - p, p - box.max)));
+        public bool Contains(float2 point)
+        {
+            TrianglesTestedLastQuery = 0;
+            if (bounds.Length == 0 || !Inside(overall, point)) return false;
+            for (int i = 0; i < bounds.Length; i++)
+            {
+                if (!Inside(bounds[i], point)) continue;
+                TrianglesTestedLastQuery++;
+                if (NativeMembershipGeometry.Contains(triangles[i], point)) return true;
+            }
             return false;
         }
-        public static float Distance(List<Triangle2> triangles, float2 point)
+        public float Distance(float2 point)
         {
             float best = float.MaxValue;
-            foreach (var triangle in triangles) best = math.min(best, MathUtils.Distance(triangle, point, out _));
+            for (int i = 0; i < bounds.Length; i++)
+            {
+                // The distance to a triangle is never smaller than the distance to its (slightly enlarged) bounds.
+                if (BoxDistance(bounds[i], point) - Epsilon >= best) continue;
+                best = math.min(best, MathUtils.Distance(triangles[i], point, out _));
+                if (best <= 0f) break;
+            }
             return best;
         }
     }

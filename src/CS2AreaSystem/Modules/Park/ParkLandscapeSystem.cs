@@ -40,7 +40,7 @@ namespace CS2AreaSystem.Modules.Park
         {
             public ParkRuntimeSnapshot Snapshot;
             public Geometry Geometry;
-            public List<Triangle2> Triangles;
+            public ParkPolygon Polygon;
             public ParkLandscapeScan<Entity> Objects;
             public ParkLandscapeTally Tally = new ParkLandscapeTally();
             public List<(Entity Root, int TransportType)> Transit = new List<(Entity Root, int TransportType)>();
@@ -132,7 +132,7 @@ namespace CS2AreaSystem.Modules.Park
                 dependency.Complete();
                 var iterator = new BoundsIterator { Bounds = search, Items = candidates };
                 tree.Iterate(ref iterator);
-                current = new ActiveScan { Snapshot = snapshot, Geometry = geometry, Triangles = ParkGeometry.Triangles(EntityManager, snapshot.Area),
+                current = new ActiveScan { Snapshot = snapshot, Geometry = geometry, Polygon = new ParkPolygon(ParkGeometry.Triangles(EntityManager, snapshot.Area)),
                     Objects = new ParkLandscapeScan<Entity>(candidates) };
                 Continue();
             }
@@ -149,7 +149,7 @@ namespace CS2AreaSystem.Modules.Park
                 if (!scan.Objects.Done) return;
                 current = null;
                 ScanCount++;
-                float pathLength = MeasurePaths(scan.Geometry.m_Bounds.xz, scan.Triangles);
+                float pathLength = MeasurePaths(scan.Geometry.m_Bounds.xz, scan.Polygon);
                 var snapshot = scan.Snapshot;
                 snapshot.AreaSquareMeters = scan.Geometry.m_SurfaceArea;
                 var landscape = new ParkLandscapeSnapshot {
@@ -174,10 +174,10 @@ namespace CS2AreaSystem.Modules.Park
             var position = EntityManager.GetComponentData<Transform>(entity).m_Position.xz;
             if (IsTransit(entity))
             {
-                if (ParkGeometry.Distance(scan.Triangles, position) <= TransitRadius) scan.Transit.Add((OwnerRoot(entity), TransportType(entity)));
+                if (scan.Polygon.Distance(position) <= TransitRadius) scan.Transit.Add((OwnerRoot(entity), TransportType(entity)));
                 return;
             }
-            if (!ParkGeometry.Contains(scan.Triangles, position)) return;
+            if (!scan.Polygon.Contains(position)) return;
             var traits = ReadObject(entity, out int prefabKey);
             scan.Tally.Add(ParkLandscapeClassifier.Classify(traits), prefabKey);
         }
@@ -245,7 +245,7 @@ namespace CS2AreaSystem.Modules.Park
             return category;
         }
         // Pedestrian pathway length inside the Park (edge length weighted by sampled inside fraction).
-        private float MeasurePaths(Bounds2 box, List<Triangle2> triangles)
+        private float MeasurePaths(Bounds2 box, ParkPolygon polygon)
         {
             var edges = new List<Entity>();
             var tree = netSearch.GetNetSearchTree(true, out var dependency);
@@ -262,7 +262,7 @@ namespace CS2AreaSystem.Modules.Park
                 var curve = EntityManager.GetComponentData<Game.Net.Curve>(edge);
                 int inside = 0;
                 for (int i = 0; i < PathSamples; i++)
-                    if (ParkGeometry.Contains(triangles, MathUtils.Position(curve.m_Bezier, (i + 0.5f) / PathSamples).xz)) inside++;
+                    if (polygon.Contains(MathUtils.Position(curve.m_Bezier, (i + 0.5f) / PathSamples).xz)) inside++;
                 length += curve.m_Length * inside / PathSamples;
             }
             return length;
