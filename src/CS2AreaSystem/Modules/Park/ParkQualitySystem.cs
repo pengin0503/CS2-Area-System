@@ -33,9 +33,11 @@ namespace CS2AreaSystem.Modules.Park
             if (!runtime.Ready) return;
             runtime.CollectParks(parks);
             if (parks.Count == 0) return;
-            int count = System.Math.Min(ParksPerUpdate, parks.Count);
-            for (int i = 0; i < count; i++) Recompute(parks[(cursor + i) % parks.Count]);
-            cursor = (cursor + count) % parks.Count;
+            var ids = new List<ulong>(parks.Count);
+            var byId = new Dictionary<ulong, ParkAreaRef>();
+            foreach (var park in parks) { ids.Add(park.StableId); byId[park.StableId] = park; }
+            foreach (var id in ParkQualitySchedule.Pick(ids, id => runtime.Store.TryGet(id, out var s) && s.Quality != null, cursor, ParksPerUpdate, out cursor))
+                Recompute(byId[id]);
         }
         public void Recompute(ParkAreaRef park)
         {

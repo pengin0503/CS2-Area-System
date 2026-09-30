@@ -156,3 +156,36 @@ public class ParkVisitCadenceTests {
   Assert.That(owner.PeakOccupancy, Is.EqualTo(12));
  }
 }
+public class ParkVisitSamplingReadinessTests {
+ private static readonly Entity alice = new() { Index = 1, Version = 1 };
+ [Test] public void NoSatisfactionSampleIsTakenBeforeTheParksFirstQualityEvaluation() {
+  var snapshot = new ParkRuntimeSnapshot { StableId = 7 };
+  Assert.That(snapshot.Experience.ValueForMoney, Is.EqualTo(50f), "neutral defaults, never an optimistic 100");
+  Assert.That(snapshot.Experience.Comfort, Is.EqualTo(50f));
+  Assert.That(ParkVisitModel.TrySample(snapshot, 80f, out _), Is.False);
+  snapshot.Quality = new ParkQualitySnapshot { Experience = new ParkVisitExperience { Landscape = 60, Comfort = 90, Maintenance = 70, ValueForMoney = 20, Accessibility = 50 } };
+  snapshot.Experience = snapshot.Quality.Experience;
+  Assert.That(ParkVisitModel.TrySample(snapshot, 80f, out var sample), Is.True);
+  Assert.That(sample, Is.EqualTo(ParkVisitModel.ComputeVisitSample(new ParkVisitExperience { Facility = 80, Landscape = 60, Comfort = 90, Maintenance = 70, ValueForMoney = 20, Accessibility = 50 })));
+ }
+ [Test] public void VisitsWithoutSamplesCountButDoNotMoveSatisfaction() {
+  var events = new List<ParkVisitEvent>(); var t = new ParkVisitTracker(ParkVisitCadence.GraceFrames);
+  t.Observe(alice, 7, false, float.NaN, 100, events);
+  t.Expire(100 + ParkVisitCadence.GraceFrames + 1, events);
+  var done = events.Single(e => e.Kind == ParkVisitEventKind.Completed);
+  Assert.That(done.HasSatisfaction, Is.False);
+  var state = ParkVisitModel.RecordCompletedVisit(ParkAreaState.CreateDefault(), done.Tourist, done.Satisfaction, done.HasSatisfaction);
+  Assert.That(state.LifetimeVisitors, Is.EqualTo(1)); Assert.That(state.LifetimeResidentVisitors, Is.EqualTo(1));
+  Assert.That(state.Satisfaction.Weight, Is.Zero); Assert.That(state.ResidentSatisfaction.Weight, Is.Zero);
+ }
+ [Test] public void UnevaluatedParksAreEvaluatedFirst() {
+  var ids = new ulong[] { 1, 2, 3, 4, 5, 6 };
+  var picked = ParkQualitySchedule.Pick(ids, id => id != 5 && id != 6, cursor: 0, count: 2, out var next);
+  Assert.That(picked, Is.EqualTo(new ulong[] { 5, 6 }));
+  Assert.That(next, Is.EqualTo(0), "round-robin cursor untouched while catching up");
+  picked = ParkQualitySchedule.Pick(ids, id => true, cursor: 4, count: 4, out next);
+  Assert.That(picked, Is.EqualTo(new ulong[] { 5, 6, 1, 2 })); Assert.That(next, Is.EqualTo(2));
+  picked = ParkQualitySchedule.Pick(ids, id => id != 6, cursor: 0, count: 3, out next);
+  Assert.That(picked, Is.EqualTo(new ulong[] { 6, 1, 2 }), "catch-up first, remaining budget round-robin");
+ }
+}

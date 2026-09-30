@@ -18,6 +18,8 @@ namespace CS2AreaSystem.Modules.Park
         public bool Tourist;
         public bool FeeSatisfied;
         public float Satisfaction;
+        // False when no experience sample was taken during the visit (e.g. before the Park's first Quality evaluation).
+        public bool HasSatisfaction;
     }
     public static class ParkVisitModel
     {
@@ -32,13 +34,25 @@ namespace CS2AreaSystem.Modules.Park
         // Actual visited provider data first (LeisureProviderData.m_Efficiency); attractions without it stay neutral.
         public static float FacilityExperience(bool hasLeisureData, int efficiency) =>
             hasLeisureData ? Clamp(100f * (1f - (float)Math.Exp(-Math.Max(0, efficiency) / FacilityEfficiencyScale))) : NeutralFacilityExperience;
-        public static ParkAreaState RecordCompletedVisit(ParkAreaState state, bool tourist, float satisfaction)
+        public static ParkAreaState RecordCompletedVisit(ParkAreaState state, bool tourist, float satisfaction, bool hasSatisfaction = true)
         {
             state.LifetimeVisitors++;
+            if (tourist) state.LifetimeTouristVisitors++; else state.LifetimeResidentVisitors++;
+            if (!hasSatisfaction) return state;
             state.Satisfaction = state.Satisfaction.Add(satisfaction);
-            if (tourist) { state.LifetimeTouristVisitors++; state.TouristSatisfaction = state.TouristSatisfaction.Add(satisfaction); }
-            else { state.LifetimeResidentVisitors++; state.ResidentSatisfaction = state.ResidentSatisfaction.Add(satisfaction); }
+            if (tourist) state.TouristSatisfaction = state.TouristSatisfaction.Add(satisfaction);
+            else state.ResidentSatisfaction = state.ResidentSatisfaction.Add(satisfaction);
             return state;
+        }
+        // A satisfaction sample needs the Park's evaluated state; until the first Quality evaluation (new Park or
+        // just after load) no sample is taken rather than one based on placeholder values.
+        public static bool TrySample(ParkRuntimeSnapshot snapshot, float facility, out float sample)
+        {
+            sample = float.NaN;
+            if (snapshot?.Quality == null) return false;
+            var visit = snapshot.Experience; visit.Facility = facility;
+            sample = ComputeVisitSample(visit);
+            return true;
         }
         // Core's deterministic same-kind primary owns exclusive visitor metrics. If that Park is not Active the visit
         // belongs to nobody rather than falling through to an overlapping Park (no double counting, no ownership hopping).
@@ -108,9 +122,10 @@ namespace CS2AreaSystem.Modules.Park
         {
             int count = ActiveCount(session.ParkId) - 1;
             if (count > 0) active[session.ParkId] = count; else active.Remove(session.ParkId);
-            float satisfaction = session.ExperienceCount > 0 ? (float)(session.ExperienceSum / session.ExperienceCount) : ParkSatisfactionState.Prior;
+            bool sampled = session.ExperienceCount > 0;
+            float satisfaction = sampled ? (float)(session.ExperienceSum / session.ExperienceCount) : ParkSatisfactionState.Prior;
             events.Add(new ParkVisitEvent { Kind = ParkVisitEventKind.Completed, Citizen = citizen, ParkId = session.ParkId, Tourist = session.Tourist,
-                FeeSatisfied = session.FeeSatisfied, Satisfaction = satisfaction });
+                FeeSatisfied = session.FeeSatisfied, Satisfaction = satisfaction, HasSatisfaction = sampled });
         }
     }
 }

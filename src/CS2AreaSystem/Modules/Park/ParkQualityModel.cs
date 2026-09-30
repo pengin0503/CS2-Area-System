@@ -212,3 +212,26 @@ namespace CS2AreaSystem.Modules.Park
         }
     }
 }
+namespace CS2AreaSystem.Modules.Park
+{
+    // Which Parks the Quality system evaluates this update: Parks never evaluated yet (new, or just after load) first,
+    // then the round-robin rotation with the remaining budget.
+    public static class ParkQualitySchedule
+    {
+        public static List<ulong> Pick(IReadOnlyList<ulong> parks, Func<ulong, bool> evaluated, int cursor, int count, out int nextCursor)
+        {
+            var picked = new List<ulong>();
+            nextCursor = parks.Count == 0 ? 0 : ((cursor % parks.Count) + parks.Count) % parks.Count;
+            foreach (var id in parks) { if (picked.Count >= count) break; if (!evaluated(id)) picked.Add(id); }
+            int steps = 0;
+            while (picked.Count < count && steps < parks.Count)
+            {
+                var id = parks[(nextCursor + steps) % parks.Count];
+                steps++;
+                if (!picked.Contains(id)) picked.Add(id);
+            }
+            if (parks.Count > 0) nextCursor = (nextCursor + steps) % parks.Count;
+            return picked;
+        }
+    }
+}

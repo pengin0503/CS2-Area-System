@@ -142,12 +142,8 @@ namespace CS2AreaSystem.Modules.Park
             {
                 var match = matches[i];
                 if (!activeParks.ContainsKey(match.ParkId)) continue;
-                float experience = float.NaN;
-                if (runtime.Store.TryGet(match.ParkId, out var snapshot))
-                {
-                    var visit = snapshot.Experience; visit.Facility = match.Facility;
-                    experience = ParkVisitModel.ComputeVisitSample(visit);
-                }
+                runtime.Store.TryGet(match.ParkId, out var snapshot);
+                ParkVisitModel.TrySample(snapshot, match.Facility, out float experience);
                 tracker.Observe(match.Citizen, match.ParkId, match.Tourist, experience, pendingFrame, events);
             }
             matches.Clear();
@@ -169,7 +165,7 @@ namespace CS2AreaSystem.Modules.Park
                 {
                     ParkVisitRecorder.RecordRecent(snapshot, e.Tourist, frame);
                     if (EntityManager.Exists(park.Area) && EntityManager.HasComponent<ParkAreaState>(park.Area))
-                        EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction));
+                        EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction, e.HasSatisfaction));
                 }
                 bool active = park.State == AreaLifecycleState.Active;
                 foreach (var listener in listeners)
