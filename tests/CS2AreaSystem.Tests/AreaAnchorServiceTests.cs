@@ -49,4 +49,14 @@ public class AreaAnchorServiceTests {
         var loaded=new AreaAnchorLink();loaded.Deserialize(io.Reader);
         Assert.That(loaded.Anchor,Is.EqualTo(replacement));Assert.That(loaded.Role,Is.EqualTo(AreaAnchorRole.Headquarters));
     }
+    [Test] public void ForgetAreaPrunesReverseIndexButQueuesFinalValidation() {
+        var store=new Store();
+        var anchors=new AreaAnchorService(store,e=>e!=Entity.Null,(a,e,r)=>true);
+        Assert.That(anchors.Assign(area,hq,AreaAnchorRole.Headquarters),Is.True);
+        anchors.DrainDirty();
+        anchors.ForgetArea(area);
+        Assert.That(anchors.DrainDirty(),Is.EquivalentTo(new[]{area}));
+        anchors.InvalidateAnchor(hq);
+        Assert.That(anchors.DrainDirty(),Is.Empty);
+    }
 }

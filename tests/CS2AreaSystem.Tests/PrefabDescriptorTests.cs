@@ -21,6 +21,14 @@ public class PrefabDescriptorTests {
         Assert.That(metadata.TypeId, Is.EqualTo(1));
         Assert.That(descriptor.PrefabName, Is.EqualTo("CS2AS.ParkArea"));
     }
+    [Test] public void ProductionResolverRejectsUnknownIconsAndKeepsVerifiedOnes() {
+        foreach (var kind in new[]{AreaTypeId.Park,AreaTypeId.Industrial,AreaTypeId.Tourism}) {
+            var descriptor=ManagedAreaPrefabFactory.Describe(kind);
+            Assert.That(ManagedAreaPrefabFactory.ResolveIcon(descriptor),Is.EqualTo(descriptor.IconUri));
+        }
+        var unknown=new AreaTypeDescriptor(99,"CS2AS.Unknown","CS2AS.Type.Unknown","coui://gameui/Media/Game/Icons/DoesNotExist.svg");
+        Assert.That(ManagedAreaPrefabFactory.ResolveIcon(unknown),Is.EqualTo(ManagedAreaPrefabFactory.FallbackIconUri));
+    }
     [Test] public void ToolbarUnavailableDoesNotBlockInitializedAreaSimulation() {
         Assert.That(AreaPrefabReadiness.CanUse(true, true, true), Is.True);
         Assert.That(AreaPrefabReadiness.CanUse(true, false, true), Is.False);
