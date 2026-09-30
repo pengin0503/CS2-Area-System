@@ -9,12 +9,34 @@ namespace CS2AreaSystem.Modules.Park
     public struct ParkFacilityTraits
     {
         public bool IsBuilding, HasRoadAccess, HasPark, HasLeisureProvider, HasAttractivenessProvider;
+        // HasLeisureData: the building prefab carries LeisureProviderData (LeisureType/efficiency below are valid).
+        public bool HasLeisureData;
         public LeisureType LeisureType;
+        // LeisureType bits offered by commercial renters (cafés, shops) inside the building.
+        public uint CommercialLeisureMask;
         public int LeisureEfficiency, Attractiveness;
         public short ParkMaintenance, ParkMaintenancePool;
     }
+    [System.Flags]
+    public enum ParkFacilityRoles : byte { None = 0, CoreParkFacility = 1, Leisure = 2, Attraction = 4, SupportingAmenity = 8 }
     public static class ParkFacilityClassifier
     {
+        public static uint LeisureBit(LeisureType type) => 1u << (int)type;
+        // Park-local roles; a building may hold several. Unrelated residential/industrial/office members get None.
+        public static ParkFacilityRoles Classify(in ParkFacilityTraits traits)
+        {
+            if (!traits.IsBuilding) return ParkFacilityRoles.None;
+            var roles = ParkFacilityRoles.None;
+            if (traits.HasPark) roles |= ParkFacilityRoles.CoreParkFacility;
+            if (traits.HasLeisureProvider || traits.HasLeisureData) roles |= ParkFacilityRoles.Leisure;
+            if (traits.HasAttractivenessProvider || traits.Attractiveness > 0) roles |= ParkFacilityRoles.Attraction;
+            if (traits.CommercialLeisureMask != 0) roles |= ParkFacilityRoles.SupportingAmenity;
+            return roles;
+        }
+        // A Park visit needs leisure at a Park, leisure or attraction building (design §8.4). Commercial spending
+        // at supporting amenities is not a Park visit in v1 (deep commercial attribution is deferred).
+        public static bool IsVisitRelevant(in ParkFacilityTraits traits) =>
+            (Classify(traits) & (ParkFacilityRoles.CoreParkFacility | ParkFacilityRoles.Leisure | ParkFacilityRoles.Attraction)) != 0;
         // Entrance baseline (design §5.3): a member building with road/path access that is recognizably a Park,
         // leisure provider or attraction. Display names are never consulted.
         public static bool IsPlausibleEntrance(in ParkFacilityTraits traits) =>
@@ -47,13 +69,75 @@ namespace CS2AreaSystem.Modules.Park
             {
                 var leisure = entities.GetComponentData<LeisureProviderData>(prefab);
                 traits.HasLeisureProvider = true;
+                traits.HasLeisureData = true;
                 traits.LeisureType = leisure.m_LeisureType;
                 traits.LeisureEfficiency = leisure.m_Efficiency;
+            }
+            if (entities.HasBuffer<Renter>(entity))
+            {
+                var renters = entities.GetBuffer<Renter>(entity, true);
+                for (int i = 0; i < renters.Length; i++)
+                {
+                    var renter = renters[i].m_Renter;
+                    if (!entities.Exists(renter) || !entities.HasComponent<PrefabRef>(renter)) continue;
+                    var renterPrefab = entities.GetComponentData<PrefabRef>(renter).m_Prefab;
+                    if (entities.Exists(renterPrefab) && entities.HasComponent<LeisureProviderData>(renterPrefab))
+                        traits.CommercialLeisureMask |= ParkFacilityClassifier.LeisureBit(entities.GetComponentData<LeisureProviderData>(renterPrefab).m_LeisureType);
+                }
             }
             if (entities.HasComponent<ParkData>(prefab)) traits.ParkMaintenancePool = entities.GetComponentData<ParkData>(prefab).m_MaintenancePool;
             if (!traits.HasAttractivenessProvider && entities.HasComponent<AttractionData>(prefab))
                 traits.Attractiveness = entities.GetComponentData<AttractionData>(prefab).m_Attractiveness;
             return traits;
         }
+    }
+}
+namespace CS2AreaSystem.Modules.Park
+{
+    // Derived, runtime-only aggregate of one Park's member buildings.
+    public sealed class ParkFacilitySnapshot
+    {
+        public int RelevantFacilities, ParkFacilities, Attractions;
+        public float AttractivenessSum, LeisureEfficiencySum, WeightedCategories;
+        public int DistinctCategories;
+        public ParkMetric VanillaCondition;
+        public static ParkFacilitySnapshot Build(System.Collections.Generic.IEnumerable<ParkFacilityTraits> members)
+        {
+            var snapshot = new ParkFacilitySnapshot();
+            uint leisureTypes = 0, commercial = 0;
+            bool attraction = false;
+            double condition = 0; int conditionCount = 0;
+            foreach (var traits in members)
+            {
+                var roles = ParkFacilityClassifier.Classify(traits);
+                if (roles == ParkFacilityRoles.None) continue;
+                snapshot.RelevantFacilities++;
+                if ((roles & ParkFacilityRoles.CoreParkFacility) != 0)
+                {
+                    snapshot.ParkFacilities++;
+                    if (traits.ParkMaintenancePool > 0)
+                    { condition += 100.0 * System.Math.Min(1.0, System.Math.Max(0.0, (double)traits.ParkMaintenance / traits.ParkMaintenancePool)); conditionCount++; }
+                    if (!traits.HasLeisureData) leisureTypes |= ParkFacilityClassifier.LeisureBit(LeisureType.CityPark);
+                }
+                if (traits.HasLeisureData)
+                {
+                    leisureTypes |= ParkFacilityClassifier.LeisureBit(traits.LeisureType);
+                    snapshot.LeisureEfficiencySum += System.Math.Max(0, traits.LeisureEfficiency);
+                }
+                if ((roles & ParkFacilityRoles.Attraction) != 0) { attraction = true; snapshot.Attractions++; snapshot.AttractivenessSum += System.Math.Max(0, traits.Attractiveness); }
+                commercial |= traits.CommercialLeisureMask;
+            }
+            for (int type = 0; type < (int)LeisureType.Count; type++)
+            {
+                uint bit = 1u << type;
+                if ((leisureTypes & bit) != 0) { snapshot.WeightedCategories += ParkQualityModel.FacilityCategoryWeight((LeisureType)type); snapshot.DistinctCategories++; }
+                else if ((commercial & bit) != 0) { snapshot.WeightedCategories += SupportingCategoryWeight; snapshot.DistinctCategories++; }
+            }
+            if (attraction) { snapshot.WeightedCategories += 1f; snapshot.DistinctCategories++; }
+            snapshot.VanillaCondition = conditionCount > 0 ? ParkMetric.Of((float)(condition / conditionCount)) : ParkMetric.Unavailable;
+            return snapshot;
+        }
+        // Supporting commercial leisure adds breadth, but less than a genuine Park facility category.
+        public const float SupportingCategoryWeight = 0.5f;
     }
 }

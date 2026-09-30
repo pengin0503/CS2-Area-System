@@ -27,6 +27,7 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
+            RegisterParkSystems(updateSystem);
             RegisterLocalization();
             RegisterSettings();
             try { updateSystem.UpdateAfter<AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
@@ -50,6 +51,16 @@ namespace CS2AreaSystem
             var localization = manager == null ? null : manager.localizationManager;
             if (localization == null) return;
             registered.Unregister(localization.RemoveSource, (locale, error) => Log.Error(error, "Area localization removal failed: " + locale));
+        }
+        // Park gameplay observes the city after Core. A Park registration failure leaves Core geometry, lifecycle,
+        // persistence and the other area types running.
+        private static void RegisterParkSystems(UpdateSystem updateSystem)
+        {
+            try
+            {
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkLandscapeSystem>(SystemUpdatePhase.ModificationEnd);
+            }
+            catch (System.Exception error) { Log.Error(error, "Park gameplay systems unavailable; Area Core remains registered."); }
         }
         private void RegisterSettings()
         {
