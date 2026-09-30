@@ -11,7 +11,7 @@ A post-merge review found issues that can be corrected without running Cities: S
 | Requirement / defect | Repair |
 |---|---|
 | Approved spec/plan remain readable source-of-truth documents | Restored the exact approved UTF-8 blobs from `bd732ae5f10628bb4f28739a293e978268466ce0`. |
-| Edit Area targets the selected native area | Management UI now follows the native edit sequence: `recreate = area` → `prefab` → `Mode.Edit` → activate `AreaToolSystem`. |
+| Edit Area enters ordinary native boundary editing | Integration review corrected the temporary-Lot recreation pattern: clear `recreate` → select the area prefab → `Mode.Edit` → activate `AreaToolSystem` → focus the selected area. Native pointer editing still needs game verification. |
 | One failed area prefab must not disable unrelated types | Prefab readiness is tracked per TypeId; missing/unregistered prefabs retry; ready types can attach to the toolbar independently. |
 | Existing saves must recover independently of construction-menu readiness | `AreaLoadCoordinatorSystem` no longer waits for every managed prefab to be ready; native loaded search geometry remains the recovery gate. |
 | Missing icon must not be accepted merely because its URI is non-empty | Production icon selection uses the 1.6.2f1 game-media URIs verified for Park, Industrial, Tourism, and the fallback icon, with fallback for unverified URIs. |
@@ -22,6 +22,8 @@ A post-merge review found issues that can be corrected without running Cities: S
 | Offline regressions should be reproducible | `scripts/test-offline-contracts.mjs` is part of `scripts/verify.ps1`, and focused C#/UI regression tests cover readiness, anchor pruning, icon fallback, localization, and rename synchronization. |
 
 ## Verification boundary
+
+Integration preparation and the issue-by-issue disposition are recorded in [area-core-integration-review.md](area-core-integration-review.md). A source-level fix in a branch is not a resolved issue on `main`, and a fixed whitelist of known icons is not runtime resource availability checking.
 
 The repaired branch still requires a fresh Windows/game-toolchain run before any claim that it builds or works in-game:
 
@@ -35,7 +37,7 @@ cd ..
 
 The first command set exercises source guards, offline contracts, NUnit tests, UI tests/build, and API compilation. The second additionally requires the official Windows CS2 modding toolchain/postprocessor/deployment environment.
 
-After a playable build is produced, all cases in `scripts/runtime-smoke-checklist.md` remain mandatory. In particular, native menu/tool input, actual area editing/rendering, overlap warning/barrier ordering, real save/load reconstruction, deployed UI discovery, and city-scale performance cannot be established from source inspection alone.
+After a playable build is produced, all cases in `scripts/runtime-smoke-checklist.md` remain mandatory. In particular, native menu/tool input, actual area editing/rendering, overlap warning/barrier ordering, real save/load reconstruction, deployed UI discovery, and city-scale performance cannot be established from source inspection alone. Issue #1 still tracks the missing selection route for completed Space Areas; this branch does not make the whole mod operational.
 
 ## Scope boundary
 

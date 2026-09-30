@@ -34,12 +34,6 @@ check(spec.startsWith('# CS2 Area System — Area Core Design\n') && spec.includ
 check(plan.startsWith('# CS2 Area System — Area Core Implementation Plan\n') && plan.includes('### Task 9:'), 'implementation plan must retain all planned tasks');
 
 const uiSystem = read('src/CS2AreaSystem/Core/UI/AreaManagementUISystem.cs');
-const recreate = uiSystem.indexOf('recreate = area');
-const setPrefab = uiSystem.indexOf('prefab = prefab', recreate + 1);
-const editMode = uiSystem.indexOf('mode = AreaToolSystem.Mode.Edit', setPrefab + 1);
-const activate = uiSystem.indexOf('tools.activeTool =', editMode + 1);
-check(recreate >= 0 && setPrefab > recreate && editMode > setPrefab && activate > editMode,
-  'Edit area must target the selected native area via recreate -> prefab -> Edit -> activeTool');
 check(uiSystem.includes('State = "CS2AS.State." + area.State'), 'management view must publish lifecycle localization keys');
 
 const lifecycle = read('src/CS2AreaSystem/Core/Areas/ManagedAreaLifecycleSystem.cs');

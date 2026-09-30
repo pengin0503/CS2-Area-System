@@ -117,11 +117,10 @@ namespace CS2AreaSystem.Core.UI
         private void Edit(Entity area)
         {
             if (!EntityManager.HasComponent<PrefabRef>(area) || !prefabs.TryGetPrefab<AreaPrefab>(EntityManager.GetComponentData<PrefabRef>(area), out var prefab)) return;
-            // Follow the native ObjectToolSystem area-edit sequence so this exact area is recreated/edited.
-            areaTool.recreate = area;
-            areaTool.prefab = prefab;
-            areaTool.mode = AreaToolSystem.Mode.Edit;
-            tools.activeTool = areaTool;
+            AreaEditWorkflow.Start(area, entity => areaTool.recreate = entity,
+                () => areaTool.prefab = prefab,
+                () => areaTool.mode = AreaToolSystem.Mode.Edit,
+                () => tools.activeTool = areaTool, selection.Focus);
         }
         private void BeginAssignment(Entity area, AreaAnchorRole role)
         {

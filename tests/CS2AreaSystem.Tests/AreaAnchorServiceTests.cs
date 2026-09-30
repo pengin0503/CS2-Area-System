@@ -59,4 +59,20 @@ public class AreaAnchorServiceTests {
         anchors.InvalidateAnchor(hq);
         Assert.That(anchors.DrainDirty(),Is.Empty);
     }
+    [Test] public void RepeatedDeletionPreservesOnlyTheSurvivingAreasSharedAnchorRelation() {
+        var store=new Store();
+        var anchors=new AreaAnchorService(store,e=>e!=Entity.Null,(a,e,r)=>true);
+        anchors.Assign(other,hq,AreaAnchorRole.Headquarters);
+        anchors.DrainDirty();
+        for(int i=0;i<100;i++) {
+            var deleted=new Entity {Index=100+i,Version=1};
+            anchors.Assign(deleted,hq,AreaAnchorRole.Headquarters);
+            anchors.DrainDirty();
+            anchors.ForgetArea(deleted);
+            Assert.That(anchors.DrainDirty(),Is.EquivalentTo(new[]{deleted}));
+            anchors.InvalidateAnchor(hq);
+            Assert.That(anchors.DrainDirty(),Is.EquivalentTo(new[]{other}));
+        }
+        Assert.That(store.Read(other).Single().Anchor,Is.EqualTo(hq));
+    }
 }
