@@ -4,6 +4,7 @@ Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
     & "$PSScriptRoot/verify-source.ps1"
     & "$PSScriptRoot/test-source-guards.ps1"
+    & "$PSScriptRoot/test-msbuild-json.ps1"
     & "$PSScriptRoot/test-build-contract.ps1"
     & node "$PSScriptRoot/test-offline-contracts.mjs"
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
