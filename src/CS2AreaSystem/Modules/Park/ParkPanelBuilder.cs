@@ -16,7 +16,7 @@ namespace CS2AreaSystem.Modules.Park
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
         public static AreaPanelDocument Build(ParkPanelModel model)
         {
-            return new AreaPanelDocument { Tabs = new[] {
+            return new AreaPanelDocument { ShowsProgress = true, Tabs = new[] {
                 new AreaPanelTabData { Id = "overview", LabelKey = "CS2AS.Tab.Overview", Items = Overview(model) },
                 new AreaPanelTabData { Id = "visitors", LabelKey = "CS2AS.Tab.Visitors", Items = Visitors(model) },
                 new AreaPanelTabData { Id = "finances", LabelKey = "CS2AS.Tab.Finances", Items = Finances(model) },

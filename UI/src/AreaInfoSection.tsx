@@ -28,11 +28,12 @@ export function AreaInfoSectionContent(area:AreaSectionData){
  // Ineligible or removed links stay listed (and removable) but never count as entrances.
  const validAnchors=anchors.filter(anchor=>anchor.valid!==false).length;
  const current=area.tabs.find(item=>item.id===tab);
+ const coreProgress=area.level!==null&&area.moduleShowsProgress!==true;
  return <InfoSection disableFocus={true} className={styles.section}>
   <InfoRow left={text('CS2AS.UI.Type')} right={text(area.typeKey)} uppercase={true}/>
   <InfoRow left={text('CS2AS.UI.Status')} right={text(area.state)} tooltip={text(area.summary)}/>
-  {area.level!==null&&<InfoRow left={text('CS2AS.UI.Level')} right={String(area.level)}/>}
-  {area.level!==null&&area.experience!==null&&<InfoRow left={text('CS2AS.UI.Experience')} right={area.experience} subRow={true}/>}
+  {coreProgress&&<InfoRow left={text('CS2AS.UI.Level')} right={String(area.level)}/>}
+  {coreProgress&&area.experience!==null&&<InfoRow left={text('CS2AS.UI.Experience')} right={area.experience} subRow={true}/>}
   {headquarters&&<InfoRow left={text('CS2AS.UI.Headquarters')} right={area.anchorName??text('CS2AS.UI.NotAssigned')}/>}
   {multiple&&(validAnchors>0?<InfoRow left={text('CS2AS.UI.Entrances')} right={String(validAnchors)}/>:<InfoRow left={text('CS2AS.UI.Entrance')} right={text('CS2AS.UI.NotAssigned')}/>)}
   {multiple&&anchors.length>0&&<ul className={styles.anchors}>{anchors.map(anchor=><li key={anchor.key} className={anchor.valid===false?styles.invalidAnchor:undefined}>

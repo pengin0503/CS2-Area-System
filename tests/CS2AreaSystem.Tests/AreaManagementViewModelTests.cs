@@ -16,6 +16,7 @@ public class AreaManagementViewModelTests {
         Assert.That(json.GetProperty("stableId").GetString(), Is.EqualTo("7"));
         Assert.That(json.GetProperty("tabs")[1].GetProperty("items")[0].GetProperty("kind").GetString(), Is.EqualTo("slider"));
         Assert.That(json.GetProperty("anchors")[0].GetProperty("key").GetString(), Is.EqualTo("30.1"));
+        Assert.That(json.GetProperty("moduleShowsProgress").GetBoolean(), Is.False);
         Assert.That(json.GetProperty("anchors")[0].GetProperty("name").GetString(), Is.EqualTo("North Gate"));
         Assert.That(json.GetProperty("anchors")[0].GetProperty("valid").GetBoolean(), Is.True);
     }
@@ -29,6 +30,7 @@ public class AreaManagementViewModelTests {
             v => v.Summary = "CS2AS.Summary.AnchorRequired", v => v.AnchorRole = null, v => v.Level = 3, v => v.Level = null,
             v => v.Experience = "11", v => v.PendingAnchor = true,
             v => v.Panel = new AreaPanelDocument(),
+            v => v.Panel = new AreaPanelDocument { Tabs = AreaPanelModelTests.Document().Tabs, ShowsProgress = true },
             v => v.Panel.Tabs[0].Items[0].Value = "13",
             v => v.Anchors = new AreaAnchorView[0],
             v => v.Anchors = new[] { new AreaAnchorView { Key = "30.1", Name = "South Gate", Valid = true } },

@@ -42,6 +42,7 @@ namespace CS2AreaSystem.Core.UI
             writer.PropertyName("pendingAnchor"); writer.Write(PendingAnchor);
             writer.PropertyName("confirmDelete"); writer.Write(ConfirmDelete);
             writer.PropertyName("tabs"); (Panel ?? new AreaPanelDocument()).Write(writer);
+            writer.PropertyName("moduleShowsProgress"); writer.Write(Panel != null && Panel.ShowsProgress);
             var anchors = Anchors ?? new AreaAnchorView[0];
             writer.PropertyName("anchors"); writer.ArrayBegin((uint)anchors.Count);
             foreach (var anchor in anchors)

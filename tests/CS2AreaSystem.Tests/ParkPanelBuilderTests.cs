@@ -26,6 +26,7 @@ public class ParkPanelBuilderTests {
  [Test] public void EmitsTheFiveApprovedTabs() {
   var d = ParkPanelBuilder.Build(Model());
   Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "visitors", "finances", "landscape", "progress" }));
+  Assert.That(d.ShowsProgress, Is.True, "the Park tabs present Level/XP, so Core omits its numeric rows");
  }
  [Test] public void OverviewShowsLevelQualitySixMetricsVisitorsEntrancesAndNextAction() {
   var o = Tab(ParkPanelBuilder.Build(Model()), "overview");

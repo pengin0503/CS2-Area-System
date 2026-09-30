@@ -4,6 +4,8 @@ export interface AreaSectionData {
  stableId:string;typeKey:string;state:string;level:number|null;experience:string|null;summary:string;
  anchorRole:'Entrance'|'Headquarters'|null;anchorName:string|null;pendingAnchor:boolean;confirmDelete:boolean;
  tabs:AreaPanelTab[];anchors?:AreaAnchor[];
+ // True when the module's tabs present level/experience themselves (Core rows are then omitted).
+ moduleShowsProgress?:boolean;
 }
 // Module-neutral structured panel content written by CS2AreaSystem.Core.Modules.AreaPanelDocument.
 export interface AreaPanelItem {

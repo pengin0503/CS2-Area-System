@@ -131,4 +131,8 @@ describe('managed area selected-info section',()=>{
   fireEvent.click(within(items[0]).getByRole('button',{name:'Remove'}));
   expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','removeAnchor','9007199254740993','30.1');
  });
+ it('omits the core level rows when the module presents progress itself',()=>{
+  render(<AreaInfoSection {...industrial} level={2} experience="2500" moduleShowsProgress={true}/>);
+  expect(screen.queryByText('Level')).toBeNull();expect(screen.queryByText('Experience')).toBeNull();
+ });
 });

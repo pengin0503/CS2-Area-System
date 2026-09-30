@@ -59,12 +59,14 @@ namespace CS2AreaSystem.Core.Modules
     public sealed class AreaPanelDocument
     {
         public IReadOnlyList<AreaPanelTabData> Tabs { get; set; } = Array.Empty<AreaPanelTabData>();
+        // True when the module's own tabs present level/experience, so Core omits its numeric rows.
+        public bool ShowsProgress { get; set; }
         public static AreaPanelDocument Overview() =>
             new AreaPanelDocument { Tabs = new[] { new AreaPanelTabData { Id = "overview", LabelKey = "CS2AS.Tab.Overview" } } };
         public static bool Equivalent(AreaPanelDocument a, AreaPanelDocument b)
         {
             if (ReferenceEquals(a, b)) return true;
-            if (a == null || b == null) return false;
+            if (a == null || b == null || a.ShowsProgress != b.ShowsProgress) return false;
             var left = a.Tabs ?? Array.Empty<AreaPanelTabData>();
             var right = b.Tabs ?? Array.Empty<AreaPanelTabData>();
             if (left.Count != right.Count) return false;
