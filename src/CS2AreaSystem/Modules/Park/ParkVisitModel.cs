@@ -114,3 +114,35 @@ namespace CS2AreaSystem.Modules.Park
         }
     }
 }
+namespace CS2AreaSystem.Modules.Park
+{
+    // Observation cadence mirrors vanilla LeisureSystem: 4096 updates/day, 16 staggered citizen groups.
+    public static class ParkVisitCadence
+    {
+        public const int Groups = 16;
+        public const uint UpdateInterval = 262144 / 4096;
+        public const uint CycleFrames = UpdateInterval * Groups;
+        // A session survives two missed observations (short transitions between buildings or paths).
+        public const uint GraceFrames = 2 * CycleFrames + UpdateInterval;
+        // After a load, visitors first seen within one full cycle (+1 update) are restored, fee-satisfied visits.
+        public const uint SeedFrames = CycleFrames + UpdateInterval;
+        public static uint GroupFor(uint frame) => (frame / UpdateInterval) & (Groups - 1);
+    }
+    public static class ParkStateDefaults
+    {
+        public static Core.Areas.ManagedAreaProgress Progress() =>
+            new Core.Areas.ManagedAreaProgress { SchemaVersion = Core.Areas.ManagedAreaProgress.CurrentSchemaVersion, Level = ParkProgressionModel.MinLevel };
+        public static Core.Areas.ManagedAreaSettings Settings() =>
+            new Core.Areas.ManagedAreaSettings { SchemaVersion = Core.Areas.ManagedAreaSettings.CurrentSchemaVersion, BudgetMultiplier = ParkFinanceModel.DefaultBudget };
+    }
+    public static class ParkVisitRecorder
+    {
+        public static void RecordRecent(ParkRuntimeSnapshot snapshot, bool tourist, uint frame)
+        {
+            snapshot.RecentVisitors.Add(frame, 1);
+            if (tourist) snapshot.RecentTouristVisitors.Add(frame, 1);
+        }
+        public static void RecordOccupancy(ParkRuntimeSnapshot snapshot, int occupancy)
+        { if (occupancy > snapshot.PeakOccupancy) snapshot.PeakOccupancy = occupancy; }
+    }
+}

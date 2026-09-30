@@ -132,3 +132,27 @@ public class ParkVisitModelTests {
   Assert.That(window.Sum(10_000), Is.Zero);
  }
 }
+public class ParkVisitCadenceTests {
+ [Test] public void ObservationFollowsTheVanillaLeisureCadence() {
+  Assert.That(ParkVisitCadence.UpdateInterval, Is.EqualTo(262144 / 4096), "same interval as vanilla LeisureSystem");
+  Assert.That(ParkVisitCadence.Groups, Is.EqualTo(16));
+  Assert.That(ParkVisitCadence.CycleFrames, Is.EqualTo(ParkVisitCadence.UpdateInterval * 16));
+  Assert.That(ParkVisitCadence.GraceFrames, Is.GreaterThan(ParkVisitCadence.CycleFrames), "a present visitor is always re-observed before expiry");
+  Assert.That(ParkVisitCadence.SeedFrames, Is.GreaterThanOrEqualTo(ParkVisitCadence.CycleFrames), "every restored visitor is seen once while seeding");
+  Assert.That(ParkVisitCadence.GroupFor(0), Is.EqualTo(0u)); Assert.That(ParkVisitCadence.GroupFor(64), Is.EqualTo(1u)); Assert.That(ParkVisitCadence.GroupFor(1024), Is.EqualTo(0u));
+ }
+ [Test] public void NewParkComponentsStartAtLevelOneWithFullBudgetAndFreeAdmission() {
+  var progress = ParkStateDefaults.Progress(); var settings = ParkStateDefaults.Settings(); var state = ParkAreaState.CreateDefault();
+  Assert.That(progress.Level, Is.EqualTo(1)); Assert.That(progress.Experience, Is.Zero);
+  Assert.That(settings.BudgetMultiplier, Is.EqualTo(1f)); Assert.That(state.AdmissionFee, Is.Zero);
+ }
+ [Test] public void CompletedVisitsUpdateRecentStatisticsForThePrimaryParkOnly() {
+  var owner = new ParkRuntimeSnapshot { StableId = 7 }; var other = new ParkRuntimeSnapshot { StableId = 9 };
+  ParkVisitRecorder.RecordRecent(owner, tourist: true, frame: 100);
+  ParkVisitRecorder.RecordRecent(owner, tourist: false, frame: 100);
+  Assert.That(owner.RecentVisitors.Sum(100), Is.EqualTo(2)); Assert.That(owner.RecentTouristVisitors.Sum(100), Is.EqualTo(1));
+  Assert.That(other.RecentVisitors.Sum(100), Is.Zero);
+  ParkVisitRecorder.RecordOccupancy(owner, 12); ParkVisitRecorder.RecordOccupancy(owner, 5);
+  Assert.That(owner.PeakOccupancy, Is.EqualTo(12));
+ }
+}

@@ -60,6 +60,19 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var snapshot in Store.All) if (!alive.Contains(snapshot.StableId)) stale.Add(snapshot.StableId);
             foreach (var id in stale) Store.Remove(id);
         }
+        // Adds Park authoritative state (and the shared progress/settings components) to Park areas only.
+        // Existing state is never replaced, so suspend/reactivate and load keep progression. Structural change:
+        // call from a modification-phase system.
+        public void EnsureParkState(List<ParkAreaRef> parks)
+        {
+            foreach (var park in parks)
+            {
+                if (!EntityManager.Exists(park.Area)) continue;
+                if (!EntityManager.HasComponent<ParkAreaState>(park.Area)) EntityManager.AddComponentData(park.Area, ParkAreaState.CreateDefault());
+                if (!EntityManager.HasComponent<ManagedAreaProgress>(park.Area)) EntityManager.AddComponentData(park.Area, ParkStateDefaults.Progress());
+                if (!EntityManager.HasComponent<ManagedAreaSettings>(park.Area)) EntityManager.AddComponentData(park.Area, ParkStateDefaults.Settings());
+            }
+        }
         public AreaMembershipIndex Membership => World.GetOrCreateSystemManaged<AreaMembershipSystem>().Index;
         public uint SimulationFrame => World.GetOrCreateSystemManaged<Game.Simulation.SimulationSystem>().frameIndex;
     }

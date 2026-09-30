@@ -57,6 +57,9 @@ namespace CS2AreaSystem.Modules.Park
         public readonly ParkRollingWindow RecentAdmission = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
         public readonly ParkRollingWindow RecentExpense = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
         public long UncollectedAdmissionRecent;
+        // Park-level experienced state used for visit satisfaction samples; Facility comes from the visited building.
+        public ParkVisitExperience Experience = new ParkVisitExperience { Facility = 50, Landscape = 50, Comfort = 100, Maintenance = 50, ValueForMoney = 100, Accessibility = 50 };
+        public int ActiveVisitors;
         // Finance settlement remainder (runtime only; at most one currency unit is lost across a load).
         public double ExpenseCarry;
     }

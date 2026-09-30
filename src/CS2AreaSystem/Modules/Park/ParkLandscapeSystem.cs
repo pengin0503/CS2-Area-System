@@ -73,6 +73,7 @@ namespace CS2AreaSystem.Modules.Park
             parksDirty = false;
             runtime.CollectParks(parks);
             runtime.PruneStore(parks);
+            runtime.EnsureParkState(parks);
             var alive = new HashSet<ulong>();
             foreach (var park in parks)
             {
