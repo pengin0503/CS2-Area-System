@@ -12,7 +12,7 @@ namespace CS2AreaSystem.Modules.Park
         private readonly ParkPanelCache panels = new ParkPanelCache(250, () => clock.ElapsedMilliseconds);
         public ParkAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, ParkFacilityTraits> readTraits = null)
             : base(AreaTypeId.Park, anchors, AreaAnchorRole.Entrance)
-        { this.readTraits = readTraits ?? ParkFacilityReader.Read; }
+        { this.readTraits = readTraits ?? ParkFacilityReader.ReadAnchor; }
         public override string BuildSummary(Entity area, in AreaPanelContext context) =>
             ValidateActivation(area) ? "CS2AS.Park.Summary.Active" : "CS2AS.Park.Summary.EntranceRequired";
         public override AreaPanelDocument BuildPanel(Entity area, in AreaPanelContext context)

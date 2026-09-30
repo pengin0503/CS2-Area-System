@@ -45,6 +45,31 @@ namespace CS2AreaSystem.Modules.Park
     }
     public static class ParkFacilityReader
     {
+        // Lightweight traits for per-frame/per-visit paths (entrance policy, visit targets): component presence and
+        // prefab data only. It never reads Renter buffers or runtime Park/Attractiveness values, which would force
+        // main-thread completion of the vanilla jobs writing them.
+        public static ParkFacilityTraits ReadCore(Entity entity, EntityManager entities, bool includeRoadAccess)
+        {
+            var traits = new ParkFacilityTraits();
+            if (!entities.Exists(entity) || !entities.HasComponent<Building>(entity)) return traits;
+            traits.IsBuilding = true;
+            traits.HasRoadAccess = !includeRoadAccess || entities.GetComponentData<Building>(entity).m_RoadEdge != Entity.Null;
+            traits.HasPark = entities.HasComponent<Game.Buildings.Park>(entity);
+            traits.HasLeisureProvider = entities.HasComponent<Game.Buildings.LeisureProvider>(entity);
+            traits.HasAttractivenessProvider = entities.HasComponent<AttractivenessProvider>(entity);
+            if (!entities.HasComponent<PrefabRef>(entity)) return traits;
+            var prefab = entities.GetComponentData<PrefabRef>(entity).m_Prefab;
+            if (!entities.Exists(prefab)) return traits;
+            if (entities.HasComponent<LeisureProviderData>(prefab))
+            {
+                var leisure = entities.GetComponentData<LeisureProviderData>(prefab);
+                traits.HasLeisureProvider = true; traits.HasLeisureData = true;
+                traits.LeisureType = leisure.m_LeisureType; traits.LeisureEfficiency = leisure.m_Efficiency;
+            }
+            if (entities.HasComponent<AttractionData>(prefab)) traits.Attractiveness = entities.GetComponentData<AttractionData>(prefab).m_Attractiveness;
+            return traits;
+        }
+        public static ParkFacilityTraits ReadAnchor(Entity entity, EntityManager entities) => ReadCore(entity, entities, true);
         public static ParkFacilityTraits Read(Entity entity, EntityManager entities)
         {
             var traits = new ParkFacilityTraits();

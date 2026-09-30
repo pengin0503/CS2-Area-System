@@ -5,13 +5,16 @@ using Game.Citizens;
 using Game.Common;
 using Game.Simulation;
 using Game.Tools;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using UnityEngine.Scripting;
 namespace CS2AreaSystem.Modules.Park
 {
     // Observes real vanilla leisure (design §8): never replaces or patches LeisureSystem and never reads its private
-    // event queue. Hot path: citizen -> CurrentBuilding -> AreaMembershipIndex.GetAreas -> primary Park.
+    // event queue. Hot path: citizen -> CurrentBuilding -> relevant building map (from AreaMembershipIndex) -> Park.
+    // Citizen data is read by a scheduled chunk job (no main-thread sync); its matches are consumed next update.
     public partial class ParkVisitSystem : GameSystemBase
     {
         private ParkRuntimeSystem runtime;
@@ -21,8 +24,13 @@ namespace CS2AreaSystem.Modules.Park
         private readonly List<ParkVisitEvent> events = new List<ParkVisitEvent>();
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private readonly Dictionary<ulong, ParkAreaRef> activeParks = new Dictionary<ulong, ParkAreaRef>();
-        private readonly Dictionary<Entity, float?> buildingExperience = new Dictionary<Entity, float?>();
         private readonly List<IParkVisitListener> listeners = new List<IParkVisitListener>();
+        private NativeParallelHashMap<Entity, ParkVisitTarget> targets;
+        private NativeList<ParkVisitMatch> matches;
+        private JobHandle pending;
+        private bool hasPending, targetsDirty = true;
+        private uint pendingFrame;
+        private string activeSignature = "";
         private int loadGeneration = -1;
         private bool failureLogged;
         public ParkVisitTracker Tracker => tracker;
@@ -39,16 +47,29 @@ namespace CS2AreaSystem.Modules.Park
                 All = new[] { ComponentType.ReadOnly<Citizen>(), ComponentType.ReadOnly<Leisure>(), ComponentType.ReadOnly<CurrentBuilding>(),
                     ComponentType.ReadOnly<HouseholdMember>(), ComponentType.ReadOnly<UpdateFrame>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() } });
+            targets = new NativeParallelHashMap<Entity, ParkVisitTarget>(256, Allocator.Persistent);
+            matches = new NativeList<ParkVisitMatch>(256, Allocator.Persistent);
+        }
+        [Preserve]
+        protected override void OnDestroy()
+        {
+            pending.Complete();
+            if (targets.IsCreated) targets.Dispose();
+            if (matches.IsCreated) matches.Dispose();
+            base.OnDestroy();
         }
         [Preserve]
         protected override void OnUpdate()
         {
             if (!runtime.Ready) return;
             uint frame = simulation.frameIndex;
+            // Our own previous job ran during the last 64 frames; completing it here does not wait on vanilla work.
+            pending.Complete();
             if (loadGeneration != runtime.LoadGeneration)
             {
                 // Sessions are runtime-only: restored in-Park visitors are re-observed as already paid.
                 loadGeneration = runtime.LoadGeneration;
+                hasPending = false; matches.Clear(); targetsDirty = true;
                 tracker.Clear();
                 tracker.SeedPreExistingUntil(frame + ParkVisitCadence.SeedFrames);
             }
@@ -56,14 +77,16 @@ namespace CS2AreaSystem.Modules.Park
             {
                 uint group = ParkVisitCadence.GroupFor(frame);
                 RefreshParks();
-                if (group == 0) { buildingExperience.Clear(); tracker.Expire(frame, events); }
-                if (activeParks.Count > 0 || tracker.SessionCount > 0) Observe(group, frame);
+                if (hasPending) ConsumeMatches();
+                if (group == 0) { tracker.Expire(frame, events); targetsDirty = true; }
                 Dispatch(frame);
+                if (targetsDirty) RebuildTargets();
+                if (!targets.IsEmpty) Schedule(group, frame);
                 failureLogged = false;
             }
             catch (System.Exception error)
             {
-                events.Clear();
+                events.Clear(); hasPending = false;
                 if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park visit observation failed this update"); }
             }
         }
@@ -71,55 +94,63 @@ namespace CS2AreaSystem.Modules.Park
         {
             runtime.CollectParks(parks);
             activeParks.Clear();
-            foreach (var park in parks) if (park.State == AreaLifecycleState.Active) activeParks[park.StableId] = park;
+            var signature = new System.Text.StringBuilder();
+            foreach (var park in parks)
+                if (park.State == AreaLifecycleState.Active) { activeParks[park.StableId] = park; signature.Append(park.StableId).Append(','); }
+            var current = signature.ToString();
+            if (current != activeSignature) { activeSignature = current; targetsDirty = true; }
         }
-        private void Observe(uint group, uint frame)
+        // Relevant buildings of Active Parks; rebuilt once per observation cycle or when the Active set changes.
+        private void RebuildTargets()
         {
+            targetsDirty = false;
+            targets.Clear();
+            var index = runtime.Membership;
+            foreach (var park in activeParks.Values)
+                foreach (var member in index.GetMembers(park.StableId))
+                {
+                    if (targets.ContainsKey(member)) continue;
+                    var traits = ParkFacilityReader.ReadCore(member, EntityManager, false);
+                    if (ParkVisitTargets.TryResolve(index.GetAreas(member), (int)AreaTypeId.Park, id => activeParks.ContainsKey(id), traits, out var target))
+                        targets.TryAdd(member, target);
+                }
+        }
+        private void Schedule(uint group, uint frame)
+        {
+            matches.Clear();
             visitors.ResetFilter();
             visitors.SetSharedComponentFilter(new UpdateFrame(group));
-            using var citizens = visitors.ToEntityArray(Allocator.Temp);
-            using var buildings = visitors.ToComponentDataArray<CurrentBuilding>(Allocator.Temp);
-            using var households = visitors.ToComponentDataArray<HouseholdMember>(Allocator.Temp);
+            var job = new ObserveJob {
+                EntityType = GetEntityTypeHandle(),
+                CurrentBuildingType = GetComponentTypeHandle<CurrentBuilding>(true),
+                HouseholdMemberType = GetComponentTypeHandle<HouseholdMember>(true),
+                Tourists = GetComponentLookup<TouristHousehold>(true),
+                Targets = targets.AsReadOnly(),
+                Matches = matches };
+            // The filter is copied into the scheduled job, so it can be reset immediately.
+            pending = job.Schedule(visitors, Dependency);
             visitors.ResetFilter();
-            ObservedLastUpdate = citizens.Length;
-            var membership = runtime.Membership;
-            for (int i = 0; i < citizens.Length; i++)
-            {
-                var building = buildings[i].m_CurrentBuilding;
-                ulong parkId = 0;
-                float experience = float.NaN;
-                if (building != Entity.Null)
-                {
-                    var relations = membership.GetAreas(building);
-                    if (relations.Count > 0)
-                    {
-                        parkId = ParkVisitModel.PrimaryPark(relations, (int)AreaTypeId.Park, id => activeParks.ContainsKey(id));
-                        if (parkId != 0)
-                        {
-                            var facility = FacilityExperience(building);
-                            if (!facility.HasValue) parkId = 0; // not a Park/leisure/attraction building: no visit
-                            else if (runtime.Store.TryGet(parkId, out var snapshot))
-                            {
-                                var visit = snapshot.Experience; visit.Facility = facility.Value;
-                                experience = ParkVisitModel.ComputeVisitSample(visit);
-                            }
-                        }
-                    }
-                }
-                if (parkId == 0) { tracker.Observe(citizens[i], 0, false, float.NaN, frame, events); continue; }
-                var household = households[i].m_Household;
-                bool tourist = household != Entity.Null && EntityManager.Exists(household) && EntityManager.HasComponent<TouristHousehold>(household);
-                tracker.Observe(citizens[i], parkId, tourist, experience, frame, events);
-            }
+            Dependency = pending;
+            hasPending = true;
+            pendingFrame = frame;
         }
-        // Null for buildings that are not Park/leisure/attraction facilities; cached for one observation cycle.
-        private float? FacilityExperience(Entity building)
+        private void ConsumeMatches()
         {
-            if (buildingExperience.TryGetValue(building, out var cached)) return cached;
-            var traits = ParkFacilityReader.Read(building, EntityManager);
-            float? value = ParkFacilityClassifier.IsVisitRelevant(traits) ? ParkVisitModel.FacilityExperience(traits.HasLeisureData, traits.LeisureEfficiency) : (float?)null;
-            buildingExperience[building] = value;
-            return value;
+            hasPending = false;
+            ObservedLastUpdate = matches.Length;
+            for (int i = 0; i < matches.Length; i++)
+            {
+                var match = matches[i];
+                if (!activeParks.ContainsKey(match.ParkId)) continue;
+                float experience = float.NaN;
+                if (runtime.Store.TryGet(match.ParkId, out var snapshot))
+                {
+                    var visit = snapshot.Experience; visit.Facility = match.Facility;
+                    experience = ParkVisitModel.ComputeVisitSample(visit);
+                }
+                tracker.Observe(match.Citizen, match.ParkId, match.Tourist, experience, pendingFrame, events);
+            }
+            matches.Clear();
         }
         private void Dispatch(uint frame)
         {
@@ -154,6 +185,35 @@ namespace CS2AreaSystem.Modules.Park
             events.Clear();
             foreach (var park in parks)
                 if (runtime.Store.TryGet(park.StableId, out var snapshot)) snapshot.ActiveVisitors = tracker.ActiveCount(park.StableId);
+        }
+        public struct ParkVisitMatch
+        {
+            public Entity Citizen;
+            public ulong ParkId;
+            public float Facility;
+            public bool Tourist;
+        }
+        private struct ObserveJob : IJobChunk
+        {
+            [ReadOnly] public EntityTypeHandle EntityType;
+            [ReadOnly] public ComponentTypeHandle<CurrentBuilding> CurrentBuildingType;
+            [ReadOnly] public ComponentTypeHandle<HouseholdMember> HouseholdMemberType;
+            [ReadOnly] public ComponentLookup<TouristHousehold> Tourists;
+            [ReadOnly] public NativeParallelHashMap<Entity, ParkVisitTarget>.ReadOnly Targets;
+            public NativeList<ParkVisitMatch> Matches;
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
+            {
+                var entities = chunk.GetNativeArray(EntityType);
+                var buildings = chunk.GetNativeArray(ref CurrentBuildingType);
+                var households = chunk.GetNativeArray(ref HouseholdMemberType);
+                for (int i = 0; i < entities.Length; i++)
+                {
+                    if (!Targets.TryGetValue(buildings[i].m_CurrentBuilding, out var target)) continue;
+                    var household = households[i].m_Household;
+                    Matches.Add(new ParkVisitMatch { Citizen = entities[i], ParkId = target.ParkId, Facility = target.Facility,
+                        Tourist = household != Entity.Null && Tourists.HasComponent(household) });
+                }
+            }
         }
     }
     public interface IParkVisitListener

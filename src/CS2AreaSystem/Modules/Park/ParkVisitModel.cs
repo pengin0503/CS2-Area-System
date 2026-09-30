@@ -146,3 +146,23 @@ namespace CS2AreaSystem.Modules.Park
         { if (occupancy > snapshot.PeakOccupancy) snapshot.PeakOccupancy = occupancy; }
     }
 }
+namespace CS2AreaSystem.Modules.Park
+{
+    public struct ParkVisitTarget
+    {
+        public ulong ParkId;
+        public float Facility;
+    }
+    // Relevant member building -> the Park that owns visits there (primary, Active) and its facility experience.
+    public static class ParkVisitTargets
+    {
+        public static bool TryResolve(IReadOnlyList<AreaMembership> relations, int parkTypeId, Func<ulong, bool> isActive, in ParkFacilityTraits traits, out ParkVisitTarget target)
+        {
+            target = default;
+            ulong park = ParkVisitModel.PrimaryPark(relations, parkTypeId, isActive);
+            if (park == 0 || !ParkFacilityClassifier.IsVisitRelevant(traits)) return false;
+            target = new ParkVisitTarget { ParkId = park, Facility = ParkVisitModel.FacilityExperience(traits.HasLeisureData, traits.LeisureEfficiency) };
+            return true;
+        }
+    }
+}
