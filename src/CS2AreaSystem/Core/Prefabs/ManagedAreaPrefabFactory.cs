@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CS2AreaSystem.Core.Areas;
 using Game.Prefabs;
 using UnityEngine;
@@ -22,6 +23,13 @@ namespace CS2AreaSystem.Core.Prefabs
     {
         public static Game.Areas.AreaType NativeGeometryType => Game.Areas.AreaType.Space;
         public const string FallbackIconUri = "coui://gameui/Media/Game/Icons/SurfaceAreaTool.svg";
+        private static readonly HashSet<string> VerifiedGameIcons = new HashSet<string>(StringComparer.Ordinal)
+        {
+            FallbackIconUri,
+            "coui://gameui/Media/Game/Icons/LargeParks.svg",
+            "coui://gameui/Media/Game/Icons/ZoneIndustrial.svg",
+            "coui://gameui/Media/Game/Icons/Attraction.svg"
+        };
         public static AreaTypeDescriptor Describe(AreaTypeId kind)
         {
             switch (kind)
@@ -37,6 +45,7 @@ namespace CS2AreaSystem.Core.Prefabs
             var preferred = descriptor.IconUri;
             return new AreaPrefabMetadata(descriptor, !string.IsNullOrWhiteSpace(preferred) && iconAvailable(preferred) ? preferred : FallbackIconUri);
         }
+        public static string ResolveIcon(AreaTypeDescriptor descriptor) => Map(descriptor, VerifiedGameIcons.Contains).IconUri;
         public SpacePrefab CreateAreaPrefab(AreaTypeDescriptor descriptor)
         {
             // Adapted from KruemelGames/ParkingLotTool, Tools/ParkingLotLotArea.cs,
@@ -50,7 +59,7 @@ namespace CS2AreaSystem.Core.Prefabs
             lot.m_EdgeColor = new Color(color.r, color.g, color.b, 0.30f);
             lot.m_SelectionColor = new Color(color.r, color.g, color.b, 0.16f);
             lot.m_SelectionEdgeColor = color;
-            lot.AddComponent<UIObject>().m_Icon = Map(descriptor, uri => !string.IsNullOrEmpty(uri)).IconUri;
+            lot.AddComponent<UIObject>().m_Icon = ResolveIcon(descriptor);
             return lot;
         }
     }

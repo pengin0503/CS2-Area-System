@@ -22,12 +22,14 @@ namespace CS2AreaSystem.Core.UI
         private PrefabSystem prefabs;
         private NameSystem names;
         private ToolSystem tools;
+        private AreaToolSystem areaTool;
         private RawValueBinding selectedArea;
         private ValueBinding<bool> visible;
         private Entity published, pendingArea;
         private ulong pendingId;
         private AreaAnchorRole pendingRole;
         private AreaManagementViewModel view;
+        private bool failureLogged;
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -36,6 +38,7 @@ namespace CS2AreaSystem.Core.UI
             prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
             names = World.GetOrCreateSystemManaged<NameSystem>();
             tools = World.GetOrCreateSystemManaged<ToolSystem>();
+            areaTool = World.GetOrCreateSystemManaged<AreaToolSystem>();
             AddBinding(selectedArea = new RawValueBinding("cs2AreaSystem", "selectedArea", writer => { if (view == null) writer.WriteNull(); else view.Write(writer); }));
             AddBinding(visible = new ValueBinding<bool>("cs2AreaSystem", "panelVisible", false));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
@@ -53,7 +56,7 @@ namespace CS2AreaSystem.Core.UI
             }));
         }
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
-        { base.OnGamePreload(purpose, mode); pendingArea = published = Entity.Null; view = null; }
+        { base.OnGamePreload(purpose, mode); pendingArea = published = Entity.Null; view = null; failureLogged = false; }
         protected override void OnUpdate()
         {
             try
@@ -70,8 +73,13 @@ namespace CS2AreaSystem.Core.UI
                     { selection.SetSelection(pendingArea); selected = pendingArea; pendingArea = Entity.Null; }
                 }
                 Publish(pendingArea != Entity.Null ? pendingArea : selected);
+                failureLogged = false;
             }
-            catch (Exception error) { Mod.Log.Error(error, "Area management UI unavailable"); view = null; published = Entity.Null; visible.Update(false); }
+            catch (Exception error)
+            {
+                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Area management UI unavailable"); }
+                view = null; published = Entity.Null; visible.Update(false);
+            }
         }
         private bool IsArea(Entity entity) => services.IsValidEntity(entity) && EntityManager.HasComponent<ManagedArea>(entity) && EntityManager.HasComponent<ManagedAreaStableId>(entity);
         private void Publish(Entity entity)
@@ -84,8 +92,10 @@ namespace CS2AreaSystem.Core.UI
                 bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
                 view = new AreaManagementViewModel {
                     StableId = EntityManager.GetComponentData<ManagedAreaStableId>(published).Value.ToString(CultureInfo.InvariantCulture),
-                    Name = names.GetRenderedLabelName(published), TypeKey = known ? descriptor.DisplayNameKey : "Unavailable module (" + area.TypeId + ")",
-                    State = area.State.ToString(), Summary = descriptor?.Module?.PanelProvider?.BuildSummary(published) ?? "Module unavailable",
+                    Name = names.GetRenderedLabelName(published),
+                    TypeKey = known ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
+                    State = "CS2AS.State." + area.State,
+                    Summary = descriptor?.Module?.PanelProvider?.BuildSummary(published) ?? "CS2AS.Summary.ModuleUnavailable",
                     Tabs = descriptor?.Module?.PanelProvider?.Tabs ?? new Core.Modules.AreaPanelTab[0],
                     AnchorRole = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole?.ToString(), PendingAnchor = pendingArea != Entity.Null
                 };
@@ -107,9 +117,11 @@ namespace CS2AreaSystem.Core.UI
         private void Edit(Entity area)
         {
             if (!EntityManager.HasComponent<PrefabRef>(area) || !prefabs.TryGetPrefab<AreaPrefab>(EntityManager.GetComponentData<PrefabRef>(area), out var prefab)) return;
-            // Native ActionsSection lot-edit pattern: select prefab and activate AreaToolSystem.
-            tools.ActivatePrefabTool(prefab);
-            if (tools.activeTool is AreaToolSystem native) native.mode = AreaToolSystem.Mode.Edit;
+            // Follow the native ObjectToolSystem area-edit sequence so this exact area is recreated/edited.
+            areaTool.recreate = area;
+            areaTool.prefab = prefab;
+            areaTool.mode = AreaToolSystem.Mode.Edit;
+            tools.activeTool = areaTool;
         }
         private void BeginAssignment(Entity area, AreaAnchorRole role)
         {

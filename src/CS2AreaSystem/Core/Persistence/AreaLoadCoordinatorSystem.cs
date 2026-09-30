@@ -1,7 +1,5 @@
-using Colossal.Serialization.Entities;
 using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Membership;
-using CS2AreaSystem.Core.Prefabs;
 using Game;
 using Game.Common;
 using Game.SceneFlow;
@@ -15,7 +13,6 @@ namespace CS2AreaSystem.Core.Persistence
         private readonly AreaLoadSequence sequence = new AreaLoadSequence();
         private AreaCoreServicesSystem services;
         private AreaMembershipSystem membership;
-        private AreaPrefabRegistrationSystem registration;
         private Game.Areas.SearchSystem search;
         private EntityQuery ids, areas;
         private bool loadingComplete = true;
@@ -26,7 +23,6 @@ namespace CS2AreaSystem.Core.Persistence
             base.OnCreate();
             services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
             membership = World.GetOrCreateSystemManaged<AreaMembershipSystem>();
-            registration = World.GetOrCreateSystemManaged<AreaPrefabRegistrationSystem>();
             search = World.GetOrCreateSystemManaged<Game.Areas.SearchSystem>();
             ids = GetEntityQuery(ComponentType.ReadOnly<ManagedAreaStableId>());
             areas = GetEntityQuery(new EntityQueryDesc {
@@ -34,15 +30,16 @@ namespace CS2AreaSystem.Core.Persistence
                 None = new[] {ComponentType.ReadOnly<Deleted>(),ComponentType.ReadOnly<Temp>()}
             });
         }
-        protected override void OnGamePreload(Purpose purpose, GameMode mode)
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
         {
             loadingComplete = false; sequence.Reset(); membership.RequestRebuild();
         }
-        protected override void OnGameLoadingComplete(Purpose purpose, GameMode mode) => loadingComplete = true;
+        protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) => loadingComplete = true;
         protected override void OnUpdate()
         {
-            if (!RebuildPending || !loadingComplete || GameManager.instance.isGameLoading || !registration.IsReady) return;
-            // Called after native ModificationEnd search updates. Complete their jobs before recovering.
+            if (!RebuildPending || !loadingComplete || GameManager.instance.isGameLoading) return;
+            // Existing managed state can recover independently from toolbar exposure or an unrelated
+            // area type's prefab readiness. Native search geometry is the authoritative readiness gate.
             search.GetSearchTree(true, out var dependency, out var triangleCounts); dependency.Complete();
             using var entities = areas.ToEntityArray(Allocator.Temp);
             foreach (var area in entities)

@@ -43,11 +43,23 @@ namespace CS2AreaSystem.Core.Anchors
         public void InvalidateAnchor(Entity anchor)
         { if (byAnchor.TryGetValue(anchor, out var areas)) dirty.UnionWith(areas); }
         public void InvalidateArea(Entity area) => dirty.Add(area);
+        public void ForgetArea(Entity area)
+        {
+            var old = store.Read(area);
+            Reindex(area, old, Array.Empty<AreaAnchorLink>());
+            // Keep one final validation queued so module deletion hooks/state transitions can run.
+            dirty.Add(area);
+        }
         public Entity[] DrainDirty() { var result = dirty.ToArray(); dirty.Clear(); return result; }
         private void Reindex(Entity area, IReadOnlyList<AreaAnchorLink> old, IReadOnlyList<AreaAnchorLink> links)
         {
             foreach (var link in old) if (byAnchor.TryGetValue(link.Anchor, out var areas)) { areas.Remove(area); if (areas.Count == 0) byAnchor.Remove(link.Anchor); }
-            foreach (var link in links) { if (!byAnchor.TryGetValue(link.Anchor, out var areas)) byAnchor[link.Anchor] = areas = new HashSet<Entity>(); areas.Add(area); }
+            foreach (var link in links)
+            {
+                if (!valid(link.Anchor)) continue;
+                if (!byAnchor.TryGetValue(link.Anchor, out var areas)) byAnchor[link.Anchor] = areas = new HashSet<Entity>();
+                areas.Add(area);
+            }
         }
     }
     public sealed class EntityAreaAnchorStore : IAreaAnchorStore
