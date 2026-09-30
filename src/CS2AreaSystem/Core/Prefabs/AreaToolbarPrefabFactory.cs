@@ -4,11 +4,13 @@ namespace CS2AreaSystem.Core.Prefabs
 {
     public sealed class AreaToolbarPrefabFactory
     {
+        public const string MenuName = "CS2AS Areas Menu";
+        public const string CategoryName = "CS2AS Area Types";
         public static bool ShouldAttach(bool hostAvailable) => hostAvailable;
         public UIAssetMenuPrefab CreateAreasMenu(UIToolbarGroupPrefab hostGroup)
         {
             var menu = ScriptableObject.CreateInstance<UIAssetMenuPrefab>();
-            menu.name = "CS2AS Areas Menu";
+            menu.name = MenuName;
             var ui = menu.AddComponent<UIObject>();
             ui.m_Group = hostGroup;
             ui.m_Priority = 90;
@@ -18,7 +20,7 @@ namespace CS2AreaSystem.Core.Prefabs
         public UIAssetCategoryPrefab CreateAreaTypesCategory(UIAssetMenuPrefab menu)
         {
             var category = ScriptableObject.CreateInstance<UIAssetCategoryPrefab>();
-            category.name = "CS2AS Area Types";
+            category.name = CategoryName;
             category.m_Menu = menu;
             var ui = category.AddComponent<UIObject>();
             ui.m_Priority = 0;

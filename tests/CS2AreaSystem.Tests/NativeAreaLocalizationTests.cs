@@ -27,8 +27,11 @@ public class NativeAreaLocalizationTests {
   keys.AddRange(Enum.GetNames(typeof(AreaLifecycleState)).Select(state=>"CS2AS.State."+state));
   foreach(var kind in new[]{AreaTypeId.Park,AreaTypeId.Industrial,AreaTypeId.Tourism}) {
    var d=CS2AreaSystem.Core.Prefabs.ManagedAreaPrefabFactory.Describe(kind);
-   keys.Add(d.DisplayNameKey); keys.Add("Assets.NAME["+d.PrefabName+"]");
+   keys.Add(d.DisplayNameKey); keys.Add("Assets.NAME["+d.PrefabName+"]"); keys.Add("Assets.DESCRIPTION["+d.PrefabName+"]");
   }
+  // Native toolbar tooltip keys for the menu button and category tab.
+  var menu=CS2AreaSystem.Core.Prefabs.AreaToolbarPrefabFactory.MenuName; var category=CS2AreaSystem.Core.Prefabs.AreaToolbarPrefabFactory.CategoryName;
+  keys.AddRange(new[]{"Assets.NAME["+menu+"]","Services.NAME["+menu+"]","Services.DESCRIPTION["+menu+"]","Assets.NAME["+category+"]","SubServices.NAME["+category+"]","Assets.SUB_SERVICE_DESCRIPTION["+category+"]"});
   var uiSource=Path.Combine(TestContext.CurrentContext.TestDirectory,"../../../../../UI/src");
   var panel=string.Join("\n",Directory.GetFiles(uiSource,"*.tsx").Where(f=>!f.EndsWith(".test.tsx")).Select(File.ReadAllText));
   keys.AddRange(System.Text.RegularExpressions.Regex.Matches(panel,@"'(CS2AS\.[A-Za-z.]+)'").Select(m=>m.Groups[1].Value));

@@ -1,15 +1,26 @@
 using System;
 using System.Collections.Generic;
+using CS2AreaSystem.Core.Prefabs;
 namespace CS2AreaSystem.Core.UI
 {
     public static class NativeAreaLocalization
     {
         public static Dictionary<string,string> Entries(string locale)
         {
+            const string menu = AreaToolbarPrefabFactory.MenuName, category = AreaToolbarPrefabFactory.CategoryName;
             bool ja = locale != null && locale.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
             return new Dictionary<string,string> {
-                ["Assets.NAME[CS2AS Areas Menu]"] = ja ? "エリア" : "Areas",
-                ["Assets.NAME[CS2AS Area Types]"] = ja ? "エリアの種類" : "Area Types",
+                ["Assets.NAME[" + menu + "]"] = ja ? "エリア" : "Areas",
+                ["Assets.NAME[" + category + "]"] = ja ? "エリアの種類" : "Area Types",
+                // Native toolbar tooltips (1.6.2f1 UI): menu button uses Services.*, category tab SubServices.NAME,
+                // category details Assets.SUB_SERVICE_DESCRIPTION and asset details Assets.DESCRIPTION.
+                ["Services.NAME[" + menu + "]"] = ja ? "エリア" : "Areas",
+                ["Services.DESCRIPTION[" + menu + "]"] = ja ? "公園・産業・観光の管理エリアを作成します。管理境界は既存の建物や道路を消しません。" : "Create Park, Industrial and Tourism management areas. Boundaries never clear existing buildings or roads.",
+                ["SubServices.NAME[" + category + "]"] = ja ? "エリアの種類" : "Area Types",
+                ["Assets.SUB_SERVICE_DESCRIPTION[" + category + "]"] = ja ? "作成する管理エリアの種類を選びます。" : "Choose the kind of management area to draw.",
+                ["Assets.DESCRIPTION[CS2AS.ParkArea]"] = ja ? "公園エリアの境界を描きます。エリア内の既存の建物を入口に割り当てると稼働します。" : "Draw a Park Area boundary. It becomes active once an existing building inside it is assigned as the entrance.",
+                ["Assets.DESCRIPTION[CS2AS.IndustrialArea]"] = ja ? "産業エリアの境界を描きます。エリア内の既存の建物を本部に割り当てると稼働します。" : "Draw an Industrial Area boundary. It becomes active once an existing building inside it is assigned as the headquarters.",
+                ["Assets.DESCRIPTION[CS2AS.TourismArea]"] = ja ? "観光エリアの境界を描きます。完成するとすぐに稼働します。" : "Draw a Tourism Area boundary. It becomes active as soon as it is completed.",
                 ["Assets.NAME[CS2AS.ParkArea]"] = ja ? "公園エリア" : "Park Area",
                 ["Assets.NAME[CS2AS.IndustrialArea]"] = ja ? "産業エリア" : "Industrial Area",
                 ["Assets.NAME[CS2AS.TourismArea]"] = ja ? "観光エリア" : "Tourism Area",

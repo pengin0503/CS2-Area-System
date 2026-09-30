@@ -40,6 +40,11 @@ namespace CS2AreaSystem.Core.Prefabs
             }
         }
         public bool IsTypeReady(int typeId) => readiness.IsReady(typeId);
+        // Toolbar prefabs registered by this system and a version bumped whenever their contents change, so
+        // AreaToolbarUnlockSystem can publish the change to the vanilla toolbar (see that system).
+        public UIAssetMenuPrefab Menu => menu;
+        public UIAssetCategoryPrefab Category => category;
+        public int ToolbarVersion { get; private set; }
         [Preserve]
         protected override void OnCreate()
         {
@@ -184,6 +189,7 @@ namespace CS2AreaSystem.Core.Prefabs
                         EntityManager.SetComponentData(areaPrefabEntity, new UIObjectData { m_Group = categoryEntity, m_Priority = priority });
                         category.AddElement(EntityManager, areaPrefabEntity);
                         toolbarTypes.Add(type.TypeId);
+                        ToolbarVersion++;
                         toolbarItemFailureLogged.Remove(type.TypeId);
                     }
                     catch (Exception error)
