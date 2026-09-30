@@ -1,4 +1,4 @@
-# CS2 Area System — Area Core
+# CS2 Area System — Area Core and Park Area v1
 
 Targets Cities: Skylines II **1.6.2f1**. Area Core source implements Park, Industrial and Tourism management boundaries using native `AreaToolSystem`, `SpacePrefab` (an `AreaPrefab`) and native toolbar/asset-menu data. Detailed visitor, production and tourism simulation is outside this implementation.
 
@@ -28,6 +28,10 @@ This profile targets net8, uses the actual game references, and deliberately ski
 ## Run and required game verification
 
 Use an official-toolchain build in a fresh 1.6.2f1 session. Open **Areas → Area Types**, select one of the three kinds and use native area controls. Completed areas are not selectable with the vanilla default tool, so open **Managed areas** (top right) and pick an area. The game's own selected-info panel opens, like for a district: its header shows and renames the area and offers locate, and the area section below shows type, status, entrance/headquarters and progress with Edit/Delete. For Park/Industrial, choose Assign entrance/headquarters in that section, then click an existing vanilla building inside that area (a hint with Cancel stays on screen meanwhile). Tourism requires no anchor. Reassign facilities through the same flow. A management boundary does not place or clear normal city assets.
+
+## Park Area v1
+
+A Park activates with one or more entrances: park, leisure or attraction buildings inside it (several entrances improve Accessibility; props and arbitrary buildings are rejected). The Park observes real vanilla leisure: citizens doing leisure at its park/leisure/attraction buildings become visits (residents and tourists separately). Overlapping Parks count a visit only in the Park with the smaller stable ID. Park Quality (0–100) combines Visitor Satisfaction 25%, Attractiveness 20%, Accessibility 15%, Variety 15%, Maintenance 15% and Comfort 10%; landscape (vegetation, rest amenities, decoration, lighting, footpaths) is analyzed inside the Park only, with diminishing returns for repeated objects. Visits and strong Quality earn XP; five levels (Local, Neighborhood, City, Major, Landmark Park) never demote. The Park budget (50–150%) pays an area-management cost from city money and drives Maintenance; from Level 2 an admission fee moves real household money to the city once per visit (never below zero). The selected-info panel shows Overview, Visitors, Finances, Landscape and Progress tabs. v1 does not change citizens' destination choice, happiness, land value, demand or vanilla tourism, and has no Park policies or events. Park runtime checks are listed in [the smoke checklist](scripts/runtime-smoke-checklist.md) and have **not been run**.
 
 Behaviour options (managed area list, camera focus, panel side, delete confirmation, whether managed areas may overlap) are in **Options → CS2 Area System**.
 

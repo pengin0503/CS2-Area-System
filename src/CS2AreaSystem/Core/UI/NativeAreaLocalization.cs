@@ -18,7 +18,7 @@ namespace CS2AreaSystem.Core.UI
                 ["Services.DESCRIPTION[" + menu + "]"] = ja ? "公園・産業・観光の管理エリアを作成します。管理境界は既存の建物や道路を消しません。" : "Create Park, Industrial and Tourism management areas. Boundaries never clear existing buildings or roads.",
                 ["SubServices.NAME[" + category + "]"] = ja ? "エリアの種類" : "Area Types",
                 ["Assets.SUB_SERVICE_DESCRIPTION[" + category + "]"] = ja ? "作成する管理エリアの種類を選びます。" : "Choose the kind of management area to draw.",
-                ["Assets.DESCRIPTION[CS2AS.ParkArea]"] = ja ? "公園エリアの境界を描きます。エリア内の既存の建物を入口に割り当てると稼働します。" : "Draw a Park Area boundary. It becomes active once an existing building inside it is assigned as the entrance.",
+                ["Assets.DESCRIPTION[CS2AS.ParkArea]"] = ja ? "公園エリアの境界を描きます。エリア内の公園・余暇施設・観光名所の建物を入口に割り当てると稼働します。入口は複数設定できます。" : "Draw a Park Area boundary. It becomes active once a park, leisure or attraction building inside it is assigned as an entrance. Several entrances are allowed.",
                 ["Assets.DESCRIPTION[CS2AS.IndustrialArea]"] = ja ? "産業エリアの境界を描きます。エリア内の既存の建物を本部に割り当てると稼働します。" : "Draw an Industrial Area boundary. It becomes active once an existing building inside it is assigned as the headquarters.",
                 ["Assets.DESCRIPTION[CS2AS.TourismArea]"] = ja ? "観光エリアの境界を描きます。完成するとすぐに稼働します。" : "Draw a Tourism Area boundary. It becomes active as soon as it is completed.",
                 ["Assets.NAME[CS2AS.ParkArea]"] = ja ? "公園エリア" : "Park Area",
@@ -59,12 +59,15 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.RemoveEntrance"] = ja ? "解除" : "Remove",
                 ["CS2AS.UI.ChangeEntrance"] = ja ? "入口を変更" : "Change entrance",
                 ["CS2AS.UI.ChangeHeadquarters"] = ja ? "本部を変更" : "Change headquarters",
-                ["CS2AS.UI.SelectEntrance"] = ja ? "このエリア内の既存の建物をクリックして入口に割り当ててください。" : "Click an existing building inside this area to assign it as the entrance.",
+                ["CS2AS.UI.SelectEntrance"] = ja ? "このエリア内の公園・余暇施設・観光名所の建物をクリックして入口に追加してください。" : "Click a park, leisure or attraction building inside this area to add it as an entrance.",
                 ["CS2AS.UI.SelectHeadquarters"] = ja ? "このエリア内の既存の建物をクリックして本部に割り当ててください。" : "Click an existing building inside this area to assign it as the headquarters.",
                 ["CS2AS.UI.AreaList"] = ja ? "管理エリア一覧" : "Managed areas",
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };
+            entries["CS2AS.UI.Met"] = ja ? "達成" : "Met";
+            entries["CS2AS.UI.NotMet"] = ja ? "未達成" : "Not met";
             CS2AreaSystem.Core.Settings.AreaSettingsLocalization.Append(entries, ja);
+            CS2AreaSystem.Modules.Park.ParkLocalization.Append(entries, ja);
             return entries;
         }
     }

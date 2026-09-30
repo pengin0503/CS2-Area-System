@@ -7,6 +7,8 @@ namespace CS2AreaSystem.Core.Modules
     public static class AreaPanelItemKind
     {
         public const string Row = "row", Bar = "bar", Warning = "warning", Note = "note", Slider = "slider", Button = "button";
+        // Requirement row: Value is "current / required", NumericValue 1 when met and 0 when not.
+        public const string Check = "check";
     }
     public sealed class AreaPanelItem
     {

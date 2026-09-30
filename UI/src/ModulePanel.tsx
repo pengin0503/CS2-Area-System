@@ -41,6 +41,9 @@ function Item({item,text,send}:ItemProps){
    <div role="progressbar" aria-label={label} aria-valuemin={min} aria-valuemax={max} aria-valuenow={value} className={styles.barTrack}>
     <div className={styles.barFill} style={{width:`${Math.round(ratio*100)}%`}}/></div>
   </div>;}
+ case 'check':{
+  const met=item.numericValue===1;
+  return <InfoRow left={text(item.labelKey)} right={`${valueText(item,text)} · ${text(met?'CS2AS.UI.Met':'CS2AS.UI.NotMet')}`} tooltip={tooltip} className={met?styles.met:styles.unmet}/>;}
  case 'warning':return <div role="alert" className={styles.warning} title={tooltip}>{text(item.labelKey)}{item.value?` ${item.value}`:''}</div>;
  case 'note':return <p role="note" className={styles.note}>{text(item.labelKey)}</p>;
  case 'slider':return <SliderItem item={item} text={text} send={send}/>;

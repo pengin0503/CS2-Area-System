@@ -18,3 +18,32 @@ Status: **NOT RUN**. Start a fresh 1.6.2f1 session with an official-toolchain bu
 12. Open the Areas toolbar menu in a fresh session and after loading a save: the **Area Types** tab (with icon) and the Park/Industrial/Tourism assets must be listed. Hovering the menu button, the tab and each asset must show a localized tooltip. Then open **Options → CS2 Area System**: every option has a localized label/description; toggling each option (list visibility, camera focus, panel side, delete confirmation, managed overlap) takes effect without restarting and persists after restarting the game (`Settings/ModsSettings/CS2AreaSystem/CS2AreaSystem.coc`).
 
 Diagnostic access: ECS systems expose `AreaMembershipSystem.FullRebuildCount`, `IncrementalMemberUpdateCount`, `IncrementalAreaUpdateCount`, `Index.GetAreas(member)`, `Index.GetMembers(stableId)` and `AreaLoadCoordinatorSystem.RebuildPending`. Use the mod/debug tooling; there is no diagnostics UI in v1.
+
+# Park Area v1 — Cities: Skylines II 1.6.2f1 runtime verification
+
+Status: **NOT RUN — pending runtime verification.** None of the items below has been executed in the game. The automated evidence (NUnit models/state/contracts, Vitest panel tests, net8 API-check build against the supplied 1.6.2f1 DLLs) does not establish any of them. Record game version, save, city size and observations for each item; do not commit saves.
+
+Diagnostic access: `ParkRuntimeSystem.Store` (per-Park landscape/facility/quality/visitor snapshots), `ParkVisitSystem.Tracker` (`SessionCount`, `ActiveCount(id)`), `ParkVisitSystem.ObservedLastUpdate`, `ParkLandscapeSystem.ScanCount`, plus the Park tabs in the selected-info panel.
+
+1. Draw a Park Area with no Entrance → **Suspended**; Overview shows the NoEntrance warning; Level/XP rows show Level 1 / 0.
+2. Assign an eligible Entrance (a park, leisure or attraction building inside the area) → **Active**. Try an unrelated building (house, office, factory) and a building outside the area: both must be rejected and the assignment stays pending.
+3. Add a second valid Entrance (Add entrance) → remains Active, the entrance list shows both, Accessibility rises (more for entrances far apart than for two adjacent ones).
+4. Remove the first Entrance with its Remove button (or demolish it) → remains Active while the second survives.
+5. Remove/demolish all Entrances → **Suspended**; Level, XP, lifetime visitors, admission settings, budget and statistics are unchanged; no management cost is charged and no XP is earned while suspended.
+6. Add real park/leisure/attraction buildings inside → Facility categories, Attractiveness and Variety change within a few in-game minutes. Unrelated buildings inside must not change them.
+7. Place trees, benches/tables, statues/fountains, lamps and footpaths → Landscape tab categories change after the next scan; `AreaMembershipSystem.Index.GetMembers(id)` still contains buildings only (no trees/props).
+8. Spam one tree prefab (hundreds) → Vegetation saturates rather than growing linearly; extreme density shows the clutter warning with a bounded penalty.
+9. Watch real citizens doing leisure at member park/leisure/attraction buildings → Visitors now / Visits (last day) / Total visits increase; satisfaction starts near 50 and moves as visits complete.
+10. Workers at unrelated member buildings and residents living inside the boundary, and people only walking through, must not produce visits.
+11. Tourists (households with `TouristHousehold`) are counted under Tourist visits, residents under Resident visits.
+12. Create two overlapping Park Areas sharing a facility → the visit is counted, charged and awarded XP only in the Park with the smaller stable ID; the other Park shows the "overlaps another Park" warning.
+13. Put the Park inside a Tourism Area → Park counts are unchanged; the Park's Tourism contribution value is shown and vanilla tourism/attractiveness is not modified.
+14. Reach Level 2 (Neighborhood Park), set an admission fee → for a new visit the visitor household's money decreases by exactly the collected amount and city money increases by the same amount, once per visit (verify with a small city and the household/city money values). A household without enough money pays at most what it has and never goes below zero.
+15. Free Park (fee 0, or any fee while Level 1) charges nothing; the fee slider is disabled at Level 1.
+16. Raise the fee on a mediocre Park → Value-for-money (and thus satisfaction of new visits) falls, while where citizens choose to go is not intentionally changed (no destination filtering).
+17. Change the Park budget 50% ↔ 150% → Area management cost per day and money paid change proportionally; Maintenance falls below 100% and rises with diminishing returns above; no other Quality metric changes directly. Vanilla upkeep of the member buildings is not charged again (compare the vanilla budget panel).
+18. Save and reload → admission fee, lifetime totals, satisfaction, Level/XP, budget, entrances and promotion hold are preserved; landscape/facility/quality values rebuild within a few in-game minutes (Calculating/neutral in between); recent statistics restart.
+19. Save while a paid visit is in progress and reload → that visitor is not charged again until a genuinely new visit.
+20. Large city profiling (100k+ population, several Parks): no noticeable frame-time increase; `ParkVisitSystem` processes one of 16 citizen groups every 64 simulation frames and never scans all citizens × all Parks; `ParkLandscapeSystem` scans at most one Park every 8 frames.
+
+Additional UI checks: all five Park tabs render in ja-JP and en-US without raw `CS2AS.*` keys; the vanilla slider (or the +/− fallback) sends budget/fee changes only for the selected Park; a failing Park tab hides only that tab content while Type/Status/Edit/Delete keep working. Park Policies/ordinances and Events/Festivals are intentionally absent in v1.
