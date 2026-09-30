@@ -53,3 +53,36 @@ public class ParkFinanceModelTests {
   Assert.That(state.LifetimeAdmissionRevenue, Is.EqualTo(7)); Assert.That(state.LifetimeManagementExpense, Is.EqualTo(120));
  }
 }
+public class ParkAdmissionTests {
+ [Test] public void LevelOneAndFreeParksCollectNothing() {
+  Assert.That(ParkFinanceModel.PlanAdmission(1, 40, 1000).Collected, Is.Zero);
+  Assert.That(ParkFinanceModel.PlanAdmission(3, 0, 1000).Collected, Is.Zero);
+  Assert.That(ParkFinanceModel.PlanAdmission(3, 0, 1000).Requested, Is.Zero);
+ }
+ [TestCase(20, 100, 20, 0)] [TestCase(20, 7, 7, 13)] [TestCase(20, 0, 0, 20)] [TestCase(20, -300, 0, 20)]
+ public void PaidParksCollectAtMostTheAvailableMoney(int fee, long money, long collected, long uncollected) {
+  var plan = ParkFinanceModel.PlanAdmission(2, fee, money);
+  Assert.That(plan.Requested, Is.EqualTo(fee)); Assert.That(plan.Collected, Is.EqualTo(collected)); Assert.That(plan.Uncollected, Is.EqualTo(uncollected));
+  Assert.That(plan.HouseholdDelta, Is.EqualTo(-plan.CityDelta), "money moves, it is never created");
+  Assert.That(Math.Max(0, money) + plan.HouseholdDelta, Is.GreaterThanOrEqualTo(0));
+ }
+ [Test] public void OneSessionIsChargedOnceEvenIfTheStartIsSeenTwice() {
+  var tracker = new ParkVisitTracker(ParkVisitCadence.GraceFrames); var events = new List<ParkVisitEvent>();
+  var citizen = new Unity.Entities.Entity { Index = 5, Version = 1 };
+  tracker.Observe(citizen, 7, false, 50, 100, events);
+  long collected = 0;
+  foreach (var e in events.Concat(events))
+   if (!e.FeeSatisfied && tracker.TryBeginAdmission(e.Citizen, e.ParkId)) collected += ParkFinanceModel.PlanAdmission(2, 15, 1000).Collected;
+  Assert.That(collected, Is.EqualTo(15));
+ }
+ [Test] public void SettlementElapsedTimeIsBoundedAfterJumps() {
+  Assert.That(ParkFinanceModel.ElapsedForSettlement(1000, 5096, 8192), Is.EqualTo(4096u));
+  Assert.That(ParkFinanceModel.ElapsedForSettlement(1000, 900_000, 8192), Is.EqualTo(8192u), "no huge back-charge after a time jump");
+  Assert.That(ParkFinanceModel.ElapsedForSettlement(5000, 1000, 8192), Is.Zero, "frame reset (load) charges nothing");
+ }
+ [Test] public void SuspendedParksPayNoAreaManagement() {
+  Assert.That(ParkFinanceModel.ShouldSettleManagement(Core.Areas.AreaLifecycleState.Active), Is.True);
+  Assert.That(ParkFinanceModel.ShouldSettleManagement(Core.Areas.AreaLifecycleState.Suspended), Is.False);
+  Assert.That(ParkFinanceModel.ShouldSettleManagement(Core.Areas.AreaLifecycleState.ModuleUnavailable), Is.False);
+ }
+}

@@ -65,6 +65,7 @@ namespace CS2AreaSystem.Modules.Park
         public int ActiveVisitors;
         // Finance settlement remainder (runtime only; at most one currency unit is lost across a load).
         public double ExpenseCarry;
+        public float ManagementNeedPerDay, ManagementCostPerDay;
     }
     public sealed class ParkRuntimeStore
     {

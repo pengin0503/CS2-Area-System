@@ -9,6 +9,13 @@ namespace CS2AreaSystem.Modules.Park
         public float AreaSquareMeters, VisitorsPerDay;
         public int LandscapeObjects, ManagedFacilities;
     }
+    public struct ParkAdmissionPlan
+    {
+        public long Requested, Collected;
+        public long Uncollected => Requested - Collected;
+        public long HouseholdDelta => -Collected;
+        public long CityDelta => Collected;
+    }
     public static class ParkFinanceModel
     {
         public const uint FramesPerDay = 262144;
@@ -28,6 +35,18 @@ namespace CS2AreaSystem.Modules.Park
         // Collect at most what the household can pay; never drive its money below zero (design §15.3).
         public static long ComputeCollectibleAdmission(long requestedFee, long availableHouseholdMoney) =>
             requestedFee <= 0 || availableHouseholdMoney <= 0 ? 0 : Math.Min(requestedFee, availableHouseholdMoney);
+        // One admission per session: Level-gated fee, collected from real household money into city money.
+        public static ParkAdmissionPlan PlanAdmission(int level, int storedFee, long householdMoney)
+        {
+            long fee = EffectiveFee(level, storedFee);
+            return new ParkAdmissionPlan { Requested = fee, Collected = ComputeCollectibleAdmission(fee, householdMoney) };
+        }
+        // Frames to settle since the previous settlement, capped so a time jump or load never back-charges.
+        public static uint ElapsedForSettlement(uint lastFrame, uint frame, uint maxFrames) =>
+            frame <= lastFrame ? 0u : Math.Min(maxFrames, frame - lastFrame);
+        // Area management is an operating cost of Active Parks only.
+        public static bool ShouldSettleManagement(CS2AreaSystem.Core.Areas.AreaLifecycleState state) =>
+            state == CS2AreaSystem.Core.Areas.AreaLifecycleState.Active;
         // Free parks have no price penalty; a high-quality Park tolerates a higher fee (design §9.6).
         public static float ComputeValueForMoney(int fee, float quality)
         {
