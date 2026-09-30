@@ -30,3 +30,22 @@ Test corrections made during Task 3 (the tests, not the rules, were wrong): the 
 - `scripts/verify.ps1 -ApiCheck`: exit 0 — source/provenance guards, MSBuild JSON tests, build-contract tests, offline contracts, NUnit 222/222, net8 API-check build 0 warnings/0 errors, Vitest 46/46, webpack production build.
 - Separate net48 API compile of the committed source against the supplied DLLs (Microsoft .NET Framework 4.8 reference assemblies): 0 warnings/0 errors.
 - Neither compile is a playable mod; see `scripts/runtime-smoke-checklist.md` (Park section, 20 items, all NOT RUN).
+
+## Review follow-up (issues #20–#29)
+
+A whole-branch review filed #20–#30; all except #30 (in-game verification, cannot be done here) were fixed in the requested order, each RED → GREEN:
+
+| Issue | Commit | Change |
+| --- | --- | --- |
+| #20 | `78866a0` | money transfers in a scheduled `IJob`; visit observation in an `IJobChunk`; `Renter`-free entrance/visit traits (sync behavior verified in the supplied `Unity.Entities.dll`) |
+| #21 | `9024688` | ineligible/demolished entrances listed and removable; explanatory summary |
+| #24 | `4ba776e` | no satisfaction samples before the first Quality evaluation; unevaluated Parks evaluated first |
+| #22 | `f9ab7e8` | Decoration only for vanilla PropsPark/PropsStone menu props |
+| #23 | `4c99ad1` | transit counted as distinct access points and modes |
+| #25 | `f0602bd` | unpaid admission as a rolling day, shown in Finances |
+| #26 | `116995f` | no duplicate Level/XP rows (`ShowsProgress`) |
+| #27 | `8af6705` | triangle-bounds prefilter for landscape point queries |
+| #29 | `41c0e72` | footpaths reaching entrances (6% of Accessibility) |
+| #28 | `1ae1b94` | C#-generated UI fixture, Park offline contracts, dispatcher tests |
+
+Final `scripts/verify.ps1 -ApiCheck`: exit 0 — NUnit 250/250, Vitest 52/52, guards/contracts, net8 API build 0/0. Separate net48 API compile 0/0. Runtime items (including new item 21 and the prop-menu/transit/job assumptions) remain NOT RUN (#30).
