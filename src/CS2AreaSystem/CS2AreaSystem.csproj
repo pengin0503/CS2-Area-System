@@ -21,7 +21,7 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Game;Colossal.Collections;Colossal.Core;Colossal.Logging;Colossal.Localization;Colossal.UI.Binding;Colossal.IO.AssetDatabase;Unity.Entities;Unity.Collections;Unity.Mathematics;UnityEngine.CoreModule;UnityEngine.AudioModule;Unity.Burst;Unity.Jobs;Colossal.Mathematics">
+    <Reference Include="Game;Colossal.Collections;Colossal.Core;Colossal.Logging;Colossal.Localization;Colossal.UI.Binding;Colossal.IO.AssetDatabase;Unity.Entities;Unity.Collections;Unity.Mathematics;UnityEngine.CoreModule;UnityEngine.AudioModule;Unity.Burst;Colossal.Mathematics">
       <HintPath>$(ManagedPath)/%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>
@@ -41,6 +41,8 @@
     <PropertyGroup><NeedBuild>false</NeedBuild></PropertyGroup>
     <Message Importance="high" Text="API-check profile: compiles against supplied game DLLs; no Unity postprocessing or game deployment. This output is not a playable mod." />
     <Error Condition="!Exists('$(ManagedPath)/Game.dll')" Text="Set CSII_MANAGEDPATH to the supplied 1.6.2f1 Managed DLL directory." />
+    <!-- Every explicit game reference must exist in the target-version Managed set (no speculative assemblies). -->
+    <Error Condition="'%(Reference.HintPath)' != '' AND !Exists('%(Reference.HintPath)')" Text="Game reference %(Reference.Identity) does not exist in the 1.6.2f1 Managed set: %(Reference.HintPath)" />
   </Target>
   <Target Name="BuildAreaUI" BeforeTargets="BeforeBuild">
     <PropertyGroup><AreaUIPath>$(MSBuildProjectDirectory)/../../UI</AreaUIPath></PropertyGroup>
