@@ -14,6 +14,7 @@ namespace CS2AreaSystem
         // ModManager creates IMod instances with FormatterServices.GetUninitializedObject:
         // constructors and instance field initializers never run, so state is created in OnLoad.
         private LocalizationSourceRegistration<MemorySource> locales;
+        private CS2AreaSystem.Core.Settings.AreaSystemSettings settings;
         internal static readonly ILog Log = LogManager.GetLogger(nameof(CS2AreaSystem));
         public void OnLoad(UpdateSystem updateSystem)
         {
@@ -27,12 +28,21 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
             RegisterLocalization();
+            RegisterSettings();
             try { updateSystem.UpdateAfter<AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
             catch (System.Exception error) { Log.Error(error, "Area management UI registration failed; simulation remains registered."); }
         }
         public void OnDispose()
         {
             CS2AreaSystem.Core.Persistence.ComponentSchema.ReportUnsupported = null;
+            CS2AreaSystem.Core.Settings.AreaSettings.Use(null);
+            var registeredSettings = settings;
+            settings = null;
+            if (registeredSettings != null)
+            {
+                try { registeredSettings.UnregisterInOptionsUI(); }
+                catch (System.Exception error) { Log.Error(error, "Area settings unregistration failed"); }
+            }
             var registered = locales;
             locales = null;
             if (registered == null || registered.Count == 0) return;
@@ -40,6 +50,19 @@ namespace CS2AreaSystem
             var localization = manager == null ? null : manager.localizationManager;
             if (localization == null) return;
             registered.Unregister(localization.RemoveSource, (locale, error) => Log.Error(error, "Area localization removal failed: " + locale));
+        }
+        private void RegisterSettings()
+        {
+            try
+            {
+                var created = new CS2AreaSystem.Core.Settings.AreaSystemSettings(this);
+                Colossal.IO.AssetDatabase.AssetDatabase.global.LoadSettings(nameof(CS2AreaSystem), created, new CS2AreaSystem.Core.Settings.AreaSystemSettings(this));
+                created.RegisterInOptionsUI();
+                settings = created;
+                CS2AreaSystem.Core.Settings.AreaSettings.Use(created);
+            }
+            // Defaults stay in effect; the mod keeps working without its options page.
+            catch (System.Exception error) { Log.Error(error, "Area settings unavailable; defaults are used"); }
         }
         private void RegisterLocalization()
         {

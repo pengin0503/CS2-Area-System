@@ -56,7 +56,8 @@ namespace CS2AreaSystem.Core.Prefabs
         {
             try
             {
-                if (tools.activeTool != areaTool || areaTool.prefab == null || tools.actionMode.IsEditor() ||
+                if (!CS2AreaSystem.Core.Settings.AreaSettings.Current.AllowManagedAreaOverlap ||
+                    tools.activeTool != areaTool || areaTool.prefab == null || tools.actionMode.IsEditor() ||
                     !TryDescribePrefab(prefabs.GetEntity(areaTool.prefab), out _) || previews.IsEmptyIgnoreFilter) return;
                 ApplyManagedPolicy();
             }
@@ -143,7 +144,9 @@ namespace CS2AreaSystem.Core.Prefabs
                 { type = descriptor; return true; }
             return false;
         }
-        private bool Permits(Entity first, Entity second) => TryDescribeArea(first, out var a) && TryDescribeArea(second, out var b) &&
+        // Option "Allow managed areas to overlap": when off, native overlap errors between managed areas remain.
+        private bool Permits(Entity first, Entity second) => CS2AreaSystem.Core.Settings.AreaSettings.Current.AllowManagedAreaOverlap &&
+            TryDescribeArea(first, out var a) && TryDescribeArea(second, out var b) &&
             a.Module != null && b.Module != null && a.Module.AllowsOverlapWith(b.TypeId) && b.Module.AllowsOverlapWith(a.TypeId);
     }
 }

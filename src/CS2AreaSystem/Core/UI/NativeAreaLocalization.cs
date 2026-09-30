@@ -9,7 +9,7 @@ namespace CS2AreaSystem.Core.UI
         {
             const string menu = AreaToolbarPrefabFactory.MenuName, category = AreaToolbarPrefabFactory.CategoryName;
             bool ja = locale != null && locale.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
-            return new Dictionary<string,string> {
+            var entries = new Dictionary<string,string> {
                 ["Assets.NAME[" + menu + "]"] = ja ? "エリア" : "Areas",
                 ["Assets.NAME[" + category + "]"] = ja ? "エリアの種類" : "Area Types",
                 // Native toolbar tooltips (1.6.2f1 UI): menu button uses Services.*, category tab SubServices.NAME,
@@ -56,6 +56,8 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.AreaList"] = ja ? "管理エリア一覧" : "Managed areas",
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };
+            CS2AreaSystem.Core.Settings.AreaSettingsLocalization.Append(entries, ja);
+            return entries;
         }
     }
 }

@@ -27,7 +27,8 @@ namespace CS2AreaSystem.Core.UI
         private Game.Audio.AudioManager audio;
         private EntityQuery soundSettings;
         private RawValueBinding selectedArea, areaList;
-        private ValueBinding<bool> visible, listAvailable, listOpen;
+        private ValueBinding<bool> visible, listAvailable, listOpen, confirmDelete;
+        private ValueBinding<string> panelSide;
         private EntityQuery managedAreas;
         private System.Collections.Generic.List<AreaListEntry> listView = new System.Collections.Generic.List<AreaListEntry>();
         private Entity published, pendingArea;
@@ -57,6 +58,8 @@ namespace CS2AreaSystem.Core.UI
             AddBinding(areaList = new RawValueBinding("cs2AreaSystem", "areaList", writer => AreaListViewModel.Write(writer, listView)));
             AddBinding(listAvailable = new ValueBinding<bool>("cs2AreaSystem", "areaListAvailable", false));
             AddBinding(listOpen = new ValueBinding<bool>("cs2AreaSystem", "areaListOpen", false));
+            AddBinding(confirmDelete = new ValueBinding<bool>("cs2AreaSystem", "confirmDelete", true));
+            AddBinding(panelSide = new ValueBinding<string>("cs2AreaSystem", "panelSide", "right"));
             AddBinding(new TriggerBinding<bool>("cs2AreaSystem", "setAreaListOpen", open => { listOpen.Update(open); if (!open) SetList(new System.Collections.Generic.List<AreaListEntry>()); }));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "selectArea", SelectArea));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
@@ -82,7 +85,11 @@ namespace CS2AreaSystem.Core.UI
             try
             {
                 if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) { Publish(Entity.Null); listAvailable.Update(false); return; }
-                listAvailable.Update(true);
+                var options = CS2AreaSystem.Core.Settings.AreaSettings.Current;
+                confirmDelete.Update(options.ConfirmAreaDeletion);
+                panelSide.Update(options.PanelSide == CS2AreaSystem.Core.Settings.AreaPanelSide.Left ? "left" : "right");
+                listAvailable.Update(options.ShowAreaList);
+                if (!options.ShowAreaList && listOpen.value) { listOpen.Update(false); SetList(new System.Collections.Generic.List<AreaListEntry>()); }
                 if (listOpen.value) PublishList();
                 var selected = selection.selectedEntity;
                 if (pendingArea != Entity.Null)
@@ -164,7 +171,7 @@ namespace CS2AreaSystem.Core.UI
                 if (!AreaListViewModel.TryFind(candidates, expectedId, out var selected) || !IsArea(selected)) return;
                 pendingArea = Entity.Null;
                 selection.SetSelection(selected);
-                selection.Focus(selected);
+                if (CS2AreaSystem.Core.Settings.AreaSettings.Current.FocusCameraOnSelect) selection.Focus(selected);
             }
             catch (Exception error) { Mod.Log.Error(error, "Area selection from the list rejected"); }
         }

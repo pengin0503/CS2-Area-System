@@ -1,5 +1,6 @@
 .host{position:absolute;right:var(--screenPadding,10rem);top:100rem;width:360rem;display:flex;flex-direction:column;pointer-events:none;}
 .host>*{pointer-events:auto;}
+.left{right:auto;left:var(--screenPadding,10rem);}
 .list{margin-bottom:8rem;color:var(--textColor,#fff);font-family:var(--fontFamily);font-size:var(--fontSizeM,16rem);
  background:linear-gradient(135deg,var(--panelColorNormal,rgba(42,55,83,.9)),var(--panelColorDark,rgba(24,33,51,.9)));border-radius:var(--panelRadius,4rem);
  button{width:100%;padding:8rem 12rem;color:inherit;background:var(--panelColorDark);border:1rem solid rgba(255,255,255,.12);border-radius:var(--panelRadiusInner,3rem);cursor:pointer;text-align:left;}

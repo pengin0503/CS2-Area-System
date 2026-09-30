@@ -6,7 +6,7 @@ import styles from './AreaManagementPanel.module.scss';
 import {localize} from './localization';
 import {AreaListPanel} from './AreaListPanel';
 
-export function AreaManagementPanel({area}:{area:AreaView}){
+export function AreaManagementPanel({area,requireDeleteConfirmation=true}:{area:AreaView;requireDeleteConfirmation?:boolean}){
  const {translate}=useLocalization();
  // Resolved on every render so a runtime locale change is reflected immediately.
  const text=(key:string)=>localize(translate,key);
@@ -29,7 +29,7 @@ export function AreaManagementPanel({area}:{area:AreaView}){
   </section>
   <div role="tablist" className={styles.tabs}>{area.tabs.map(item=><button role="tab" key={item.id} aria-selected={tab===item.id} onClick={()=>setTab(item.id)}>{text(item.labelKey)}</button>)}</div>
   <section role="tabpanel" className={styles.section}>{text(area.summary)}</section>
-  <footer className={styles.section}>{confirmDelete?<><span>{text('CS2AS.UI.DeleteConfirm')}</span><button onClick={()=>action('deleteArea')}>{text('CS2AS.UI.ConfirmDelete')}</button><button onClick={()=>setConfirmDelete(false)}>{text('CS2AS.UI.Cancel')}</button></>:<button onClick={()=>setConfirmDelete(true)}>{text('CS2AS.UI.DeleteArea')}</button>}</footer>
+  <footer className={styles.section}>{confirmDelete?<><span>{text('CS2AS.UI.DeleteConfirm')}</span><button onClick={()=>action('deleteArea')}>{text('CS2AS.UI.ConfirmDelete')}</button><button onClick={()=>setConfirmDelete(false)}>{text('CS2AS.UI.Cancel')}</button></>:<button onClick={()=>requireDeleteConfirmation?setConfirmDelete(true):action('deleteArea')}>{text('CS2AS.UI.DeleteArea')}</button>}</footer>
  </aside>;
 }
 // A render/binding failure hides only this panel. Retries use a capped exponential backoff so a transient
@@ -56,12 +56,16 @@ class PanelBoundary extends React.Component<React.PropsWithChildren,{failed:bool
  render(){return this.state.failed?null:this.props.children;}
 }
 function BoundPanel(){
- const bindings=getBindings();const area=useValue(bindings.selectedArea);const visible=useValue(bindings.panelVisible);
- return visible&&area?<AreaManagementPanel key={area.stableId} area={area}/>:null;
+ const bindings=getBindings();const area=useValue(bindings.selectedArea);const visible=useValue(bindings.panelVisible);const confirmDelete=useValue(bindings.confirmDelete);
+ return visible&&area?<AreaManagementPanel key={area.stableId} area={area} requireDeleteConfirmation={confirmDelete!==false}/>:null;
 }
 function BoundList(){
  const bindings=getBindings();const available=useValue(bindings.areaListAvailable);const open=useValue(bindings.areaListOpen);const areas=useValue(bindings.areaList);
  return available?<AreaListPanel open={open} areas={areas??[]}/>:null;
 }
 // The list and the management panel fail and recover independently.
-export function AreaManagementPanelHost(){return <div className={styles.host}><PanelBoundary><BoundList/></PanelBoundary><PanelBoundary><BoundPanel/></PanelBoundary></div>;}
+function Host({children}:React.PropsWithChildren){
+ const side=useValue(getBindings().panelSide)==='left'?'left':'right';
+ return <div className={side==='left'?`${styles.host} ${styles.left}`:styles.host}>{children}</div>;
+}
+export function AreaManagementPanelHost(){return <PanelBoundary><Host><PanelBoundary><BoundList/></PanelBoundary><PanelBoundary><BoundPanel/></PanelBoundary></Host></PanelBoundary>;}
