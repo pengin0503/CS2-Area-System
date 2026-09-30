@@ -1,9 +1,9 @@
 import React from 'react';
-import {render,screen,fireEvent} from '@testing-library/react';
+import {render,screen,fireEvent,act} from '@testing-library/react';
 import {describe,it,expect,vi,afterEach} from 'vitest';
-import {AreaManagementPanel,AreaManagementPanelHost} from './AreaManagementPanel';
+import {AreaManagementPanel,AreaManagementPanelHost,PANEL_RETRY_BASE_MS,PANEL_RETRY_MAX_MS} from './AreaManagementPanel';
 import type {AreaView} from './bindings';
-const binding=vi.hoisted(()=>({selected:null as unknown,visible:true,fail:false,trigger:vi.fn()}));
+const binding=vi.hoisted(()=>({selected:null as unknown,visible:true,fail:false,reads:0,trigger:vi.fn()}));
 const translations:Record<string,string>={
  'CS2AS.Type.Park':'Park Area','CS2AS.Type.Industrial':'Industrial Area','CS2AS.Type.Tourism':'Tourism Area',
  'CS2AS.Tab.Overview':'Overview','CS2AS.Summary.Active':'Active','CS2AS.Summary.AnchorRequired':'Assign a required facility to activate this area.',
@@ -13,10 +13,10 @@ const translations:Record<string,string>={
  'CS2AS.UI.CancelAssignment':'Cancel assignment','CS2AS.UI.DeleteArea':'Delete area','CS2AS.UI.DeleteConfirm':'Delete this management boundary?',
  'CS2AS.UI.ConfirmDelete':'Confirm delete','CS2AS.UI.Cancel':'Cancel'
 };
-vi.mock('cs2/api',()=>({bindValue:(_group:string,name:string)=>({name}),useValue:(value:{name:string})=>{if(binding.fail)throw new Error('binding unavailable');return value.name==='panelVisible'?binding.visible:binding.selected;},trigger:binding.trigger}));
+vi.mock('cs2/api',()=>({bindValue:(_group:string,name:string)=>({name}),useValue:(value:{name:string})=>{binding.reads++;if(binding.fail)throw new Error('binding unavailable');return value.name==='panelVisible'?binding.visible:binding.selected;},trigger:binding.trigger}));
 vi.mock('cs2/l10n',()=>({useLocalization:()=>({translate:(key:string)=>translations[key]??key})}));
 const industrial:AreaView={stableId:'9007199254740993',name:'Harbor Industry',typeKey:'CS2AS.Type.Industrial',state:'CS2AS.State.Suspended',level:null,experience:null,tabs:[{id:'overview',labelKey:'CS2AS.Tab.Overview'}],summary:'CS2AS.Summary.AnchorRequired',anchorRole:'Headquarters',pendingAnchor:false};
-afterEach(()=>{binding.fail=false;binding.selected=null;binding.trigger.mockClear();});
+afterEach(()=>{binding.fail=false;binding.selected=null;binding.reads=0;binding.trigger.mockClear();vi.useRealTimers();});
 describe('managed area panel',()=>{
  it('host reads the selected area binding',()=>{binding.selected=industrial;render(<AreaManagementPanelHost/>);expect(screen.getByText('Harbor Industry')).toBeInTheDocument();});
  it('renders nothing without a managed selection',()=>{render(<AreaManagementPanelHost/>);expect(screen.queryByRole('complementary')).toBeNull();});
@@ -26,4 +26,23 @@ describe('managed area panel',()=>{
  it('sends the persisted ID unchanged to protect against stale selections',()=>{render(<AreaManagementPanel area={industrial}/>);fireEvent.click(screen.getByRole('button',{name:'Assign headquarters'}));expect(binding.trigger).toHaveBeenCalledWith('cs2AreaSystem','assignHeadquarters','9007199254740993');});
  it('resyncs the rename input when the backend name changes',()=>{const view=render(<AreaManagementPanel area={industrial}/>);const input=screen.getByRole('textbox',{name:'Area name'}) as HTMLInputElement;expect(input.value).toBe('Harbor Industry');view.rerender(<AreaManagementPanel area={{...industrial,name:'Renamed Industry'}}/>);expect(input.value).toBe('Renamed Industry');});
  it('keeps typed name and selected tab when the backend republishes identical content',()=>{const tabs=[{id:'overview',labelKey:'CS2AS.Tab.Overview'},{id:'custom',labelKey:'Custom'}];const view=render(<AreaManagementPanel area={{...industrial,tabs}}/>);const input=screen.getByRole('textbox',{name:'Area name'}) as HTMLInputElement;fireEvent.change(input,{target:{value:'Draft name'}});fireEvent.click(screen.getByRole('tab',{name:'Custom'}));view.rerender(<AreaManagementPanel area={{...industrial,tabs:tabs.map(t=>({...t}))}}/>);expect(input.value).toBe('Draft name');expect(screen.getByRole('tab',{name:'Custom'})).toHaveAttribute('aria-selected','true');});
+ it('recovers in the same session after a transient binding error without sending actions',()=>{
+  vi.useFakeTimers();const consoleError=vi.spyOn(console,'error').mockImplementation(()=>{});
+  binding.fail=true;binding.selected=industrial;render(<AreaManagementPanelHost/>);
+  expect(screen.queryByRole('complementary')).toBeNull();
+  binding.fail=false;act(()=>{vi.advanceTimersByTime(PANEL_RETRY_BASE_MS);});
+  expect(screen.getByText('Harbor Industry')).toBeInTheDocument();
+  expect(binding.trigger).not.toHaveBeenCalled();consoleError.mockRestore();
+ });
+ it('retries a persistent failure with capped backoff instead of a render loop',()=>{
+  vi.useFakeTimers();const consoleError=vi.spyOn(console,'error').mockImplementation(()=>{});
+  binding.fail=true;binding.selected=industrial;render(<AreaManagementPanelHost/>);
+  const readsPerAttempt=binding.reads;
+  for(let second=0;second<10*60;second++)act(()=>{vi.advanceTimersByTime(1000);});
+  // 1s,2s,4s,8s,16s then every 30s: about 5+18 retries in ten minutes, never one per frame.
+  const retries=(binding.reads-readsPerAttempt)/readsPerAttempt;
+  expect(retries).toBeGreaterThanOrEqual(5);expect(retries).toBeLessThanOrEqual(25);
+  expect(PANEL_RETRY_MAX_MS).toBe(30000);
+  expect(screen.queryByRole('complementary')).toBeNull();expect(binding.trigger).not.toHaveBeenCalled();consoleError.mockRestore();
+ });
 });
