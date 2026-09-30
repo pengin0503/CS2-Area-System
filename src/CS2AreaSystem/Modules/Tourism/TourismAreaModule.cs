@@ -1,1 +1,10 @@
-dXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLkFuY2hvcnM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLk1vZHVsZXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLk1vZHVsZXMuVG91cmlzbQp7CiAgICBwdWJsaWMgc2VhbGVkIGNsYXNzIFRvdXJpc21BcmVhTW9kdWxlIDogQW5jaG9yQXJlYU1vZHVsZQogICAgewogICAgICAgIHB1YmxpYyBUb3VyaXNtQXJlYU1vZHVsZSgpIDogYmFzZShBcmVhVHlwZUlkLlRvdXJpc20sIG51bGwsIG51bGwpIHsgfQogICAgfQp9Cg==
+using CS2AreaSystem.Core.Anchors;
+using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Modules;
+namespace CS2AreaSystem.Modules.Tourism
+{
+    public sealed class TourismAreaModule : AnchorAreaModule
+    {
+        public TourismAreaModule() : base(AreaTypeId.Tourism, null, null) { }
+    }
+}

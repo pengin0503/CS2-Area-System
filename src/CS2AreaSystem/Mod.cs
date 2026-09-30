@@ -1,1 +1,44 @@
-dXNpbmcgR2FtZTsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLk1lbWJlcnNoaXA7CnVzaW5nIEdhbWUuTW9kZGluZzsKdXNpbmcgQ29sb3NzYWwuTG9nZ2luZzsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlByZWZhYnM7CnVzaW5nIEdhbWUuUHJlZmFiczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLkFyZWFzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbQp7CiAgICBwdWJsaWMgc2VhbGVkIGNsYXNzIE1vZCA6IElNb2QKICAgIHsKICAgICAgICBwcml2YXRlIHJlYWRvbmx5IFN5c3RlbS5Db2xsZWN0aW9ucy5HZW5lcmljLkxpc3Q8U3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWMuS2V5VmFsdWVQYWlyPHN0cmluZywgQ29sb3NzYWwuTG9jYWxpemF0aW9uLk1lbW9yeVNvdXJjZT4+IGxvY2FsZXMgPSBuZXcgU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWMuTGlzdDxTeXN0ZW0uQ29sbGVjdGlvbnMuR2VuZXJpYy5LZXlWYWx1ZVBhaXI8c3RyaW5nLCBDb2xvc3NhbC5Mb2NhbGl6YXRpb24uTWVtb3J5U291cmNlPj4oKTsKICAgICAgICBpbnRlcm5hbCBzdGF0aWMgcmVhZG9ubHkgSUxvZyBMb2cgPSBMb2dNYW5hZ2VyLkdldExvZ2dlcihuYW1lb2YoQ1MyQXJlYVN5c3RlbSkpOwogICAgICAgIHB1YmxpYyB2b2lkIE9uTG9hZChVcGRhdGVTeXN0ZW0gdXBkYXRlU3lzdGVtKQogICAgICAgIHsKICAgICAgICAgICAgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlLkNvbXBvbmVudFNjaGVtYS5SZXBvcnRVbnN1cHBvcnRlZCA9IG1lc3NhZ2UgPT4gTG9nLkVycm9yKG1lc3NhZ2UpOwogICAgICAgICAgICB1cGRhdGVTeXN0ZW0uVXBkYXRlQmVmb3JlPEFyZWFQcmVmYWJSZWdpc3RyYXRpb25TeXN0ZW0sIFByZWZhYkluaXRpYWxpemVTeXN0ZW0+KFN5c3RlbVVwZGF0ZVBoYXNlLlByZWZhYlVwZGF0ZSk7CiAgICAgICAgICAgIHVwZGF0ZVN5c3RlbS5VcGRhdGVCZWZvcmU8TWFuYWdlZEFyZWFPdmVybGFwU3lzdGVtLCBHYW1lLk5vdGlmaWNhdGlvbnMuSWNvbkNvbW1hbmRTeXN0ZW0+KFN5c3RlbVVwZGF0ZVBoYXNlLk1vZGlmaWNhdGlvbkVuZCk7CiAgICAgICAgICAgIHVwZGF0ZVN5c3RlbS5VcGRhdGVBdDxNYW5hZ2VkQXJlYUxpZmVjeWNsZVN5c3RlbT4oU3lzdGVtVXBkYXRlUGhhc2UuUHJlVG9vbCk7CiAgICAgICAgICAgIHVwZGF0ZVN5c3RlbS5VcGRhdGVBdDxNYW5hZ2VkQXJlYUxpZmVjeWNsZVN5c3RlbT4oU3lzdGVtVXBkYXRlUGhhc2UuTW9kaWZpY2F0aW9uRW5kKTsKICAgICAgICAgICAgdXBkYXRlU3lzdGVtLlVwZGF0ZUFmdGVyPENTMkFyZWFTeXN0ZW0uQ29yZS5QZXJzaXN0ZW5jZS5BcmVhTG9hZENvb3JkaW5hdG9yU3lzdGVtPihTeXN0ZW1VcGRhdGVQaGFzZS5Nb2RpZmljYXRpb25FbmQpOwogICAgICAgICAgICB1cGRhdGVTeXN0ZW0uVXBkYXRlQWZ0ZXI8QXJlYU1lbWJlcnNoaXBTeXN0ZW0+KFN5c3RlbVVwZGF0ZVBoYXNlLk1vZGlmaWNhdGlvbkVuZCk7CiAgICAgICAgICAgIHVwZGF0ZVN5c3RlbS5VcGRhdGVBZnRlcjxDUzJBcmVhU3lzdGVtLkNvcmUuQW5jaG9ycy5BcmVhQWN0aXZhdGlvblN5c3RlbT4oU3lzdGVtVXBkYXRlUGhhc2UuTW9kaWZpY2F0aW9uRW5kKTsKICAgICAgICAgICAgdHJ5CiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIHZhciBsb2NhbGl6YXRpb24gPSBHYW1lLlNjZW5lRmxvdy5HYW1lTWFuYWdlci5pbnN0YW5jZS5sb2NhbGl6YXRpb25NYW5hZ2VyOwogICAgICAgICAgICAgICAgZm9yZWFjaCAodmFyIGxvY2FsZSBpbiBsb2NhbGl6YXRpb24uR2V0U3VwcG9ydGVkTG9jYWxlcygpKQogICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgIHZhciBzb3VyY2UgPSBuZXcgQ29sb3NzYWwuTG9jYWxpemF0aW9uLk1lbW9yeVNvdXJjZShDb3JlLlVJLk5hdGl2ZUFyZWFMb2NhbGl6YXRpb24uRW50cmllcyhsb2NhbGUpKTsKICAgICAgICAgICAgICAgICAgICBsb2NhbGl6YXRpb24uQWRkU291cmNlKGxvY2FsZSwgc291cmNlKTsgbG9jYWxlcy5BZGQobmV3IFN5c3RlbS5Db2xsZWN0aW9ucy5HZW5lcmljLktleVZhbHVlUGFpcjxzdHJpbmcsIENvbG9zc2FsLkxvY2FsaXphdGlvbi5NZW1vcnlTb3VyY2U+KGxvY2FsZSwgc291cmNlKSk7CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICAgICAgY2F0Y2ggKFN5c3RlbS5FeGNlcHRpb24gZXJyb3IpIHsgTG9nLkVycm9yKGVycm9yLCAiQXJlYSBtZW51IGxvY2FsaXphdGlvbiB1bmF2YWlsYWJsZSIpOyB9CiAgICAgICAgICAgIHRyeSB7IHVwZGF0ZVN5c3RlbS5VcGRhdGVBZnRlcjxDUzJBcmVhU3lzdGVtLkNvcmUuVUkuQXJlYU1hbmFnZW1lbnRVSVN5c3RlbT4oU3lzdGVtVXBkYXRlUGhhc2UuVUlVcGRhdGUpOyB9CiAgICAgICAgICAgIGNhdGNoIChTeXN0ZW0uRXhjZXB0aW9uIGVycm9yKSB7IExvZy5FcnJvcihlcnJvciwgIkFyZWEgbWFuYWdlbWVudCBVSSByZWdpc3RyYXRpb24gZmFpbGVkOyBzaW11bGF0aW9uIHJlbWFpbnMgcmVnaXN0ZXJlZC4iKTsgfQogICAgICAgIH0KICAgICAgICBwdWJsaWMgdm9pZCBPbkRpc3Bvc2UoKQogICAgICAgIHsKICAgICAgICAgICAgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlLkNvbXBvbmVudFNjaGVtYS5SZXBvcnRVbnN1cHBvcnRlZCA9IG51bGw7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBsb2NhbGUgaW4gbG9jYWxlcykgR2FtZS5TY2VuZUZsb3cuR2FtZU1hbmFnZXIuaW5zdGFuY2UubG9jYWxpemF0aW9uTWFuYWdlci5SZW1vdmVTb3VyY2UobG9jYWxlLktleSwgbG9jYWxlLlZhbHVlKTsKICAgICAgICAgICAgbG9jYWxlcy5DbGVhcigpOwogICAgICAgIH0KICAgIH0KfQo=
+using Game;
+using CS2AreaSystem.Core.Membership;
+using Game.Modding;
+using Colossal.Logging;
+using CS2AreaSystem.Core.Prefabs;
+using Game.Prefabs;
+using CS2AreaSystem.Core.Areas;
+namespace CS2AreaSystem
+{
+    public sealed class Mod : IMod
+    {
+        private readonly System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, Colossal.Localization.MemorySource>> locales = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, Colossal.Localization.MemorySource>>();
+        internal static readonly ILog Log = LogManager.GetLogger(nameof(CS2AreaSystem));
+        public void OnLoad(UpdateSystem updateSystem)
+        {
+            CS2AreaSystem.Core.Persistence.ComponentSchema.ReportUnsupported = message => Log.Error(message);
+            updateSystem.UpdateBefore<AreaPrefabRegistrationSystem, PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateBefore<ManagedAreaOverlapSystem, Game.Notifications.IconCommandSystem>(SystemUpdatePhase.ModificationEnd);
+            updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.PreTool);
+            updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.ModificationEnd);
+            updateSystem.UpdateAfter<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
+            updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
+            updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
+            try
+            {
+                var localization = Game.SceneFlow.GameManager.instance.localizationManager;
+                foreach (var locale in localization.GetSupportedLocales())
+                {
+                    var source = new Colossal.Localization.MemorySource(Core.UI.NativeAreaLocalization.Entries(locale));
+                    localization.AddSource(locale, source); locales.Add(new System.Collections.Generic.KeyValuePair<string, Colossal.Localization.MemorySource>(locale, source));
+                }
+            }
+            catch (System.Exception error) { Log.Error(error, "Area menu localization unavailable"); }
+            try { updateSystem.UpdateAfter<CS2AreaSystem.Core.UI.AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
+            catch (System.Exception error) { Log.Error(error, "Area management UI registration failed; simulation remains registered."); }
+        }
+        public void OnDispose()
+        {
+            CS2AreaSystem.Core.Persistence.ComponentSchema.ReportUnsupported = null;
+            foreach (var locale in locales) Game.SceneFlow.GameManager.instance.localizationManager.RemoveSource(locale.Key, locale.Value);
+            locales.Clear();
+        }
+    }
+}

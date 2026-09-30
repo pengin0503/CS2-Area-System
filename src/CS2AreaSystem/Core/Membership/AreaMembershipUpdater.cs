@@ -1,1 +1,42 @@
-dXNpbmcgU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLk1lbWJlcnNoaXAKewogICAgcHVibGljIGludGVyZmFjZSBJQXJlYU1lbWJlcnNoaXBTcGF0aWFsU291cmNlCiAgICB7CiAgICAgICAgSUVudW1lcmFibGU8RW50aXR5PiBHZXRBbGxNZW1iZXJzKCk7CiAgICAgICAgSUVudW1lcmFibGU8RW50aXR5PiBHZXRTcGF0aWFsQ2FuZGlkYXRlcyhFbnRpdHkgYXJlYSk7CiAgICAgICAgSVJlYWRPbmx5TGlzdDxBcmVhTWVtYmVyc2hpcD4gRmluZENvbnRhaW5pbmdBcmVhcyhFbnRpdHkgbWVtYmVyKTsKICAgIH0KICAgIHB1YmxpYyBzZWFsZWQgY2xhc3MgQXJlYU1lbWJlcnNoaXBVcGRhdGVyCiAgICB7CiAgICAgICAgcHJpdmF0ZSByZWFkb25seSBBcmVhTWVtYmVyc2hpcEluZGV4IGluZGV4OwogICAgICAgIHByaXZhdGUgcmVhZG9ubHkgSUFyZWFNZW1iZXJzaGlwU3BhdGlhbFNvdXJjZSBzcGF0aWFsOwogICAgICAgIHB1YmxpYyBpbnQgRnVsbFJlYnVpbGRDb3VudCB7IGdldDsgcHJpdmF0ZSBzZXQ7IH0KICAgICAgICBwdWJsaWMgaW50IEluY3JlbWVudGFsTWVtYmVyVXBkYXRlQ291bnQgeyBnZXQ7IHByaXZhdGUgc2V0OyB9CiAgICAgICAgcHVibGljIGludCBJbmNyZW1lbnRhbEFyZWFVcGRhdGVDb3VudCB7IGdldDsgcHJpdmF0ZSBzZXQ7IH0KICAgICAgICBwdWJsaWMgQXJlYU1lbWJlcnNoaXBVcGRhdGVyKEFyZWFNZW1iZXJzaGlwSW5kZXggaW5kZXgsIElBcmVhTWVtYmVyc2hpcFNwYXRpYWxTb3VyY2Ugc3BhdGlhbCkgeyB0aGlzLmluZGV4ID0gaW5kZXg7IHRoaXMuc3BhdGlhbCA9IHNwYXRpYWw7IH0KICAgICAgICBwdWJsaWMgdm9pZCBSZWJ1aWxkKCkKICAgICAgICB7CiAgICAgICAgICAgIGluZGV4LkNsZWFyKCk7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBtZW1iZXIgaW4gc3BhdGlhbC5HZXRBbGxNZW1iZXJzKCkpIGluZGV4LlJlcGxhY2VNZW1iZXJzaGlwKG1lbWJlciwgc3BhdGlhbC5GaW5kQ29udGFpbmluZ0FyZWFzKG1lbWJlcikpOwogICAgICAgICAgICBGdWxsUmVidWlsZENvdW50Kys7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyB2b2lkIFVwZGF0ZU1lbWJlcihFbnRpdHkgbWVtYmVyKQogICAgICAgIHsKICAgICAgICAgICAgaW5kZXguUmVwbGFjZU1lbWJlcnNoaXAobWVtYmVyLCBzcGF0aWFsLkZpbmRDb250YWluaW5nQXJlYXMobWVtYmVyKSk7CiAgICAgICAgICAgIEluY3JlbWVudGFsTWVtYmVyVXBkYXRlQ291bnQrKzsKICAgICAgICB9CiAgICAgICAgcHVibGljIHZvaWQgVXBkYXRlQXJlYShFbnRpdHkgYXJlYSwgdWxvbmcgc3RhYmxlSWQsIGJvb2wgZGVsZXRlZCkKICAgICAgICB7CiAgICAgICAgICAgIGlmIChkZWxldGVkKSBpbmRleC5SZW1vdmVBcmVhKHN0YWJsZUlkKTsKICAgICAgICAgICAgZWxzZQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICB2YXIgYWZmZWN0ZWQgPSBuZXcgSGFzaFNldDxFbnRpdHk+KGluZGV4LkdldE1lbWJlcnMoc3RhYmxlSWQpKTsKICAgICAgICAgICAgICAgIGFmZmVjdGVkLlVuaW9uV2l0aChzcGF0aWFsLkdldFNwYXRpYWxDYW5kaWRhdGVzKGFyZWEpKTsKICAgICAgICAgICAgICAgIGZvcmVhY2ggKHZhciBtZW1iZXIgaW4gYWZmZWN0ZWQpIGluZGV4LlJlcGxhY2VNZW1iZXJzaGlwKG1lbWJlciwgc3BhdGlhbC5GaW5kQ29udGFpbmluZ0FyZWFzKG1lbWJlcikpOwogICAgICAgICAgICB9CiAgICAgICAgICAgIEluY3JlbWVudGFsQXJlYVVwZGF0ZUNvdW50Kys7CiAgICAgICAgfQogICAgfQp9Cg==
+using System.Collections.Generic;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Membership
+{
+    public interface IAreaMembershipSpatialSource
+    {
+        IEnumerable<Entity> GetAllMembers();
+        IEnumerable<Entity> GetSpatialCandidates(Entity area);
+        IReadOnlyList<AreaMembership> FindContainingAreas(Entity member);
+    }
+    public sealed class AreaMembershipUpdater
+    {
+        private readonly AreaMembershipIndex index;
+        private readonly IAreaMembershipSpatialSource spatial;
+        public int FullRebuildCount { get; private set; }
+        public int IncrementalMemberUpdateCount { get; private set; }
+        public int IncrementalAreaUpdateCount { get; private set; }
+        public AreaMembershipUpdater(AreaMembershipIndex index, IAreaMembershipSpatialSource spatial) { this.index = index; this.spatial = spatial; }
+        public void Rebuild()
+        {
+            index.Clear();
+            foreach (var member in spatial.GetAllMembers()) index.ReplaceMembership(member, spatial.FindContainingAreas(member));
+            FullRebuildCount++;
+        }
+        public void UpdateMember(Entity member)
+        {
+            index.ReplaceMembership(member, spatial.FindContainingAreas(member));
+            IncrementalMemberUpdateCount++;
+        }
+        public void UpdateArea(Entity area, ulong stableId, bool deleted)
+        {
+            if (deleted) index.RemoveArea(stableId);
+            else
+            {
+                var affected = new HashSet<Entity>(index.GetMembers(stableId));
+                affected.UnionWith(spatial.GetSpatialCandidates(area));
+                foreach (var member in affected) index.ReplaceMembership(member, spatial.FindContainingAreas(member));
+            }
+            IncrementalAreaUpdateCount++;
+        }
+    }
+}

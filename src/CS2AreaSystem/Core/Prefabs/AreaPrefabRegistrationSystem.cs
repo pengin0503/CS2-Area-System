@@ -1,1 +1,93 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuQXJlYXM7CnVzaW5nIEdhbWU7CnVzaW5nIEdhbWUuQXJlYXM7CnVzaW5nIEdhbWUuUHJlZmFiczsKdXNpbmcgVW5pdHkuQ29sbGVjdGlvbnM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwp1c2luZyBVbml0eUVuZ2luZS5TY3JpcHRpbmc7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuUHJlZmFicwp7CiAgICBwdWJsaWMgcGFydGlhbCBjbGFzcyBBcmVhUHJlZmFiUmVnaXN0cmF0aW9uU3lzdGVtIDogR2FtZVN5c3RlbUJhc2UKICAgIHsKICAgICAgICBwcml2YXRlIFByZWZhYlN5c3RlbSBwcmVmYWJzOwogICAgICAgIHByaXZhdGUgQXJlYUNvcmVTZXJ2aWNlc1N5c3RlbSBzZXJ2aWNlczsKICAgICAgICBwcml2YXRlIEVudGl0eVF1ZXJ5IHRvb2xiYXJHcm91cHM7CiAgICAgICAgcHJpdmF0ZSBVSUFzc2V0Q2F0ZWdvcnlQcmVmYWIgY2F0ZWdvcnk7CiAgICAgICAgcHJpdmF0ZSBib29sIHJlZ2lzdGVyZWQ7CiAgICAgICAgcHJpdmF0ZSBib29sIHRvb2xiYXJBdHRhY2hlZDsKICAgICAgICBwcml2YXRlIGJvb2wgbWlzc2luZ0hvc3RMb2dnZWQ7CiAgICAgICAgcHVibGljIGJvb2wgSXNSZWFkeSB7IGdldDsgcHJpdmF0ZSBzZXQ7IH0KICAgICAgICBbUHJlc2VydmVdCiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25DcmVhdGUoKQogICAgICAgIHsKICAgICAgICAgICAgYmFzZS5PbkNyZWF0ZSgpOwogICAgICAgICAgICBwcmVmYWJzID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPFByZWZhYlN5c3RlbT4oKTsKICAgICAgICAgICAgc2VydmljZXMgPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8QXJlYUNvcmVTZXJ2aWNlc1N5c3RlbT4oKTsKICAgICAgICAgICAgdG9vbGJhckdyb3VwcyA9IEdldEVudGl0eVF1ZXJ5KENvbXBvbmVudFR5cGUuUmVhZE9ubHk8VUlUb29sYmFyR3JvdXBEYXRhPigpLCBDb21wb25lbnRUeXBlLlJlYWRPbmx5PFByZWZhYkRhdGE+KCkpOwogICAgICAgIH0KICAgICAgICBbUHJlc2VydmVdCiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25VcGRhdGUoKQogICAgICAgIHsKICAgICAgICAgICAgaWYgKCFyZWdpc3RlcmVkKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICByZWdpc3RlcmVkID0gdHJ1ZTsKICAgICAgICAgICAgICAgIGZvcmVhY2ggKHZhciB0eXBlIGluIHNlcnZpY2VzLlJlZ2lzdHJ5LkFsbCkKICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICB0cnkKICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgIHR5cGUuUHJlZmFiID0gbmV3IE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeSgpLkNyZWF0ZUFyZWFQcmVmYWIodHlwZSk7CiAgICAgICAgICAgICAgICAgICAgICAgIGlmICghcHJlZmFicy5BZGRQcmVmYWIodHlwZS5QcmVmYWIpKSBNb2QuTG9nLkVycm9yKCJDb3VsZCBub3QgcmVnaXN0ZXIgIiArIHR5cGUuUHJlZmFiTmFtZSk7CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgIGNhdGNoIChFeGNlcHRpb24gZXJyb3IpIHsgTW9kLkxvZy5FcnJvcihlcnJvciwgIkFyZWEgcHJlZmFiIHJlZ2lzdHJhdGlvbiBmYWlsZWQ6ICIgKyB0eXBlLlByZWZhYk5hbWUpOyB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICAgICAgSXNSZWFkeSA9IHRydWU7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciB0eXBlIGluIHNlcnZpY2VzLlJlZ2lzdHJ5LkFsbCkKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgaWYgKCFJc1ByZWZhYlJlYWR5KHR5cGUpKSBJc1JlYWR5ID0gZmFsc2U7CiAgICAgICAgICAgIH0KICAgICAgICAgICAgLy8gT25seSBleHBvc2UgbmF0aXZlIHRvb2xiYXIgYXNzZXRzIG9uY2UgZXZlcnkgYXJjaGV0eXBlIGlzIGluaXRpYWxpemVkLgogICAgICAgICAgICBpZiAoSXNSZWFkeSAmJiAhdG9vbGJhckF0dGFjaGVkKSBUcnlBdHRhY2hUb29sYmFyKCk7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBib29sIElzUHJlZmFiUmVhZHkoQXJlYVR5cGVEZXNjcmlwdG9yIHR5cGUpCiAgICAgICAgewogICAgICAgICAgICBpZiAodHlwZS5QcmVmYWIgPT0gbnVsbCB8fCAhcHJlZmFicy5UcnlHZXRFbnRpdHkodHlwZS5QcmVmYWIsIG91dCB2YXIgZW50aXR5KSB8fCAhRW50aXR5TWFuYWdlci5FeGlzdHMoZW50aXR5KSkgcmV0dXJuIGZhbHNlOwogICAgICAgICAgICBpZiAoIUVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PEFyZWFEYXRhPihlbnRpdHkpIHx8ICFFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxBcmVhR2VvbWV0cnlEYXRhPihlbnRpdHkpKSByZXR1cm4gZmFsc2U7CiAgICAgICAgICAgIHZhciBnZW9tZXRyeSA9IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxBcmVhR2VvbWV0cnlEYXRhPihlbnRpdHkpOwogICAgICAgICAgICByZXR1cm4gQXJlYVByZWZhYlJlYWRpbmVzcy5DYW5Vc2UodHJ1ZSwgRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPEFyZWFEYXRhPihlbnRpdHkpLm1fQXJjaGV0eXBlLlZhbGlkLAogICAgICAgICAgICAgICAgZ2VvbWV0cnkubV9UeXBlID09IE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeS5OYXRpdmVHZW9tZXRyeVR5cGUgJiYgZ2VvbWV0cnkubV9GbGFncyA9PSAwICYmCiAgICAgICAgICAgICAgICBOYXRpdmVBcmVhQ3JlYXRpb25Qb2xpY3kuQ2FuQ3JlYXRlKGZhbHNlLCBnZW9tZXRyeS5tX1R5cGUsIGdlb21ldHJ5Lm1fRmxhZ3MsIEVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PFJlbmRlcmVkQXJlYURhdGE+KGVudGl0eSkpKTsKICAgICAgICB9CiAgICAgICAgcHJpdmF0ZSB2b2lkIFRyeUF0dGFjaFRvb2xiYXIoKQogICAgICAgIHsKICAgICAgICAgICAgVUlUb29sYmFyR3JvdXBQcmVmYWIgaG9zdCA9IG51bGw7CiAgICAgICAgICAgIHVzaW5nIHZhciBjYW5kaWRhdGVzID0gdG9vbGJhckdyb3Vwcy5Ub0VudGl0eUFycmF5KEFsbG9jYXRvci5UZW1wKTsKICAgICAgICAgICAgZm9yZWFjaCAodmFyIGVudGl0eSBpbiBjYW5kaWRhdGVzKQogICAgICAgICAgICAgICAgaWYgKHByZWZhYnMuVHJ5R2V0UHJlZmFiPFVJVG9vbGJhckdyb3VwUHJlZmFiPihlbnRpdHksIG91dCB2YXIgZ3JvdXApICYmIGdyb3VwLm5hbWUgPT0gIlRvb2xzIFRvb2xiYXIgR3JvdXAiKSB7IGhvc3QgPSBncm91cDsgYnJlYWs7IH0KICAgICAgICAgICAgaWYgKGhvc3QgPT0gbnVsbCkKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgaWYgKCFtaXNzaW5nSG9zdExvZ2dlZCkgeyBtaXNzaW5nSG9zdExvZ2dlZCA9IHRydWU7IE1vZC5Mb2cuV2FybigiVG9vbHMgVG9vbGJhciBHcm91cCB1bmF2YWlsYWJsZTsgYXJlYXMgcmVtYWluIGxvYWRhYmxlLiBUb29sYmFyIGF0dGFjaG1lbnQgd2lsbCByZXRyeS4iKTsgfQogICAgICAgICAgICAgICAgcmV0dXJuOwogICAgICAgICAgICB9CiAgICAgICAgICAgIHRyeQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICB2YXIgZmFjdG9yeSA9IG5ldyBBcmVhVG9vbGJhclByZWZhYkZhY3RvcnkoKTsKICAgICAgICAgICAgICAgIHZhciBtZW51ID0gZmFjdG9yeS5DcmVhdGVBcmVhc01lbnUoaG9zdCk7CiAgICAgICAgICAgICAgICBjYXRlZ29yeSA9IGZhY3RvcnkuQ3JlYXRlQXJlYVR5cGVzQ2F0ZWdvcnkobWVudSk7CiAgICAgICAgICAgICAgICBpZiAoIXByZWZhYnMuQWRkUHJlZmFiKG1lbnUpIHx8ICFwcmVmYWJzLkFkZFByZWZhYihjYXRlZ29yeSkpIHsgTW9kLkxvZy5FcnJvcigiQXJlYSB0b29sYmFyIHJlZ2lzdHJhdGlvbiBmYWlsZWQ7IHNpbXVsYXRpb24gcmVtYWlucyBhdmFpbGFibGUuIik7IHJldHVybjsgfQogICAgICAgICAgICAgICAgdmFyIGNhdGVnb3J5RW50aXR5ID0gcHJlZmFicy5HZXRFbnRpdHkoY2F0ZWdvcnkpOwogICAgICAgICAgICAgICAgaW50IHByaW9yaXR5ID0gMDsKICAgICAgICAgICAgICAgIGZvcmVhY2ggKHZhciB0eXBlIGluIHNlcnZpY2VzLlJlZ2lzdHJ5LkFsbCkKICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICBmYWN0b3J5LkF0dGFjaEFyZWFQcmVmYWIodHlwZS5QcmVmYWIsIGNhdGVnb3J5LCBwcmlvcml0eSsrLCB0eXBlLkljb25VcmkpOwogICAgICAgICAgICAgICAgICAgIHZhciBhcmVhUHJlZmFiRW50aXR5ID0gcHJlZmFicy5HZXRFbnRpdHkodHlwZS5QcmVmYWIpOwogICAgICAgICAgICAgICAgICAgIEVudGl0eU1hbmFnZXIuU2V0Q29tcG9uZW50RGF0YShhcmVhUHJlZmFiRW50aXR5LCBuZXcgVUlPYmplY3REYXRhIHsgbV9Hcm91cCA9IGNhdGVnb3J5RW50aXR5LCBtX1ByaW9yaXR5ID0gcHJpb3JpdHkgfSk7CiAgICAgICAgICAgICAgICAgICAgY2F0ZWdvcnkuQWRkRWxlbWVudChFbnRpdHlNYW5hZ2VyLCBhcmVhUHJlZmFiRW50aXR5KTsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIHRvb2xiYXJBdHRhY2hlZCA9IHRydWU7CiAgICAgICAgICAgIH0KICAgICAgICAgICAgY2F0Y2ggKEV4Y2VwdGlvbiBlcnJvcikgeyBNb2QuTG9nLkVycm9yKGVycm9yLCAiQXJlYSB0b29sYmFyIGZhaWxlZDsgc2ltdWxhdGlvbiByZW1haW5zIGF2YWlsYWJsZS4iKTsgfQogICAgICAgIH0KICAgIH0KfQo=
+using System;
+using CS2AreaSystem.Core.Areas;
+using Game;
+using Game.Areas;
+using Game.Prefabs;
+using Unity.Collections;
+using Unity.Entities;
+using UnityEngine.Scripting;
+namespace CS2AreaSystem.Core.Prefabs
+{
+    public partial class AreaPrefabRegistrationSystem : GameSystemBase
+    {
+        private PrefabSystem prefabs;
+        private AreaCoreServicesSystem services;
+        private EntityQuery toolbarGroups;
+        private UIAssetCategoryPrefab category;
+        private bool registered;
+        private bool toolbarAttached;
+        private bool missingHostLogged;
+        public bool IsReady { get; private set; }
+        [Preserve]
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
+            services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            toolbarGroups = GetEntityQuery(ComponentType.ReadOnly<UIToolbarGroupData>(), ComponentType.ReadOnly<PrefabData>());
+        }
+        [Preserve]
+        protected override void OnUpdate()
+        {
+            if (!registered)
+            {
+                registered = true;
+                foreach (var type in services.Registry.All)
+                {
+                    try
+                    {
+                        type.Prefab = new ManagedAreaPrefabFactory().CreateAreaPrefab(type);
+                        if (!prefabs.AddPrefab(type.Prefab)) Mod.Log.Error("Could not register " + type.PrefabName);
+                    }
+                    catch (Exception error) { Mod.Log.Error(error, "Area prefab registration failed: " + type.PrefabName); }
+                }
+            }
+            IsReady = true;
+            foreach (var type in services.Registry.All)
+            {
+                if (!IsPrefabReady(type)) IsReady = false;
+            }
+            // Only expose native toolbar assets once every archetype is initialized.
+            if (IsReady && !toolbarAttached) TryAttachToolbar();
+        }
+        public bool IsPrefabReady(AreaTypeDescriptor type)
+        {
+            if (type.Prefab == null || !prefabs.TryGetEntity(type.Prefab, out var entity) || !EntityManager.Exists(entity)) return false;
+            if (!EntityManager.HasComponent<AreaData>(entity) || !EntityManager.HasComponent<AreaGeometryData>(entity)) return false;
+            var geometry = EntityManager.GetComponentData<AreaGeometryData>(entity);
+            return AreaPrefabReadiness.CanUse(true, EntityManager.GetComponentData<AreaData>(entity).m_Archetype.Valid,
+                geometry.m_Type == ManagedAreaPrefabFactory.NativeGeometryType && geometry.m_Flags == 0 &&
+                NativeAreaCreationPolicy.CanCreate(false, geometry.m_Type, geometry.m_Flags, EntityManager.HasComponent<RenderedAreaData>(entity)));
+        }
+        private void TryAttachToolbar()
+        {
+            UIToolbarGroupPrefab host = null;
+            using var candidates = toolbarGroups.ToEntityArray(Allocator.Temp);
+            foreach (var entity in candidates)
+                if (prefabs.TryGetPrefab<UIToolbarGroupPrefab>(entity, out var group) && group.name == "Tools Toolbar Group") { host = group; break; }
+            if (host == null)
+            {
+                if (!missingHostLogged) { missingHostLogged = true; Mod.Log.Warn("Tools Toolbar Group unavailable; areas remain loadable. Toolbar attachment will retry."); }
+                return;
+            }
+            try
+            {
+                var factory = new AreaToolbarPrefabFactory();
+                var menu = factory.CreateAreasMenu(host);
+                category = factory.CreateAreaTypesCategory(menu);
+                if (!prefabs.AddPrefab(menu) || !prefabs.AddPrefab(category)) { Mod.Log.Error("Area toolbar registration failed; simulation remains available."); return; }
+                var categoryEntity = prefabs.GetEntity(category);
+                int priority = 0;
+                foreach (var type in services.Registry.All)
+                {
+                    factory.AttachAreaPrefab(type.Prefab, category, priority++, type.IconUri);
+                    var areaPrefabEntity = prefabs.GetEntity(type.Prefab);
+                    EntityManager.SetComponentData(areaPrefabEntity, new UIObjectData { m_Group = categoryEntity, m_Priority = priority });
+                    category.AddElement(EntityManager, areaPrefabEntity);
+                }
+                toolbarAttached = true;
+            }
+            catch (Exception error) { Mod.Log.Error(error, "Area toolbar failed; simulation remains available."); }
+        }
+    }
+}

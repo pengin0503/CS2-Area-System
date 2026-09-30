@@ -1,1 +1,1 @@
-bmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhcyB7IHB1YmxpYyBlbnVtIEFyZWFUeXBlSWQgOiBpbnQgeyBQYXJrID0gMSwgSW5kdXN0cmlhbCA9IDIsIFRvdXJpc20gPSAzIH0gfQo=
+namespace CS2AreaSystem.Core.Areas { public enum AreaTypeId : int { Park = 1, Industrial = 2, Tourism = 3 } }

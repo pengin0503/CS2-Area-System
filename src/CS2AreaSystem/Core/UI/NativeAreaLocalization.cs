@@ -1,1 +1,19 @@
-dXNpbmcgU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuVUkKewogICAgcHVibGljIHN0YXRpYyBjbGFzcyBOYXRpdmVBcmVhTG9jYWxpemF0aW9uCiAgICB7CiAgICAgICAgcHVibGljIHN0YXRpYyBEaWN0aW9uYXJ5PHN0cmluZyxzdHJpbmc+IEVudHJpZXMoc3RyaW5nIGxvY2FsZSkKICAgICAgICB7CiAgICAgICAgICAgIGJvb2wgamEgPSBsb2NhbGUgPT0gImphLUpQIjsKICAgICAgICAgICAgdmFyIGVudHJpZXMgPSBuZXcgRGljdGlvbmFyeTxzdHJpbmcsc3RyaW5nPiB7CiAgICAgICAgICAgICAgICBbIkFzc2V0cy5OQU1FW0NTMkFTIEFyZWFzIE1lbnVdIl0gPSBqYSA/ICLjgqjjg6rjgqIiIDogIkFyZWFzIiwKICAgICAgICAgICAgICAgIFsiQXNzZXRzLk5BTUVbQ1MyQVMgQXJlYSBUeXBlc10iXSA9IGphID8gIuOCqOODquOCouOBrueorumhniIgOiAiQXJlYSBUeXBlcyIsCiAgICAgICAgICAgICAgICBbIkFzc2V0cy5OQU1FW0NTMkFTLlBhcmtBcmVhXSJdID0gamEgPyAi5YWs5ZyS44Ko44Oq44KiIiA6ICJQYXJrIEFyZWEiLAogICAgICAgICAgICAgICAgWyJBc3NldHMuTkFNRVtDUzJBUy5JbmR1c3RyaWFsQXJlYV0iXSA9IGphID8gIueUo+alreOCqOODquOCoiIgOiAiSW5kdXN0cmlhbCBBcmVhIiwKICAgICAgICAgICAgICAgIFsiQXNzZXRzLk5BTUVbQ1MyQVMuVG91cmlzbUFyZWFdIl0gPSBqYSA/ICLoprPlhYnjgqjjg6rjgqIiIDogIlRvdXJpc20gQXJlYSIKICAgICAgICAgICAgfTsKICAgICAgICAgICAgcmV0dXJuIGVudHJpZXM7CiAgICAgICAgfQogICAgfQp9Cg==
+using System.Collections.Generic;
+namespace CS2AreaSystem.Core.UI
+{
+    public static class NativeAreaLocalization
+    {
+        public static Dictionary<string,string> Entries(string locale)
+        {
+            bool ja = locale == "ja-JP";
+            var entries = new Dictionary<string,string> {
+                ["Assets.NAME[CS2AS Areas Menu]"] = ja ? "エリア" : "Areas",
+                ["Assets.NAME[CS2AS Area Types]"] = ja ? "エリアの種類" : "Area Types",
+                ["Assets.NAME[CS2AS.ParkArea]"] = ja ? "公園エリア" : "Park Area",
+                ["Assets.NAME[CS2AS.IndustrialArea]"] = ja ? "産業エリア" : "Industrial Area",
+                ["Assets.NAME[CS2AS.TourismArea]"] = ja ? "観光エリア" : "Tourism Area"
+            };
+            return entries;
+        }
+    }
+}

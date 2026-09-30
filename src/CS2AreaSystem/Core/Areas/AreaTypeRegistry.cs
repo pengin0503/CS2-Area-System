@@ -1,1 +1,18 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBTeXN0ZW0uQ29sbGVjdGlvbnMuR2VuZXJpYzsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhcwp7CiAgICBwdWJsaWMgc2VhbGVkIGNsYXNzIEFyZWFUeXBlUmVnaXN0cnkKICAgIHsKICAgICAgICBwcml2YXRlIHJlYWRvbmx5IERpY3Rpb25hcnk8aW50LCBBcmVhVHlwZURlc2NyaXB0b3I+IHR5cGVzID0gbmV3IERpY3Rpb25hcnk8aW50LCBBcmVhVHlwZURlc2NyaXB0b3I+KCk7CiAgICAgICAgcHVibGljIElSZWFkT25seUNvbGxlY3Rpb248QXJlYVR5cGVEZXNjcmlwdG9yPiBBbGwgPT4gdHlwZXMuVmFsdWVzOwogICAgICAgIHB1YmxpYyBib29sIFJlZ2lzdGVyKEFyZWFUeXBlRGVzY3JpcHRvciBkZXNjcmlwdG9yKQogICAgICAgIHsKICAgICAgICAgICAgaWYgKGRlc2NyaXB0b3IgPT0gbnVsbCkgdGhyb3cgbmV3IEFyZ3VtZW50TnVsbEV4Y2VwdGlvbihuYW1lb2YoZGVzY3JpcHRvcikpOwogICAgICAgICAgICBpZiAodHlwZXMuQ29udGFpbnNLZXkoZGVzY3JpcHRvci5UeXBlSWQpKSByZXR1cm4gZmFsc2U7CiAgICAgICAgICAgIHR5cGVzLkFkZChkZXNjcmlwdG9yLlR5cGVJZCwgZGVzY3JpcHRvcik7CiAgICAgICAgICAgIHJldHVybiB0cnVlOwogICAgICAgIH0KICAgICAgICBwdWJsaWMgYm9vbCBUcnlHZXQoaW50IHR5cGVJZCwgb3V0IEFyZWFUeXBlRGVzY3JpcHRvciBkZXNjcmlwdG9yKSA9PiB0eXBlcy5UcnlHZXRWYWx1ZSh0eXBlSWQsIG91dCBkZXNjcmlwdG9yKTsKICAgIH0KfQo=
+using System;
+using System.Collections.Generic;
+namespace CS2AreaSystem.Core.Areas
+{
+    public sealed class AreaTypeRegistry
+    {
+        private readonly Dictionary<int, AreaTypeDescriptor> types = new Dictionary<int, AreaTypeDescriptor>();
+        public IReadOnlyCollection<AreaTypeDescriptor> All => types.Values;
+        public bool Register(AreaTypeDescriptor descriptor)
+        {
+            if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
+            if (types.ContainsKey(descriptor.TypeId)) return false;
+            types.Add(descriptor.TypeId, descriptor);
+            return true;
+        }
+        public bool TryGet(int typeId, out AreaTypeDescriptor descriptor) => types.TryGetValue(typeId, out descriptor);
+    }
+}

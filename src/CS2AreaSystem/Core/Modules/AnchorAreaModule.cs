@@ -1,1 +1,33 @@
-dXNpbmcgU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5BbmNob3JzOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuQXJlYXM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5QcmVmYWJzOwp1c2luZyBVbml0eS5FbnRpdGllczsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5Nb2R1bGVzCnsKICAgIHB1YmxpYyBhYnN0cmFjdCBjbGFzcyBBbmNob3JBcmVhTW9kdWxlIDogSUFyZWFNb2R1bGUsIElBcmVhQW5jaG9yUG9saWN5LCBJQXJlYU1lbWJlckNsYXNzaWZpZXIsIElBcmVhUGFuZWxQcm92aWRlcgogICAgewogICAgICAgIHByaXZhdGUgcmVhZG9ubHkgQXJlYUFuY2hvclNlcnZpY2UgYW5jaG9yczsKICAgICAgICBwcml2YXRlIHJlYWRvbmx5IEFyZWFUeXBlSWQga2luZDsKICAgICAgICBwdWJsaWMgQXJlYUFuY2hvclJvbGU/IFJlcXVpcmVkQW5jaG9yUm9sZSB7IGdldDsgfQogICAgICAgIHB1YmxpYyBJUmVhZE9ubHlMaXN0PEFyZWFQYW5lbFRhYj4gVGFicyB7IGdldDsgfSA9IG5ld1tdIHsgbmV3IEFyZWFQYW5lbFRhYigib3ZlcnZpZXciLCAiQ1MyQVMuVGFiLk92ZXJ2aWV3IikgfTsKICAgICAgICBwcm90ZWN0ZWQgQW5jaG9yQXJlYU1vZHVsZShBcmVhVHlwZUlkIGtpbmQsIEFyZWFBbmNob3JTZXJ2aWNlIGFuY2hvcnMsIEFyZWFBbmNob3JSb2xlPyByb2xlKQogICAgICAgIHsgdGhpcy5raW5kID0ga2luZDsgdGhpcy5hbmNob3JzID0gYW5jaG9yczsgUmVxdWlyZWRBbmNob3JSb2xlID0gcm9sZTsgfQogICAgICAgIHB1YmxpYyBBcmVhVHlwZURlc2NyaXB0b3IgRGVzY3JpYmVUeXBlKCkKICAgICAgICB7CiAgICAgICAgICAgIHZhciBtZXRhZGF0YSA9IE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeS5EZXNjcmliZShraW5kKTsKICAgICAgICAgICAgcmV0dXJuIG5ldyBBcmVhVHlwZURlc2NyaXB0b3IobWV0YWRhdGEuVHlwZUlkLCBtZXRhZGF0YS5QcmVmYWJOYW1lLCBtZXRhZGF0YS5EaXNwbGF5TmFtZUtleSwgbWV0YWRhdGEuSWNvblVyaSwgdGhpcyk7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBib29sIFZhbGlkYXRlQWN0aXZhdGlvbihFbnRpdHkgYXJlYSkgPT4gIVJlcXVpcmVkQW5jaG9yUm9sZS5IYXNWYWx1ZSB8fCBhbmNob3JzLkhhc1ZhbGlkQW5jaG9yKGFyZWEsIFJlcXVpcmVkQW5jaG9yUm9sZS5WYWx1ZSk7CiAgICAgICAgcHVibGljIElBcmVhTWVtYmVyQ2xhc3NpZmllciBNZW1iZXJDbGFzc2lmaWVyID0+IHRoaXM7CiAgICAgICAgcHVibGljIElBcmVhUGFuZWxQcm92aWRlciBQYW5lbFByb3ZpZGVyID0+IHRoaXM7CiAgICAgICAgcHVibGljIEFyZWFNZW1iZXJSb2xlIENsYXNzaWZ5KEVudGl0eSBtZW1iZXIsIEVudGl0eSBhcmVhKSA9PiBBcmVhTWVtYmVyUm9sZS5NZW1iZXI7CiAgICAgICAgcHVibGljIGJvb2wgQWxsb3dzT3ZlcmxhcFdpdGgoaW50IG90aGVyVHlwZUlkKSA9PiB0cnVlOwogICAgICAgIHB1YmxpYyBzdHJpbmcgQnVpbGRTdW1tYXJ5KEVudGl0eSBhcmVhKSA9PiBWYWxpZGF0ZUFjdGl2YXRpb24oYXJlYSkgPyAiQ1MyQVMuU3VtbWFyeS5BY3RpdmUiIDogIkNTMkFTLlN1bW1hcnkuQW5jaG9yUmVxdWlyZWQiOwogICAgICAgIHB1YmxpYyBib29sIEhhbmRsZUFjdGlvbihFbnRpdHkgYXJlYSwgc3RyaW5nIGFjdGlvbikgPT4gZmFsc2U7CiAgICAgICAgcHVibGljIHZvaWQgT25BcmVhQ3JlYXRlZChFbnRpdHkgYXJlYSkgeyB9CiAgICAgICAgcHVibGljIHZvaWQgT25BcmVhQWN0aXZhdGVkKEVudGl0eSBhcmVhKSB7IH0KICAgICAgICBwdWJsaWMgdm9pZCBPbkFyZWFTdXNwZW5kZWQoRW50aXR5IGFyZWEpIHsgfQogICAgICAgIHB1YmxpYyB2b2lkIE9uQXJlYURlbGV0ZWQoRW50aXR5IGFyZWEpIHsgfQogICAgfQp9Cg==
+using System.Collections.Generic;
+using CS2AreaSystem.Core.Anchors;
+using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Prefabs;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Modules
+{
+    public abstract class AnchorAreaModule : IAreaModule, IAreaAnchorPolicy, IAreaMemberClassifier, IAreaPanelProvider
+    {
+        private readonly AreaAnchorService anchors;
+        private readonly AreaTypeId kind;
+        public AreaAnchorRole? RequiredAnchorRole { get; }
+        public IReadOnlyList<AreaPanelTab> Tabs { get; } = new[] { new AreaPanelTab("overview", "CS2AS.Tab.Overview") };
+        protected AnchorAreaModule(AreaTypeId kind, AreaAnchorService anchors, AreaAnchorRole? role)
+        { this.kind = kind; this.anchors = anchors; RequiredAnchorRole = role; }
+        public AreaTypeDescriptor DescribeType()
+        {
+            var metadata = ManagedAreaPrefabFactory.Describe(kind);
+            return new AreaTypeDescriptor(metadata.TypeId, metadata.PrefabName, metadata.DisplayNameKey, metadata.IconUri, this);
+        }
+        public bool ValidateActivation(Entity area) => !RequiredAnchorRole.HasValue || anchors.HasValidAnchor(area, RequiredAnchorRole.Value);
+        public IAreaMemberClassifier MemberClassifier => this;
+        public IAreaPanelProvider PanelProvider => this;
+        public AreaMemberRole Classify(Entity member, Entity area) => AreaMemberRole.Member;
+        public bool AllowsOverlapWith(int otherTypeId) => true;
+        public string BuildSummary(Entity area) => ValidateActivation(area) ? "CS2AS.Summary.Active" : "CS2AS.Summary.AnchorRequired";
+        public bool HandleAction(Entity area, string action) => false;
+        public void OnAreaCreated(Entity area) { }
+        public void OnAreaActivated(Entity area) { }
+        public void OnAreaSuspended(Entity area) { }
+        public void OnAreaDeleted(Entity area) { }
+    }
+}

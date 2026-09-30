@@ -1,1 +1,16 @@
-dXNpbmcgU3lzdGVtLklPOwp1c2luZyBTeXN0ZW07Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuUGVyc2lzdGVuY2UKewogICAgcHVibGljIHN0YXRpYyBjbGFzcyBDb21wb25lbnRTY2hlbWEKICAgIHsKICAgICAgICBwdWJsaWMgc3RhdGljIEFjdGlvbjxzdHJpbmc+IFJlcG9ydFVuc3VwcG9ydGVkIHsgZ2V0OyBzZXQ7IH0KICAgICAgICBwdWJsaWMgc3RhdGljIHZvaWQgUmVxdWlyZVN1cHBvcnRlZCh1c2hvcnQgdmVyc2lvbikKICAgICAgICB7CiAgICAgICAgICAgIGlmICh2ZXJzaW9uID09IDEpIHJldHVybjsKICAgICAgICAgICAgdmFyIG1lc3NhZ2UgPSAiVW5zdXBwb3J0ZWQgQXJlYSBDb3JlIGNvbXBvbmVudCBzY2hlbWEgIiArIHZlcnNpb24gKyAiOyByZWZ1c2luZyB0byByZWludGVycHJldCBvciBvdmVyd3JpdGUgc2F2ZWQgZGF0YS4iOwogICAgICAgICAgICBSZXBvcnRVbnN1cHBvcnRlZD8uSW52b2tlKG1lc3NhZ2UpOwogICAgICAgICAgICB0aHJvdyBuZXcgSW52YWxpZERhdGFFeGNlcHRpb24obWVzc2FnZSk7CiAgICAgICAgfQogICAgfQp9Cg==
+using System.IO;
+using System;
+namespace CS2AreaSystem.Core.Persistence
+{
+    public static class ComponentSchema
+    {
+        public static Action<string> ReportUnsupported { get; set; }
+        public static void RequireSupported(ushort version)
+        {
+            if (version == 1) return;
+            var message = "Unsupported Area Core component schema " + version + "; refusing to reinterpret or overwrite saved data.";
+            ReportUnsupported?.Invoke(message);
+            throw new InvalidDataException(message);
+        }
+    }
+}

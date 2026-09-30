@@ -1,1 +1,26 @@
-dXNpbmcgU3lzdGVtOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLkFyZWFzCnsKICAgIHB1YmxpYyBzZWFsZWQgY2xhc3MgQXJlYVN0YWJsZUlkQWxsb2NhdG9yCiAgICB7CiAgICAgICAgcHJpdmF0ZSB1bG9uZyBuZXh0OwogICAgICAgIHByaXZhdGUgYm9vbCBleGhhdXN0ZWQ7CiAgICAgICAgcHVibGljIEFyZWFTdGFibGVJZEFsbG9jYXRvcih1bG9uZyBuZXh0VmFsdWUgPSAxKQogICAgICAgIHsKICAgICAgICAgICAgaWYgKG5leHRWYWx1ZSA9PSAwKSB0aHJvdyBuZXcgQXJndW1lbnRPdXRPZlJhbmdlRXhjZXB0aW9uKG5hbWVvZihuZXh0VmFsdWUpKTsKICAgICAgICAgICAgbmV4dCA9IG5leHRWYWx1ZTsKICAgICAgICB9CiAgICAgICAgcHVibGljIHVsb25nIEFsbG9jYXRlKCkKICAgICAgICB7CiAgICAgICAgICAgIGlmIChleGhhdXN0ZWQpIHRocm93IG5ldyBPdmVyZmxvd0V4Y2VwdGlvbigiQXJlYSBzdGFibGUgSURzIGV4aGF1c3RlZC4iKTsKICAgICAgICAgICAgdWxvbmcgdmFsdWUgPSBuZXh0OwogICAgICAgICAgICBpZiAodmFsdWUgPT0gdWxvbmcuTWF4VmFsdWUpIGV4aGF1c3RlZCA9IHRydWU7IGVsc2UgbmV4dCsrOwogICAgICAgICAgICByZXR1cm4gdmFsdWU7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyB2b2lkIE9ic2VydmVFeGlzdGluZyh1bG9uZyB2YWx1ZSkKICAgICAgICB7CiAgICAgICAgICAgIGlmICh2YWx1ZSA9PSB1bG9uZy5NYXhWYWx1ZSkgZXhoYXVzdGVkID0gdHJ1ZTsKICAgICAgICAgICAgZWxzZSBpZiAodmFsdWUgPj0gbmV4dCkgbmV4dCA9IHZhbHVlICsgMTsKICAgICAgICB9CiAgICB9Cn0K
+using System;
+namespace CS2AreaSystem.Core.Areas
+{
+    public sealed class AreaStableIdAllocator
+    {
+        private ulong next;
+        private bool exhausted;
+        public AreaStableIdAllocator(ulong nextValue = 1)
+        {
+            if (nextValue == 0) throw new ArgumentOutOfRangeException(nameof(nextValue));
+            next = nextValue;
+        }
+        public ulong Allocate()
+        {
+            if (exhausted) throw new OverflowException("Area stable IDs exhausted.");
+            ulong value = next;
+            if (value == ulong.MaxValue) exhausted = true; else next++;
+            return value;
+        }
+        public void ObserveExisting(ulong value)
+        {
+            if (value == ulong.MaxValue) exhausted = true;
+            else if (value >= next) next = value + 1;
+        }
+    }
+}

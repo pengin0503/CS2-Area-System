@@ -1,1 +1,63 @@
-dXNpbmcgQ29sb3NzYWwuU2VyaWFsaXphdGlvbi5FbnRpdGllczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLkFyZWFzOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuTWVtYmVyc2hpcDsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlByZWZhYnM7CnVzaW5nIEdhbWU7CnVzaW5nIEdhbWUuQ29tbW9uOwp1c2luZyBHYW1lLlNjZW5lRmxvdzsKdXNpbmcgR2FtZS5Ub29sczsKdXNpbmcgVW5pdHkuQ29sbGVjdGlvbnM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlCnsKICAgIHB1YmxpYyBwYXJ0aWFsIGNsYXNzIEFyZWFMb2FkQ29vcmRpbmF0b3JTeXN0ZW0gOiBHYW1lU3lzdGVtQmFzZQogICAgewogICAgICAgIHByaXZhdGUgcmVhZG9ubHkgQXJlYUxvYWRTZXF1ZW5jZSBzZXF1ZW5jZSA9IG5ldyBBcmVhTG9hZFNlcXVlbmNlKCk7CiAgICAgICAgcHJpdmF0ZSBBcmVhQ29yZVNlcnZpY2VzU3lzdGVtIHNlcnZpY2VzOwogICAgICAgIHByaXZhdGUgQXJlYU1lbWJlcnNoaXBTeXN0ZW0gbWVtYmVyc2hpcDsKICAgICAgICBwcml2YXRlIEFyZWFQcmVmYWJSZWdpc3RyYXRpb25TeXN0ZW0gcmVnaXN0cmF0aW9uOwogICAgICAgIHByaXZhdGUgR2FtZS5BcmVhcy5TZWFyY2hTeXN0ZW0gc2VhcmNoOwogICAgICAgIHByaXZhdGUgRW50aXR5UXVlcnkgaWRzLCBhcmVhczsKICAgICAgICBwcml2YXRlIGJvb2wgbG9hZGluZ0NvbXBsZXRlID0gdHJ1ZTsKICAgICAgICBwdWJsaWMgYm9vbCBSZWJ1aWxkUGVuZGluZyA9PiAhc2VxdWVuY2UuUmVhZHk7CiAgICAgICAgcHVibGljIGJvb2wgUmVhZHkgPT4gc2VxdWVuY2UuUmVhZHk7CiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25DcmVhdGUoKQogICAgICAgIHsKICAgICAgICAgICAgYmFzZS5PbkNyZWF0ZSgpOwogICAgICAgICAgICBzZXJ2aWNlcyA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxBcmVhQ29yZVNlcnZpY2VzU3lzdGVtPigpOwogICAgICAgICAgICBtZW1iZXJzaGlwID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPEFyZWFNZW1iZXJzaGlwU3lzdGVtPigpOwogICAgICAgICAgICByZWdpc3RyYXRpb24gPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8QXJlYVByZWZhYlJlZ2lzdHJhdGlvblN5c3RlbT4oKTsKICAgICAgICAgICAgc2VhcmNoID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPEdhbWUuQXJlYXMuU2VhcmNoU3lzdGVtPigpOwogICAgICAgICAgICBpZHMgPSBHZXRFbnRpdHlRdWVyeShDb21wb25lbnRUeXBlLlJlYWRPbmx5PE1hbmFnZWRBcmVhU3RhYmxlSWQ+KCkpOwogICAgICAgICAgICBhcmVhcyA9IEdldEVudGl0eVF1ZXJ5KG5ldyBFbnRpdHlRdWVyeURlc2MgewogICAgICAgICAgICAgICAgQWxsID0gbmV3W10ge0NvbXBvbmVudFR5cGUuUmVhZE9ubHk8TWFuYWdlZEFyZWE+KCksQ29tcG9uZW50VHlwZS5SZWFkT25seTxNYW5hZ2VkQXJlYVN0YWJsZUlkPigpfSwKICAgICAgICAgICAgICAgIE5vbmUgPSBuZXdbXSB7Q29tcG9uZW50VHlwZS5SZWFkT25seTxEZWxldGVkPigpLENvbXBvbmVudFR5cGUuUmVhZE9ubHk8VGVtcD4oKX0KICAgICAgICAgICAgfSk7CiAgICAgICAgfQogICAgICAgIHByb3RlY3RlZCBvdmVycmlkZSB2b2lkIE9uR2FtZVByZWxvYWQoUHVycG9zZSBwdXJwb3NlLCBHYW1lTW9kZSBtb2RlKQogICAgICAgIHsKICAgICAgICAgICAgbG9hZGluZ0NvbXBsZXRlID0gZmFsc2U7IHNlcXVlbmNlLlJlc2V0KCk7IG1lbWJlcnNoaXAuUmVxdWVzdFJlYnVpbGQoKTsKICAgICAgICB9CiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25HYW1lTG9hZGluZ0NvbXBsZXRlKFB1cnBvc2UgcHVycG9zZSwgR2FtZU1vZGUgbW9kZSkgPT4gbG9hZGluZ0NvbXBsZXRlID0gdHJ1ZTsKICAgICAgICBwcm90ZWN0ZWQgb3ZlcnJpZGUgdm9pZCBPblVwZGF0ZSgpCiAgICAgICAgewogICAgICAgICAgICBpZiAoIVJlYnVpbGRQZW5kaW5nIHx8ICFsb2FkaW5nQ29tcGxldGUgfHwgR2FtZU1hbmFnZXIuaW5zdGFuY2UuaXNHYW1lTG9hZGluZyB8fCAhcmVnaXN0cmF0aW9uLklzUmVhZHkpIHJldHVybjsKICAgICAgICAgICAgLy8gQ2FsbGVkIGFmdGVyIG5hdGl2ZSBNb2RpZmljYXRpb25FbmQgc2VhcmNoIHVwZGF0ZXMuIENvbXBsZXRlIHRoZWlyIGpvYnMgYmVmb3JlIHJlY292ZXJpbmcuCiAgICAgICAgICAgIHNlYXJjaC5HZXRTZWFyY2hUcmVlKHRydWUsIG91dCB2YXIgZGVwZW5kZW5jeSwgb3V0IHZhciB0cmlhbmdsZUNvdW50cyk7IGRlcGVuZGVuY3kuQ29tcGxldGUoKTsKICAgICAgICAgICAgdXNpbmcgdmFyIGVudGl0aWVzID0gYXJlYXMuVG9FbnRpdHlBcnJheShBbGxvY2F0b3IuVGVtcCk7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBhcmVhIGluIGVudGl0aWVzKQogICAgICAgICAgICAgICAgaWYgKEVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PEdhbWUuQXJlYXMuQXJlYT4oYXJlYSkgJiYgIXRyaWFuZ2xlQ291bnRzLkNvbnRhaW5zS2V5KGFyZWEpKSByZXR1cm47CiAgICAgICAgICAgIHNlcXVlbmNlLlRyeVJlY292ZXIodHJ1ZSwgKCkgPT4gewogICAgICAgICAgICAgICAgdXNpbmcgdmFyIHZhbHVlcyA9IGlkcy5Ub0NvbXBvbmVudERhdGFBcnJheTxNYW5hZ2VkQXJlYVN0YWJsZUlkPihBbGxvY2F0b3IuVGVtcCk7CiAgICAgICAgICAgICAgICBmb3JlYWNoICh2YXIgaWQgaW4gdmFsdWVzKSBzZXJ2aWNlcy5TdGFibGVJZHMuT2JzZXJ2ZUV4aXN0aW5nKGlkLlZhbHVlKTsKICAgICAgICAgICAgfSwgbWVtYmVyc2hpcC5SZWJ1aWxkTm93LCBWYWxpZGF0ZU1vZHVsZXMpOwogICAgICAgIH0KICAgICAgICBwdWJsaWMgdm9pZCBWYWxpZGF0ZU1vZHVsZXMoKQogICAgICAgIHsKICAgICAgICAgICAgdXNpbmcgdmFyIGVudGl0aWVzID0gYXJlYXMuVG9FbnRpdHlBcnJheShBbGxvY2F0b3IuVGVtcCk7CiAgICAgICAgICAgIHNlcnZpY2VzLkFuY2hvcnMuUmVidWlsZFJldmVyc2VJbmRleChlbnRpdGllcy5Ub0FycmF5KCkpOwogICAgICAgICAgICB2YXIgYWN0aXZhdGlvbiA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxDUzJBcmVhU3lzdGVtLkNvcmUuQW5jaG9ycy5BcmVhQWN0aXZhdGlvblN5c3RlbT4oKTsKICAgICAgICAgICAgZm9yZWFjaCAodmFyIGVudGl0eSBpbiBlbnRpdGllcykgYWN0aXZhdGlvbi5WYWxpZGF0ZUFyZWEoZW50aXR5KTsKICAgICAgICB9CiAgICB9Cn0K
+using Colossal.Serialization.Entities;
+using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Membership;
+using CS2AreaSystem.Core.Prefabs;
+using Game;
+using Game.Common;
+using Game.SceneFlow;
+using Game.Tools;
+using Unity.Collections;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Persistence
+{
+    public partial class AreaLoadCoordinatorSystem : GameSystemBase
+    {
+        private readonly AreaLoadSequence sequence = new AreaLoadSequence();
+        private AreaCoreServicesSystem services;
+        private AreaMembershipSystem membership;
+        private AreaPrefabRegistrationSystem registration;
+        private Game.Areas.SearchSystem search;
+        private EntityQuery ids, areas;
+        private bool loadingComplete = true;
+        public bool RebuildPending => !sequence.Ready;
+        public bool Ready => sequence.Ready;
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            membership = World.GetOrCreateSystemManaged<AreaMembershipSystem>();
+            registration = World.GetOrCreateSystemManaged<AreaPrefabRegistrationSystem>();
+            search = World.GetOrCreateSystemManaged<Game.Areas.SearchSystem>();
+            ids = GetEntityQuery(ComponentType.ReadOnly<ManagedAreaStableId>());
+            areas = GetEntityQuery(new EntityQueryDesc {
+                All = new[] {ComponentType.ReadOnly<ManagedArea>(),ComponentType.ReadOnly<ManagedAreaStableId>()},
+                None = new[] {ComponentType.ReadOnly<Deleted>(),ComponentType.ReadOnly<Temp>()}
+            });
+        }
+        protected override void OnGamePreload(Purpose purpose, GameMode mode)
+        {
+            loadingComplete = false; sequence.Reset(); membership.RequestRebuild();
+        }
+        protected override void OnGameLoadingComplete(Purpose purpose, GameMode mode) => loadingComplete = true;
+        protected override void OnUpdate()
+        {
+            if (!RebuildPending || !loadingComplete || GameManager.instance.isGameLoading || !registration.IsReady) return;
+            // Called after native ModificationEnd search updates. Complete their jobs before recovering.
+            search.GetSearchTree(true, out var dependency, out var triangleCounts); dependency.Complete();
+            using var entities = areas.ToEntityArray(Allocator.Temp);
+            foreach (var area in entities)
+                if (EntityManager.HasComponent<Game.Areas.Area>(area) && !triangleCounts.ContainsKey(area)) return;
+            sequence.TryRecover(true, () => {
+                using var values = ids.ToComponentDataArray<ManagedAreaStableId>(Allocator.Temp);
+                foreach (var id in values) services.StableIds.ObserveExisting(id.Value);
+            }, membership.RebuildNow, ValidateModules);
+        }
+        public void ValidateModules()
+        {
+            using var entities = areas.ToEntityArray(Allocator.Temp);
+            services.Anchors.RebuildReverseIndex(entities.ToArray());
+            var activation = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Anchors.AreaActivationSystem>();
+            foreach (var entity in entities) activation.ValidateArea(entity);
+        }
+    }
+}

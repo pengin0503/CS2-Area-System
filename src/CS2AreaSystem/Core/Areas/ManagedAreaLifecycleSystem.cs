@@ -1,1 +1,81 @@
-dXNpbmcgU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWM7CnVzaW5nIENvbG9zc2FsLlNlcmlhbGl6YXRpb24uRW50aXRpZXM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5QcmVmYWJzOwp1c2luZyBHYW1lOwp1c2luZyBHYW1lLkFyZWFzOwp1c2luZyBHYW1lLkNvbW1vbjsKdXNpbmcgR2FtZS5QcmVmYWJzOwp1c2luZyBHYW1lLlNjZW5lRmxvdzsKdXNpbmcgR2FtZS5Ub29sczsKdXNpbmcgVW5pdHkuQ29sbGVjdGlvbnM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwp1c2luZyBVbml0eUVuZ2luZS5TY3JpcHRpbmc7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuQXJlYXMKewogICAgcHVibGljIHBhcnRpYWwgY2xhc3MgTWFuYWdlZEFyZWFMaWZlY3ljbGVTeXN0ZW0gOiBHYW1lU3lzdGVtQmFzZQogICAgewogICAgICAgIHByaXZhdGUgQXJlYUNvcmVTZXJ2aWNlc1N5c3RlbSBzZXJ2aWNlczsKICAgICAgICBwcml2YXRlIFByZWZhYlN5c3RlbSBwcmVmYWJzOwogICAgICAgIHByaXZhdGUgQXJlYVByZWZhYlJlZ2lzdHJhdGlvblN5c3RlbSByZWdpc3RyYXRpb247CiAgICAgICAgcHJpdmF0ZSBUb29sU3lzdGVtIHRvb2xzOwogICAgICAgIHByaXZhdGUgRW50aXR5UXVlcnkgY2hhbmdlZEFyZWFzOwogICAgICAgIHByaXZhdGUgRW50aXR5UXVlcnkgc2F2ZWRJZHM7CiAgICAgICAgcHJpdmF0ZSBib29sIG9ic2VydmVkU2F2ZWRJZHM7CiAgICAgICAgcHJpdmF0ZSByZWFkb25seSBIYXNoU2V0PGludD4gYmxvY2tlZFR5cGVzID0gbmV3IEhhc2hTZXQ8aW50PigpOwogICAgICAgIHByaXZhdGUgcmVhZG9ubHkgTWFuYWdlZEFyZWFUeXBlUmVzb2x2ZXIgcmVzb2x2ZXIgPSBuZXcgTWFuYWdlZEFyZWFUeXBlUmVzb2x2ZXIoKTsKICAgICAgICBwdWJsaWMgYm9vbCBDYW5DcmVhdGUoaW50IHR5cGVJZCkgPT4gcmVnaXN0cmF0aW9uLklzUmVhZHkgJiYgIWJsb2NrZWRUeXBlcy5Db250YWlucyh0eXBlSWQpOwogICAgICAgIFtQcmVzZXJ2ZV0KICAgICAgICBwcm90ZWN0ZWQgb3ZlcnJpZGUgdm9pZCBPbkNyZWF0ZSgpCiAgICAgICAgewogICAgICAgICAgICBiYXNlLk9uQ3JlYXRlKCk7CiAgICAgICAgICAgIHNlcnZpY2VzID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPEFyZWFDb3JlU2VydmljZXNTeXN0ZW0+KCk7CiAgICAgICAgICAgIHByZWZhYnMgPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8UHJlZmFiU3lzdGVtPigpOwogICAgICAgICAgICByZWdpc3RyYXRpb24gPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8QXJlYVByZWZhYlJlZ2lzdHJhdGlvblN5c3RlbT4oKTsKICAgICAgICAgICAgdG9vbHMgPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8VG9vbFN5c3RlbT4oKTsKICAgICAgICAgICAgY2hhbmdlZEFyZWFzID0gR2V0RW50aXR5UXVlcnkobmV3IEVudGl0eVF1ZXJ5RGVzYyB7CiAgICAgICAgICAgICAgICBBbGwgPSBuZXdbXSB7IENvbXBvbmVudFR5cGUuUmVhZE9ubHk8QXJlYT4oKSwgQ29tcG9uZW50VHlwZS5SZWFkT25seTxQcmVmYWJSZWY+KCkgfSwKICAgICAgICAgICAgICAgIEFueSA9IG5ld1tdIHsgQ29tcG9uZW50VHlwZS5SZWFkT25seTxDcmVhdGVkPigpLCBDb21wb25lbnRUeXBlLlJlYWRPbmx5PFVwZGF0ZWQ+KCkgfSwKICAgICAgICAgICAgICAgIE5vbmUgPSBuZXdbXSB7IENvbXBvbmVudFR5cGUuUmVhZE9ubHk8VGVtcD4oKSwgQ29tcG9uZW50VHlwZS5SZWFkT25seTxEZWxldGVkPigpIH0KICAgICAgICAgICAgfSk7CiAgICAgICAgICAgIHNhdmVkSWRzID0gR2V0RW50aXR5UXVlcnkoQ29tcG9uZW50VHlwZS5SZWFkT25seTxNYW5hZ2VkQXJlYVN0YWJsZUlkPigpKTsKICAgICAgICB9CiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25HYW1lTG9hZGVkKENvbnRleHQgY29udGV4dCkgeyBvYnNlcnZlZFNhdmVkSWRzID0gZmFsc2U7IH0KICAgICAgICBbUHJlc2VydmVdCiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25VcGRhdGUoKQogICAgICAgIHsKICAgICAgICAgICAgVmFsaWRhdGVUb29sKCk7CiAgICAgICAgICAgIGlmIChHYW1lTWFuYWdlci5pbnN0YW5jZS5pc0dhbWVMb2FkaW5nIHx8ICFyZWdpc3RyYXRpb24uSXNSZWFkeSB8fAogICAgICAgICAgICAgICAgIVdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxDUzJBcmVhU3lzdGVtLkNvcmUuUGVyc2lzdGVuY2UuQXJlYUxvYWRDb29yZGluYXRvclN5c3RlbT4oKS5SZWFkeSkgcmV0dXJuOwogICAgICAgICAgICBpZiAoIW9ic2VydmVkU2F2ZWRJZHMpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIHVzaW5nIHZhciBsb2FkZWQgPSBzYXZlZElkcy5Ub0NvbXBvbmVudERhdGFBcnJheTxNYW5hZ2VkQXJlYVN0YWJsZUlkPihBbGxvY2F0b3IuVGVtcCk7CiAgICAgICAgICAgICAgICBmb3JlYWNoICh2YXIgaWQgaW4gbG9hZGVkKSBzZXJ2aWNlcy5TdGFibGVJZHMuT2JzZXJ2ZUV4aXN0aW5nKGlkLlZhbHVlKTsKICAgICAgICAgICAgICAgIG9ic2VydmVkU2F2ZWRJZHMgPSB0cnVlOwogICAgICAgICAgICB9CiAgICAgICAgICAgIHVzaW5nIHZhciBhcmVhcyA9IGNoYW5nZWRBcmVhcy5Ub0VudGl0eUFycmF5KEFsbG9jYXRvci5UZW1wKTsKICAgICAgICAgICAgZm9yZWFjaCAodmFyIGVudGl0eSBpbiBhcmVhcykKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgaWYgKCFwcmVmYWJzLlRyeUdldFByZWZhYjxBcmVhUHJlZmFiPihFbnRpdHlNYW5hZ2VyLkdldENvbXBvbmVudERhdGE8UHJlZmFiUmVmPihlbnRpdHkpLCBvdXQgdmFyIHByZWZhYikgfHwKICAgICAgICAgICAgICAgICAgICAhcmVzb2x2ZXIuVHJ5UmVzb2x2ZShwcmVmYWIubmFtZSwgb3V0IHZhciBraW5kKSkgY29udGludWU7CiAgICAgICAgICAgICAgICBib29sIGhhc01hbmFnZWQgPSBFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxNYW5hZ2VkQXJlYT4oZW50aXR5KTsKICAgICAgICAgICAgICAgIGJvb2wgaGFzSWQgPSBFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxNYW5hZ2VkQXJlYVN0YWJsZUlkPihlbnRpdHkpOwogICAgICAgICAgICAgICAgaWYgKGhhc01hbmFnZWQgJiYgaGFzSWQpIGNvbnRpbnVlOwogICAgICAgICAgICAgICAgdmFyIGlkZW50aXR5ID0gTWFuYWdlZEFyZWFJZGVudGl0eS5FbnN1cmUoKGludClraW5kLAogICAgICAgICAgICAgICAgICAgIGhhc01hbmFnZWQgPyBFbnRpdHlNYW5hZ2VyLkdldENvbXBvbmVudERhdGE8TWFuYWdlZEFyZWE+KGVudGl0eSkgOiAoTWFuYWdlZEFyZWE/KW51bGwsCiAgICAgICAgICAgICAgICAgICAgaGFzSWQgPyBFbnRpdHlNYW5hZ2VyLkdldENvbXBvbmVudERhdGE8TWFuYWdlZEFyZWFTdGFibGVJZD4oZW50aXR5KSA6IChNYW5hZ2VkQXJlYVN0YWJsZUlkPyludWxsLCBzZXJ2aWNlcy5TdGFibGVJZHMpOwogICAgICAgICAgICAgICAgaWYgKCFoYXNNYW5hZ2VkKSBFbnRpdHlNYW5hZ2VyLkFkZENvbXBvbmVudERhdGEoZW50aXR5LCBpZGVudGl0eS5NYW5hZ2VkKTsKICAgICAgICAgICAgICAgIGlmICghaGFzSWQpIEVudGl0eU1hbmFnZXIuQWRkQ29tcG9uZW50RGF0YShlbnRpdHksIGlkZW50aXR5LlN0YWJsZUlkKTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICBwcml2YXRlIHZvaWQgVmFsaWRhdGVUb29sKCkKICAgICAgICB7CiAgICAgICAgICAgIHZhciBwcmVmYWIgPSB0b29scy5hY3RpdmVQcmVmYWI7CiAgICAgICAgICAgIGlmIChwcmVmYWIgPT0gbnVsbCB8fCAhcmVzb2x2ZXIuVHJ5UmVzb2x2ZShwcmVmYWIubmFtZSwgb3V0IHZhciBraW5kKSkgcmV0dXJuOwogICAgICAgICAgICBib29sIG5hdGl2ZSA9IHRvb2xzLmFjdGl2ZVRvb2wgaXMgQXJlYVRvb2xTeXN0ZW07CiAgICAgICAgICAgIGJvb2wgcmVhZHkgPSBDYW5DcmVhdGUoKGludClraW5kKTsKICAgICAgICAgICAgaWYgKCFuYXRpdmUgJiYgYmxvY2tlZFR5cGVzLkFkZCgoaW50KWtpbmQpKQogICAgICAgICAgICAgICAgTW9kLkxvZy5FcnJvcigiTWFuYWdlZCBhcmVhIHByZWZhYiBzZWxlY3RlZCBhbiB1bmV4cGVjdGVkIHRvb2w7IGNyZWF0aW9uIGRpc2FibGVkIGZvciAiICsgcHJlZmFiLm5hbWUpOwogICAgICAgICAgICBpZiAoIUFyZWFUb29sQWN0aXZhdGlvblBvbGljeS5DYW5DcmVhdGUocmVhZHksIG5hdGl2ZSkpIHRvb2xzLkFjdGl2YXRlUHJlZmFiVG9vbChudWxsKTsKICAgICAgICB9CiAgICB9Cn0K
+using System.Collections.Generic;
+using Colossal.Serialization.Entities;
+using CS2AreaSystem.Core.Prefabs;
+using Game;
+using Game.Areas;
+using Game.Common;
+using Game.Prefabs;
+using Game.SceneFlow;
+using Game.Tools;
+using Unity.Collections;
+using Unity.Entities;
+using UnityEngine.Scripting;
+namespace CS2AreaSystem.Core.Areas
+{
+    public partial class ManagedAreaLifecycleSystem : GameSystemBase
+    {
+        private AreaCoreServicesSystem services;
+        private PrefabSystem prefabs;
+        private AreaPrefabRegistrationSystem registration;
+        private ToolSystem tools;
+        private EntityQuery changedAreas;
+        private EntityQuery savedIds;
+        private bool observedSavedIds;
+        private readonly HashSet<int> blockedTypes = new HashSet<int>();
+        private readonly ManagedAreaTypeResolver resolver = new ManagedAreaTypeResolver();
+        public bool CanCreate(int typeId) => registration.IsReady && !blockedTypes.Contains(typeId);
+        [Preserve]
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
+            registration = World.GetOrCreateSystemManaged<AreaPrefabRegistrationSystem>();
+            tools = World.GetOrCreateSystemManaged<ToolSystem>();
+            changedAreas = GetEntityQuery(new EntityQueryDesc {
+                All = new[] { ComponentType.ReadOnly<Area>(), ComponentType.ReadOnly<PrefabRef>() },
+                Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>() },
+                None = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() }
+            });
+            savedIds = GetEntityQuery(ComponentType.ReadOnly<ManagedAreaStableId>());
+        }
+        protected override void OnGameLoaded(Context context) { observedSavedIds = false; }
+        [Preserve]
+        protected override void OnUpdate()
+        {
+            ValidateTool();
+            if (GameManager.instance.isGameLoading || !registration.IsReady ||
+                !World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>().Ready) return;
+            if (!observedSavedIds)
+            {
+                using var loaded = savedIds.ToComponentDataArray<ManagedAreaStableId>(Allocator.Temp);
+                foreach (var id in loaded) services.StableIds.ObserveExisting(id.Value);
+                observedSavedIds = true;
+            }
+            using var areas = changedAreas.ToEntityArray(Allocator.Temp);
+            foreach (var entity in areas)
+            {
+                if (!prefabs.TryGetPrefab<AreaPrefab>(EntityManager.GetComponentData<PrefabRef>(entity), out var prefab) ||
+                    !resolver.TryResolve(prefab.name, out var kind)) continue;
+                bool hasManaged = EntityManager.HasComponent<ManagedArea>(entity);
+                bool hasId = EntityManager.HasComponent<ManagedAreaStableId>(entity);
+                if (hasManaged && hasId) continue;
+                var identity = ManagedAreaIdentity.Ensure((int)kind,
+                    hasManaged ? EntityManager.GetComponentData<ManagedArea>(entity) : (ManagedArea?)null,
+                    hasId ? EntityManager.GetComponentData<ManagedAreaStableId>(entity) : (ManagedAreaStableId?)null, services.StableIds);
+                if (!hasManaged) EntityManager.AddComponentData(entity, identity.Managed);
+                if (!hasId) EntityManager.AddComponentData(entity, identity.StableId);
+            }
+        }
+        private void ValidateTool()
+        {
+            var prefab = tools.activePrefab;
+            if (prefab == null || !resolver.TryResolve(prefab.name, out var kind)) return;
+            bool native = tools.activeTool is AreaToolSystem;
+            bool ready = CanCreate((int)kind);
+            if (!native && blockedTypes.Add((int)kind))
+                Mod.Log.Error("Managed area prefab selected an unexpected tool; creation disabled for " + prefab.name);
+            if (!AreaToolActivationPolicy.CanCreate(ready, native)) tools.ActivatePrefabTool(null);
+        }
+    }
+}

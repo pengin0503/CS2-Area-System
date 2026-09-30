@@ -1,1 +1,14 @@
-dXNpbmcgQ29sb3NzYWwuTWF0aGVtYXRpY3M7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5NZW1iZXJzaGlwOwp1c2luZyBOVW5pdC5GcmFtZXdvcms7CnVzaW5nIFVuaXR5Lk1hdGhlbWF0aWNzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5UZXN0czsKcHVibGljIGNsYXNzIE5hdGl2ZU1lbWJlcnNoaXBHZW9tZXRyeVRlc3RzIHsKICAgIFtUZXN0Q2FzZSgxZiwgMWYsIHRydWUpXQogICAgW1Rlc3RDYXNlKDBmLCAwZiwgdHJ1ZSldCiAgICBbVGVzdENhc2UoOWYsIDlmLCBmYWxzZSldCiAgICBwdWJsaWMgdm9pZCBOYXRpdmVUcmlhbmdsZVRlc3RzQ2Fub25pY2FsUG9pbnQoZmxvYXQgeCwgZmxvYXQgeiwgYm9vbCBleHBlY3RlZCkgewogICAgICAgIHZhciB0cmlhbmdsZSA9IG5ldyBUcmlhbmdsZTIobmV3IGZsb2F0MigwLDApLG5ldyBmbG9hdDIoMTAsMCksbmV3IGZsb2F0MigwLDEwKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoTmF0aXZlTWVtYmVyc2hpcEdlb21ldHJ5LkNvbnRhaW5zKHRyaWFuZ2xlLCBuZXcgZmxvYXQyKHgseikpLCBJcy5FcXVhbFRvKGV4cGVjdGVkKSk7CiAgICB9Cn0K
+using Colossal.Mathematics;
+using CS2AreaSystem.Core.Membership;
+using NUnit.Framework;
+using Unity.Mathematics;
+namespace CS2AreaSystem.Tests;
+public class NativeMembershipGeometryTests {
+    [TestCase(1f, 1f, true)]
+    [TestCase(0f, 0f, true)]
+    [TestCase(9f, 9f, false)]
+    public void NativeTriangleTestsCanonicalPoint(float x, float z, bool expected) {
+        var triangle = new Triangle2(new float2(0,0),new float2(10,0),new float2(0,10));
+        Assert.That(NativeMembershipGeometry.Contains(triangle, new float2(x,z)), Is.EqualTo(expected));
+    }
+}

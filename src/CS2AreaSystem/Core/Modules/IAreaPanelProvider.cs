@@ -1,1 +1,17 @@
-dXNpbmcgU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLk1vZHVsZXMKewogICAgcHVibGljIHNlYWxlZCBjbGFzcyBBcmVhUGFuZWxUYWIKICAgIHsKICAgICAgICBwdWJsaWMgc3RyaW5nIElkIHsgZ2V0OyB9CiAgICAgICAgcHVibGljIHN0cmluZyBMYWJlbEtleSB7IGdldDsgfQogICAgICAgIHB1YmxpYyBBcmVhUGFuZWxUYWIoc3RyaW5nIGlkLCBzdHJpbmcgbGFiZWxLZXkpIHsgSWQgPSBpZDsgTGFiZWxLZXkgPSBsYWJlbEtleTsgfQogICAgfQogICAgcHVibGljIGludGVyZmFjZSBJQXJlYVBhbmVsUHJvdmlkZXIKICAgIHsKICAgICAgICBJUmVhZE9ubHlMaXN0PEFyZWFQYW5lbFRhYj4gVGFicyB7IGdldDsgfQogICAgICAgIHN0cmluZyBCdWlsZFN1bW1hcnkoRW50aXR5IGFyZWEpOwogICAgICAgIGJvb2wgSGFuZGxlQWN0aW9uKEVudGl0eSBhcmVhLCBzdHJpbmcgYWN0aW9uKTsKICAgIH0KfQo=
+using System.Collections.Generic;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Modules
+{
+    public sealed class AreaPanelTab
+    {
+        public string Id { get; }
+        public string LabelKey { get; }
+        public AreaPanelTab(string id, string labelKey) { Id = id; LabelKey = labelKey; }
+    }
+    public interface IAreaPanelProvider
+    {
+        IReadOnlyList<AreaPanelTab> Tabs { get; }
+        string BuildSummary(Entity area);
+        bool HandleAction(Entity area, string action);
+    }
+}

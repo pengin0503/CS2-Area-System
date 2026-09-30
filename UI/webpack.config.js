@@ -1,1 +1,14 @@
-Ly8gQWRhcHRlZCBmcm9tIHRvbWtwdW5rdC9QYXJrTWFuYWdlciBVSS93ZWJwYWNrLmNvbmZpZy5qcyAoR1BMLTMuMCkuCmNvbnN0IHBhdGg9cmVxdWlyZSgncGF0aCcpOwpjb25zdCB3ZWJwYWNrPXJlcXVpcmUoJ3dlYnBhY2snKTsKY29uc3QgTWluaUNzc0V4dHJhY3RQbHVnaW49cmVxdWlyZSgnbWluaS1jc3MtZXh0cmFjdC1wbHVnaW4nKTsKY29uc3QgbW9kPXJlcXVpcmUoJy4vbW9kLmpzb24nKTsKbW9kdWxlLmV4cG9ydHM9ewogZW50cnk6e1ttb2QuaWRdOicuL3NyYy9pbmRleC50c3gnfSwKIGV4dGVybmFsc1R5cGU6J3dpbmRvdycsZXh0ZXJuYWxzOntyZWFjdDonUmVhY3QnLCdyZWFjdC1kb20nOidSZWFjdERPTScsJ2NzMi9hcGknOidjczIvYXBpJywnY3MyL21vZGRpbmcnOidjczIvbW9kZGluZyd9LAogcmVzb2x2ZTp7ZXh0ZW5zaW9uczpbJy50c3gnLCcudHMnLCcuanMnXX0sCiBtb2R1bGU6e3J1bGVzOlt7dGVzdDovXC50c3g/JC8sZXhjbHVkZTovbm9kZV9tb2R1bGVzLyx1c2U6J3RzLWxvYWRlcid9LHt0ZXN0Oi9cLnNjc3MkLyx1c2U6W01pbmlDc3NFeHRyYWN0UGx1Z2luLmxvYWRlcix7bG9hZGVyOidjc3MtbG9hZGVyJyxvcHRpb25zOnttb2R1bGVzOnthdXRvOnRydWUsbG9jYWxJZGVudE5hbWU6J2NzMmFzX1tsb2NhbF1fW2hhc2g6YmFzZTY0OjVdJ319fSwnc2Fzcy1sb2FkZXInXX1dfSwKIG91dHB1dDp7ZmlsZW5hbWU6J1tuYW1lXS5qcycscGF0aDpwYXRoLnJlc29sdmUoX19kaXJuYW1lLCdidWlsZCcpLGNsZWFuOnRydWUsbGlicmFyeTp7dHlwZTonbW9kdWxlJ30scHVibGljUGF0aDonY291aTovL3VpLW1vZHMvJ30sCiBleHBlcmltZW50czp7b3V0cHV0TW9kdWxlOnRydWV9LG9wdGltaXphdGlvbjp7bWluaW1pemU6ZmFsc2V9LAogcGx1Z2luczpbbmV3IE1pbmlDc3NFeHRyYWN0UGx1Z2luKCksbmV3IHdlYnBhY2suQmFubmVyUGx1Z2luKGBDaXRpZXM6IFNreWxpbmVzIElJIFVJIE1vZHVsZVxuSWQ6ICR7bW9kLmlkfVxuQXV0aG9yOiAke21vZC5hdXRob3J9XG5WZXJzaW9uOiAke21vZC52ZXJzaW9ufVxuRGVwZW5kZW5jaWVzOiAke21vZC5kZXBlbmRlbmNpZXMuam9pbignLCcpfWApXQp9Owo=
+// Adapted from tomkpunkt/ParkManager UI/webpack.config.js (GPL-3.0).
+const path=require('path');
+const webpack=require('webpack');
+const MiniCssExtractPlugin=require('mini-css-extract-plugin');
+const mod=require('./mod.json');
+module.exports={
+ entry:{[mod.id]:'./src/index.tsx'},
+ externalsType:'window',externals:{react:'React','react-dom':'ReactDOM','cs2/api':'cs2/api','cs2/modding':'cs2/modding'},
+ resolve:{extensions:['.tsx','.ts','.js']},
+ module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:'ts-loader'},{test:/\.scss$/,use:[MiniCssExtractPlugin.loader,{loader:'css-loader',options:{modules:{auto:true,localIdentName:'cs2as_[local]_[hash:base64:5]'}}},'sass-loader']}]},
+ output:{filename:'[name].js',path:path.resolve(__dirname,'build'),clean:true,library:{type:'module'},publicPath:'coui://ui-mods/'},
+ experiments:{outputModule:true},optimization:{minimize:false},
+ plugins:[new MiniCssExtractPlugin(),new webpack.BannerPlugin(`Cities: Skylines II UI Module\nId: ${mod.id}\nAuthor: ${mod.author}\nVersion: ${mod.version}\nDependencies: ${mod.dependencies.join(',')}`)]
+};

@@ -1,1 +1,4 @@
-aW1wb3J0IHR5cGUge01vZFJlZ2lzdHJhcn0gZnJvbSAnY3MyL21vZGRpbmcnOwppbXBvcnQge0FyZWFNYW5hZ2VtZW50UGFuZWxIb3N0fSBmcm9tICcuL0FyZWFNYW5hZ2VtZW50UGFuZWwnOwpjb25zdCByZWdpc3RlcjpNb2RSZWdpc3RyYXI9cmVnaXN0cnk9PnJlZ2lzdHJ5LmFwcGVuZCgnR2FtZScsQXJlYU1hbmFnZW1lbnRQYW5lbEhvc3QpOwpleHBvcnQgZGVmYXVsdCByZWdpc3RlcjsK
+import type {ModRegistrar} from 'cs2/modding';
+import {AreaManagementPanelHost} from './AreaManagementPanel';
+const register:ModRegistrar=registry=>registry.append('Game',AreaManagementPanelHost);
+export default register;

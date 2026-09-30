@@ -1,1 +1,52 @@
-dXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLkFuY2hvcnM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Nb2R1bGVzLlBhcms7CnVzaW5nIENTMkFyZWFTeXN0ZW0uTW9kdWxlcy5JbmR1c3RyaWFsOwp1c2luZyBDUzJBcmVhU3lzdGVtLk1vZHVsZXMuVG91cmlzbTsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5UZXN0cy5TdXBwb3J0Owp1c2luZyBOVW5pdC5GcmFtZXdvcms7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5UZXN0czsKcHVibGljIGNsYXNzIEFyZWFBbmNob3JTZXJ2aWNlVGVzdHMgewogICAgcHJpdmF0ZSBzZWFsZWQgY2xhc3MgU3RvcmUgOiBJQXJlYUFuY2hvclN0b3JlIHsKICAgICAgICBwdWJsaWMgRGljdGlvbmFyeTxFbnRpdHksSVJlYWRPbmx5TGlzdDxBcmVhQW5jaG9yTGluaz4+IFZhbHVlcyA9IG5ldygpOwogICAgICAgIHB1YmxpYyBJUmVhZE9ubHlMaXN0PEFyZWFBbmNob3JMaW5rPiBSZWFkKEVudGl0eSBhcmVhKSA9PiBWYWx1ZXMuVHJ5R2V0VmFsdWUoYXJlYSxvdXQgdmFyIGxpbmtzKT9saW5rczpBcnJheS5FbXB0eTxBcmVhQW5jaG9yTGluaz4oKTsKICAgICAgICBwdWJsaWMgdm9pZCBXcml0ZShFbnRpdHkgYXJlYSxJUmVhZE9ubHlMaXN0PEFyZWFBbmNob3JMaW5rPiBsaW5rcykgPT4gVmFsdWVzW2FyZWFdPWxpbmtzLlRvQXJyYXkoKTsKICAgIH0KICAgIHByaXZhdGUgcmVhZG9ubHkgRW50aXR5IGFyZWE9bmV3KCl7SW5kZXg9MTAsVmVyc2lvbj0xfSwgb3RoZXI9bmV3KCl7SW5kZXg9MjAsVmVyc2lvbj0xfSwgaHE9bmV3KCl7SW5kZXg9MzAsVmVyc2lvbj0xfSwgcmVwbGFjZW1lbnQ9bmV3KCl7SW5kZXg9NDAsVmVyc2lvbj0xfTsKICAgIFtUZXN0XSBwdWJsaWMgdm9pZCBIZWFkcXVhcnRlcnNMb3NzU3VzcGVuZHNPbmx5SXRzQXJlYUFuZFJlYXNzaWdubWVudFByZXNlcnZlc1Byb2dyZXNzKCkgewogICAgICAgIHZhciBpbnZhbGlkPW5ldyBIYXNoU2V0PEVudGl0eT4oKTsKICAgICAgICB2YXIgc3RvcmU9bmV3IFN0b3JlKCk7IHZhciBhbmNob3JzPW5ldyBBcmVhQW5jaG9yU2VydmljZShzdG9yZSxlPT4haW52YWxpZC5Db250YWlucyhlKSwoYSxlLHIpPT50cnVlKTsKICAgICAgICB2YXIgaW5kdXN0cmlhbD1uZXcgSW5kdXN0cmlhbEFyZWFNb2R1bGUoYW5jaG9ycyk7IHZhciB0b3VyaXNtPW5ldyBUb3VyaXNtQXJlYU1vZHVsZSgpOwogICAgICAgIEFyZWFMaWZlY3ljbGVTdGF0ZSBTdGF0ZShFbnRpdHkgYSk9PkFyZWFMaWZlY3ljbGVQb2xpY3kuUmVzb2x2ZSh0cnVlLGluZHVzdHJpYWwuVmFsaWRhdGVBY3RpdmF0aW9uKGEpLGZhbHNlKTsKICAgICAgICB2YXIgcHJvZ3Jlc3M9bmV3IE1hbmFnZWRBcmVhUHJvZ3Jlc3N7TGV2ZWw9MyxFeHBlcmllbmNlPTEwMDB9OwogICAgICAgIEFzc2VydC5UaGF0KFN0YXRlKGFyZWEpLElzLkVxdWFsVG8oQXJlYUxpZmVjeWNsZVN0YXRlLlN1c3BlbmRlZCkpOwogICAgICAgIEFzc2VydC5UaGF0KGFuY2hvcnMuQXNzaWduKGFyZWEsaHEsQXJlYUFuY2hvclJvbGUuSGVhZHF1YXJ0ZXJzKSxJcy5UcnVlKTsKICAgICAgICBhbmNob3JzLkFzc2lnbihvdGhlcixyZXBsYWNlbWVudCxBcmVhQW5jaG9yUm9sZS5IZWFkcXVhcnRlcnMpOwogICAgICAgIEFzc2VydC5UaGF0KFN0YXRlKGFyZWEpLElzLkVxdWFsVG8oQXJlYUxpZmVjeWNsZVN0YXRlLkFjdGl2ZSkpOwogICAgICAgIGludmFsaWQuQWRkKGhxKTsgQXNzZXJ0LlRoYXQoU3RhdGUoYXJlYSksSXMuRXF1YWxUbyhBcmVhTGlmZWN5Y2xlU3RhdGUuU3VzcGVuZGVkKSk7IEFzc2VydC5UaGF0KFN0YXRlKG90aGVyKSxJcy5FcXVhbFRvKEFyZWFMaWZlY3ljbGVTdGF0ZS5BY3RpdmUpKTsKICAgICAgICBhbmNob3JzLkFzc2lnbihhcmVhLHJlcGxhY2VtZW50LEFyZWFBbmNob3JSb2xlLkhlYWRxdWFydGVycyk7CiAgICAgICAgQXNzZXJ0LlRoYXQoU3RhdGUoYXJlYSksSXMuRXF1YWxUbyhBcmVhTGlmZWN5Y2xlU3RhdGUuQWN0aXZlKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoc3RvcmUuUmVhZChhcmVhKS5Db3VudCxJcy5FcXVhbFRvKDEpKTsgQXNzZXJ0LlRoYXQocHJvZ3Jlc3MuTGV2ZWwsSXMuRXF1YWxUbygzKSk7IEFzc2VydC5UaGF0KHByb2dyZXNzLkV4cGVyaWVuY2UsSXMuRXF1YWxUbygxMDAwKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQodG91cmlzbS5WYWxpZGF0ZUFjdGl2YXRpb24oYXJlYSksSXMuVHJ1ZSk7CiAgICB9CiAgICBbVGVzdF0gcHVibGljIHZvaWQgUGFya05lZWRzRW50cmFuY2VBbmRJbnZhbGlkQXNzaWdubWVudENhbm5vdFJlcGxhY2VFeGlzdGluZ0xpbmtzKCkgewogICAgICAgIHZhciBzdG9yZT1uZXcgU3RvcmUoKTsgdmFyIGFuY2hvcnM9bmV3IEFyZWFBbmNob3JTZXJ2aWNlKHN0b3JlLGU9PmUhPUVudGl0eS5OdWxsLChhLGUscik9PnI9PUFyZWFBbmNob3JSb2xlLkVudHJhbmNlKTsKICAgICAgICB2YXIgcGFyaz1uZXcgUGFya0FyZWFNb2R1bGUoYW5jaG9ycyk7CiAgICAgICAgQXNzZXJ0LlRoYXQocGFyay5WYWxpZGF0ZUFjdGl2YXRpb24oYXJlYSksSXMuRmFsc2UpOwogICAgICAgIEFzc2VydC5UaGF0KGFuY2hvcnMuQXNzaWduKGFyZWEsaHEsQXJlYUFuY2hvclJvbGUuRW50cmFuY2UpLElzLlRydWUpOwogICAgICAgIEFzc2VydC5UaGF0KHBhcmsuVmFsaWRhdGVBY3RpdmF0aW9uKGFyZWEpLElzLlRydWUpOwogICAgICAgIEFzc2VydC5UaGF0KGFuY2hvcnMuQXNzaWduKGFyZWEsRW50aXR5Lk51bGwsQXJlYUFuY2hvclJvbGUuRW50cmFuY2UpLElzLkZhbHNlKTsKICAgICAgICBBc3NlcnQuVGhhdChhbmNob3JzLkFzc2lnbihhcmVhLHJlcGxhY2VtZW50LEFyZWFBbmNob3JSb2xlLkhlYWRxdWFydGVycyksSXMuRmFsc2UpOwogICAgICAgIEFzc2VydC5UaGF0KGFuY2hvcnMuUmVtb3ZlKGFyZWEsaHEsQXJlYUFuY2hvclJvbGUuRW50cmFuY2UpLElzLlRydWUpOwogICAgICAgIEFzc2VydC5UaGF0KHBhcmsuVmFsaWRhdGVBY3RpdmF0aW9uKGFyZWEpLElzLkZhbHNlKTsKICAgIH0KICAgIFtUZXN0XSBwdWJsaWMgdm9pZCBBbmNob3JVc2VzU2VyaWFsaXplckVudGl0eU92ZXJsb2FkQW5kUmVhZGVyUmVtYXBwaW5nKCkgewogICAgICAgIHZhciBpbz1NZW1vcnlTZXJpYWxpemVyLkNyZWF0ZSgpOwogICAgICAgIHZhciBsaW5rPW5ldyBBcmVhQW5jaG9yTGlua3tBbmNob3I9aHEsUm9sZT1BcmVhQW5jaG9yUm9sZS5IZWFkcXVhcnRlcnN9OyBsaW5rLlNlcmlhbGl6ZShpby5Xcml0ZXIpOwogICAgICAgIEFzc2VydC5UaGF0KGlvLkRhdGEuVG9rZW5zLERvZXMuQ29udGFpbihocSkpOwogICAgICAgIGlvLkRhdGEuUmVtYXA9ZT0+ZT09aHE/cmVwbGFjZW1lbnQ6ZTsKICAgICAgICB2YXIgbG9hZGVkPW5ldyBBcmVhQW5jaG9yTGluaygpO2xvYWRlZC5EZXNlcmlhbGl6ZShpby5SZWFkZXIpOwogICAgICAgIEFzc2VydC5UaGF0KGxvYWRlZC5BbmNob3IsSXMuRXF1YWxUbyhyZXBsYWNlbWVudCkpO0Fzc2VydC5UaGF0KGxvYWRlZC5Sb2xlLElzLkVxdWFsVG8oQXJlYUFuY2hvclJvbGUuSGVhZHF1YXJ0ZXJzKSk7CiAgICB9Cn0K
+using CS2AreaSystem.Core.Anchors;
+using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Modules.Park;
+using CS2AreaSystem.Modules.Industrial;
+using CS2AreaSystem.Modules.Tourism;
+using CS2AreaSystem.Tests.Support;
+using NUnit.Framework;
+using Unity.Entities;
+namespace CS2AreaSystem.Tests;
+public class AreaAnchorServiceTests {
+    private sealed class Store : IAreaAnchorStore {
+        public Dictionary<Entity,IReadOnlyList<AreaAnchorLink>> Values = new();
+        public IReadOnlyList<AreaAnchorLink> Read(Entity area) => Values.TryGetValue(area,out var links)?links:Array.Empty<AreaAnchorLink>();
+        public void Write(Entity area,IReadOnlyList<AreaAnchorLink> links) => Values[area]=links.ToArray();
+    }
+    private readonly Entity area=new(){Index=10,Version=1}, other=new(){Index=20,Version=1}, hq=new(){Index=30,Version=1}, replacement=new(){Index=40,Version=1};
+    [Test] public void HeadquartersLossSuspendsOnlyItsAreaAndReassignmentPreservesProgress() {
+        var invalid=new HashSet<Entity>();
+        var store=new Store(); var anchors=new AreaAnchorService(store,e=>!invalid.Contains(e),(a,e,r)=>true);
+        var industrial=new IndustrialAreaModule(anchors); var tourism=new TourismAreaModule();
+        AreaLifecycleState State(Entity a)=>AreaLifecyclePolicy.Resolve(true,industrial.ValidateActivation(a),false);
+        var progress=new ManagedAreaProgress{Level=3,Experience=1000};
+        Assert.That(State(area),Is.EqualTo(AreaLifecycleState.Suspended));
+        Assert.That(anchors.Assign(area,hq,AreaAnchorRole.Headquarters),Is.True);
+        anchors.Assign(other,replacement,AreaAnchorRole.Headquarters);
+        Assert.That(State(area),Is.EqualTo(AreaLifecycleState.Active));
+        invalid.Add(hq); Assert.That(State(area),Is.EqualTo(AreaLifecycleState.Suspended)); Assert.That(State(other),Is.EqualTo(AreaLifecycleState.Active));
+        anchors.Assign(area,replacement,AreaAnchorRole.Headquarters);
+        Assert.That(State(area),Is.EqualTo(AreaLifecycleState.Active));
+        Assert.That(store.Read(area).Count,Is.EqualTo(1)); Assert.That(progress.Level,Is.EqualTo(3)); Assert.That(progress.Experience,Is.EqualTo(1000));
+        Assert.That(tourism.ValidateActivation(area),Is.True);
+    }
+    [Test] public void ParkNeedsEntranceAndInvalidAssignmentCannotReplaceExistingLinks() {
+        var store=new Store(); var anchors=new AreaAnchorService(store,e=>e!=Entity.Null,(a,e,r)=>r==AreaAnchorRole.Entrance);
+        var park=new ParkAreaModule(anchors);
+        Assert.That(park.ValidateActivation(area),Is.False);
+        Assert.That(anchors.Assign(area,hq,AreaAnchorRole.Entrance),Is.True);
+        Assert.That(park.ValidateActivation(area),Is.True);
+        Assert.That(anchors.Assign(area,Entity.Null,AreaAnchorRole.Entrance),Is.False);
+        Assert.That(anchors.Assign(area,replacement,AreaAnchorRole.Headquarters),Is.False);
+        Assert.That(anchors.Remove(area,hq,AreaAnchorRole.Entrance),Is.True);
+        Assert.That(park.ValidateActivation(area),Is.False);
+    }
+    [Test] public void AnchorUsesSerializerEntityOverloadAndReaderRemapping() {
+        var io=MemorySerializer.Create();
+        var link=new AreaAnchorLink{Anchor=hq,Role=AreaAnchorRole.Headquarters}; link.Serialize(io.Writer);
+        Assert.That(io.Data.Tokens,Does.Contain(hq));
+        io.Data.Remap=e=>e==hq?replacement:e;
+        var loaded=new AreaAnchorLink();loaded.Deserialize(io.Reader);
+        Assert.That(loaded.Anchor,Is.EqualTo(replacement));Assert.That(loaded.Role,Is.EqualTo(AreaAnchorRole.Headquarters));
+    }
+}

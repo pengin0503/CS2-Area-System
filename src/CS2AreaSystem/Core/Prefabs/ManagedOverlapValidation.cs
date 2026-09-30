@@ -1,1 +1,30 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBTeXN0ZW0uQ29sbGVjdGlvbnMuR2VuZXJpYzsKdXNpbmcgR2FtZS5Ub29sczsKdXNpbmcgVW5pdHkuRW50aXRpZXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuUHJlZmFicwp7CiAgICAvLyBOYXRpdmUgZXJyb3JzIHJlbWFpbiBhdXRob3JpdGF0aXZlIGV4Y2VwdCBmb3IgZXhwbGljaXRseSBwZXJtaXR0ZWQgbWFuYWdlZCBwYWlycy4KICAgIHB1YmxpYyBzdGF0aWMgY2xhc3MgTWFuYWdlZE92ZXJsYXBWYWxpZGF0aW9uCiAgICB7CiAgICAgICAgcHVibGljIHN0YXRpYyBJUmVhZE9ubHlDb2xsZWN0aW9uPEVudGl0eT4gRmluZE92ZXJsYXBPbmx5RW50aXRpZXMoSUVudW1lcmFibGU8RXJyb3JEYXRhPiBlcnJvcnMsCiAgICAgICAgICAgIEZ1bmM8RW50aXR5LCBib29sPiBvd25lZCwgRnVuYzxFbnRpdHksIEVudGl0eSwgYm9vbD4gcGVybWl0cyA9IG51bGwpCiAgICAgICAgewogICAgICAgICAgICB2YXIgcGVybWl0dGVkID0gbmV3IEhhc2hTZXQ8RW50aXR5PigpOwogICAgICAgICAgICB2YXIgYmxvY2tlZCA9IG5ldyBIYXNoU2V0PEVudGl0eT4oKTsKICAgICAgICAgICAgZm9yZWFjaCAodmFyIGVycm9yIGluIGVycm9ycykKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgaWYgKGVycm9yLm1fRXJyb3JTZXZlcml0eSA8IEVycm9yU2V2ZXJpdHkuRXJyb3IpIGNvbnRpbnVlOwogICAgICAgICAgICAgICAgYm9vbCBhbGxvd2VkID0gZXJyb3IubV9FcnJvclNldmVyaXR5ID09IEVycm9yU2V2ZXJpdHkuRXJyb3IgJiYgZXJyb3IubV9FcnJvclR5cGUgPT0gRXJyb3JUeXBlLk92ZXJsYXBFeGlzdGluZyAmJgogICAgICAgICAgICAgICAgICAgIGVycm9yLm1fVGVtcEVudGl0eSAhPSBFbnRpdHkuTnVsbCAmJiBlcnJvci5tX1Blcm1hbmVudEVudGl0eSAhPSBFbnRpdHkuTnVsbCAmJgogICAgICAgICAgICAgICAgICAgIG93bmVkKGVycm9yLm1fVGVtcEVudGl0eSkgJiYgb3duZWQoZXJyb3IubV9QZXJtYW5lbnRFbnRpdHkpICYmCiAgICAgICAgICAgICAgICAgICAgKHBlcm1pdHMgPT0gbnVsbCB8fCBwZXJtaXRzKGVycm9yLm1fVGVtcEVudGl0eSwgZXJyb3IubV9QZXJtYW5lbnRFbnRpdHkpKTsKICAgICAgICAgICAgICAgIHZhciBkZXN0aW5hdGlvbiA9IGFsbG93ZWQgPyBwZXJtaXR0ZWQgOiBibG9ja2VkOwogICAgICAgICAgICAgICAgaWYgKGVycm9yLm1fVGVtcEVudGl0eSAhPSBFbnRpdHkuTnVsbCkgZGVzdGluYXRpb24uQWRkKGVycm9yLm1fVGVtcEVudGl0eSk7CiAgICAgICAgICAgICAgICBpZiAoZXJyb3IubV9QZXJtYW5lbnRFbnRpdHkgIT0gRW50aXR5Lk51bGwpIGRlc3RpbmF0aW9uLkFkZChlcnJvci5tX1Blcm1hbmVudEVudGl0eSk7CiAgICAgICAgICAgIH0KICAgICAgICAgICAgcGVybWl0dGVkLkV4Y2VwdFdpdGgoYmxvY2tlZCk7CiAgICAgICAgICAgIHJldHVybiBwZXJtaXR0ZWQ7CiAgICAgICAgfQogICAgfQp9Cg==
+using System;
+using System.Collections.Generic;
+using Game.Tools;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Prefabs
+{
+    // Native errors remain authoritative except for explicitly permitted managed pairs.
+    public static class ManagedOverlapValidation
+    {
+        public static IReadOnlyCollection<Entity> FindOverlapOnlyEntities(IEnumerable<ErrorData> errors,
+            Func<Entity, bool> owned, Func<Entity, Entity, bool> permits = null)
+        {
+            var permitted = new HashSet<Entity>();
+            var blocked = new HashSet<Entity>();
+            foreach (var error in errors)
+            {
+                if (error.m_ErrorSeverity < ErrorSeverity.Error) continue;
+                bool allowed = error.m_ErrorSeverity == ErrorSeverity.Error && error.m_ErrorType == ErrorType.OverlapExisting &&
+                    error.m_TempEntity != Entity.Null && error.m_PermanentEntity != Entity.Null &&
+                    owned(error.m_TempEntity) && owned(error.m_PermanentEntity) &&
+                    (permits == null || permits(error.m_TempEntity, error.m_PermanentEntity));
+                var destination = allowed ? permitted : blocked;
+                if (error.m_TempEntity != Entity.Null) destination.Add(error.m_TempEntity);
+                if (error.m_PermanentEntity != Entity.Null) destination.Add(error.m_PermanentEntity);
+            }
+            permitted.ExceptWith(blocked);
+            return permitted;
+        }
+    }
+}

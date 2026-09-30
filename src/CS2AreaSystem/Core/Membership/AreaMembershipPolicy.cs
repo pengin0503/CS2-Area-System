@@ -1,1 +1,30 @@
-dXNpbmcgU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuTWVtYmVyc2hpcAp7CiAgICBwdWJsaWMgc3RhdGljIGNsYXNzIEFyZWFNZW1iZXJzaGlwUG9saWN5CiAgICB7CiAgICAgICAgcHVibGljIHN0YXRpYyB1bG9uZyBDaG9vc2VQcmltYXJ5U2FtZUtpbmQoSVJlYWRPbmx5TGlzdDx1bG9uZz4gaWRzKQogICAgICAgIHsKICAgICAgICAgICAgdWxvbmcgbWluaW11bSA9IDA7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBpZCBpbiBpZHMpIGlmIChpZCAhPSAwICYmIChtaW5pbXVtID09IDAgfHwgaWQgPCBtaW5pbXVtKSkgbWluaW11bSA9IGlkOwogICAgICAgICAgICByZXR1cm4gbWluaW11bTsKICAgICAgICB9CiAgICAgICAgcHVibGljIHN0YXRpYyBJUmVhZE9ubHlMaXN0PEFyZWFNZW1iZXJzaGlwPiBOb3JtYWxpemUoSVJlYWRPbmx5TGlzdDxBcmVhTWVtYmVyc2hpcD4gbWVtYmVyc2hpcHMpCiAgICAgICAgewogICAgICAgICAgICB2YXIgdW5pcXVlID0gbmV3IERpY3Rpb25hcnk8dWxvbmcsIEFyZWFNZW1iZXJzaGlwPigpOwogICAgICAgICAgICB2YXIgcHJpbWFyaWVzID0gbmV3IERpY3Rpb25hcnk8aW50LCB1bG9uZz4oKTsKICAgICAgICAgICAgZm9yZWFjaCAodmFyIHJlbGF0aW9uIGluIG1lbWJlcnNoaXBzKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICBpZiAocmVsYXRpb24uQXJlYVN0YWJsZUlkID09IDApIGNvbnRpbnVlOwogICAgICAgICAgICAgICAgdW5pcXVlW3JlbGF0aW9uLkFyZWFTdGFibGVJZF0gPSByZWxhdGlvbjsKICAgICAgICAgICAgICAgIGlmICghcHJpbWFyaWVzLlRyeUdldFZhbHVlKHJlbGF0aW9uLlR5cGVJZCwgb3V0IHZhciBtaW5pbXVtKSB8fCByZWxhdGlvbi5BcmVhU3RhYmxlSWQgPCBtaW5pbXVtKQogICAgICAgICAgICAgICAgICAgIHByaW1hcmllc1tyZWxhdGlvbi5UeXBlSWRdID0gcmVsYXRpb24uQXJlYVN0YWJsZUlkOwogICAgICAgICAgICB9CiAgICAgICAgICAgIHZhciByZXN1bHQgPSBuZXcgTGlzdDxBcmVhTWVtYmVyc2hpcD4oKTsKICAgICAgICAgICAgZm9yZWFjaCAodmFyIHJlbGF0aW9uIGluIHVuaXF1ZS5WYWx1ZXMpCiAgICAgICAgICAgICAgICByZXN1bHQuQWRkKG5ldyBBcmVhTWVtYmVyc2hpcChyZWxhdGlvbi5BcmVhU3RhYmxlSWQsIHJlbGF0aW9uLlR5cGVJZCwgcHJpbWFyaWVzW3JlbGF0aW9uLlR5cGVJZF0gPT0gcmVsYXRpb24uQXJlYVN0YWJsZUlkKSk7CiAgICAgICAgICAgIHJlc3VsdC5Tb3J0KChhLCBiKSA9PiBhLkFyZWFTdGFibGVJZC5Db21wYXJlVG8oYi5BcmVhU3RhYmxlSWQpKTsKICAgICAgICAgICAgcmV0dXJuIHJlc3VsdC5Bc1JlYWRPbmx5KCk7CiAgICAgICAgfQogICAgfQp9Cg==
+using System.Collections.Generic;
+namespace CS2AreaSystem.Core.Membership
+{
+    public static class AreaMembershipPolicy
+    {
+        public static ulong ChoosePrimarySameKind(IReadOnlyList<ulong> ids)
+        {
+            ulong minimum = 0;
+            foreach (var id in ids) if (id != 0 && (minimum == 0 || id < minimum)) minimum = id;
+            return minimum;
+        }
+        public static IReadOnlyList<AreaMembership> Normalize(IReadOnlyList<AreaMembership> memberships)
+        {
+            var unique = new Dictionary<ulong, AreaMembership>();
+            var primaries = new Dictionary<int, ulong>();
+            foreach (var relation in memberships)
+            {
+                if (relation.AreaStableId == 0) continue;
+                unique[relation.AreaStableId] = relation;
+                if (!primaries.TryGetValue(relation.TypeId, out var minimum) || relation.AreaStableId < minimum)
+                    primaries[relation.TypeId] = relation.AreaStableId;
+            }
+            var result = new List<AreaMembership>();
+            foreach (var relation in unique.Values)
+                result.Add(new AreaMembership(relation.AreaStableId, relation.TypeId, primaries[relation.TypeId] == relation.AreaStableId));
+            result.Sort((a, b) => a.AreaStableId.CompareTo(b.AreaStableId));
+            return result.AsReadOnly();
+        }
+    }
+}

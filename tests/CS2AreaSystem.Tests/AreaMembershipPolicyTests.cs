@@ -1,1 +1,45 @@
-dXNpbmcgTlVuaXQuRnJhbWV3b3JrOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuTWVtYmVyc2hpcDsKdXNpbmcgVW5pdHkuRW50aXRpZXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLlRlc3RzOwpwdWJsaWMgY2xhc3MgQXJlYU1lbWJlcnNoaXBQb2xpY3lUZXN0cyB7CiAgICBwcml2YXRlIHN0YXRpYyByZWFkb25seSBFbnRpdHkgTWVtYmVyID0gbmV3IEVudGl0eSB7IEluZGV4ID0gMTAwLCBWZXJzaW9uID0gMSB9OwogICAgW1Rlc3RdIHB1YmxpYyB2b2lkIENyb3NzS2luZE92ZXJsYXBLZWVwc0JvdGhQcmltYXJ5TWVtYmVyc2hpcHMoKSB7CiAgICAgICAgdmFyIGluZGV4ID0gbmV3IEFyZWFNZW1iZXJzaGlwSW5kZXgoKTsKICAgICAgICBpbmRleC5SZXBsYWNlTWVtYmVyc2hpcChNZW1iZXIsIG5ld1tdIHsgbmV3IEFyZWFNZW1iZXJzaGlwKDEwLCAxLCBmYWxzZSksIG5ldyBBcmVhTWVtYmVyc2hpcCgyMCwgMywgZmFsc2UpIH0pOwogICAgICAgIEFzc2VydC5UaGF0KGluZGV4LkdldEFyZWFzKE1lbWJlcikuU2VsZWN0KHggPT4gKHguQXJlYVN0YWJsZUlkLCB4LklzUHJpbWFyeUZvclR5cGUpKSwKICAgICAgICAgICAgSXMuRXF1aXZhbGVudFRvKG5ld1tdIHsgKDEwVUwsIHRydWUpLCAoMjBVTCwgdHJ1ZSkgfSkpOwogICAgICAgIEFzc2VydC5UaGF0KGluZGV4LkdldE1lbWJlcnMoMTApLCBEb2VzLkNvbnRhaW4oTWVtYmVyKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaW5kZXguR2V0TWVtYmVycygyMCksIERvZXMuQ29udGFpbihNZW1iZXIpKTsKICAgIH0KICAgIFtUZXN0XSBwdWJsaWMgdm9pZCBTYW1lS2luZFVzZXNTbWFsbGVzdFBlcnNpc3RlZElkSW5kZXBlbmRlbnRPZk9yZGVyQW5kUmVidWlsZCgpIHsKICAgICAgICBBc3NlcnQuVGhhdChBcmVhTWVtYmVyc2hpcFBvbGljeS5DaG9vc2VQcmltYXJ5U2FtZUtpbmQobmV3IHVsb25nW10geyAzMCwgMTAgfSksIElzLkVxdWFsVG8oMTBVTCkpOwogICAgICAgIEFzc2VydC5UaGF0KEFyZWFNZW1iZXJzaGlwUG9saWN5LkNob29zZVByaW1hcnlTYW1lS2luZChuZXcgdWxvbmdbXSB7IDEwLCAzMCB9KSwgSXMuRXF1YWxUbygxMFVMKSk7CiAgICAgICAgdmFyIGluZGV4ID0gbmV3IEFyZWFNZW1iZXJzaGlwSW5kZXgoKTsKICAgICAgICBmb3IgKGludCByZWJ1aWxkID0gMDsgcmVidWlsZCA8IDI7IHJlYnVpbGQrKykgewogICAgICAgICAgICBpbmRleC5DbGVhcigpOwogICAgICAgICAgICBpbmRleC5SZXBsYWNlTWVtYmVyc2hpcChNZW1iZXIsIG5ld1tdIHsgbmV3IEFyZWFNZW1iZXJzaGlwKDMwLCAxLCB0cnVlKSwgbmV3IEFyZWFNZW1iZXJzaGlwKDEwLCAxLCB0cnVlKSB9KTsKICAgICAgICAgICAgQXNzZXJ0LlRoYXQoaW5kZXguR2V0QXJlYXMoTWVtYmVyKS5TaW5nbGUoeCA9PiB4LklzUHJpbWFyeUZvclR5cGUpLkFyZWFTdGFibGVJZCwgSXMuRXF1YWxUbygxMFVMKSk7CiAgICAgICAgICAgIEFzc2VydC5UaGF0KGluZGV4LkdldEFyZWFzKE1lbWJlciksIEhhcy5Db3VudC5FcXVhbFRvKDIpKTsKICAgICAgICB9CiAgICB9CiAgICBbVGVzdF0gcHVibGljIHZvaWQgUmVtb3ZhbFByb21vdGVzUmVtYWluaW5nU2FtZUtpbmRPd25lckFuZENsZWFuc1JldmVyc2VJbmRleCgpIHsKICAgICAgICB2YXIgaW5kZXggPSBuZXcgQXJlYU1lbWJlcnNoaXBJbmRleCgpOwogICAgICAgIGluZGV4LlJlcGxhY2VNZW1iZXJzaGlwKE1lbWJlciwgbmV3W10geyBuZXcgQXJlYU1lbWJlcnNoaXAoMTAsIDEsIGZhbHNlKSwgbmV3IEFyZWFNZW1iZXJzaGlwKDMwLCAxLCBmYWxzZSkgfSk7CiAgICAgICAgaW5kZXguUmVtb3ZlQXJlYSgxMCk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaW5kZXguR2V0QXJlYXMoTWVtYmVyKS5TaW5nbGUoKS5Jc1ByaW1hcnlGb3JUeXBlLCBJcy5UcnVlKTsKICAgICAgICBBc3NlcnQuVGhhdChpbmRleC5HZXRNZW1iZXJzKDEwKSwgSXMuRW1wdHkpOwogICAgICAgIGluZGV4LlJlbW92ZU1lbWJlcihNZW1iZXIpOwogICAgICAgIEFzc2VydC5UaGF0KGluZGV4LkdldE1lbWJlcnMoMzApLCBJcy5FbXB0eSk7CiAgICB9CiAgICBbVGVzdF0gcHVibGljIHZvaWQgUmVwbGFjZW1lbnRDb3BpZXNJbnB1dHNBbmRSZW1vdmVzU3RhbGVSZWxhdGlvbnMoKSB7CiAgICAgICAgdmFyIGluZGV4ID0gbmV3IEFyZWFNZW1iZXJzaGlwSW5kZXgoKTsKICAgICAgICB2YXIgaW5wdXQgPSBuZXdbXSB7IG5ldyBBcmVhTWVtYmVyc2hpcCgxMCwgMSwgdHJ1ZSkgfTsKICAgICAgICBpbmRleC5SZXBsYWNlTWVtYmVyc2hpcChNZW1iZXIsIGlucHV0KTsKICAgICAgICBpbnB1dFswXSA9IG5ldyBBcmVhTWVtYmVyc2hpcCgyMCwgMywgdHJ1ZSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaW5kZXguR2V0QXJlYXMoTWVtYmVyKS5TaW5nbGUoKS5BcmVhU3RhYmxlSWQsIElzLkVxdWFsVG8oMTBVTCkpOwogICAgICAgIGluZGV4LlJlcGxhY2VNZW1iZXJzaGlwKE1lbWJlciwgaW5wdXQpOwogICAgICAgIEFzc2VydC5UaGF0KGluZGV4LkdldE1lbWJlcnMoMTApLCBJcy5FbXB0eSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaW5kZXguR2V0TWVtYmVycygyMCksIERvZXMuQ29udGFpbihNZW1iZXIpKTsKICAgIH0KfQo=
+using NUnit.Framework;
+using CS2AreaSystem.Core.Membership;
+using Unity.Entities;
+namespace CS2AreaSystem.Tests;
+public class AreaMembershipPolicyTests {
+    private static readonly Entity Member = new Entity { Index = 100, Version = 1 };
+    [Test] public void CrossKindOverlapKeepsBothPrimaryMemberships() {
+        var index = new AreaMembershipIndex();
+        index.ReplaceMembership(Member, new[] { new AreaMembership(10, 1, false), new AreaMembership(20, 3, false) });
+        Assert.That(index.GetAreas(Member).Select(x => (x.AreaStableId, x.IsPrimaryForType)),
+            Is.EquivalentTo(new[] { (10UL, true), (20UL, true) }));
+        Assert.That(index.GetMembers(10), Does.Contain(Member));
+        Assert.That(index.GetMembers(20), Does.Contain(Member));
+    }
+    [Test] public void SameKindUsesSmallestPersistedIdIndependentOfOrderAndRebuild() {
+        Assert.That(AreaMembershipPolicy.ChoosePrimarySameKind(new ulong[] { 30, 10 }), Is.EqualTo(10UL));
+        Assert.That(AreaMembershipPolicy.ChoosePrimarySameKind(new ulong[] { 10, 30 }), Is.EqualTo(10UL));
+        var index = new AreaMembershipIndex();
+        for (int rebuild = 0; rebuild < 2; rebuild++) {
+            index.Clear();
+            index.ReplaceMembership(Member, new[] { new AreaMembership(30, 1, true), new AreaMembership(10, 1, true) });
+            Assert.That(index.GetAreas(Member).Single(x => x.IsPrimaryForType).AreaStableId, Is.EqualTo(10UL));
+            Assert.That(index.GetAreas(Member), Has.Count.EqualTo(2));
+        }
+    }
+    [Test] public void RemovalPromotesRemainingSameKindOwnerAndCleansReverseIndex() {
+        var index = new AreaMembershipIndex();
+        index.ReplaceMembership(Member, new[] { new AreaMembership(10, 1, false), new AreaMembership(30, 1, false) });
+        index.RemoveArea(10);
+        Assert.That(index.GetAreas(Member).Single().IsPrimaryForType, Is.True);
+        Assert.That(index.GetMembers(10), Is.Empty);
+        index.RemoveMember(Member);
+        Assert.That(index.GetMembers(30), Is.Empty);
+    }
+    [Test] public void ReplacementCopiesInputsAndRemovesStaleRelations() {
+        var index = new AreaMembershipIndex();
+        var input = new[] { new AreaMembership(10, 1, true) };
+        index.ReplaceMembership(Member, input);
+        input[0] = new AreaMembership(20, 3, true);
+        Assert.That(index.GetAreas(Member).Single().AreaStableId, Is.EqualTo(10UL));
+        index.ReplaceMembership(Member, input);
+        Assert.That(index.GetMembers(10), Is.Empty);
+        Assert.That(index.GetMembers(20), Does.Contain(Member));
+    }
+}

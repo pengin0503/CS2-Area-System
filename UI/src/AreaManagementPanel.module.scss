@@ -1,1 +1,18 @@
-LnBhbmVsIHsKIHBvc2l0aW9uOmFic29sdXRlO3JpZ2h0OnZhcigtLXNjcmVlblBhZGRpbmcsMTByZW0pO3RvcDoxMDByZW07d2lkdGg6MzYwcmVtO21heC1oZWlnaHQ6NzV2aDtvdmVyZmxvdy15OmF1dG87CiBjb2xvcjp2YXIoLS10ZXh0Q29sb3IsI2ZmZik7Zm9udC1mYW1pbHk6dmFyKC0tZm9udEZhbWlseSk7Zm9udC1zaXplOnZhcigtLWZvbnRTaXplTSwxNnJlbSk7CiBiYWNrZ3JvdW5kOmxpbmVhci1ncmFkaWVudCgxMzVkZWcsdmFyKC0tcGFuZWxDb2xvck5vcm1hbCxyZ2JhKDQyLDU1LDgzLC45KSksdmFyKC0tcGFuZWxDb2xvckRhcmsscmdiYSgyNCwzMyw1MSwuOSkpKTsKIGJvcmRlci1yYWRpdXM6dmFyKC0tcGFuZWxSYWRpdXMsNHJlbSk7Ym94LXNoYWRvdzowIDRyZW0gMTZyZW0gcmdiYSgwLDAsMCwuMyk7CiBoMntmb250LXNpemU6dmFyKC0tZm9udFNpemVMLDIwcmVtKTttYXJnaW46MCAwIDhyZW07fQogYnV0dG9ue3BhZGRpbmc6OHJlbSAxMnJlbTttYXJnaW46NHJlbSA0cmVtIDRyZW0gMDtjb2xvcjppbmhlcml0O2JhY2tncm91bmQ6dmFyKC0tcGFuZWxDb2xvckRhcmspO2JvcmRlcjoxcmVtIHNvbGlkIHJnYmEoMjU1LDI1NSwyNTUsLjEyKTtib3JkZXItcmFkaXVzOnZhcigtLXBhbmVsUmFkaXVzSW5uZXIsM3JlbSk7Y3Vyc29yOnBvaW50ZXI7fQogYnV0dG9uOmhvdmVye2JhY2tncm91bmQ6dmFyKC0tcGFuZWxDb2xvckRhcmstaG92ZXIscmdiYSg3MCw4NSwxMTAsLjgpKTt9CiBidXR0b246YWN0aXZlLGJ1dHRvblthcmlhLXNlbGVjdGVkPSd0cnVlJ117YmFja2dyb3VuZDp2YXIoLS1wYW5lbENvbG9yRGFyay1hY3RpdmUsIzMzNGM3MCk7Ym9yZGVyLWNvbG9yOnJnYmEoMjU1LDI1NSwyNTUsLjQ1KTt9CiBidXR0b246Zm9jdXMtdmlzaWJsZSxpbnB1dDpmb2N1cy12aXNpYmxle291dGxpbmU6MnJlbSBzb2xpZCAjOTFjNmZmO30KIGlucHV0e3dpZHRoOjY1JTtwYWRkaW5nOjhyZW07Y29sb3I6aW5oZXJpdDtiYWNrZ3JvdW5kOnZhcigtLXBhbmVsQ29sb3JEYXJrKTtib3JkZXI6MXJlbSBzb2xpZCByZ2JhKDI1NSwyNTUsMjU1LC4zKTt9Cn0KLmhlYWRlciwuc2VjdGlvbntwYWRkaW5nOjEycmVtIDE2cmVtO2JvcmRlci1ib3R0b206MXJlbSBzb2xpZCByZ2JhKDI1NSwyNTUsMjU1LC4xMik7fQouaGVhZGVye2JhY2tncm91bmQ6dmFyKC0tcGFuZWxDb2xvckRhcmspO30KLnN0YXR1c3tkaXNwbGF5OmJsb2NrO21hcmdpbi10b3A6OHJlbTtmb250LXNpemU6dmFyKC0tZm9udFNpemVTLDE0cmVtKTt9Ci5hY3Rpb25ze2Rpc3BsYXk6ZmxleDt9Ci50YWJze2Rpc3BsYXk6ZmxleDtwYWRkaW5nOjRyZW0gMTJyZW07Ym9yZGVyLWJvdHRvbToxcmVtIHNvbGlkIHJnYmEoMjU1LDI1NSwyNTUsLjEyKTt9Ci5wcm9ncmVzc3ttYXJnaW4tdG9wOjhyZW07cGFkZGluZzo0cmVtIDhyZW07Ym9yZGVyLXJhZGl1czozcmVtO2JhY2tncm91bmQ6cmdiYSgyNTUsMjU1LDI1NSwuMTIpO2ZvbnQtc2l6ZTp2YXIoLS1mb250U2l6ZVMsMTRyZW0pO30K
+.panel {
+ position:absolute;right:var(--screenPadding,10rem);top:100rem;width:360rem;max-height:75vh;overflow-y:auto;
+ color:var(--textColor,#fff);font-family:var(--fontFamily);font-size:var(--fontSizeM,16rem);
+ background:linear-gradient(135deg,var(--panelColorNormal,rgba(42,55,83,.9)),var(--panelColorDark,rgba(24,33,51,.9)));
+ border-radius:var(--panelRadius,4rem);box-shadow:0 4rem 16rem rgba(0,0,0,.3);
+ h2{font-size:var(--fontSizeL,20rem);margin:0 0 8rem;}
+ button{padding:8rem 12rem;margin:4rem 4rem 4rem 0;color:inherit;background:var(--panelColorDark);border:1rem solid rgba(255,255,255,.12);border-radius:var(--panelRadiusInner,3rem);cursor:pointer;}
+ button:hover{background:var(--panelColorDark-hover,rgba(70,85,110,.8));}
+ button:active,button[aria-selected='true']{background:var(--panelColorDark-active,#334c70);border-color:rgba(255,255,255,.45);}
+ button:focus-visible,input:focus-visible{outline:2rem solid #91c6ff;}
+ input{width:65%;padding:8rem;color:inherit;background:var(--panelColorDark);border:1rem solid rgba(255,255,255,.3);}
+}
+.header,.section{padding:12rem 16rem;border-bottom:1rem solid rgba(255,255,255,.12);}
+.header{background:var(--panelColorDark);}
+.status{display:block;margin-top:8rem;font-size:var(--fontSizeS,14rem);}
+.actions{display:flex;}
+.tabs{display:flex;padding:4rem 12rem;border-bottom:1rem solid rgba(255,255,255,.12);}
+.progress{margin-top:8rem;padding:4rem 8rem;border-radius:3rem;background:rgba(255,255,255,.12);font-size:var(--fontSizeS,14rem);}

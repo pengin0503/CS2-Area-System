@@ -1,1 +1,4 @@
-aW1wb3J0ICdAdGVzdGluZy1saWJyYXJ5L2plc3QtZG9tL3ZpdGVzdCc7CmltcG9ydCB7IGNsZWFudXAgfSBmcm9tICdAdGVzdGluZy1saWJyYXJ5L3JlYWN0JzsKaW1wb3J0IHsgYWZ0ZXJFYWNoIH0gZnJvbSAndml0ZXN0JzsKYWZ0ZXJFYWNoKGNsZWFudXApOwo=
+import '@testing-library/jest-dom/vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+afterEach(cleanup);

@@ -1,1 +1,36 @@
-dXNpbmcgU3lzdGVtLlJlZmxlY3Rpb247CnVzaW5nIENvbG9zc2FsLlNlcmlhbGl6YXRpb24uRW50aXRpZXM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5UZXN0cy5TdXBwb3J0OwovLyBVbm1hbmFnZWQgZ2FtZSBidWZmZXJzIGNhbm5vdCBydW4gb3V0c2lkZSBVbml0eS4gUHJveHkgdGhlIGFjdHVhbCBJUmVhZGVyL0lXcml0ZXIgY29udHJhY3QuCnB1YmxpYyBjbGFzcyBNZW1vcnlTZXJpYWxpemVyIDogRGlzcGF0Y2hQcm94eSB7CiAgICBwdWJsaWMgTGlzdDxvYmplY3Q+IFRva2VucyA9IG5ldygpOwogICAgcHVibGljIGludCBQb3NpdGlvbjsKICAgIHB1YmxpYyBGdW5jPEVudGl0eSxFbnRpdHk+IFJlbWFwID0gZW50aXR5ID0+IGVudGl0eTsKICAgIHByb3RlY3RlZCBvdmVycmlkZSBvYmplY3QgSW52b2tlKE1ldGhvZEluZm8gbWV0aG9kLCBvYmplY3RbXSBhcmdzKSB7CiAgICAgICAgaWYgKG1ldGhvZCEuTmFtZSA9PSAiV3JpdGUiKSB7IFRva2Vucy5BZGQoYXJncyFbMF0hKTsgcmV0dXJuIG51bGw7IH0KICAgICAgICBpZiAobWV0aG9kLk5hbWUgPT0gIlJlYWQiKSB7CiAgICAgICAgICAgIHZhciB2YWx1ZSA9IFRva2Vuc1tQb3NpdGlvbisrXTsKICAgICAgICAgICAgYXJncyFbMF0gPSB2YWx1ZSBpcyBFbnRpdHkgZW50aXR5ID8gUmVtYXAoZW50aXR5KSA6IHZhbHVlOwogICAgICAgICAgICByZXR1cm4gbnVsbDsKICAgICAgICB9CiAgICAgICAgaWYgKG1ldGhvZC5OYW1lID09ICJCZWdpbiIpIHsKICAgICAgICAgICAgaWYgKG1ldGhvZC5SZXR1cm5UeXBlID09IHR5cGVvZihXcml0ZXJCbG9jaykpIHsgVG9rZW5zLkFkZCgwKTsgcmV0dXJuIGRlZmF1bHQoV3JpdGVyQmxvY2spOyB9CiAgICAgICAgICAgIFBvc2l0aW9uKys7IHJldHVybiBkZWZhdWx0KFJlYWRlckJsb2NrKTsKICAgICAgICB9CiAgICAgICAgaWYgKG1ldGhvZC5OYW1lID09ICJFbmQiKSByZXR1cm4gdHJ1ZTsKICAgICAgICB0aHJvdyBuZXcgTm90U3VwcG9ydGVkRXhjZXB0aW9uKG1ldGhvZC5OYW1lKTsKICAgIH0KICAgIHB1YmxpYyBzdGF0aWMgKElXcml0ZXIgV3JpdGVyLCBJUmVhZGVyIFJlYWRlciwgTWVtb3J5U2VyaWFsaXplciBEYXRhKSBDcmVhdGUoKSB7CiAgICAgICAgdmFyIHdyaXRlcj1DcmVhdGU8SVdyaXRlcixNZW1vcnlTZXJpYWxpemVyPigpOwogICAgICAgIHZhciByZWFkZXI9Q3JlYXRlPElSZWFkZXIsTWVtb3J5U2VyaWFsaXplcj4oKTsKICAgICAgICB2YXIgdz0oTWVtb3J5U2VyaWFsaXplcikob2JqZWN0KXdyaXRlcjsKICAgICAgICB2YXIgcj0oTWVtb3J5U2VyaWFsaXplcikob2JqZWN0KXJlYWRlcjsKICAgICAgICByLlRva2Vucz13LlRva2VuczsKICAgICAgICByZXR1cm4gKHdyaXRlcixyZWFkZXIscik7CiAgICB9CiAgICBwdWJsaWMgc3RhdGljIFQgUm91bmRUcmlwPFQ+KFQgdmFsdWUpIHdoZXJlIFQ6c3RydWN0LElTZXJpYWxpemFibGUgewogICAgICAgIHZhciBpbz1DcmVhdGUoKTsgdmFsdWUuU2VyaWFsaXplKGlvLldyaXRlcik7CiAgICAgICAgdmFyIHJlc3VsdD1kZWZhdWx0KFQpOyByZXN1bHQuRGVzZXJpYWxpemUoaW8uUmVhZGVyKTsgcmV0dXJuIHJlc3VsdDsKICAgIH0KfQo=
+using System.Reflection;
+using Colossal.Serialization.Entities;
+using Unity.Entities;
+namespace CS2AreaSystem.Tests.Support;
+// Unmanaged game buffers cannot run outside Unity. Proxy the actual IReader/IWriter contract.
+public class MemorySerializer : DispatchProxy {
+    public List<object> Tokens = new();
+    public int Position;
+    public Func<Entity,Entity> Remap = entity => entity;
+    protected override object Invoke(MethodInfo method, object[] args) {
+        if (method!.Name == "Write") { Tokens.Add(args![0]!); return null; }
+        if (method.Name == "Read") {
+            var value = Tokens[Position++];
+            args![0] = value is Entity entity ? Remap(entity) : value;
+            return null;
+        }
+        if (method.Name == "Begin") {
+            if (method.ReturnType == typeof(WriterBlock)) { Tokens.Add(0); return default(WriterBlock); }
+            Position++; return default(ReaderBlock);
+        }
+        if (method.Name == "End") return true;
+        throw new NotSupportedException(method.Name);
+    }
+    public static (IWriter Writer, IReader Reader, MemorySerializer Data) Create() {
+        var writer=Create<IWriter,MemorySerializer>();
+        var reader=Create<IReader,MemorySerializer>();
+        var w=(MemorySerializer)(object)writer;
+        var r=(MemorySerializer)(object)reader;
+        r.Tokens=w.Tokens;
+        return (writer,reader,r);
+    }
+    public static T RoundTrip<T>(T value) where T:struct,ISerializable {
+        var io=Create(); value.Serialize(io.Writer);
+        var result=default(T); result.Deserialize(io.Reader); return result;
+    }
+}

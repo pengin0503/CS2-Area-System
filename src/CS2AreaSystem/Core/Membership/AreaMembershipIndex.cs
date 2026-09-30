@@ -1,1 +1,55 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBTeXN0ZW0uQ29sbGVjdGlvbnMuR2VuZXJpYzsKdXNpbmcgU3lzdGVtLkxpbnE7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLk1lbWJlcnNoaXAKewogICAgcHVibGljIHJlYWRvbmx5IHN0cnVjdCBBcmVhTWVtYmVyc2hpcAogICAgewogICAgICAgIHB1YmxpYyB1bG9uZyBBcmVhU3RhYmxlSWQgeyBnZXQ7IH0KICAgICAgICBwdWJsaWMgaW50IFR5cGVJZCB7IGdldDsgfQogICAgICAgIHB1YmxpYyBib29sIElzUHJpbWFyeUZvclR5cGUgeyBnZXQ7IH0KICAgICAgICBwdWJsaWMgQXJlYU1lbWJlcnNoaXAodWxvbmcgYXJlYVN0YWJsZUlkLCBpbnQgdHlwZUlkLCBib29sIGlzUHJpbWFyeUZvclR5cGUpCiAgICAgICAgeyBBcmVhU3RhYmxlSWQgPSBhcmVhU3RhYmxlSWQ7IFR5cGVJZCA9IHR5cGVJZDsgSXNQcmltYXJ5Rm9yVHlwZSA9IGlzUHJpbWFyeUZvclR5cGU7IH0KICAgIH0KICAgIHB1YmxpYyBzZWFsZWQgY2xhc3MgQXJlYU1lbWJlcnNoaXBJbmRleAogICAgewogICAgICAgIHByaXZhdGUgcmVhZG9ubHkgRGljdGlvbmFyeTxFbnRpdHksIElSZWFkT25seUxpc3Q8QXJlYU1lbWJlcnNoaXA+PiBieU1lbWJlciA9IG5ldyBEaWN0aW9uYXJ5PEVudGl0eSwgSVJlYWRPbmx5TGlzdDxBcmVhTWVtYmVyc2hpcD4+KCk7CiAgICAgICAgcHJpdmF0ZSByZWFkb25seSBEaWN0aW9uYXJ5PHVsb25nLCBIYXNoU2V0PEVudGl0eT4+IGJ5QXJlYSA9IG5ldyBEaWN0aW9uYXJ5PHVsb25nLCBIYXNoU2V0PEVudGl0eT4+KCk7CiAgICAgICAgcHVibGljIElSZWFkT25seUxpc3Q8QXJlYU1lbWJlcnNoaXA+IEdldEFyZWFzKEVudGl0eSBtZW1iZXIpID0+CiAgICAgICAgICAgIGJ5TWVtYmVyLlRyeUdldFZhbHVlKG1lbWJlciwgb3V0IHZhciB2YWx1ZXMpID8gdmFsdWVzIDogQXJyYXkuRW1wdHk8QXJlYU1lbWJlcnNoaXA+KCk7CiAgICAgICAgcHVibGljIElSZWFkT25seUNvbGxlY3Rpb248RW50aXR5PiBHZXRNZW1iZXJzKHVsb25nIGFyZWFJZCkgPT4KICAgICAgICAgICAgYnlBcmVhLlRyeUdldFZhbHVlKGFyZWFJZCwgb3V0IHZhciB2YWx1ZXMpID8gQXJyYXkuQXNSZWFkT25seSh2YWx1ZXMuVG9BcnJheSgpKSA6IEFycmF5LkVtcHR5PEVudGl0eT4oKTsKICAgICAgICBwdWJsaWMgdm9pZCBSZXBsYWNlTWVtYmVyc2hpcChFbnRpdHkgbWVtYmVyLCBJUmVhZE9ubHlMaXN0PEFyZWFNZW1iZXJzaGlwPiBtZW1iZXJzaGlwcykKICAgICAgICB7CiAgICAgICAgICAgIFJlbW92ZU1lbWJlcihtZW1iZXIpOwogICAgICAgICAgICB2YXIgbm9ybWFsaXplZCA9IEFyZWFNZW1iZXJzaGlwUG9saWN5Lk5vcm1hbGl6ZShtZW1iZXJzaGlwcyk7CiAgICAgICAgICAgIGlmIChub3JtYWxpemVkLkNvdW50ID09IDApIHJldHVybjsKICAgICAgICAgICAgYnlNZW1iZXJbbWVtYmVyXSA9IG5vcm1hbGl6ZWQ7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciByZWxhdGlvbiBpbiBub3JtYWxpemVkKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICBpZiAoIWJ5QXJlYS5UcnlHZXRWYWx1ZShyZWxhdGlvbi5BcmVhU3RhYmxlSWQsIG91dCB2YXIgbWVtYmVycykpCiAgICAgICAgICAgICAgICAgICAgYnlBcmVhW3JlbGF0aW9uLkFyZWFTdGFibGVJZF0gPSBtZW1iZXJzID0gbmV3IEhhc2hTZXQ8RW50aXR5PigpOwogICAgICAgICAgICAgICAgbWVtYmVycy5BZGQobWVtYmVyKTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICBwdWJsaWMgdm9pZCBSZW1vdmVNZW1iZXIoRW50aXR5IG1lbWJlcikKICAgICAgICB7CiAgICAgICAgICAgIGlmICghYnlNZW1iZXIuVHJ5R2V0VmFsdWUobWVtYmVyLCBvdXQgdmFyIHJlbGF0aW9ucykpIHJldHVybjsKICAgICAgICAgICAgZm9yZWFjaCAodmFyIHJlbGF0aW9uIGluIHJlbGF0aW9ucykKICAgICAgICAgICAgICAgIGlmIChieUFyZWEuVHJ5R2V0VmFsdWUocmVsYXRpb24uQXJlYVN0YWJsZUlkLCBvdXQgdmFyIG1lbWJlcnMpKQogICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgIG1lbWJlcnMuUmVtb3ZlKG1lbWJlcik7CiAgICAgICAgICAgICAgICAgICAgaWYgKG1lbWJlcnMuQ291bnQgPT0gMCkgYnlBcmVhLlJlbW92ZShyZWxhdGlvbi5BcmVhU3RhYmxlSWQpOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICBieU1lbWJlci5SZW1vdmUobWVtYmVyKTsKICAgICAgICB9CiAgICAgICAgcHVibGljIHZvaWQgUmVtb3ZlQXJlYSh1bG9uZyBhcmVhU3RhYmxlSWQpCiAgICAgICAgewogICAgICAgICAgICBmb3JlYWNoICh2YXIgbWVtYmVyIGluIEdldE1lbWJlcnMoYXJlYVN0YWJsZUlkKSkKICAgICAgICAgICAgICAgIFJlcGxhY2VNZW1iZXJzaGlwKG1lbWJlciwgR2V0QXJlYXMobWVtYmVyKS5XaGVyZSh4ID0+IHguQXJlYVN0YWJsZUlkICE9IGFyZWFTdGFibGVJZCkuVG9BcnJheSgpKTsKICAgICAgICAgICAgYnlBcmVhLlJlbW92ZShhcmVhU3RhYmxlSWQpOwogICAgICAgIH0KICAgICAgICBwdWJsaWMgdm9pZCBDbGVhcigpIHsgYnlNZW1iZXIuQ2xlYXIoKTsgYnlBcmVhLkNsZWFyKCk7IH0KICAgIH0KfQo=
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Membership
+{
+    public readonly struct AreaMembership
+    {
+        public ulong AreaStableId { get; }
+        public int TypeId { get; }
+        public bool IsPrimaryForType { get; }
+        public AreaMembership(ulong areaStableId, int typeId, bool isPrimaryForType)
+        { AreaStableId = areaStableId; TypeId = typeId; IsPrimaryForType = isPrimaryForType; }
+    }
+    public sealed class AreaMembershipIndex
+    {
+        private readonly Dictionary<Entity, IReadOnlyList<AreaMembership>> byMember = new Dictionary<Entity, IReadOnlyList<AreaMembership>>();
+        private readonly Dictionary<ulong, HashSet<Entity>> byArea = new Dictionary<ulong, HashSet<Entity>>();
+        public IReadOnlyList<AreaMembership> GetAreas(Entity member) =>
+            byMember.TryGetValue(member, out var values) ? values : Array.Empty<AreaMembership>();
+        public IReadOnlyCollection<Entity> GetMembers(ulong areaId) =>
+            byArea.TryGetValue(areaId, out var values) ? Array.AsReadOnly(values.ToArray()) : Array.Empty<Entity>();
+        public void ReplaceMembership(Entity member, IReadOnlyList<AreaMembership> memberships)
+        {
+            RemoveMember(member);
+            var normalized = AreaMembershipPolicy.Normalize(memberships);
+            if (normalized.Count == 0) return;
+            byMember[member] = normalized;
+            foreach (var relation in normalized)
+            {
+                if (!byArea.TryGetValue(relation.AreaStableId, out var members))
+                    byArea[relation.AreaStableId] = members = new HashSet<Entity>();
+                members.Add(member);
+            }
+        }
+        public void RemoveMember(Entity member)
+        {
+            if (!byMember.TryGetValue(member, out var relations)) return;
+            foreach (var relation in relations)
+                if (byArea.TryGetValue(relation.AreaStableId, out var members))
+                {
+                    members.Remove(member);
+                    if (members.Count == 0) byArea.Remove(relation.AreaStableId);
+                }
+            byMember.Remove(member);
+        }
+        public void RemoveArea(ulong areaStableId)
+        {
+            foreach (var member in GetMembers(areaStableId))
+                ReplaceMembership(member, GetAreas(member).Where(x => x.AreaStableId != areaStableId).ToArray());
+            byArea.Remove(areaStableId);
+        }
+        public void Clear() { byMember.Clear(); byArea.Clear(); }
+    }
+}

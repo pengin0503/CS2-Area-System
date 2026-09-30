@@ -1,1 +1,22 @@
-JEVycm9yQWN0aW9uUHJlZmVyZW5jZT0nU3RvcCcKJGZpeHR1cmU9Sm9pbi1QYXRoIChbSU8uUGF0aF06OkdldFRlbXBQYXRoKCkpICgnYXJlYS1jb3JlLWd1YXJkcy0nK1tndWlkXTo6TmV3R3VpZCgpKQpOZXctSXRlbSAtSXRlbVR5cGUgRGlyZWN0b3J5IC1QYXRoICIkZml4dHVyZS9zcmMiLCIkZml4dHVyZS9VSS9zcmMiIHwgT3V0LU51bGwKdHJ5IHsKIGZ1bmN0aW9uIFZlcmlmeS1GaXh0dXJlKFtib29sXSRyZWplY3QsW3N0cmluZ10kbWVzc2FnZSkgewogICRvdXRwdXQ9JiAiJFBTSE9NRS9wd3NoIiAtTm9Qcm9maWxlIC1GaWxlICIkUFNTY3JpcHRSb290L3ZlcmlmeS1zb3VyY2UucHMxIiAtUm9vdCAkZml4dHVyZSAyPiYxIHwgT3V0LVN0cmluZwogICRjb2RlPSRMQVNURVhJVENPREUKICBpZiAoKCRyZWplY3QgLWFuZCAoJGNvZGUgLWVxIDAgLW9yICEkb3V0cHV0LkNvbnRhaW5zKCRtZXNzYWdlKSkpIC1vciAoISRyZWplY3QgLWFuZCAkY29kZSAtbmUgMCkpIHt0aHJvdyAiU291cmNlIGd1YXJkIGV4cGVjdGF0aW9uIGZhaWxlZDogY29kZT0kY29kZSBvdXRwdXQ9JG91dHB1dCJ9CiB9CiBTZXQtQ29udGVudCAiJGZpeHR1cmUvc3JjL1NhZmUuY3MiICdjbGFzcyBTYWZlIHt9JwogVmVyaWZ5LUZpeHR1cmUgJGZhbHNlICcnCiBmb3JlYWNoKCRmb3JiaWRkZW4gaW4gQCgnSGFybW9ueUxpYicsJzBIYXJtb255JywncGF0Y2ggb2Ygc2hpcHBlZCBpbmRleC5qcycsJ3BhdGNoIG9mIHNoaXBwZWQgaW5kZXguY3NzJykpIHsKICBTZXQtQ29udGVudCAiJGZpeHR1cmUvc3JjL0JhZC5jcyIgJGZvcmJpZGRlbgogIFZlcmlmeS1GaXh0dXJlICR0cnVlICdGb3JiaWRkZW4gcHJvZHVjdGlvbiBkZXBlbmRlbmN5IG9yIHNoaXBwZWQgVUkgbXV0YXRpb24nCiB9CiBSZW1vdmUtSXRlbSAiJGZpeHR1cmUvc3JjL0JhZC5jcyIKIFNldC1Db250ZW50ICIkZml4dHVyZS9zcmMvQWRhcHRlZC5jcyIgJy8vIEFkYXB0ZWQgZnJvbSBleGFtcGxlJwogVmVyaWZ5LUZpeHR1cmUgJHRydWUgJ1RISVJEX1BBUlRZLm1kJwogU2V0LUNvbnRlbnQgIiRmaXh0dXJlL1RISVJEX1BBUlRZLm1kIiAnUHJvdmVuYW5jZSByZWNvcmRlZCcKIFZlcmlmeS1GaXh0dXJlICRmYWxzZSAnJwogV3JpdGUtSG9zdCAnU291cmNlIGd1YXJkIHRlc3RzIHBhc3NlZCAoY2xlYW4sIGZvdXIgZm9yYmlkZGVuIHBhdHRlcm5zLCBwcm92ZW5hbmNlIG1pc3NpbmcvcHJlc2VudCkuJwp9IGZpbmFsbHkge1JlbW92ZS1JdGVtIC1SZWN1cnNlIC1Gb3JjZSAkZml4dHVyZX0K
+$ErrorActionPreference='Stop'
+$fixture=Join-Path ([IO.Path]::GetTempPath()) ('area-core-guards-'+[guid]::NewGuid())
+New-Item -ItemType Directory -Path "$fixture/src","$fixture/UI/src" | Out-Null
+try {
+ function Verify-Fixture([bool]$reject,[string]$message) {
+  $output=& "$PSHOME/pwsh" -NoProfile -File "$PSScriptRoot/verify-source.ps1" -Root $fixture 2>&1 | Out-String
+  $code=$LASTEXITCODE
+  if (($reject -and ($code -eq 0 -or !$output.Contains($message))) -or (!$reject -and $code -ne 0)) {throw "Source guard expectation failed: code=$code output=$output"}
+ }
+ Set-Content "$fixture/src/Safe.cs" 'class Safe {}'
+ Verify-Fixture $false ''
+ foreach($forbidden in @('HarmonyLib','0Harmony','patch of shipped index.js','patch of shipped index.css')) {
+  Set-Content "$fixture/src/Bad.cs" $forbidden
+  Verify-Fixture $true 'Forbidden production dependency or shipped UI mutation'
+ }
+ Remove-Item "$fixture/src/Bad.cs"
+ Set-Content "$fixture/src/Adapted.cs" '// Adapted from example'
+ Verify-Fixture $true 'THIRD_PARTY.md'
+ Set-Content "$fixture/THIRD_PARTY.md" 'Provenance recorded'
+ Verify-Fixture $false ''
+ Write-Host 'Source guard tests passed (clean, four forbidden patterns, provenance missing/present).'
+} finally {Remove-Item -Recurse -Force $fixture}

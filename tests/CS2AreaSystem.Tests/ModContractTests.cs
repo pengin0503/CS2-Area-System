@@ -1,1 +1,10 @@
-dXNpbmcgTlVuaXQuRnJhbWV3b3JrOwp1c2luZyBHYW1lLk1vZGRpbmc7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLlRlc3RzOwpwdWJsaWMgY2xhc3MgTW9kQ29udHJhY3RUZXN0cyB7CiAgICBbVGVzdF0gcHVibGljIHZvaWQgTW9kU3VwcG9ydHNHYW1lTGlmZWN5Y2xlKCkgewogICAgICAgIElNb2QgbW9kID0gbmV3IE1vZCgpOwogICAgICAgIEFzc2VydC5Eb2VzTm90VGhyb3coKCkgPT4gbW9kLk9uRGlzcG9zZSgpKTsKICAgIH0KfQoK
+using NUnit.Framework;
+using Game.Modding;
+namespace CS2AreaSystem.Tests;
+public class ModContractTests {
+    [Test] public void ModSupportsGameLifecycle() {
+        IMod mod = new Mod();
+        Assert.DoesNotThrow(() => mod.OnDispose());
+    }
+}
+

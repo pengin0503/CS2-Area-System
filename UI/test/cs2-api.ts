@@ -1,1 +1,3 @@
-ZXhwb3J0IGZ1bmN0aW9uIGJpbmRWYWx1ZTxUPihncm91cDpzdHJpbmcsbmFtZTpzdHJpbmcsZmFsbGJhY2s/OlQpe3JldHVybnt2YWx1ZTpmYWxsYmFja307fQpleHBvcnQgZnVuY3Rpb24gdXNlVmFsdWU8VD4oYmluZGluZzp7dmFsdWU6VH0pOlR7cmV0dXJuIGJpbmRpbmcudmFsdWU7fQpleHBvcnQgZnVuY3Rpb24gdHJpZ2dlcigpe3Rocm93IG5ldyBFcnJvcignVGVzdCBtdXN0IGV4cGxpY2l0bHkgcHJvdmlkZSBiaW5kaW5nIGJlaGF2aW9yJyk7fQo=
+export function bindValue<T>(group:string,name:string,fallback?:T){return{value:fallback};}
+export function useValue<T>(binding:{value:T}):T{return binding.value;}
+export function trigger(){throw new Error('Test must explicitly provide binding behavior');}

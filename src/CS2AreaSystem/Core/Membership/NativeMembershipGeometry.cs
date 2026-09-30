@@ -1,1 +1,10 @@
-dXNpbmcgQ29sb3NzYWwuTWF0aGVtYXRpY3M7CnVzaW5nIFVuaXR5Lk1hdGhlbWF0aWNzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLk1lbWJlcnNoaXAKewogICAgcHVibGljIHN0YXRpYyBjbGFzcyBOYXRpdmVNZW1iZXJzaGlwR2VvbWV0cnkKICAgIHsKICAgICAgICBwdWJsaWMgc3RhdGljIGJvb2wgQ29udGFpbnMoVHJpYW5nbGUyIHRyaWFuZ2xlLCBmbG9hdDIgcG9pbnQpID0+CiAgICAgICAgICAgIE1hdGhVdGlscy5JbnRlcnNlY3QodHJpYW5nbGUsIG5ldyBDaXJjbGUyKDBmLCBwb2ludCkpOwogICAgfQp9Cg==
+using Colossal.Mathematics;
+using Unity.Mathematics;
+namespace CS2AreaSystem.Core.Membership
+{
+    public static class NativeMembershipGeometry
+    {
+        public static bool Contains(Triangle2 triangle, float2 point) =>
+            MathUtils.Intersect(triangle, new Circle2(0f, point));
+    }
+}

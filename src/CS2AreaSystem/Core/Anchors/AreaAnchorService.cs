@@ -1,1 +1,69 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBTeXN0ZW0uQ29sbGVjdGlvbnMuR2VuZXJpYzsKdXNpbmcgU3lzdGVtLkxpbnE7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLkFuY2hvcnMKewogICAgcHVibGljIGludGVyZmFjZSBJQXJlYUFuY2hvclN0b3JlCiAgICB7CiAgICAgICAgSVJlYWRPbmx5TGlzdDxBcmVhQW5jaG9yTGluaz4gUmVhZChFbnRpdHkgYXJlYSk7CiAgICAgICAgdm9pZCBXcml0ZShFbnRpdHkgYXJlYSwgSVJlYWRPbmx5TGlzdDxBcmVhQW5jaG9yTGluaz4gbGlua3MpOwogICAgfQogICAgcHVibGljIHNlYWxlZCBjbGFzcyBBcmVhQW5jaG9yU2VydmljZQogICAgewogICAgICAgIHByaXZhdGUgcmVhZG9ubHkgSUFyZWFBbmNob3JTdG9yZSBzdG9yZTsKICAgICAgICBwcml2YXRlIHJlYWRvbmx5IEZ1bmM8RW50aXR5LCBib29sPiB2YWxpZDsKICAgICAgICBwcml2YXRlIHJlYWRvbmx5IEZ1bmM8RW50aXR5LCBFbnRpdHksIEFyZWFBbmNob3JSb2xlLCBib29sPiBlbGlnaWJsZTsKICAgICAgICBwcml2YXRlIHJlYWRvbmx5IERpY3Rpb25hcnk8RW50aXR5LCBIYXNoU2V0PEVudGl0eT4+IGJ5QW5jaG9yID0gbmV3IERpY3Rpb25hcnk8RW50aXR5LCBIYXNoU2V0PEVudGl0eT4+KCk7CiAgICAgICAgcHJpdmF0ZSByZWFkb25seSBIYXNoU2V0PEVudGl0eT4gZGlydHkgPSBuZXcgSGFzaFNldDxFbnRpdHk+KCk7CiAgICAgICAgcHVibGljIEFyZWFBbmNob3JTZXJ2aWNlKElBcmVhQW5jaG9yU3RvcmUgc3RvcmUsIEZ1bmM8RW50aXR5LCBib29sPiB2YWxpZCwgRnVuYzxFbnRpdHksIEVudGl0eSwgQXJlYUFuY2hvclJvbGUsIGJvb2w+IGVsaWdpYmxlKQogICAgICAgIHsgdGhpcy5zdG9yZSA9IHN0b3JlOyB0aGlzLnZhbGlkID0gdmFsaWQ7IHRoaXMuZWxpZ2libGUgPSBlbGlnaWJsZTsgfQogICAgICAgIHB1YmxpYyBib29sIEFzc2lnbihFbnRpdHkgYXJlYSwgRW50aXR5IGFuY2hvciwgQXJlYUFuY2hvclJvbGUgcm9sZSkKICAgICAgICB7CiAgICAgICAgICAgIGlmICghdmFsaWQoYXJlYSkgfHwgIXZhbGlkKGFuY2hvcikgfHwgIWVsaWdpYmxlKGFyZWEsIGFuY2hvciwgcm9sZSkpIHJldHVybiBmYWxzZTsKICAgICAgICAgICAgdmFyIG9sZCA9IHN0b3JlLlJlYWQoYXJlYSk7CiAgICAgICAgICAgIHZhciBsaW5rcyA9IG9sZC5XaGVyZShsaW5rID0+ICEobGluay5Sb2xlID09IHJvbGUgJiYgKHJvbGUgPT0gQXJlYUFuY2hvclJvbGUuSGVhZHF1YXJ0ZXJzIHx8IGxpbmsuQW5jaG9yID09IGFuY2hvcikpKS5Ub0xpc3QoKTsKICAgICAgICAgICAgbGlua3MuQWRkKG5ldyBBcmVhQW5jaG9yTGluayB7IEFuY2hvciA9IGFuY2hvciwgUm9sZSA9IHJvbGUgfSk7CiAgICAgICAgICAgIHN0b3JlLldyaXRlKGFyZWEsIGxpbmtzKTsgUmVpbmRleChhcmVhLCBvbGQsIGxpbmtzKTsgZGlydHkuQWRkKGFyZWEpOyByZXR1cm4gdHJ1ZTsKICAgICAgICB9CiAgICAgICAgcHVibGljIGJvb2wgUmVtb3ZlKEVudGl0eSBhcmVhLCBFbnRpdHkgYW5jaG9yLCBBcmVhQW5jaG9yUm9sZSByb2xlKQogICAgICAgIHsKICAgICAgICAgICAgdmFyIG9sZCA9IHN0b3JlLlJlYWQoYXJlYSk7CiAgICAgICAgICAgIHZhciBsaW5rcyA9IG9sZC5XaGVyZShsaW5rID0+IGxpbmsuQW5jaG9yICE9IGFuY2hvciB8fCBsaW5rLlJvbGUgIT0gcm9sZSkuVG9BcnJheSgpOwogICAgICAgICAgICBpZiAobGlua3MuTGVuZ3RoID09IG9sZC5Db3VudCkgcmV0dXJuIGZhbHNlOwogICAgICAgICAgICBzdG9yZS5Xcml0ZShhcmVhLCBsaW5rcyk7IFJlaW5kZXgoYXJlYSwgb2xkLCBsaW5rcyk7IGRpcnR5LkFkZChhcmVhKTsgcmV0dXJuIHRydWU7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBib29sIEhhc1ZhbGlkQW5jaG9yKEVudGl0eSBhcmVhLCBBcmVhQW5jaG9yUm9sZSByb2xlKSA9PiBzdG9yZS5SZWFkKGFyZWEpLkFueShsaW5rID0+CiAgICAgICAgICAgIGxpbmsuUm9sZSA9PSByb2xlICYmIHZhbGlkKGxpbmsuQW5jaG9yKSAmJiBlbGlnaWJsZShhcmVhLCBsaW5rLkFuY2hvciwgcm9sZSkpOwogICAgICAgIHB1YmxpYyB2b2lkIFJlYnVpbGRSZXZlcnNlSW5kZXgoSUVudW1lcmFibGU8RW50aXR5PiBhcmVhcykKICAgICAgICB7CiAgICAgICAgICAgIGJ5QW5jaG9yLkNsZWFyKCk7IGRpcnR5LkNsZWFyKCk7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBhcmVhIGluIGFyZWFzKSBSZWluZGV4KGFyZWEsIEFycmF5LkVtcHR5PEFyZWFBbmNob3JMaW5rPigpLCBzdG9yZS5SZWFkKGFyZWEpKTsKICAgICAgICB9CiAgICAgICAgcHVibGljIHZvaWQgSW52YWxpZGF0ZUFuY2hvcihFbnRpdHkgYW5jaG9yKQogICAgICAgIHsgaWYgKGJ5QW5jaG9yLlRyeUdldFZhbHVlKGFuY2hvciwgb3V0IHZhciBhcmVhcykpIGRpcnR5LlVuaW9uV2l0aChhcmVhcyk7IH0KICAgICAgICBwdWJsaWMgdm9pZCBJbnZhbGlkYXRlQXJlYShFbnRpdHkgYXJlYSkgPT4gZGlydHkuQWRkKGFyZWEpOwogICAgICAgIHB1YmxpYyBFbnRpdHlbXSBEcmFpbkRpcnR5KCkgeyB2YXIgcmVzdWx0ID0gZGlydHkuVG9BcnJheSgpOyBkaXJ0eS5DbGVhcigpOyByZXR1cm4gcmVzdWx0OyB9CiAgICAgICAgcHJpdmF0ZSB2b2lkIFJlaW5kZXgoRW50aXR5IGFyZWEsIElSZWFkT25seUxpc3Q8QXJlYUFuY2hvckxpbms+IG9sZCwgSVJlYWRPbmx5TGlzdDxBcmVhQW5jaG9yTGluaz4gbGlua3MpCiAgICAgICAgewogICAgICAgICAgICBmb3JlYWNoICh2YXIgbGluayBpbiBvbGQpIGlmIChieUFuY2hvci5UcnlHZXRWYWx1ZShsaW5rLkFuY2hvciwgb3V0IHZhciBhcmVhcykpIHsgYXJlYXMuUmVtb3ZlKGFyZWEpOyBpZiAoYXJlYXMuQ291bnQgPT0gMCkgYnlBbmNob3IuUmVtb3ZlKGxpbmsuQW5jaG9yKTsgfQogICAgICAgICAgICBmb3JlYWNoICh2YXIgbGluayBpbiBsaW5rcykgeyBpZiAoIWJ5QW5jaG9yLlRyeUdldFZhbHVlKGxpbmsuQW5jaG9yLCBvdXQgdmFyIGFyZWFzKSkgYnlBbmNob3JbbGluay5BbmNob3JdID0gYXJlYXMgPSBuZXcgSGFzaFNldDxFbnRpdHk+KCk7IGFyZWFzLkFkZChhcmVhKTsgfQogICAgICAgIH0KICAgIH0KICAgIHB1YmxpYyBzZWFsZWQgY2xhc3MgRW50aXR5QXJlYUFuY2hvclN0b3JlIDogSUFyZWFBbmNob3JTdG9yZQogICAgewogICAgICAgIHByaXZhdGUgcmVhZG9ubHkgRW50aXR5TWFuYWdlciBlbnRpdGllczsKICAgICAgICBwdWJsaWMgRW50aXR5QXJlYUFuY2hvclN0b3JlKEVudGl0eU1hbmFnZXIgZW50aXRpZXMpID0+IHRoaXMuZW50aXRpZXMgPSBlbnRpdGllczsKICAgICAgICBwdWJsaWMgSVJlYWRPbmx5TGlzdDxBcmVhQW5jaG9yTGluaz4gUmVhZChFbnRpdHkgYXJlYSkKICAgICAgICB7CiAgICAgICAgICAgIGlmICghZW50aXRpZXMuRXhpc3RzKGFyZWEpIHx8ICFlbnRpdGllcy5IYXNCdWZmZXI8QXJlYUFuY2hvckxpbms+KGFyZWEpKSByZXR1cm4gQXJyYXkuRW1wdHk8QXJlYUFuY2hvckxpbms+KCk7CiAgICAgICAgICAgIHZhciBidWZmZXIgPSBlbnRpdGllcy5HZXRCdWZmZXI8QXJlYUFuY2hvckxpbms+KGFyZWEsIHRydWUpOwogICAgICAgICAgICB2YXIgY29weSA9IG5ldyBBcmVhQW5jaG9yTGlua1tidWZmZXIuTGVuZ3RoXTsgZm9yIChpbnQgaSA9IDA7IGkgPCBjb3B5Lkxlbmd0aDsgaSsrKSBjb3B5W2ldID0gYnVmZmVyW2ldOyByZXR1cm4gY29weTsKICAgICAgICB9CiAgICAgICAgcHVibGljIHZvaWQgV3JpdGUoRW50aXR5IGFyZWEsIElSZWFkT25seUxpc3Q8QXJlYUFuY2hvckxpbms+IGxpbmtzKQogICAgICAgIHsKICAgICAgICAgICAgdmFyIGJ1ZmZlciA9IGVudGl0aWVzLkhhc0J1ZmZlcjxBcmVhQW5jaG9yTGluaz4oYXJlYSkgPyBlbnRpdGllcy5HZXRCdWZmZXI8QXJlYUFuY2hvckxpbms+KGFyZWEpIDogZW50aXRpZXMuQWRkQnVmZmVyPEFyZWFBbmNob3JMaW5rPihhcmVhKTsKICAgICAgICAgICAgYnVmZmVyLkNsZWFyKCk7IGZvcmVhY2ggKHZhciBsaW5rIGluIGxpbmtzKSBidWZmZXIuQWRkKGxpbmspOwogICAgICAgIH0KICAgIH0KfQo=
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Anchors
+{
+    public interface IAreaAnchorStore
+    {
+        IReadOnlyList<AreaAnchorLink> Read(Entity area);
+        void Write(Entity area, IReadOnlyList<AreaAnchorLink> links);
+    }
+    public sealed class AreaAnchorService
+    {
+        private readonly IAreaAnchorStore store;
+        private readonly Func<Entity, bool> valid;
+        private readonly Func<Entity, Entity, AreaAnchorRole, bool> eligible;
+        private readonly Dictionary<Entity, HashSet<Entity>> byAnchor = new Dictionary<Entity, HashSet<Entity>>();
+        private readonly HashSet<Entity> dirty = new HashSet<Entity>();
+        public AreaAnchorService(IAreaAnchorStore store, Func<Entity, bool> valid, Func<Entity, Entity, AreaAnchorRole, bool> eligible)
+        { this.store = store; this.valid = valid; this.eligible = eligible; }
+        public bool Assign(Entity area, Entity anchor, AreaAnchorRole role)
+        {
+            if (!valid(area) || !valid(anchor) || !eligible(area, anchor, role)) return false;
+            var old = store.Read(area);
+            var links = old.Where(link => !(link.Role == role && (role == AreaAnchorRole.Headquarters || link.Anchor == anchor))).ToList();
+            links.Add(new AreaAnchorLink { Anchor = anchor, Role = role });
+            store.Write(area, links); Reindex(area, old, links); dirty.Add(area); return true;
+        }
+        public bool Remove(Entity area, Entity anchor, AreaAnchorRole role)
+        {
+            var old = store.Read(area);
+            var links = old.Where(link => link.Anchor != anchor || link.Role != role).ToArray();
+            if (links.Length == old.Count) return false;
+            store.Write(area, links); Reindex(area, old, links); dirty.Add(area); return true;
+        }
+        public bool HasValidAnchor(Entity area, AreaAnchorRole role) => store.Read(area).Any(link =>
+            link.Role == role && valid(link.Anchor) && eligible(area, link.Anchor, role));
+        public void RebuildReverseIndex(IEnumerable<Entity> areas)
+        {
+            byAnchor.Clear(); dirty.Clear();
+            foreach (var area in areas) Reindex(area, Array.Empty<AreaAnchorLink>(), store.Read(area));
+        }
+        public void InvalidateAnchor(Entity anchor)
+        { if (byAnchor.TryGetValue(anchor, out var areas)) dirty.UnionWith(areas); }
+        public void InvalidateArea(Entity area) => dirty.Add(area);
+        public Entity[] DrainDirty() { var result = dirty.ToArray(); dirty.Clear(); return result; }
+        private void Reindex(Entity area, IReadOnlyList<AreaAnchorLink> old, IReadOnlyList<AreaAnchorLink> links)
+        {
+            foreach (var link in old) if (byAnchor.TryGetValue(link.Anchor, out var areas)) { areas.Remove(area); if (areas.Count == 0) byAnchor.Remove(link.Anchor); }
+            foreach (var link in links) { if (!byAnchor.TryGetValue(link.Anchor, out var areas)) byAnchor[link.Anchor] = areas = new HashSet<Entity>(); areas.Add(area); }
+        }
+    }
+    public sealed class EntityAreaAnchorStore : IAreaAnchorStore
+    {
+        private readonly EntityManager entities;
+        public EntityAreaAnchorStore(EntityManager entities) => this.entities = entities;
+        public IReadOnlyList<AreaAnchorLink> Read(Entity area)
+        {
+            if (!entities.Exists(area) || !entities.HasBuffer<AreaAnchorLink>(area)) return Array.Empty<AreaAnchorLink>();
+            var buffer = entities.GetBuffer<AreaAnchorLink>(area, true);
+            var copy = new AreaAnchorLink[buffer.Length]; for (int i = 0; i < copy.Length; i++) copy[i] = buffer[i]; return copy;
+        }
+        public void Write(Entity area, IReadOnlyList<AreaAnchorLink> links)
+        {
+            var buffer = entities.HasBuffer<AreaAnchorLink>(area) ? entities.GetBuffer<AreaAnchorLink>(area) : entities.AddBuffer<AreaAnchorLink>(area);
+            buffer.Clear(); foreach (var link in links) buffer.Add(link);
+        }
+    }
+}

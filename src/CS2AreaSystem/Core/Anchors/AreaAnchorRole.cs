@@ -1,1 +1,5 @@
-bmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BbmNob3JzCnsKICAgIHB1YmxpYyBlbnVtIEFyZWFBbmNob3JSb2xlIDogYnl0ZSB7IEVudHJhbmNlID0gMSwgSGVhZHF1YXJ0ZXJzID0gMiB9CiAgICBwdWJsaWMgaW50ZXJmYWNlIElBcmVhQW5jaG9yUG9saWN5IHsgQXJlYUFuY2hvclJvbGU/IFJlcXVpcmVkQW5jaG9yUm9sZSB7IGdldDsgfSB9Cn0K
+namespace CS2AreaSystem.Core.Anchors
+{
+    public enum AreaAnchorRole : byte { Entrance = 1, Headquarters = 2 }
+    public interface IAreaAnchorPolicy { AreaAnchorRole? RequiredAnchorRole { get; } }
+}

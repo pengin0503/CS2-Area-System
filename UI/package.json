@@ -1,1 +1,6 @@
-ewogICJuYW1lIjoiY3MyLWFyZWEtc3lzdGVtLXVpIiwidmVyc2lvbiI6IjAuMS4wIiwicHJpdmF0ZSI6dHJ1ZSwKICAic2NyaXB0cyI6eyJ0ZXN0Ijoidml0ZXN0IiwiYnVpbGQiOiJ3ZWJwYWNrIC0tbW9kZSBwcm9kdWN0aW9uIn0sCiAgImRlcGVuZGVuY2llcyI6eyJyZWFjdCI6IjE4LjMuMSIsInJlYWN0LWRvbSI6IjE4LjMuMSJ9LAogICJkZXZEZXBlbmRlbmNpZXMiOnsiQHRlc3RpbmctbGlicmFyeS9yZWFjdCI6IjE2LjEuMCIsIkB0ZXN0aW5nLWxpYnJhcnkvamVzdC1kb20iOiI2LjYuMyIsIkB0eXBlcy9yZWFjdCI6IjE4LjMuMTgiLCJAdHlwZXMvcmVhY3QtZG9tIjoiMTguMy41IiwidHlwZXNjcmlwdCI6IjUuNy4zIiwidml0ZXN0IjoiMi4xLjkiLCJqc2RvbSI6IjI1LjAuMSIsIndlYnBhY2siOiI1Ljk3LjEiLCJ3ZWJwYWNrLWNsaSI6IjYuMC4xIiwidHMtbG9hZGVyIjoiOS41LjIiLCJjc3MtbG9hZGVyIjoiNi4xMS4wIiwic2FzcyI6IjEuODMuNCIsInNhc3MtbG9hZGVyIjoiMTYuMC40IiwibWluaS1jc3MtZXh0cmFjdC1wbHVnaW4iOiIyLjkuMiJ9Cn0K
+{
+  "name":"cs2-area-system-ui","version":"0.1.0","private":true,
+  "scripts":{"test":"vitest","build":"webpack --mode production"},
+  "dependencies":{"react":"18.3.1","react-dom":"18.3.1"},
+  "devDependencies":{"@testing-library/react":"16.1.0","@testing-library/jest-dom":"6.6.3","@types/react":"18.3.18","@types/react-dom":"18.3.5","typescript":"5.7.3","vitest":"2.1.9","jsdom":"25.0.1","webpack":"5.97.1","webpack-cli":"6.0.1","ts-loader":"9.5.2","css-loader":"6.11.0","sass":"1.83.4","sass-loader":"16.0.4","mini-css-extract-plugin":"2.9.2"}
+}

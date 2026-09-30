@@ -1,1 +1,6 @@
-dXNpbmcgVW5pdHkuRW50aXRpZXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuTW9kdWxlcwp7CiAgICBwdWJsaWMgZW51bSBBcmVhTWVtYmVyUm9sZSA6IGJ5dGUgeyBOb25lLCBNZW1iZXIgfQogICAgcHVibGljIGludGVyZmFjZSBJQXJlYU1lbWJlckNsYXNzaWZpZXIgeyBBcmVhTWVtYmVyUm9sZSBDbGFzc2lmeShFbnRpdHkgbWVtYmVyLCBFbnRpdHkgYXJlYSk7IH0KfQo=
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Modules
+{
+    public enum AreaMemberRole : byte { None, Member }
+    public interface IAreaMemberClassifier { AreaMemberRole Classify(Entity member, Entity area); }
+}

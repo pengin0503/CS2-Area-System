@@ -1,1 +1,28 @@
-dXNpbmcgTlVuaXQuRnJhbWV3b3JrOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuQXJlYXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLlRlc3RzOwpwdWJsaWMgY2xhc3MgTWFuYWdlZEFyZWFUeXBlUmVzb2x2ZXJUZXN0cyB7CiAgICBbVGVzdENhc2UoIkNTMkFTLlBhcmtBcmVhIiwgQXJlYVR5cGVJZC5QYXJrKV0KICAgIFtUZXN0Q2FzZSgiQ1MyQVMuSW5kdXN0cmlhbEFyZWEiLCBBcmVhVHlwZUlkLkluZHVzdHJpYWwpXQogICAgW1Rlc3RDYXNlKCJDUzJBUy5Ub3VyaXNtQXJlYSIsIEFyZWFUeXBlSWQuVG91cmlzbSldCiAgICBwdWJsaWMgdm9pZCBSZXNvbHZlc09ubHlNYW5hZ2VkUHJlZmFicyhzdHJpbmcgbmFtZSwgQXJlYVR5cGVJZCBleHBlY3RlZCkgewogICAgICAgIEFzc2VydC5UaGF0KG5ldyBNYW5hZ2VkQXJlYVR5cGVSZXNvbHZlcigpLlRyeVJlc29sdmUobmFtZSwgb3V0IHZhciBhY3R1YWwpLCBJcy5UcnVlKTsKICAgICAgICBBc3NlcnQuVGhhdChhY3R1YWwsIElzLkVxdWFsVG8oZXhwZWN0ZWQpKTsKICAgIH0KICAgIFtUZXN0Q2FzZSgiRGlzdHJpY3QiKV0gW1Rlc3RDYXNlKCJGb3Jlc3RyeSBBcmVhIildIFtUZXN0Q2FzZSgiY3MyYXMucGFya2FyZWEiKV0gW1Rlc3RDYXNlKG51bGwpXQogICAgcHVibGljIHZvaWQgUmVqZWN0c1VucmVsYXRlZE9ySW5jb3JyZWN0bHlDYXNlZFByZWZhYihzdHJpbmcgbmFtZSkgPT4KICAgICAgICBBc3NlcnQuVGhhdChuZXcgTWFuYWdlZEFyZWFUeXBlUmVzb2x2ZXIoKS5UcnlSZXNvbHZlKG5hbWUsIG91dCBfKSwgSXMuRmFsc2UpOwogICAgW1Rlc3RdIHB1YmxpYyB2b2lkIE5hdGl2ZUVkaXRzRG9Ob3RSZXBsYWNlRXhpc3RpbmdJZGVudGl0eU9yU2F2ZWRVbmtub3duVHlwZSgpIHsKICAgICAgICB2YXIgaWRzID0gbmV3IEFyZWFTdGFibGVJZEFsbG9jYXRvcigpOwogICAgICAgIHZhciBjcmVhdGVkID0gTWFuYWdlZEFyZWFJZGVudGl0eS5FbnN1cmUoMSwgbnVsbCwgbnVsbCwgaWRzKTsKICAgICAgICBBc3NlcnQuVGhhdChjcmVhdGVkLlN0YWJsZUlkLlZhbHVlLCBJcy5FcXVhbFRvKDFVTCkpOwogICAgICAgIHZhciBzYXZlZCA9IG5ldyBNYW5hZ2VkQXJlYSB7IFNjaGVtYVZlcnNpb24gPSAxLCBUeXBlSWQgPSA5OTk5LCBTdGF0ZSA9IEFyZWFMaWZlY3ljbGVTdGF0ZS5Nb2R1bGVVbmF2YWlsYWJsZSB9OwogICAgICAgIHZhciBlZGl0ID0gTWFuYWdlZEFyZWFJZGVudGl0eS5FbnN1cmUoMSwgc2F2ZWQsIG5ldyBNYW5hZ2VkQXJlYVN0YWJsZUlkIHsgVmFsdWUgPSA0MiB9LCBpZHMpOwogICAgICAgIEFzc2VydC5UaGF0KGVkaXQuU3RhYmxlSWQuVmFsdWUsIElzLkVxdWFsVG8oNDJVTCkpOwogICAgICAgIEFzc2VydC5UaGF0KGVkaXQuTWFuYWdlZC5UeXBlSWQsIElzLkVxdWFsVG8oOTk5OSkpOwogICAgICAgIEFzc2VydC5UaGF0KGlkcy5BbGxvY2F0ZSgpLCBJcy5FcXVhbFRvKDJVTCkpOwogICAgfQogICAgW1Rlc3RDYXNlKGZhbHNlLCB0cnVlLCBmYWxzZSldIFtUZXN0Q2FzZSh0cnVlLCBmYWxzZSwgZmFsc2UpXSBbVGVzdENhc2UodHJ1ZSwgdHJ1ZSwgdHJ1ZSldCiAgICBwdWJsaWMgdm9pZCBDcmVhdGlvblJlcXVpcmVzUmVhZHlQcmVmYWJBbmROYXRpdmVUb29sKGJvb2wgcmVhZHksIGJvb2wgbmF0aXZlVG9vbCwgYm9vbCBhbGxvd2VkKSA9PgogICAgICAgIEFzc2VydC5UaGF0KEFyZWFUb29sQWN0aXZhdGlvblBvbGljeS5DYW5DcmVhdGUocmVhZHksIG5hdGl2ZVRvb2wpLCBJcy5FcXVhbFRvKGFsbG93ZWQpKTsKfQo=
+using NUnit.Framework;
+using CS2AreaSystem.Core.Areas;
+namespace CS2AreaSystem.Tests;
+public class ManagedAreaTypeResolverTests {
+    [TestCase("CS2AS.ParkArea", AreaTypeId.Park)]
+    [TestCase("CS2AS.IndustrialArea", AreaTypeId.Industrial)]
+    [TestCase("CS2AS.TourismArea", AreaTypeId.Tourism)]
+    public void ResolvesOnlyManagedPrefabs(string name, AreaTypeId expected) {
+        Assert.That(new ManagedAreaTypeResolver().TryResolve(name, out var actual), Is.True);
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+    [TestCase("District")] [TestCase("Forestry Area")] [TestCase("cs2as.parkarea")] [TestCase(null)]
+    public void RejectsUnrelatedOrIncorrectlyCasedPrefab(string name) =>
+        Assert.That(new ManagedAreaTypeResolver().TryResolve(name, out _), Is.False);
+    [Test] public void NativeEditsDoNotReplaceExistingIdentityOrSavedUnknownType() {
+        var ids = new AreaStableIdAllocator();
+        var created = ManagedAreaIdentity.Ensure(1, null, null, ids);
+        Assert.That(created.StableId.Value, Is.EqualTo(1UL));
+        var saved = new ManagedArea { SchemaVersion = 1, TypeId = 9999, State = AreaLifecycleState.ModuleUnavailable };
+        var edit = ManagedAreaIdentity.Ensure(1, saved, new ManagedAreaStableId { Value = 42 }, ids);
+        Assert.That(edit.StableId.Value, Is.EqualTo(42UL));
+        Assert.That(edit.Managed.TypeId, Is.EqualTo(9999));
+        Assert.That(ids.Allocate(), Is.EqualTo(2UL));
+    }
+    [TestCase(false, true, false)] [TestCase(true, false, false)] [TestCase(true, true, true)]
+    public void CreationRequiresReadyPrefabAndNativeTool(bool ready, bool nativeTool, bool allowed) =>
+        Assert.That(AreaToolActivationPolicy.CanCreate(ready, nativeTool), Is.EqualTo(allowed));
+}

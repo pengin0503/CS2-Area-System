@@ -1,1 +1,122 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBTeXN0ZW0uR2xvYmFsaXphdGlvbjsKdXNpbmcgQ29sb3NzYWwuU2VyaWFsaXphdGlvbi5FbnRpdGllczsKdXNpbmcgQ29sb3NzYWwuVUkuQmluZGluZzsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLkFuY2hvcnM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlOwp1c2luZyBHYW1lOwp1c2luZyBHYW1lLkNvbW1vbjsKdXNpbmcgR2FtZS5QcmVmYWJzOwp1c2luZyBHYW1lLlNjZW5lRmxvdzsKdXNpbmcgR2FtZS5Ub29sczsKdXNpbmcgR2FtZS5VSTsKdXNpbmcgR2FtZS5VSS5JbkdhbWU7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLlVJCnsKICAgIHB1YmxpYyBwYXJ0aWFsIGNsYXNzIEFyZWFNYW5hZ2VtZW50VUlTeXN0ZW0gOiBVSVN5c3RlbUJhc2UKICAgIHsKICAgICAgICBwcml2YXRlIEFyZWFDb3JlU2VydmljZXNTeXN0ZW0gc2VydmljZXM7CiAgICAgICAgcHJpdmF0ZSBTZWxlY3RlZEluZm9VSVN5c3RlbSBzZWxlY3Rpb247CiAgICAgICAgcHJpdmF0ZSBQcmVmYWJTeXN0ZW0gcHJlZmFiczsKICAgICAgICBwcml2YXRlIE5hbWVTeXN0ZW0gbmFtZXM7CiAgICAgICAgcHJpdmF0ZSBUb29sU3lzdGVtIHRvb2xzOwogICAgICAgIHByaXZhdGUgUmF3VmFsdWVCaW5kaW5nIHNlbGVjdGVkQXJlYTsKICAgICAgICBwcml2YXRlIFZhbHVlQmluZGluZzxib29sPiB2aXNpYmxlOwogICAgICAgIHByaXZhdGUgRW50aXR5IHB1Ymxpc2hlZCwgcGVuZGluZ0FyZWE7CiAgICAgICAgcHJpdmF0ZSB1bG9uZyBwZW5kaW5nSWQ7CiAgICAgICAgcHJpdmF0ZSBBcmVhQW5jaG9yUm9sZSBwZW5kaW5nUm9sZTsKICAgICAgICBwcml2YXRlIEFyZWFNYW5hZ2VtZW50Vmlld01vZGVsIHZpZXc7CiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25DcmVhdGUoKQogICAgICAgIHsKICAgICAgICAgICAgYmFzZS5PbkNyZWF0ZSgpOwogICAgICAgICAgICBzZXJ2aWNlcyA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxBcmVhQ29yZVNlcnZpY2VzU3lzdGVtPigpOwogICAgICAgICAgICBzZWxlY3Rpb24gPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8U2VsZWN0ZWRJbmZvVUlTeXN0ZW0+KCk7CiAgICAgICAgICAgIHByZWZhYnMgPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8UHJlZmFiU3lzdGVtPigpOwogICAgICAgICAgICBuYW1lcyA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxOYW1lU3lzdGVtPigpOwogICAgICAgICAgICB0b29scyA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxUb29sU3lzdGVtPigpOwogICAgICAgICAgICBBZGRCaW5kaW5nKHNlbGVjdGVkQXJlYSA9IG5ldyBSYXdWYWx1ZUJpbmRpbmcoImNzMkFyZWFTeXN0ZW0iLCAic2VsZWN0ZWRBcmVhIiwgd3JpdGVyID0+IHsgaWYgKHZpZXcgPT0gbnVsbCkgd3JpdGVyLldyaXRlTnVsbCgpOyBlbHNlIHZpZXcuV3JpdGUod3JpdGVyKTsgfSkpOwogICAgICAgICAgICBBZGRCaW5kaW5nKHZpc2libGUgPSBuZXcgVmFsdWVCaW5kaW5nPGJvb2w+KCJjczJBcmVhU3lzdGVtIiwgInBhbmVsVmlzaWJsZSIsIGZhbHNlKSk7CiAgICAgICAgICAgIEFkZEJpbmRpbmcobmV3IFRyaWdnZXJCaW5kaW5nPHN0cmluZz4oImNzMkFyZWFTeXN0ZW0iLCAiZWRpdEFyZWEiLCBpZCA9PiBBY3QoaWQsIEVkaXQpKSk7CiAgICAgICAgICAgIEFkZEJpbmRpbmcobmV3IFRyaWdnZXJCaW5kaW5nPHN0cmluZz4oImNzMkFyZWFTeXN0ZW0iLCAibG9jYXRlQXJlYSIsIGlkID0+IEFjdChpZCwgc2VsZWN0aW9uLkZvY3VzKSkpOwogICAgICAgICAgICBBZGRCaW5kaW5nKG5ldyBUcmlnZ2VyQmluZGluZzxzdHJpbmcsIHN0cmluZz4oImNzMkFyZWFTeXN0ZW0iLCAicmVuYW1lQXJlYSIsIChpZCwgbmFtZSkgPT4gQWN0KGlkLCBhcmVhID0+IHsKICAgICAgICAgICAgICAgIGlmICghc3RyaW5nLklzTnVsbE9yV2hpdGVTcGFjZShuYW1lKSAmJiBuYW1lLkxlbmd0aCA8PSAxMjgpIG5hbWVzLlNldEN1c3RvbU5hbWUoYXJlYSwgbmFtZS5UcmltKCkpOwogICAgICAgICAgICB9KSkpOwogICAgICAgICAgICBBZGRCaW5kaW5nKG5ldyBUcmlnZ2VyQmluZGluZzxzdHJpbmc+KCJjczJBcmVhU3lzdGVtIiwgImRlbGV0ZUFyZWEiLCBpZCA9PiBBY3QoaWQsIGFyZWEgPT4gewogICAgICAgICAgICAgICAgRW50aXR5TWFuYWdlci5BZGRDb21wb25lbnQ8RGVsZXRlZD4oYXJlYSk7IHNlbGVjdGlvbi5TZXRTZWxlY3Rpb24oRW50aXR5Lk51bGwpOyBwZW5kaW5nQXJlYSA9IEVudGl0eS5OdWxsOwogICAgICAgICAgICB9KSkpOwogICAgICAgICAgICBBZGRCaW5kaW5nKG5ldyBUcmlnZ2VyQmluZGluZzxzdHJpbmc+KCJjczJBcmVhU3lzdGVtIiwgImFzc2lnbkhlYWRxdWFydGVycyIsIGlkID0+IEFjdChpZCwgYXJlYSA9PiBCZWdpbkFzc2lnbm1lbnQoYXJlYSwgQXJlYUFuY2hvclJvbGUuSGVhZHF1YXJ0ZXJzKSkpKTsKICAgICAgICAgICAgQWRkQmluZGluZyhuZXcgVHJpZ2dlckJpbmRpbmc8c3RyaW5nPigiY3MyQXJlYVN5c3RlbSIsICJhc3NpZ25FbnRyYW5jZSIsIGlkID0+IEFjdChpZCwgYXJlYSA9PiBCZWdpbkFzc2lnbm1lbnQoYXJlYSwgQXJlYUFuY2hvclJvbGUuRW50cmFuY2UpKSkpOwogICAgICAgICAgICBBZGRCaW5kaW5nKG5ldyBUcmlnZ2VyQmluZGluZzxzdHJpbmc+KCJjczJBcmVhU3lzdGVtIiwgImNhbmNlbEFuY2hvckFzc2lnbm1lbnQiLCBpZCA9PiB7CiAgICAgICAgICAgICAgICBpZiAocGVuZGluZ0FyZWEgIT0gRW50aXR5Lk51bGwgJiYgaWQgPT0gcGVuZGluZ0lkLlRvU3RyaW5nKEN1bHR1cmVJbmZvLkludmFyaWFudEN1bHR1cmUpKSB7IHNlbGVjdGlvbi5TZXRTZWxlY3Rpb24ocGVuZGluZ0FyZWEpOyBwZW5kaW5nQXJlYSA9IEVudGl0eS5OdWxsOyB9CiAgICAgICAgICAgIH0pKTsKICAgICAgICB9CiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25HYW1lUHJlbG9hZChQdXJwb3NlIHB1cnBvc2UsIEdhbWVNb2RlIG1vZGUpCiAgICAgICAgeyBiYXNlLk9uR2FtZVByZWxvYWQocHVycG9zZSwgbW9kZSk7IHBlbmRpbmdBcmVhID0gcHVibGlzaGVkID0gRW50aXR5Lk51bGw7IHZpZXcgPSBudWxsOyB9CiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25VcGRhdGUoKQogICAgICAgIHsKICAgICAgICAgICAgdHJ5CiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGlmIChHYW1lTWFuYWdlci5pbnN0YW5jZS5pc0dhbWVMb2FkaW5nIHx8ICFXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8QXJlYUxvYWRDb29yZGluYXRvclN5c3RlbT4oKS5SZWFkeSkgeyBQdWJsaXNoKEVudGl0eS5OdWxsKTsgcmV0dXJuOyB9CiAgICAgICAgICAgICAgICB2YXIgc2VsZWN0ZWQgPSBzZWxlY3Rpb24uc2VsZWN0ZWRFbnRpdHk7CiAgICAgICAgICAgICAgICBpZiAocGVuZGluZ0FyZWEgIT0gRW50aXR5Lk51bGwpCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgaWYgKCFJc0FyZWEocGVuZGluZ0FyZWEpIHx8IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxNYW5hZ2VkQXJlYVN0YWJsZUlkPihwZW5kaW5nQXJlYSkuVmFsdWUgIT0gcGVuZGluZ0lkKQogICAgICAgICAgICAgICAgICAgICAgICBwZW5kaW5nQXJlYSA9IEVudGl0eS5OdWxsOwogICAgICAgICAgICAgICAgICAgIGVsc2UgaWYgKHNlbGVjdGVkICE9IHBlbmRpbmdBcmVhICYmIElzQXJlYShzZWxlY3RlZCkpIHBlbmRpbmdBcmVhID0gRW50aXR5Lk51bGw7CiAgICAgICAgICAgICAgICAgICAgZWxzZSBpZiAoc2VsZWN0ZWQgIT0gcGVuZGluZ0FyZWEgJiYgc2VydmljZXMuSXNWYWxpZEVudGl0eShzZWxlY3RlZCkgJiYgRW50aXR5TWFuYWdlci5IYXNDb21wb25lbnQ8R2FtZS5CdWlsZGluZ3MuQnVpbGRpbmc+KHNlbGVjdGVkKSAmJgogICAgICAgICAgICAgICAgICAgICAgICBzZXJ2aWNlcy5BbmNob3JzLkFzc2lnbihwZW5kaW5nQXJlYSwgc2VsZWN0ZWQsIHBlbmRpbmdSb2xlKSkKICAgICAgICAgICAgICAgICAgICB7IHNlbGVjdGlvbi5TZXRTZWxlY3Rpb24ocGVuZGluZ0FyZWEpOyBzZWxlY3RlZCA9IHBlbmRpbmdBcmVhOyBwZW5kaW5nQXJlYSA9IEVudGl0eS5OdWxsOyB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICBQdWJsaXNoKHBlbmRpbmdBcmVhICE9IEVudGl0eS5OdWxsID8gcGVuZGluZ0FyZWEgOiBzZWxlY3RlZCk7CiAgICAgICAgICAgIH0KICAgICAgICAgICAgY2F0Y2ggKEV4Y2VwdGlvbiBlcnJvcikgeyBNb2QuTG9nLkVycm9yKGVycm9yLCAiQXJlYSBtYW5hZ2VtZW50IFVJIHVuYXZhaWxhYmxlIik7IHZpZXcgPSBudWxsOyBwdWJsaXNoZWQgPSBFbnRpdHkuTnVsbDsgdmlzaWJsZS5VcGRhdGUoZmFsc2UpOyB9CiAgICAgICAgfQogICAgICAgIHByaXZhdGUgYm9vbCBJc0FyZWEoRW50aXR5IGVudGl0eSkgPT4gc2VydmljZXMuSXNWYWxpZEVudGl0eShlbnRpdHkpICYmIEVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PE1hbmFnZWRBcmVhPihlbnRpdHkpICYmIEVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PE1hbmFnZWRBcmVhU3RhYmxlSWQ+KGVudGl0eSk7CiAgICAgICAgcHJpdmF0ZSB2b2lkIFB1Ymxpc2goRW50aXR5IGVudGl0eSkKICAgICAgICB7CiAgICAgICAgICAgIHB1Ymxpc2hlZCA9IElzQXJlYShlbnRpdHkpID8gZW50aXR5IDogRW50aXR5Lk51bGw7CiAgICAgICAgICAgIHZpZXcgPSBudWxsOwogICAgICAgICAgICBpZiAocHVibGlzaGVkICE9IEVudGl0eS5OdWxsKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICB2YXIgYXJlYSA9IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxNYW5hZ2VkQXJlYT4ocHVibGlzaGVkKTsKICAgICAgICAgICAgICAgIGJvb2wga25vd24gPSBzZXJ2aWNlcy5SZWdpc3RyeS5UcnlHZXQoYXJlYS5UeXBlSWQsIG91dCB2YXIgZGVzY3JpcHRvcik7CiAgICAgICAgICAgICAgICB2aWV3ID0gbmV3IEFyZWFNYW5hZ2VtZW50Vmlld01vZGVsIHsKICAgICAgICAgICAgICAgICAgICBTdGFibGVJZCA9IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxNYW5hZ2VkQXJlYVN0YWJsZUlkPihwdWJsaXNoZWQpLlZhbHVlLlRvU3RyaW5nKEN1bHR1cmVJbmZvLkludmFyaWFudEN1bHR1cmUpLAogICAgICAgICAgICAgICAgICAgIE5hbWUgPSBuYW1lcy5HZXRSZW5kZXJlZExhYmVsTmFtZShwdWJsaXNoZWQpLCBUeXBlS2V5ID0ga25vd24gPyBkZXNjcmlwdG9yLkRpc3BsYXlOYW1lS2V5IDogIlVuYXZhaWxhYmxlIG1vZHVsZSAoIiArIGFyZWEuVHlwZUlkICsgIikiLAogICAgICAgICAgICAgICAgICAgIFN0YXRlID0gYXJlYS5TdGF0ZS5Ub1N0cmluZygpLCBTdW1tYXJ5ID0gZGVzY3JpcHRvcj8uTW9kdWxlPy5QYW5lbFByb3ZpZGVyPy5CdWlsZFN1bW1hcnkocHVibGlzaGVkKSA/PyAiTW9kdWxlIHVuYXZhaWxhYmxlIiwKICAgICAgICAgICAgICAgICAgICBUYWJzID0gZGVzY3JpcHRvcj8uTW9kdWxlPy5QYW5lbFByb3ZpZGVyPy5UYWJzID8/IG5ldyBDb3JlLk1vZHVsZXMuQXJlYVBhbmVsVGFiWzBdLAogICAgICAgICAgICAgICAgICAgIEFuY2hvclJvbGUgPSAoZGVzY3JpcHRvcj8uTW9kdWxlIGFzIElBcmVhQW5jaG9yUG9saWN5KT8uUmVxdWlyZWRBbmNob3JSb2xlPy5Ub1N0cmluZygpLCBQZW5kaW5nQW5jaG9yID0gcGVuZGluZ0FyZWEgIT0gRW50aXR5Lk51bGwKICAgICAgICAgICAgICAgIH07CiAgICAgICAgICAgICAgICBpZiAoRW50aXR5TWFuYWdlci5IYXNDb21wb25lbnQ8TWFuYWdlZEFyZWFQcm9ncmVzcz4ocHVibGlzaGVkKSkKICAgICAgICAgICAgICAgIHsgdmFyIHByb2dyZXNzID0gRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPE1hbmFnZWRBcmVhUHJvZ3Jlc3M+KHB1Ymxpc2hlZCk7IHZpZXcuTGV2ZWwgPSBwcm9ncmVzcy5MZXZlbDsgdmlldy5FeHBlcmllbmNlID0gcHJvZ3Jlc3MuRXhwZXJpZW5jZS5Ub1N0cmluZyhDdWx0dXJlSW5mby5JbnZhcmlhbnRDdWx0dXJlKTsgfQogICAgICAgICAgICB9CiAgICAgICAgICAgIHZpc2libGUuVXBkYXRlKHZpZXcgIT0gbnVsbCk7IHNlbGVjdGVkQXJlYS5VcGRhdGUoKTsKICAgICAgICB9CiAgICAgICAgcHJpdmF0ZSB2b2lkIEFjdChzdHJpbmcgZXhwZWN0ZWRJZCwgQWN0aW9uPEVudGl0eT4gYWN0aW9uKQogICAgICAgIHsKICAgICAgICAgICAgdHJ5CiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGlmIChHYW1lTWFuYWdlci5pbnN0YW5jZS5pc0dhbWVMb2FkaW5nIHx8ICFXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8QXJlYUxvYWRDb29yZGluYXRvclN5c3RlbT4oKS5SZWFkeSB8fCAhSXNBcmVhKHB1Ymxpc2hlZCkpIHJldHVybjsKICAgICAgICAgICAgICAgIHZhciBpZCA9IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxNYW5hZ2VkQXJlYVN0YWJsZUlkPihwdWJsaXNoZWQpLlZhbHVlOwogICAgICAgICAgICAgICAgaWYgKEFyZWFVSUFjdGlvbkd1YXJkLk1hdGNoZXMocHVibGlzaGVkLCBzZWxlY3Rpb24uc2VsZWN0ZWRFbnRpdHksIGlkLCBleHBlY3RlZElkLCBJc0FyZWEocHVibGlzaGVkKSkpIGFjdGlvbihwdWJsaXNoZWQpOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGNhdGNoIChFeGNlcHRpb24gZXJyb3IpIHsgTW9kLkxvZy5FcnJvcihlcnJvciwgIkFyZWEgbWFuYWdlbWVudCBhY3Rpb24gcmVqZWN0ZWQiKTsgfQogICAgICAgIH0KICAgICAgICBwcml2YXRlIHZvaWQgRWRpdChFbnRpdHkgYXJlYSkKICAgICAgICB7CiAgICAgICAgICAgIGlmICghRW50aXR5TWFuYWdlci5IYXNDb21wb25lbnQ8UHJlZmFiUmVmPihhcmVhKSB8fCAhcHJlZmFicy5UcnlHZXRQcmVmYWI8QXJlYVByZWZhYj4oRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPFByZWZhYlJlZj4oYXJlYSksIG91dCB2YXIgcHJlZmFiKSkgcmV0dXJuOwogICAgICAgICAgICAvLyBOYXRpdmUgQWN0aW9uc1NlY3Rpb24gbG90LWVkaXQgcGF0dGVybjogc2VsZWN0IHByZWZhYiBhbmQgYWN0aXZhdGUgQXJlYVRvb2xTeXN0ZW0uCiAgICAgICAgICAgIHRvb2xzLkFjdGl2YXRlUHJlZmFiVG9vbChwcmVmYWIpOwogICAgICAgICAgICBpZiAodG9vbHMuYWN0aXZlVG9vbCBpcyBBcmVhVG9vbFN5c3RlbSBuYXRpdmUpIG5hdGl2ZS5tb2RlID0gQXJlYVRvb2xTeXN0ZW0uTW9kZS5FZGl0OwogICAgICAgIH0KICAgICAgICBwcml2YXRlIHZvaWQgQmVnaW5Bc3NpZ25tZW50KEVudGl0eSBhcmVhLCBBcmVhQW5jaG9yUm9sZSByb2xlKQogICAgICAgIHsKICAgICAgICAgICAgdmFyIHR5cGUgPSBFbnRpdHlNYW5hZ2VyLkdldENvbXBvbmVudERhdGE8TWFuYWdlZEFyZWE+KGFyZWEpLlR5cGVJZDsKICAgICAgICAgICAgaWYgKCFzZXJ2aWNlcy5SZWdpc3RyeS5UcnlHZXQodHlwZSwgb3V0IHZhciBkZXNjcmlwdG9yKSB8fCAhKGRlc2NyaXB0b3IuTW9kdWxlIGlzIElBcmVhQW5jaG9yUG9saWN5IHBvbGljeSkgfHwgcG9saWN5LlJlcXVpcmVkQW5jaG9yUm9sZSAhPSByb2xlKSByZXR1cm47CiAgICAgICAgICAgIHBlbmRpbmdBcmVhID0gYXJlYTsgcGVuZGluZ1JvbGUgPSByb2xlOyBwZW5kaW5nSWQgPSBFbnRpdHlNYW5hZ2VyLkdldENvbXBvbmVudERhdGE8TWFuYWdlZEFyZWFTdGFibGVJZD4oYXJlYSkuVmFsdWU7CiAgICAgICAgICAgIHRvb2xzLkFjdGl2YXRlUHJlZmFiVG9vbChudWxsKTsKICAgICAgICB9CiAgICB9Cn0K
+using System;
+using System.Globalization;
+using Colossal.Serialization.Entities;
+using Colossal.UI.Binding;
+using CS2AreaSystem.Core.Anchors;
+using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Persistence;
+using Game;
+using Game.Common;
+using Game.Prefabs;
+using Game.SceneFlow;
+using Game.Tools;
+using Game.UI;
+using Game.UI.InGame;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.UI
+{
+    public partial class AreaManagementUISystem : UISystemBase
+    {
+        private AreaCoreServicesSystem services;
+        private SelectedInfoUISystem selection;
+        private PrefabSystem prefabs;
+        private NameSystem names;
+        private ToolSystem tools;
+        private RawValueBinding selectedArea;
+        private ValueBinding<bool> visible;
+        private Entity published, pendingArea;
+        private ulong pendingId;
+        private AreaAnchorRole pendingRole;
+        private AreaManagementViewModel view;
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            selection = World.GetOrCreateSystemManaged<SelectedInfoUISystem>();
+            prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
+            names = World.GetOrCreateSystemManaged<NameSystem>();
+            tools = World.GetOrCreateSystemManaged<ToolSystem>();
+            AddBinding(selectedArea = new RawValueBinding("cs2AreaSystem", "selectedArea", writer => { if (view == null) writer.WriteNull(); else view.Write(writer); }));
+            AddBinding(visible = new ValueBinding<bool>("cs2AreaSystem", "panelVisible", false));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "locateArea", id => Act(id, selection.Focus)));
+            AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "renameArea", (id, name) => Act(id, area => {
+                if (!string.IsNullOrWhiteSpace(name) && name.Length <= 128) names.SetCustomName(area, name.Trim());
+            })));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, area => {
+                EntityManager.AddComponent<Deleted>(area); selection.SetSelection(Entity.Null); pendingArea = Entity.Null;
+            })));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignHeadquarters", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Headquarters))));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignEntrance", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Entrance))));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", id => {
+                if (pendingArea != Entity.Null && id == pendingId.ToString(CultureInfo.InvariantCulture)) { selection.SetSelection(pendingArea); pendingArea = Entity.Null; }
+            }));
+        }
+        protected override void OnGamePreload(Purpose purpose, GameMode mode)
+        { base.OnGamePreload(purpose, mode); pendingArea = published = Entity.Null; view = null; }
+        protected override void OnUpdate()
+        {
+            try
+            {
+                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) { Publish(Entity.Null); return; }
+                var selected = selection.selectedEntity;
+                if (pendingArea != Entity.Null)
+                {
+                    if (!IsArea(pendingArea) || EntityManager.GetComponentData<ManagedAreaStableId>(pendingArea).Value != pendingId)
+                        pendingArea = Entity.Null;
+                    else if (selected != pendingArea && IsArea(selected)) pendingArea = Entity.Null;
+                    else if (selected != pendingArea && services.IsValidEntity(selected) && EntityManager.HasComponent<Game.Buildings.Building>(selected) &&
+                        services.Anchors.Assign(pendingArea, selected, pendingRole))
+                    { selection.SetSelection(pendingArea); selected = pendingArea; pendingArea = Entity.Null; }
+                }
+                Publish(pendingArea != Entity.Null ? pendingArea : selected);
+            }
+            catch (Exception error) { Mod.Log.Error(error, "Area management UI unavailable"); view = null; published = Entity.Null; visible.Update(false); }
+        }
+        private bool IsArea(Entity entity) => services.IsValidEntity(entity) && EntityManager.HasComponent<ManagedArea>(entity) && EntityManager.HasComponent<ManagedAreaStableId>(entity);
+        private void Publish(Entity entity)
+        {
+            published = IsArea(entity) ? entity : Entity.Null;
+            view = null;
+            if (published != Entity.Null)
+            {
+                var area = EntityManager.GetComponentData<ManagedArea>(published);
+                bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
+                view = new AreaManagementViewModel {
+                    StableId = EntityManager.GetComponentData<ManagedAreaStableId>(published).Value.ToString(CultureInfo.InvariantCulture),
+                    Name = names.GetRenderedLabelName(published), TypeKey = known ? descriptor.DisplayNameKey : "Unavailable module (" + area.TypeId + ")",
+                    State = area.State.ToString(), Summary = descriptor?.Module?.PanelProvider?.BuildSummary(published) ?? "Module unavailable",
+                    Tabs = descriptor?.Module?.PanelProvider?.Tabs ?? new Core.Modules.AreaPanelTab[0],
+                    AnchorRole = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole?.ToString(), PendingAnchor = pendingArea != Entity.Null
+                };
+                if (EntityManager.HasComponent<ManagedAreaProgress>(published))
+                { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(published); view.Level = progress.Level; view.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
+            }
+            visible.Update(view != null); selectedArea.Update();
+        }
+        private void Act(string expectedId, Action<Entity> action)
+        {
+            try
+            {
+                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready || !IsArea(published)) return;
+                var id = EntityManager.GetComponentData<ManagedAreaStableId>(published).Value;
+                if (AreaUIActionGuard.Matches(published, selection.selectedEntity, id, expectedId, IsArea(published))) action(published);
+            }
+            catch (Exception error) { Mod.Log.Error(error, "Area management action rejected"); }
+        }
+        private void Edit(Entity area)
+        {
+            if (!EntityManager.HasComponent<PrefabRef>(area) || !prefabs.TryGetPrefab<AreaPrefab>(EntityManager.GetComponentData<PrefabRef>(area), out var prefab)) return;
+            // Native ActionsSection lot-edit pattern: select prefab and activate AreaToolSystem.
+            tools.ActivatePrefabTool(prefab);
+            if (tools.activeTool is AreaToolSystem native) native.mode = AreaToolSystem.Mode.Edit;
+        }
+        private void BeginAssignment(Entity area, AreaAnchorRole role)
+        {
+            var type = EntityManager.GetComponentData<ManagedArea>(area).TypeId;
+            if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.RequiredAnchorRole != role) return;
+            pendingArea = area; pendingRole = role; pendingId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
+            tools.ActivatePrefabTool(null);
+        }
+    }
+}

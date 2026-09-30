@@ -1,1 +1,15 @@
-cGFyYW0oW3N0cmluZ10kUm9vdD0oU3BsaXQtUGF0aCAkUFNTY3JpcHRSb290IC1QYXJlbnQpKQokRXJyb3JBY3Rpb25QcmVmZXJlbmNlPSdTdG9wJwokcHJvZHVjdGlvbj1AKEdldC1DaGlsZEl0ZW0gIiRSb290L3NyYyIsIiRSb290L1VJL3NyYyIgLVJlY3Vyc2UgLUZpbGUgfCBXaGVyZS1PYmplY3QgeyAkXy5FeHRlbnNpb24gLWluICcuY3MnLCcuY3Nwcm9qJywnLnRzJywnLnRzeCcsJy5zY3NzJyAtYW5kICRfLkZ1bGxOYW1lIC1ub3RtYXRjaCAnW1xcL10oYmlufG9ianxub2RlX21vZHVsZXN8YnVpbGQpW1xcL10nIH0pCiRhZGFwdGVkPSRmYWxzZQpmb3JlYWNoKCRmaWxlIGluICRwcm9kdWN0aW9uKSB7CiAkc291cmNlPUdldC1Db250ZW50ICRmaWxlLkZ1bGxOYW1lIC1SYXcKIGlmKCRzb3VyY2UgLW1hdGNoICcwSGFybW9ueXxIYXJtb255TGlifHBhdGNoIG9mIHNoaXBwZWQgaW5kZXhcLihqc3xjc3MpfCg/OldyaXRlQWxsVGV4dHx3cml0ZUZpbGV8Q29weS1JdGVtKVteXHJcbl0qKD86Z2FtZXVpfENpdGllczJfRGF0YXxTdHJlYW1pbmdBc3NldHMpW15cclxuXSppbmRleFwuKD86anN8Y3NzKScpIHsKICB0aHJvdyAiRm9yYmlkZGVuIHByb2R1Y3Rpb24gZGVwZW5kZW5jeSBvciBzaGlwcGVkIFVJIG11dGF0aW9uOiAkKCRmaWxlLkZ1bGxOYW1lKSIKIH0KIGlmKCRzb3VyY2UgLW1hdGNoICdBZGFwdGVkIGZyb218Q29waWVkIGZyb20nKSB7JGFkYXB0ZWQ9JHRydWV9Cn0KIyBQYWNrYWdpbmcgY29uZmlnIG1heSBhbHNvIGluY2x1ZGUgYWRhcHRhdGlvbnMuCmlmKFRlc3QtUGF0aCAiJFJvb3QvVUkvd2VicGFjay5jb25maWcuanMiKSB7aWYoKEdldC1Db250ZW50ICIkUm9vdC9VSS93ZWJwYWNrLmNvbmZpZy5qcyIgLVJhdykgLW1hdGNoICdBZGFwdGVkIGZyb218Q29waWVkIGZyb20nKSB7JGFkYXB0ZWQ9JHRydWV9fQppZigkYWRhcHRlZCAtYW5kICEoVGVzdC1QYXRoICIkUm9vdC9USElSRF9QQVJUWS5tZCIpKSB7dGhyb3cgJ1RISVJEX1BBUlRZLm1kIHJlcXVpcmVkIGZvciBhZGFwdGVkL2NvcGllZCBwcm9kdWN0aW9uIHNvdXJjZS4nfQpXcml0ZS1Ib3N0ICdBcmVhIENvcmUgc291cmNlL3BvbGljeSBndWFyZHMgcGFzc2VkLicK
+param([string]$Root=(Split-Path $PSScriptRoot -Parent))
+$ErrorActionPreference='Stop'
+$production=@(Get-ChildItem "$Root/src","$Root/UI/src" -Recurse -File | Where-Object { $_.Extension -in '.cs','.csproj','.ts','.tsx','.scss' -and $_.FullName -notmatch '[\\/](bin|obj|node_modules|build)[\\/]' })
+$adapted=$false
+foreach($file in $production) {
+ $source=Get-Content $file.FullName -Raw
+ if($source -match '0Harmony|HarmonyLib|patch of shipped index\.(js|css)|(?:WriteAllText|writeFile|Copy-Item)[^\r\n]*(?:gameui|Cities2_Data|StreamingAssets)[^\r\n]*index\.(?:js|css)') {
+  throw "Forbidden production dependency or shipped UI mutation: $($file.FullName)"
+ }
+ if($source -match 'Adapted from|Copied from') {$adapted=$true}
+}
+# Packaging config may also include adaptations.
+if(Test-Path "$Root/UI/webpack.config.js") {if((Get-Content "$Root/UI/webpack.config.js" -Raw) -match 'Adapted from|Copied from') {$adapted=$true}}
+if($adapted -and !(Test-Path "$Root/THIRD_PARTY.md")) {throw 'THIRD_PARTY.md required for adapted/copied production source.'}
+Write-Host 'Area Core source/policy guards passed.'

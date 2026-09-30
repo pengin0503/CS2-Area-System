@@ -1,1 +1,24 @@
-dXNpbmcgQ29sb3NzYWwuU2VyaWFsaXphdGlvbi5FbnRpdGllczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlOwp1c2luZyBVbml0eS5FbnRpdGllczsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhcwp7CiAgICBwdWJsaWMgc3RydWN0IE1hbmFnZWRBcmVhU3RhYmxlSWQgOiBJQ29tcG9uZW50RGF0YSwgSVNlcmlhbGl6YWJsZQogICAgewogICAgICAgIHB1YmxpYyBjb25zdCB1c2hvcnQgQ3VycmVudFNjaGVtYVZlcnNpb24gPSAxOwogICAgICAgIHB1YmxpYyB1c2hvcnQgU2NoZW1hVmVyc2lvbjsKICAgICAgICBwdWJsaWMgdWxvbmcgVmFsdWU7CiAgICAgICAgcHVibGljIHZvaWQgU2VyaWFsaXplPFRXcml0ZXI+KFRXcml0ZXIgd3JpdGVyKSB3aGVyZSBUV3JpdGVyIDogSVdyaXRlcgogICAgICAgIHsKICAgICAgICAgICAgQ29tcG9uZW50U2NoZW1hLlJlcXVpcmVTdXBwb3J0ZWQoU2NoZW1hVmVyc2lvbiA9PSAwID8gQ3VycmVudFNjaGVtYVZlcnNpb24gOiBTY2hlbWFWZXJzaW9uKTsKICAgICAgICAgICAgd3JpdGVyLldyaXRlKEN1cnJlbnRTY2hlbWFWZXJzaW9uKTsKICAgICAgICAgICAgd3JpdGVyLldyaXRlKFZhbHVlKTsKICAgICAgICB9CiAgICAgICAgcHVibGljIHZvaWQgRGVzZXJpYWxpemU8VFJlYWRlcj4oVFJlYWRlciByZWFkZXIpIHdoZXJlIFRSZWFkZXIgOiBJUmVhZGVyCiAgICAgICAgewogICAgICAgICAgICByZWFkZXIuUmVhZChvdXQgU2NoZW1hVmVyc2lvbik7CiAgICAgICAgICAgIENvbXBvbmVudFNjaGVtYS5SZXF1aXJlU3VwcG9ydGVkKFNjaGVtYVZlcnNpb24pOwogICAgICAgICAgICByZWFkZXIuUmVhZChvdXQgVmFsdWUpOwogICAgICAgIH0KICAgIH0KfQo=
+using Colossal.Serialization.Entities;
+using CS2AreaSystem.Core.Persistence;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Areas
+{
+    public struct ManagedAreaStableId : IComponentData, ISerializable
+    {
+        public const ushort CurrentSchemaVersion = 1;
+        public ushort SchemaVersion;
+        public ulong Value;
+        public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
+        {
+            ComponentSchema.RequireSupported(SchemaVersion == 0 ? CurrentSchemaVersion : SchemaVersion);
+            writer.Write(CurrentSchemaVersion);
+            writer.Write(Value);
+        }
+        public void Deserialize<TReader>(TReader reader) where TReader : IReader
+        {
+            reader.Read(out SchemaVersion);
+            ComponentSchema.RequireSupported(SchemaVersion);
+            reader.Read(out Value);
+        }
+    }
+}

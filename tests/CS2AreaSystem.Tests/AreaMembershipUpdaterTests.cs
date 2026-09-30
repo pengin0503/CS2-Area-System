@@ -1,1 +1,48 @@
-dXNpbmcgTlVuaXQuRnJhbWV3b3JrOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuTWVtYmVyc2hpcDsKdXNpbmcgVW5pdHkuRW50aXRpZXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLlRlc3RzOwpwdWJsaWMgY2xhc3MgQXJlYU1lbWJlcnNoaXBVcGRhdGVyVGVzdHMgewogICAgcHJpdmF0ZSBzZWFsZWQgY2xhc3MgU3BhdGlhbEZpeHR1cmUgOiBJQXJlYU1lbWJlcnNoaXBTcGF0aWFsU291cmNlIHsKICAgICAgICBwdWJsaWMgRW50aXR5IE1lbWJlciA9IG5ldyBFbnRpdHkgeyBJbmRleCA9IDEsIFZlcnNpb24gPSAxIH07CiAgICAgICAgcHVibGljIElSZWFkT25seUxpc3Q8QXJlYU1lbWJlcnNoaXA+IFJlbGF0aW9ucyA9IG5ld1tdIHsgbmV3IEFyZWFNZW1iZXJzaGlwKDEwLCAxLCBmYWxzZSkgfTsKICAgICAgICBwdWJsaWMgYm9vbCBBbGxvd0Z1bGxFbnVtZXJhdGlvbiA9IHRydWU7CiAgICAgICAgcHVibGljIGJvb2wgTmV3bHlJbnNpZGU7CiAgICAgICAgcHVibGljIElFbnVtZXJhYmxlPEVudGl0eT4gR2V0QWxsTWVtYmVycygpIHsKICAgICAgICAgICAgaWYgKCFBbGxvd0Z1bGxFbnVtZXJhdGlvbikgdGhyb3cgbmV3IEludmFsaWRPcGVyYXRpb25FeGNlcHRpb24oIkluY3JlbWVudGFsIHVwZGF0ZSBhdHRlbXB0ZWQgYSBmdWxsIGNpdHkgZW51bWVyYXRpb24iKTsKICAgICAgICAgICAgcmV0dXJuIG5ld1tdIHsgTWVtYmVyIH07CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBJRW51bWVyYWJsZTxFbnRpdHk+IEdldFNwYXRpYWxDYW5kaWRhdGVzKEVudGl0eSBhcmVhKSA9PiBOZXdseUluc2lkZSA/IG5ld1tdIHsgTWVtYmVyIH0gOiBBcnJheS5FbXB0eTxFbnRpdHk+KCk7CiAgICAgICAgcHVibGljIElSZWFkT25seUxpc3Q8QXJlYU1lbWJlcnNoaXA+IEZpbmRDb250YWluaW5nQXJlYXMoRW50aXR5IG1lbWJlcikgPT4gUmVsYXRpb25zOwogICAgfQogICAgW1Rlc3RdIHB1YmxpYyB2b2lkIE9yZGluYXJ5TWVtYmVyQ2hhbmdlc05ldmVyUmVidWlsZENpdHkoKSB7CiAgICAgICAgdmFyIHNwYXRpYWwgPSBuZXcgU3BhdGlhbEZpeHR1cmUoKTsKICAgICAgICB2YXIgaW5kZXggPSBuZXcgQXJlYU1lbWJlcnNoaXBJbmRleCgpOwogICAgICAgIHZhciB1cGRhdGVzID0gbmV3IEFyZWFNZW1iZXJzaGlwVXBkYXRlcihpbmRleCwgc3BhdGlhbCk7CiAgICAgICAgdXBkYXRlcy5SZWJ1aWxkKCk7CiAgICAgICAgc3BhdGlhbC5BbGxvd0Z1bGxFbnVtZXJhdGlvbiA9IGZhbHNlOwogICAgICAgIHNwYXRpYWwuUmVsYXRpb25zID0gQXJyYXkuRW1wdHk8QXJlYU1lbWJlcnNoaXA+KCk7CiAgICAgICAgdXBkYXRlcy5VcGRhdGVNZW1iZXIoc3BhdGlhbC5NZW1iZXIpOwogICAgICAgIEFzc2VydC5UaGF0KGluZGV4LkdldEFyZWFzKHNwYXRpYWwuTWVtYmVyKSwgSXMuRW1wdHkpOwogICAgICAgIEFzc2VydC5UaGF0KHVwZGF0ZXMuRnVsbFJlYnVpbGRDb3VudCwgSXMuRXF1YWxUbygxKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQodXBkYXRlcy5JbmNyZW1lbnRhbE1lbWJlclVwZGF0ZUNvdW50LCBJcy5FcXVhbFRvKDEpKTsKICAgIH0KICAgIFtUZXN0XSBwdWJsaWMgdm9pZCBBcmVhU2hyaW5rUmVjb25zaWRlcnNQcmV2aW91c01lbWJlcnNBbmRFeHBhbnNpb25GaW5kc05ld09uZXMoKSB7CiAgICAgICAgdmFyIHNwYXRpYWwgPSBuZXcgU3BhdGlhbEZpeHR1cmUoKTsKICAgICAgICB2YXIgaW5kZXggPSBuZXcgQXJlYU1lbWJlcnNoaXBJbmRleCgpOwogICAgICAgIHZhciB1cGRhdGVzID0gbmV3IEFyZWFNZW1iZXJzaGlwVXBkYXRlcihpbmRleCwgc3BhdGlhbCk7CiAgICAgICAgdXBkYXRlcy5SZWJ1aWxkKCk7CiAgICAgICAgc3BhdGlhbC5BbGxvd0Z1bGxFbnVtZXJhdGlvbiA9IGZhbHNlOwogICAgICAgIHNwYXRpYWwuUmVsYXRpb25zID0gQXJyYXkuRW1wdHk8QXJlYU1lbWJlcnNoaXA+KCk7CiAgICAgICAgdXBkYXRlcy5VcGRhdGVBcmVhKG5ldyBFbnRpdHkgeyBJbmRleCA9IDEwIH0sIDEwLCBmYWxzZSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaW5kZXguR2V0TWVtYmVycygxMCksIElzLkVtcHR5KTsKICAgICAgICBzcGF0aWFsLlJlbGF0aW9ucyA9IG5ld1tdIHsgbmV3IEFyZWFNZW1iZXJzaGlwKDEwLCAxLCBmYWxzZSkgfTsKICAgICAgICBzcGF0aWFsLk5ld2x5SW5zaWRlID0gdHJ1ZTsKICAgICAgICB1cGRhdGVzLlVwZGF0ZUFyZWEobmV3IEVudGl0eSB7IEluZGV4ID0gMTAgfSwgMTAsIGZhbHNlKTsKICAgICAgICBBc3NlcnQuVGhhdChpbmRleC5HZXRNZW1iZXJzKDEwKSwgRG9lcy5Db250YWluKHNwYXRpYWwuTWVtYmVyKSk7CiAgICAgICAgdXBkYXRlcy5VcGRhdGVBcmVhKG5ldyBFbnRpdHkgeyBJbmRleCA9IDEwIH0sIDEwLCB0cnVlKTsKICAgICAgICBBc3NlcnQuVGhhdChpbmRleC5HZXRNZW1iZXJzKDEwKSwgSXMuRW1wdHkpOwogICAgICAgIEFzc2VydC5UaGF0KHVwZGF0ZXMuRnVsbFJlYnVpbGRDb3VudCwgSXMuRXF1YWxUbygxKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQodXBkYXRlcy5JbmNyZW1lbnRhbEFyZWFVcGRhdGVDb3VudCwgSXMuRXF1YWxUbygzKSk7CiAgICB9Cn0K
+using NUnit.Framework;
+using CS2AreaSystem.Core.Membership;
+using Unity.Entities;
+namespace CS2AreaSystem.Tests;
+public class AreaMembershipUpdaterTests {
+    private sealed class SpatialFixture : IAreaMembershipSpatialSource {
+        public Entity Member = new Entity { Index = 1, Version = 1 };
+        public IReadOnlyList<AreaMembership> Relations = new[] { new AreaMembership(10, 1, false) };
+        public bool AllowFullEnumeration = true;
+        public bool NewlyInside;
+        public IEnumerable<Entity> GetAllMembers() {
+            if (!AllowFullEnumeration) throw new InvalidOperationException("Incremental update attempted a full city enumeration");
+            return new[] { Member };
+        }
+        public IEnumerable<Entity> GetSpatialCandidates(Entity area) => NewlyInside ? new[] { Member } : Array.Empty<Entity>();
+        public IReadOnlyList<AreaMembership> FindContainingAreas(Entity member) => Relations;
+    }
+    [Test] public void OrdinaryMemberChangesNeverRebuildCity() {
+        var spatial = new SpatialFixture();
+        var index = new AreaMembershipIndex();
+        var updates = new AreaMembershipUpdater(index, spatial);
+        updates.Rebuild();
+        spatial.AllowFullEnumeration = false;
+        spatial.Relations = Array.Empty<AreaMembership>();
+        updates.UpdateMember(spatial.Member);
+        Assert.That(index.GetAreas(spatial.Member), Is.Empty);
+        Assert.That(updates.FullRebuildCount, Is.EqualTo(1));
+        Assert.That(updates.IncrementalMemberUpdateCount, Is.EqualTo(1));
+    }
+    [Test] public void AreaShrinkReconsidersPreviousMembersAndExpansionFindsNewOnes() {
+        var spatial = new SpatialFixture();
+        var index = new AreaMembershipIndex();
+        var updates = new AreaMembershipUpdater(index, spatial);
+        updates.Rebuild();
+        spatial.AllowFullEnumeration = false;
+        spatial.Relations = Array.Empty<AreaMembership>();
+        updates.UpdateArea(new Entity { Index = 10 }, 10, false);
+        Assert.That(index.GetMembers(10), Is.Empty);
+        spatial.Relations = new[] { new AreaMembership(10, 1, false) };
+        spatial.NewlyInside = true;
+        updates.UpdateArea(new Entity { Index = 10 }, 10, false);
+        Assert.That(index.GetMembers(10), Does.Contain(spatial.Member));
+        updates.UpdateArea(new Entity { Index = 10 }, 10, true);
+        Assert.That(index.GetMembers(10), Is.Empty);
+        Assert.That(updates.FullRebuildCount, Is.EqualTo(1));
+        Assert.That(updates.IncrementalAreaUpdateCount, Is.EqualTo(3));
+    }
+}

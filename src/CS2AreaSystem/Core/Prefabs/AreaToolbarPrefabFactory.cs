@@ -1,1 +1,36 @@
-dXNpbmcgR2FtZS5QcmVmYWJzOwp1c2luZyBVbml0eUVuZ2luZTsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5QcmVmYWJzCnsKICAgIHB1YmxpYyBzZWFsZWQgY2xhc3MgQXJlYVRvb2xiYXJQcmVmYWJGYWN0b3J5CiAgICB7CiAgICAgICAgcHVibGljIHN0YXRpYyBib29sIFNob3VsZEF0dGFjaChib29sIGhvc3RBdmFpbGFibGUpID0+IGhvc3RBdmFpbGFibGU7CiAgICAgICAgcHVibGljIFVJQXNzZXRNZW51UHJlZmFiIENyZWF0ZUFyZWFzTWVudShVSVRvb2xiYXJHcm91cFByZWZhYiBob3N0R3JvdXApCiAgICAgICAgewogICAgICAgICAgICB2YXIgbWVudSA9IFNjcmlwdGFibGVPYmplY3QuQ3JlYXRlSW5zdGFuY2U8VUlBc3NldE1lbnVQcmVmYWI+KCk7CiAgICAgICAgICAgIG1lbnUubmFtZSA9ICJDUzJBUyBBcmVhcyBNZW51IjsKICAgICAgICAgICAgdmFyIHVpID0gbWVudS5BZGRDb21wb25lbnQ8VUlPYmplY3Q+KCk7CiAgICAgICAgICAgIHVpLm1fR3JvdXAgPSBob3N0R3JvdXA7CiAgICAgICAgICAgIHVpLm1fUHJpb3JpdHkgPSA5MDsKICAgICAgICAgICAgdWkubV9JY29uID0gTWFuYWdlZEFyZWFQcmVmYWJGYWN0b3J5LkZhbGxiYWNrSWNvblVyaTsKICAgICAgICAgICAgcmV0dXJuIG1lbnU7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBVSUFzc2V0Q2F0ZWdvcnlQcmVmYWIgQ3JlYXRlQXJlYVR5cGVzQ2F0ZWdvcnkoVUlBc3NldE1lbnVQcmVmYWIgbWVudSkKICAgICAgICB7CiAgICAgICAgICAgIHZhciBjYXRlZ29yeSA9IFNjcmlwdGFibGVPYmplY3QuQ3JlYXRlSW5zdGFuY2U8VUlBc3NldENhdGVnb3J5UHJlZmFiPigpOwogICAgICAgICAgICBjYXRlZ29yeS5uYW1lID0gIkNTMkFTIEFyZWEgVHlwZXMiOwogICAgICAgICAgICBjYXRlZ29yeS5tX01lbnUgPSBtZW51OwogICAgICAgICAgICB2YXIgdWkgPSBjYXRlZ29yeS5BZGRDb21wb25lbnQ8VUlPYmplY3Q+KCk7CiAgICAgICAgICAgIHVpLm1fUHJpb3JpdHkgPSAwOwogICAgICAgICAgICB1aS5tX0ljb24gPSBNYW5hZ2VkQXJlYVByZWZhYkZhY3RvcnkuRmFsbGJhY2tJY29uVXJpOwogICAgICAgICAgICByZXR1cm4gY2F0ZWdvcnk7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyB2b2lkIEF0dGFjaEFyZWFQcmVmYWIoUHJlZmFiQmFzZSBhcmVhUHJlZmFiLCBVSUFzc2V0Q2F0ZWdvcnlQcmVmYWIgY2F0ZWdvcnksIGludCBwcmlvcml0eSwgc3RyaW5nIGljb25VcmkpCiAgICAgICAgewogICAgICAgICAgICB2YXIgdWkgPSBhcmVhUHJlZmFiLkdldENvbXBvbmVudDxVSU9iamVjdD4oKSA/PyBhcmVhUHJlZmFiLkFkZENvbXBvbmVudDxVSU9iamVjdD4oKTsKICAgICAgICAgICAgdWkubV9Hcm91cCA9IGNhdGVnb3J5OwogICAgICAgICAgICB1aS5tX1ByaW9yaXR5ID0gcHJpb3JpdHk7CiAgICAgICAgICAgIHVpLm1fSWNvbiA9IHN0cmluZy5Jc051bGxPcldoaXRlU3BhY2UoaWNvblVyaSkgPyBNYW5hZ2VkQXJlYVByZWZhYkZhY3RvcnkuRmFsbGJhY2tJY29uVXJpIDogaWNvblVyaTsKICAgICAgICB9CiAgICB9Cn0K
+using Game.Prefabs;
+using UnityEngine;
+namespace CS2AreaSystem.Core.Prefabs
+{
+    public sealed class AreaToolbarPrefabFactory
+    {
+        public static bool ShouldAttach(bool hostAvailable) => hostAvailable;
+        public UIAssetMenuPrefab CreateAreasMenu(UIToolbarGroupPrefab hostGroup)
+        {
+            var menu = ScriptableObject.CreateInstance<UIAssetMenuPrefab>();
+            menu.name = "CS2AS Areas Menu";
+            var ui = menu.AddComponent<UIObject>();
+            ui.m_Group = hostGroup;
+            ui.m_Priority = 90;
+            ui.m_Icon = ManagedAreaPrefabFactory.FallbackIconUri;
+            return menu;
+        }
+        public UIAssetCategoryPrefab CreateAreaTypesCategory(UIAssetMenuPrefab menu)
+        {
+            var category = ScriptableObject.CreateInstance<UIAssetCategoryPrefab>();
+            category.name = "CS2AS Area Types";
+            category.m_Menu = menu;
+            var ui = category.AddComponent<UIObject>();
+            ui.m_Priority = 0;
+            ui.m_Icon = ManagedAreaPrefabFactory.FallbackIconUri;
+            return category;
+        }
+        public void AttachAreaPrefab(PrefabBase areaPrefab, UIAssetCategoryPrefab category, int priority, string iconUri)
+        {
+            var ui = areaPrefab.GetComponent<UIObject>() ?? areaPrefab.AddComponent<UIObject>();
+            ui.m_Group = category;
+            ui.m_Priority = priority;
+            ui.m_Icon = string.IsNullOrWhiteSpace(iconUri) ? ManagedAreaPrefabFactory.FallbackIconUri : iconUri;
+        }
+    }
+}

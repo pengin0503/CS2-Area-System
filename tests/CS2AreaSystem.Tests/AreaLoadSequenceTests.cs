@@ -1,1 +1,15 @@
-dXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlOwp1c2luZyBOVW5pdC5GcmFtZXdvcms7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLlRlc3RzOwpwdWJsaWMgY2xhc3MgQXJlYUxvYWRTZXF1ZW5jZVRlc3RzIHsKICAgIFtUZXN0XSBwdWJsaWMgdm9pZCBSZWNvdmVyeVdhaXRzVGhlbk9ic2VydmVzUmVidWlsZHNWYWxpZGF0ZXNFeGFjdGx5T25jZUJlZm9yZVVwZGF0ZXMoKSB7CiAgICAgICAgdmFyIHNlcXVlbmNlPW5ldyBBcmVhTG9hZFNlcXVlbmNlKCk7CiAgICAgICAgdmFyIG9wZXJhdGlvbnM9bmV3IExpc3Q8c3RyaW5nPigpOwogICAgICAgIHZvaWQgUmVjb3Zlcihib29sIHJlYWR5KSA9PiBzZXF1ZW5jZS5UcnlSZWNvdmVyKHJlYWR5LCgpPT5vcGVyYXRpb25zLkFkZCgiaWRzIiksKCk9Pm9wZXJhdGlvbnMuQWRkKCJtZW1iZXJzaGlwIiksKCk9Pm9wZXJhdGlvbnMuQWRkKCJhY3RpdmF0aW9uIikpOwogICAgICAgIFJlY292ZXIoZmFsc2UpOyBBc3NlcnQuVGhhdChzZXF1ZW5jZS5SZWFkeSwgSXMuRmFsc2UpOyBBc3NlcnQuVGhhdChvcGVyYXRpb25zLCBJcy5FbXB0eSk7CiAgICAgICAgUmVjb3Zlcih0cnVlKTsgUmVjb3Zlcih0cnVlKTsKICAgICAgICBBc3NlcnQuVGhhdChvcGVyYXRpb25zLCBJcy5FcXVhbFRvKG5ld1tdeyJpZHMiLCJtZW1iZXJzaGlwIiwiYWN0aXZhdGlvbiJ9KSk7IEFzc2VydC5UaGF0KHNlcXVlbmNlLlJlYWR5LCBJcy5UcnVlKTsKICAgICAgICBzZXF1ZW5jZS5SZXNldCgpOyBSZWNvdmVyKGZhbHNlKTsgQXNzZXJ0LlRoYXQoc2VxdWVuY2UuUmVhZHksIElzLkZhbHNlKTsKICAgICAgICBSZWNvdmVyKHRydWUpOyBBc3NlcnQuVGhhdChvcGVyYXRpb25zLkNvdW50LCBJcy5FcXVhbFRvKDYpKTsKICAgIH0KfQo=
+using CS2AreaSystem.Core.Persistence;
+using NUnit.Framework;
+namespace CS2AreaSystem.Tests;
+public class AreaLoadSequenceTests {
+    [Test] public void RecoveryWaitsThenObservesRebuildsValidatesExactlyOnceBeforeUpdates() {
+        var sequence=new AreaLoadSequence();
+        var operations=new List<string>();
+        void Recover(bool ready) => sequence.TryRecover(ready,()=>operations.Add("ids"),()=>operations.Add("membership"),()=>operations.Add("activation"));
+        Recover(false); Assert.That(sequence.Ready, Is.False); Assert.That(operations, Is.Empty);
+        Recover(true); Recover(true);
+        Assert.That(operations, Is.EqualTo(new[]{"ids","membership","activation"})); Assert.That(sequence.Ready, Is.True);
+        sequence.Reset(); Recover(false); Assert.That(sequence.Ready, Is.False);
+        Recover(true); Assert.That(operations.Count, Is.EqualTo(6));
+    }
+}

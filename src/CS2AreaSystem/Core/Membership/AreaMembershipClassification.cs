@@ -1,1 +1,14 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuTW9kdWxlczsKdXNpbmcgVW5pdHkuRW50aXRpZXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuTWVtYmVyc2hpcAp7CiAgICBwdWJsaWMgc3RhdGljIGNsYXNzIEFyZWFNZW1iZXJzaGlwQ2xhc3NpZmljYXRpb24KICAgIHsKICAgICAgICBwdWJsaWMgc3RhdGljIGJvb2wgSW5jbHVkZShJQXJlYU1lbWJlckNsYXNzaWZpZXIgY2xhc3NpZmllciwgRW50aXR5IG1lbWJlciwgRW50aXR5IGFyZWEsIEFjdGlvbjxFeGNlcHRpb24+IHJlcG9ydCkKICAgICAgICB7CiAgICAgICAgICAgIHRyeSB7IHJldHVybiBjbGFzc2lmaWVyID09IG51bGwgfHwgY2xhc3NpZmllci5DbGFzc2lmeShtZW1iZXIsIGFyZWEpICE9IEFyZWFNZW1iZXJSb2xlLk5vbmU7IH0KICAgICAgICAgICAgY2F0Y2ggKEV4Y2VwdGlvbiBlcnJvcikgeyByZXBvcnQoZXJyb3IpOyByZXR1cm4gZmFsc2U7IH0KICAgICAgICB9CiAgICB9Cn0K
+using System;
+using CS2AreaSystem.Core.Modules;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Membership
+{
+    public static class AreaMembershipClassification
+    {
+        public static bool Include(IAreaMemberClassifier classifier, Entity member, Entity area, Action<Exception> report)
+        {
+            try { return classifier == null || classifier.Classify(member, area) != AreaMemberRole.None; }
+            catch (Exception error) { report(error); return false; }
+        }
+    }
+}

@@ -1,1 +1,22 @@
-dXNpbmcgTlVuaXQuRnJhbWV3b3JrOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuQXJlYXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLlRlc3RzOwpwdWJsaWMgY2xhc3MgQXJlYVN0YWJsZUlkQWxsb2NhdG9yVGVzdHMgewogICAgW1Rlc3RdIHB1YmxpYyB2b2lkIEFsbG9jYXRlc01vbm90b25pY2FsbHlBbmRPYnNlcnZlc1NhdmVkSWRzKCkgewogICAgICAgIHZhciBpZHMgPSBuZXcgQXJlYVN0YWJsZUlkQWxsb2NhdG9yKCk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaWRzLkFsbG9jYXRlKCksIElzLkVxdWFsVG8oMVVMKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaWRzLkFsbG9jYXRlKCksIElzLkVxdWFsVG8oMlVMKSk7CiAgICAgICAgaWRzLk9ic2VydmVFeGlzdGluZyg1MCk7CiAgICAgICAgaWRzLk9ic2VydmVFeGlzdGluZygxMCk7CiAgICAgICAgQXNzZXJ0LlRoYXQoaWRzLkFsbG9jYXRlKCksIElzLkVxdWFsVG8oNTFVTCkpOwogICAgfQogICAgW1Rlc3RdIHB1YmxpYyB2b2lkIEV4aGF1c3Rpb25OZXZlclJldXNlc1plcm9PckV4aXN0aW5nSWRzKCkgewogICAgICAgIHZhciBpZHMgPSBuZXcgQXJlYVN0YWJsZUlkQWxsb2NhdG9yKHVsb25nLk1heFZhbHVlKTsKICAgICAgICBBc3NlcnQuVGhhdChpZHMuQWxsb2NhdGUoKSwgSXMuRXF1YWxUbyh1bG9uZy5NYXhWYWx1ZSkpOwogICAgICAgIEFzc2VydC5UaHJvd3M8T3ZlcmZsb3dFeGNlcHRpb24+KCgpID0+IGlkcy5BbGxvY2F0ZSgpKTsKICAgICAgICB2YXIgbG9hZGVkID0gbmV3IEFyZWFTdGFibGVJZEFsbG9jYXRvcigpOwogICAgICAgIGxvYWRlZC5PYnNlcnZlRXhpc3RpbmcodWxvbmcuTWF4VmFsdWUpOwogICAgICAgIEFzc2VydC5UaHJvd3M8T3ZlcmZsb3dFeGNlcHRpb24+KCgpID0+IGxvYWRlZC5BbGxvY2F0ZSgpKTsKICAgICAgICBBc3NlcnQuVGhyb3dzPEFyZ3VtZW50T3V0T2ZSYW5nZUV4Y2VwdGlvbj4oKCkgPT4gbmV3IEFyZWFTdGFibGVJZEFsbG9jYXRvcigwKSk7CiAgICB9Cn0K
+using NUnit.Framework;
+using CS2AreaSystem.Core.Areas;
+namespace CS2AreaSystem.Tests;
+public class AreaStableIdAllocatorTests {
+    [Test] public void AllocatesMonotonicallyAndObservesSavedIds() {
+        var ids = new AreaStableIdAllocator();
+        Assert.That(ids.Allocate(), Is.EqualTo(1UL));
+        Assert.That(ids.Allocate(), Is.EqualTo(2UL));
+        ids.ObserveExisting(50);
+        ids.ObserveExisting(10);
+        Assert.That(ids.Allocate(), Is.EqualTo(51UL));
+    }
+    [Test] public void ExhaustionNeverReusesZeroOrExistingIds() {
+        var ids = new AreaStableIdAllocator(ulong.MaxValue);
+        Assert.That(ids.Allocate(), Is.EqualTo(ulong.MaxValue));
+        Assert.Throws<OverflowException>(() => ids.Allocate());
+        var loaded = new AreaStableIdAllocator();
+        loaded.ObserveExisting(ulong.MaxValue);
+        Assert.Throws<OverflowException>(() => loaded.Allocate());
+        Assert.Throws<ArgumentOutOfRangeException>(() => new AreaStableIdAllocator(0));
+    }
+}

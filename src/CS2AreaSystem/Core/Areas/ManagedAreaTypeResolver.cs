@@ -1,1 +1,29 @@
-dXNpbmcgU3lzdGVtOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLkFyZWFzCnsKICAgIHB1YmxpYyBzZWFsZWQgY2xhc3MgTWFuYWdlZEFyZWFUeXBlUmVzb2x2ZXIKICAgIHsKICAgICAgICBwdWJsaWMgYm9vbCBUcnlSZXNvbHZlKHN0cmluZyBwcmVmYWJOYW1lLCBvdXQgQXJlYVR5cGVJZCB0eXBlSWQpCiAgICAgICAgewogICAgICAgICAgICB0eXBlSWQgPSBkZWZhdWx0OwogICAgICAgICAgICBpZiAoU3RyaW5nQ29tcGFyZXIuT3JkaW5hbC5FcXVhbHMocHJlZmFiTmFtZSwgIkNTMkFTLlBhcmtBcmVhIikpIHR5cGVJZCA9IEFyZWFUeXBlSWQuUGFyazsKICAgICAgICAgICAgZWxzZSBpZiAoU3RyaW5nQ29tcGFyZXIuT3JkaW5hbC5FcXVhbHMocHJlZmFiTmFtZSwgIkNTMkFTLkluZHVzdHJpYWxBcmVhIikpIHR5cGVJZCA9IEFyZWFUeXBlSWQuSW5kdXN0cmlhbDsKICAgICAgICAgICAgZWxzZSBpZiAoU3RyaW5nQ29tcGFyZXIuT3JkaW5hbC5FcXVhbHMocHJlZmFiTmFtZSwgIkNTMkFTLlRvdXJpc21BcmVhIikpIHR5cGVJZCA9IEFyZWFUeXBlSWQuVG91cmlzbTsKICAgICAgICAgICAgZWxzZSByZXR1cm4gZmFsc2U7CiAgICAgICAgICAgIHJldHVybiB0cnVlOwogICAgICAgIH0KICAgIH0KICAgIHB1YmxpYyByZWFkb25seSBzdHJ1Y3QgTWFuYWdlZEFyZWFJZGVudGl0eQogICAgewogICAgICAgIHB1YmxpYyBNYW5hZ2VkQXJlYSBNYW5hZ2VkIHsgZ2V0OyB9CiAgICAgICAgcHVibGljIE1hbmFnZWRBcmVhU3RhYmxlSWQgU3RhYmxlSWQgeyBnZXQ7IH0KICAgICAgICBwcml2YXRlIE1hbmFnZWRBcmVhSWRlbnRpdHkoTWFuYWdlZEFyZWEgbWFuYWdlZCwgTWFuYWdlZEFyZWFTdGFibGVJZCBzdGFibGUpIHsgTWFuYWdlZCA9IG1hbmFnZWQ7IFN0YWJsZUlkID0gc3RhYmxlOyB9CiAgICAgICAgcHVibGljIHN0YXRpYyBNYW5hZ2VkQXJlYUlkZW50aXR5IEVuc3VyZShpbnQgcmVzb2x2ZWRUeXBlSWQsIE1hbmFnZWRBcmVhPyBjdXJyZW50LCBNYW5hZ2VkQXJlYVN0YWJsZUlkPyBzdGFibGUsIEFyZWFTdGFibGVJZEFsbG9jYXRvciBpZHMpID0+CiAgICAgICAgICAgIG5ldyBNYW5hZ2VkQXJlYUlkZW50aXR5KGN1cnJlbnQgPz8gbmV3IE1hbmFnZWRBcmVhIHsgU2NoZW1hVmVyc2lvbiA9IE1hbmFnZWRBcmVhLkN1cnJlbnRTY2hlbWFWZXJzaW9uLCBUeXBlSWQgPSByZXNvbHZlZFR5cGVJZCwgU3RhdGUgPSBBcmVhTGlmZWN5Y2xlU3RhdGUuQ3JlYXRlZCB9LAogICAgICAgICAgICAgICAgc3RhYmxlID8/IG5ldyBNYW5hZ2VkQXJlYVN0YWJsZUlkIHsgVmFsdWUgPSBpZHMuQWxsb2NhdGUoKSB9KTsKICAgIH0KICAgIHB1YmxpYyBzdGF0aWMgY2xhc3MgQXJlYVRvb2xBY3RpdmF0aW9uUG9saWN5CiAgICB7CiAgICAgICAgcHVibGljIHN0YXRpYyBib29sIENhbkNyZWF0ZShib29sIHByZWZhYlJlYWR5LCBib29sIG5hdGl2ZVRvb2wpID0+IHByZWZhYlJlYWR5ICYmIG5hdGl2ZVRvb2w7CiAgICB9Cn0K
+using System;
+namespace CS2AreaSystem.Core.Areas
+{
+    public sealed class ManagedAreaTypeResolver
+    {
+        public bool TryResolve(string prefabName, out AreaTypeId typeId)
+        {
+            typeId = default;
+            if (StringComparer.Ordinal.Equals(prefabName, "CS2AS.ParkArea")) typeId = AreaTypeId.Park;
+            else if (StringComparer.Ordinal.Equals(prefabName, "CS2AS.IndustrialArea")) typeId = AreaTypeId.Industrial;
+            else if (StringComparer.Ordinal.Equals(prefabName, "CS2AS.TourismArea")) typeId = AreaTypeId.Tourism;
+            else return false;
+            return true;
+        }
+    }
+    public readonly struct ManagedAreaIdentity
+    {
+        public ManagedArea Managed { get; }
+        public ManagedAreaStableId StableId { get; }
+        private ManagedAreaIdentity(ManagedArea managed, ManagedAreaStableId stable) { Managed = managed; StableId = stable; }
+        public static ManagedAreaIdentity Ensure(int resolvedTypeId, ManagedArea? current, ManagedAreaStableId? stable, AreaStableIdAllocator ids) =>
+            new ManagedAreaIdentity(current ?? new ManagedArea { SchemaVersion = ManagedArea.CurrentSchemaVersion, TypeId = resolvedTypeId, State = AreaLifecycleState.Created },
+                stable ?? new ManagedAreaStableId { Value = ids.Allocate() });
+    }
+    public static class AreaToolActivationPolicy
+    {
+        public static bool CanCreate(bool prefabReady, bool nativeTool) => prefabReady && nativeTool;
+    }
+}

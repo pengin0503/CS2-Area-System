@@ -1,1 +1,18 @@
-dXNpbmcgU3lzdGVtOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlCnsKICAgIHB1YmxpYyBzZWFsZWQgY2xhc3MgQXJlYUxvYWRTZXF1ZW5jZQogICAgewogICAgICAgIHB1YmxpYyBib29sIFJlYWR5IHsgZ2V0OyBwcml2YXRlIHNldDsgfQogICAgICAgIHB1YmxpYyB2b2lkIFJlc2V0KCkgPT4gUmVhZHkgPSBmYWxzZTsKICAgICAgICBwdWJsaWMgYm9vbCBUcnlSZWNvdmVyKGJvb2wgbmF0aXZlUmVhZHksIEFjdGlvbiBvYnNlcnZlSWRzLCBBY3Rpb24gcmVidWlsZE1lbWJlcnNoaXAsIEFjdGlvbiB2YWxpZGF0ZU1vZHVsZXMpCiAgICAgICAgewogICAgICAgICAgICBpZiAoUmVhZHkgfHwgIW5hdGl2ZVJlYWR5KSByZXR1cm4gZmFsc2U7CiAgICAgICAgICAgIG9ic2VydmVJZHMoKTsKICAgICAgICAgICAgcmVidWlsZE1lbWJlcnNoaXAoKTsKICAgICAgICAgICAgdmFsaWRhdGVNb2R1bGVzKCk7CiAgICAgICAgICAgIFJlYWR5ID0gdHJ1ZTsKICAgICAgICAgICAgcmV0dXJuIHRydWU7CiAgICAgICAgfQogICAgfQp9Cg==
+using System;
+namespace CS2AreaSystem.Core.Persistence
+{
+    public sealed class AreaLoadSequence
+    {
+        public bool Ready { get; private set; }
+        public void Reset() => Ready = false;
+        public bool TryRecover(bool nativeReady, Action observeIds, Action rebuildMembership, Action validateModules)
+        {
+            if (Ready || !nativeReady) return false;
+            observeIds();
+            rebuildMembership();
+            validateModules();
+            Ready = true;
+            return true;
+        }
+    }
+}

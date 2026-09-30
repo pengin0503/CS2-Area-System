@@ -1,1 +1,149 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBTeXN0ZW0uQ29sbGVjdGlvbnMuR2VuZXJpYzsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLkFyZWFzOwp1c2luZyBHYW1lOwp1c2luZyBHYW1lLkFyZWFzOwp1c2luZyBHYW1lLkNvbW1vbjsKdXNpbmcgR2FtZS5Ob3RpZmljYXRpb25zOwp1c2luZyBHYW1lLlByZWZhYnM7CnVzaW5nIEdhbWUuU2ltdWxhdGlvbjsKdXNpbmcgR2FtZS5Ub29sczsKdXNpbmcgVW5pdHkuQ29sbGVjdGlvbnM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwp1c2luZyBVbml0eUVuZ2luZS5TY3JpcHRpbmc7CgpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5Db3JlLlByZWZhYnMKewogICAgLy8gQWRkaXRpdmUgbWFuYWdlbWVudC1sYXllciBwb2xpY3kuIE5hdGl2ZSB2YWxpZGF0aW9uIHN0aWxsIHJ1bnMgdW5jaGFuZ2VkLgogICAgLy8gUnVucyBhZnRlciBpdHMgQ29tcG9uZW50cyBzeXN0ZW0gYW5kIGJlZm9yZSBJY29uQ29tbWFuZFN5c3RlbS9lbmQgYmFycmllci4KICAgIHB1YmxpYyBwYXJ0aWFsIGNsYXNzIE1hbmFnZWRBcmVhT3ZlcmxhcFN5c3RlbSA6IEdhbWVTeXN0ZW1CYXNlCiAgICB7CiAgICAgICAgcHJpdmF0ZSBBcmVhQ29yZVNlcnZpY2VzU3lzdGVtIHNlcnZpY2VzOwogICAgICAgIHByaXZhdGUgUHJlZmFiU3lzdGVtIHByZWZhYnM7CiAgICAgICAgcHJpdmF0ZSBUb29sU3lzdGVtIHRvb2xzOwogICAgICAgIHByaXZhdGUgQXJlYVRvb2xTeXN0ZW0gYXJlYVRvb2w7CiAgICAgICAgcHJpdmF0ZSBHYW1lLkFyZWFzLlNlYXJjaFN5c3RlbSBhcmVhU2VhcmNoOwogICAgICAgIHByaXZhdGUgR2FtZS5PYmplY3RzLlNlYXJjaFN5c3RlbSBvYmplY3RTZWFyY2g7CiAgICAgICAgcHJpdmF0ZSBHYW1lLk5ldC5TZWFyY2hTeXN0ZW0gbmV0U2VhcmNoOwogICAgICAgIHByaXZhdGUgV2F0ZXJTeXN0ZW0gd2F0ZXI7CiAgICAgICAgcHJpdmF0ZSBUZXJyYWluU3lzdGVtIHRlcnJhaW47CiAgICAgICAgcHJpdmF0ZSBNb2RpZmljYXRpb25FbmRCYXJyaWVyIGJhcnJpZXI7CiAgICAgICAgcHJpdmF0ZSBJY29uQ29tbWFuZFN5c3RlbSBpY29uczsKICAgICAgICBwcml2YXRlIEVudGl0eVF1ZXJ5IHByZXZpZXdzLCBlcnJvclByZWZhYnM7CiAgICAgICAgcHJpdmF0ZSBib29sIGZhaWx1cmVMb2dnZWQ7CiAgICAgICAgW1ByZXNlcnZlXQogICAgICAgIHByb3RlY3RlZCBvdmVycmlkZSB2b2lkIE9uQ3JlYXRlKCkKICAgICAgICB7CiAgICAgICAgICAgIGJhc2UuT25DcmVhdGUoKTsKICAgICAgICAgICAgc2VydmljZXMgPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8QXJlYUNvcmVTZXJ2aWNlc1N5c3RlbT4oKTsKICAgICAgICAgICAgcHJlZmFicyA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxQcmVmYWJTeXN0ZW0+KCk7CiAgICAgICAgICAgIHRvb2xzID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPFRvb2xTeXN0ZW0+KCk7CiAgICAgICAgICAgIGFyZWFUb29sID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPEFyZWFUb29sU3lzdGVtPigpOwogICAgICAgICAgICBhcmVhU2VhcmNoID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPEdhbWUuQXJlYXMuU2VhcmNoU3lzdGVtPigpOwogICAgICAgICAgICBvYmplY3RTZWFyY2ggPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8R2FtZS5PYmplY3RzLlNlYXJjaFN5c3RlbT4oKTsKICAgICAgICAgICAgbmV0U2VhcmNoID0gV29ybGQuR2V0T3JDcmVhdGVTeXN0ZW1NYW5hZ2VkPEdhbWUuTmV0LlNlYXJjaFN5c3RlbT4oKTsKICAgICAgICAgICAgd2F0ZXIgPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8V2F0ZXJTeXN0ZW0+KCk7CiAgICAgICAgICAgIHRlcnJhaW4gPSBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8VGVycmFpblN5c3RlbT4oKTsKICAgICAgICAgICAgYmFycmllciA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxNb2RpZmljYXRpb25FbmRCYXJyaWVyPigpOwogICAgICAgICAgICBpY29ucyA9IFdvcmxkLkdldE9yQ3JlYXRlU3lzdGVtTWFuYWdlZDxJY29uQ29tbWFuZFN5c3RlbT4oKTsKICAgICAgICAgICAgcHJldmlld3MgPSBHZXRFbnRpdHlRdWVyeShDb21wb25lbnRUeXBlLlJlYWRPbmx5PEFyZWE+KCksIENvbXBvbmVudFR5cGUuUmVhZE9ubHk8U3BhY2U+KCksCiAgICAgICAgICAgICAgICBDb21wb25lbnRUeXBlLlJlYWRPbmx5PFRlbXA+KCksIENvbXBvbmVudFR5cGUuUmVhZE9ubHk8VXBkYXRlZD4oKSwgQ29tcG9uZW50VHlwZS5SZWFkT25seTxQcmVmYWJSZWY+KCksCiAgICAgICAgICAgICAgICBDb21wb25lbnRUeXBlLlJlYWRPbmx5PE5vZGU+KCksIENvbXBvbmVudFR5cGUuUmVhZE9ubHk8VHJpYW5nbGU+KCksIENvbXBvbmVudFR5cGUuRXhjbHVkZTxEZWxldGVkPigpKTsKICAgICAgICAgICAgZXJyb3JQcmVmYWJzID0gR2V0RW50aXR5UXVlcnkoQ29tcG9uZW50VHlwZS5SZWFkT25seTxOb3RpZmljYXRpb25JY29uRGF0YT4oKSwgQ29tcG9uZW50VHlwZS5SZWFkT25seTxUb29sRXJyb3JEYXRhPigpKTsKICAgICAgICB9CiAgICAgICAgW1ByZXNlcnZlXQogICAgICAgIHByb3RlY3RlZCBvdmVycmlkZSB2b2lkIE9uVXBkYXRlKCkKICAgICAgICB7CiAgICAgICAgICAgIHRyeQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICBpZiAodG9vbHMuYWN0aXZlVG9vbCAhPSBhcmVhVG9vbCB8fCBhcmVhVG9vbC5wcmVmYWIgPT0gbnVsbCB8fCB0b29scy5hY3Rpb25Nb2RlLklzRWRpdG9yKCkgfHwKICAgICAgICAgICAgICAgICAgICAhVHJ5RGVzY3JpYmVQcmVmYWIocHJlZmFicy5HZXRFbnRpdHkoYXJlYVRvb2wucHJlZmFiKSwgb3V0IF8pIHx8IHByZXZpZXdzLklzRW1wdHlJZ25vcmVGaWx0ZXIpIHJldHVybjsKICAgICAgICAgICAgICAgIEFwcGx5TWFuYWdlZFBvbGljeSgpOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGNhdGNoIChFeGNlcHRpb24gZXJyb3IpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIC8vIEZhaWwgY2xvc2VkOiB3aXRob3V0IGNvbXBsZXRlIG5hdGl2ZSBldmlkZW5jZSwga2VlcCBibG9ja2luZyBlcnJvcnMuCiAgICAgICAgICAgICAgICBpZiAoIWZhaWx1cmVMb2dnZWQpIHsgZmFpbHVyZUxvZ2dlZCA9IHRydWU7IE1vZC5Mb2cuRXJyb3IoZXJyb3IsICJNYW5hZ2VkIG92ZXJsYXAgdmFsaWRhdGlvbiB1bmF2YWlsYWJsZTsgbmF0aXZlIGVycm9ycyByZW1haW4gYXV0aG9yaXRhdGl2ZS4iKTsgfQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgICAgIHByaXZhdGUgdm9pZCBBcHBseU1hbmFnZWRQb2xpY3koKQogICAgICAgIHsKICAgICAgICAgICAgdmFyIG9iamVjdFRyZWUgPSBvYmplY3RTZWFyY2guR2V0U3RhdGljU2VhcmNoVHJlZSh0cnVlLCBvdXQgdmFyIG9iamVjdERlcGVuZGVuY3kpOwogICAgICAgICAgICB2YXIgbmV0VHJlZSA9IG5ldFNlYXJjaC5HZXROZXRTZWFyY2hUcmVlKHRydWUsIG91dCB2YXIgbmV0RGVwZW5kZW5jeSk7CiAgICAgICAgICAgIHZhciBhcmVhVHJlZSA9IGFyZWFTZWFyY2guR2V0U2VhcmNoVHJlZSh0cnVlLCBvdXQgdmFyIGFyZWFEZXBlbmRlbmN5KTsKICAgICAgICAgICAgdmFyIHN1cmZhY2UgPSB3YXRlci5HZXRTdXJmYWNlRGF0YShvdXQgdmFyIHdhdGVyRGVwZW5kZW5jeSk7CiAgICAgICAgICAgIG9iamVjdERlcGVuZGVuY3kuQ29tcGxldGUoKTsgbmV0RGVwZW5kZW5jeS5Db21wbGV0ZSgpOyBhcmVhRGVwZW5kZW5jeS5Db21wbGV0ZSgpOyB3YXRlckRlcGVuZGVuY3kuQ29tcGxldGUoKTsKICAgICAgICAgICAgdmFyIGhlaWdodCA9IHRlcnJhaW4uR2V0SGVpZ2h0RGF0YSgpOwogICAgICAgICAgICB2YXIgZGF0YSA9IG5ldyBWYWxpZGF0aW9uU3lzdGVtLkVudGl0eURhdGEodGhpcyk7CiAgICAgICAgICAgIHZhciBlcnJvcnMgPSBuZXcgTGlzdDxFcnJvckRhdGE+KCk7CiAgICAgICAgICAgIHVzaW5nIHZhciBxdWV1ZSA9IG5ldyBOYXRpdmVRdWV1ZTxFcnJvckRhdGE+KEFsbG9jYXRvci5UZW1wSm9iKTsKICAgICAgICAgICAgdmFyIHdyaXRlciA9IHF1ZXVlLkFzUGFyYWxsZWxXcml0ZXIoKTsKICAgICAgICAgICAgdXNpbmcgdmFyIGVudGl0aWVzID0gcHJldmlld3MuVG9FbnRpdHlBcnJheShBbGxvY2F0b3IuVGVtcCk7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBlbnRpdHkgaW4gZW50aXRpZXMpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGlmICghSXNPd25lZChlbnRpdHkpKSBjb250aW51ZTsKICAgICAgICAgICAgICAgIHZhciB0ZW1wID0gRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPFRlbXA+KGVudGl0eSk7CiAgICAgICAgICAgICAgICBpZiAoKHRlbXAubV9GbGFncyAmIChUZW1wRmxhZ3MuRGVsZXRlIHwgVGVtcEZsYWdzLlNlbGVjdCB8IFRlbXBGbGFncy5EdXBsaWNhdGUpKSAhPSAwKSBjb250aW51ZTsKICAgICAgICAgICAgICAgIHZhciBhcmVhID0gRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPEFyZWE+KGVudGl0eSk7CiAgICAgICAgICAgICAgICBpZiAoKGFyZWEubV9GbGFncyAmIEFyZWFGbGFncy5TbGF2ZSkgIT0gMCkgY29udGludWU7CiAgICAgICAgICAgICAgICB2YXIgb3duZXIgPSBFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxPd25lcj4oZW50aXR5KSA/IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxPd25lcj4oZW50aXR5KSA6IGRlZmF1bHQ7CiAgICAgICAgICAgICAgICB2YXIgZ2VvbWV0cnkgPSBFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxHZW9tZXRyeT4oZW50aXR5KSA/IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxHZW9tZXRyeT4oZW50aXR5KSA6IGRlZmF1bHQ7CiAgICAgICAgICAgICAgICB2YXIgcmVmZXJlbmNlID0gRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPFByZWZhYlJlZj4oZW50aXR5KTsKICAgICAgICAgICAgICAgIEdhbWUuQXJlYXMuVmFsaWRhdGlvbkhlbHBlcnMuVmFsaWRhdGVBcmVhKGZhbHNlLCBlbnRpdHksIHRlbXAsIG93bmVyLCBhcmVhLCBnZW9tZXRyeSwgZGVmYXVsdCwKICAgICAgICAgICAgICAgICAgICBFbnRpdHlNYW5hZ2VyLkdldEJ1ZmZlcjxOb2RlPihlbnRpdHksIHRydWUpLCByZWZlcmVuY2UsIGRhdGEsIG9iamVjdFRyZWUsIG5ldFRyZWUsIGFyZWFUcmVlLCBzdXJmYWNlLCBoZWlnaHQsIHdyaXRlcik7CiAgICAgICAgICAgICAgICBmb3JlYWNoICh2YXIgdHJpYW5nbGUgaW4gRW50aXR5TWFuYWdlci5HZXRCdWZmZXI8VHJpYW5nbGU+KGVudGl0eSwgdHJ1ZSkpCiAgICAgICAgICAgICAgICAgICAgR2FtZS5BcmVhcy5WYWxpZGF0aW9uSGVscGVycy5WYWxpZGF0ZVRyaWFuZ2xlKGZhbHNlLCAoYXJlYS5tX0ZsYWdzICYgQXJlYUZsYWdzLkNvbXBsZXRlKSA9PSAwLAogICAgICAgICAgICAgICAgICAgICAgICAoYXJlYS5tX0ZsYWdzICYgQXJlYUZsYWdzLkNvdW50ZXJDbG9ja3dpc2UpICE9IDAsIGVudGl0eSwgdGVtcCwgb3duZXIsIHRyaWFuZ2xlLAogICAgICAgICAgICAgICAgICAgICAgICBkYXRhLCBvYmplY3RUcmVlLCBuZXRUcmVlLCBhcmVhVHJlZSwgc3VyZmFjZSwgaGVpZ2h0LCB3cml0ZXIpOwogICAgICAgICAgICB9CiAgICAgICAgICAgIHdoaWxlIChxdWV1ZS5UcnlEZXF1ZXVlKG91dCB2YXIgZXJyb3IpKSBlcnJvcnMuQWRkKGVycm9yKTsKICAgICAgICAgICAgdmFyIGFsbG93ZWQgPSBuZXcgSGFzaFNldDxFbnRpdHk+KE1hbmFnZWRPdmVybGFwVmFsaWRhdGlvbi5GaW5kT3ZlcmxhcE9ubHlFbnRpdGllcyhlcnJvcnMsIElzT3duZWQsIFBlcm1pdHMpKTsKICAgICAgICAgICAgaWYgKGFsbG93ZWQuQ291bnQgPT0gMCkgcmV0dXJuOwogICAgICAgICAgICAvLyBRdWV1ZSBhZnRlciBuYXRpdmUgdmFsaWRhdGlvbidzIEVDQjsgcGxheWJhY2sgbmV2ZXIgZXhwb3NlcyBhbiB1bnZhbGlkYXRlZCBmcmFtZS4KICAgICAgICAgICAgdmFyIGNvbW1hbmRzID0gYmFycmllci5DcmVhdGVDb21tYW5kQnVmZmVyKCk7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBlbnRpdHkgaW4gYWxsb3dlZCkKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgY29tbWFuZHMuUmVtb3ZlQ29tcG9uZW50PEdhbWUuVG9vbHMuRXJyb3I+KGVudGl0eSk7CiAgICAgICAgICAgICAgICBjb21tYW5kcy5BZGRDb21wb25lbnQ8V2FybmluZz4oZW50aXR5KTsKICAgICAgICAgICAgICAgIGNvbW1hbmRzLkFkZENvbXBvbmVudDxCYXRjaGVzVXBkYXRlZD4oZW50aXR5KTsKICAgICAgICAgICAgfQogICAgICAgICAgICBFbnRpdHkgb3ZlcmxhcEljb24gPSBFbnRpdHkuTnVsbDsKICAgICAgICAgICAgdXNpbmcgdmFyIGNhbmRpZGF0ZXMgPSBlcnJvclByZWZhYnMuVG9FbnRpdHlBcnJheShBbGxvY2F0b3IuVGVtcCk7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBjYW5kaWRhdGUgaW4gY2FuZGlkYXRlcykKICAgICAgICAgICAgICAgIGlmIChFbnRpdHlNYW5hZ2VyLkdldENvbXBvbmVudERhdGE8VG9vbEVycm9yRGF0YT4oY2FuZGlkYXRlKS5tX0Vycm9yID09IEVycm9yVHlwZS5PdmVybGFwRXhpc3RpbmcpIHsgb3ZlcmxhcEljb24gPSBjYW5kaWRhdGU7IGJyZWFrOyB9CiAgICAgICAgICAgIGlmIChvdmVybGFwSWNvbiA9PSBFbnRpdHkuTnVsbCkgcmV0dXJuOwogICAgICAgICAgICB2YXIgaWNvbkNvbW1hbmRzID0gaWNvbnMuQ3JlYXRlQ29tbWFuZEJ1ZmZlcigpOwogICAgICAgICAgICBmb3JlYWNoICh2YXIgZXJyb3IgaW4gZXJyb3JzKQogICAgICAgICAgICAgICAgaWYgKGVycm9yLm1fRXJyb3JUeXBlID09IEVycm9yVHlwZS5PdmVybGFwRXhpc3RpbmcgJiYgYWxsb3dlZC5Db250YWlucyhlcnJvci5tX1RlbXBFbnRpdHkpICYmIGFsbG93ZWQuQ29udGFpbnMoZXJyb3IubV9QZXJtYW5lbnRFbnRpdHkpKQogICAgICAgICAgICAgICAgICAgIGljb25Db21tYW5kcy5BZGQoZXJyb3IubV9UZW1wRW50aXR5LCBvdmVybGFwSWNvbiwgZXJyb3IubV9Qb3NpdGlvbiwgSWNvblByaW9yaXR5Lldhcm5pbmcsCiAgICAgICAgICAgICAgICAgICAgICAgIEljb25DbHVzdGVyTGF5ZXIuRGVmYXVsdCwgKEljb25GbGFncykwLCBlcnJvci5tX1Blcm1hbmVudEVudGl0eSwgaXNUZW1wOiB0cnVlKTsKICAgICAgICB9CiAgICAgICAgcHJpdmF0ZSBib29sIElzT3duZWQoRW50aXR5IGVudGl0eSkgPT4gVHJ5RGVzY3JpYmVBcmVhKGVudGl0eSwgb3V0IF8pOwogICAgICAgIHByaXZhdGUgYm9vbCBUcnlEZXNjcmliZUFyZWEoRW50aXR5IGVudGl0eSwgb3V0IEFyZWFUeXBlRGVzY3JpcHRvciB0eXBlKQogICAgICAgIHsKICAgICAgICAgICAgdHlwZSA9IG51bGw7CiAgICAgICAgICAgIGlmICghRW50aXR5TWFuYWdlci5FeGlzdHMoZW50aXR5KSB8fCAhRW50aXR5TWFuYWdlci5IYXNDb21wb25lbnQ8QXJlYT4oZW50aXR5KSB8fAogICAgICAgICAgICAgICAgIUVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PFNwYWNlPihlbnRpdHkpIHx8IEVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PERlbGV0ZWQ+KGVudGl0eSkgfHwKICAgICAgICAgICAgICAgICFFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxQcmVmYWJSZWY+KGVudGl0eSkpIHJldHVybiBmYWxzZTsKICAgICAgICAgICAgaWYgKCFUcnlEZXNjcmliZVByZWZhYihFbnRpdHlNYW5hZ2VyLkdldENvbXBvbmVudERhdGE8UHJlZmFiUmVmPihlbnRpdHkpLm1fUHJlZmFiLCBvdXQgdHlwZSkpIHJldHVybiBmYWxzZTsKICAgICAgICAgICAgLy8gVW5rbm93biBmdXR1cmUgVHlwZUlkIG11c3QgcmV0YWluIG5hdGl2ZSB2YWxpZGF0aW9uIHJhdGhlciB0aGFuIGFzc3VtZSBhIG1vZHVsZSBwb2xpY3kuCiAgICAgICAgICAgIGlmIChFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxNYW5hZ2VkQXJlYT4oZW50aXR5KSkKICAgICAgICAgICAgICAgIHJldHVybiBzZXJ2aWNlcy5SZWdpc3RyeS5UcnlHZXQoRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPE1hbmFnZWRBcmVhPihlbnRpdHkpLlR5cGVJZCwgb3V0IHR5cGUpOwogICAgICAgICAgICByZXR1cm4gRW50aXR5TWFuYWdlci5IYXNDb21wb25lbnQ8VGVtcD4oZW50aXR5KTsKICAgICAgICB9CiAgICAgICAgcHJpdmF0ZSBib29sIFRyeURlc2NyaWJlUHJlZmFiKEVudGl0eSBlbnRpdHksIG91dCBBcmVhVHlwZURlc2NyaXB0b3IgdHlwZSkKICAgICAgICB7CiAgICAgICAgICAgIHR5cGUgPSBudWxsOwogICAgICAgICAgICBpZiAoIUVudGl0eU1hbmFnZXIuRXhpc3RzKGVudGl0eSkgfHwgIUVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PFNwYWNlRGF0YT4oZW50aXR5KSB8fAogICAgICAgICAgICAgICAgIUVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PEFyZWFHZW9tZXRyeURhdGE+KGVudGl0eSkpIHJldHVybiBmYWxzZTsKICAgICAgICAgICAgdmFyIGdlb21ldHJ5ID0gRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPEFyZWFHZW9tZXRyeURhdGE+KGVudGl0eSk7CiAgICAgICAgICAgIGlmIChnZW9tZXRyeS5tX1R5cGUgIT0gQXJlYVR5cGUuU3BhY2UgfHwgZ2VvbWV0cnkubV9GbGFncyAhPSAwKSByZXR1cm4gZmFsc2U7CiAgICAgICAgICAgIGZvcmVhY2ggKHZhciBkZXNjcmlwdG9yIGluIHNlcnZpY2VzLlJlZ2lzdHJ5LkFsbCkKICAgICAgICAgICAgICAgIGlmIChkZXNjcmlwdG9yLlByZWZhYiAhPSBudWxsICYmIHByZWZhYnMuVHJ5R2V0RW50aXR5KGRlc2NyaXB0b3IuUHJlZmFiLCBvdXQgdmFyIHJlZ2lzdGVyZWQpICYmIHJlZ2lzdGVyZWQgPT0gZW50aXR5KQogICAgICAgICAgICAgICAgeyB0eXBlID0gZGVzY3JpcHRvcjsgcmV0dXJuIHRydWU7IH0KICAgICAgICAgICAgcmV0dXJuIGZhbHNlOwogICAgICAgIH0KICAgICAgICBwcml2YXRlIGJvb2wgUGVybWl0cyhFbnRpdHkgZmlyc3QsIEVudGl0eSBzZWNvbmQpID0+IFRyeURlc2NyaWJlQXJlYShmaXJzdCwgb3V0IHZhciBhKSAmJiBUcnlEZXNjcmliZUFyZWEoc2Vjb25kLCBvdXQgdmFyIGIpICYmCiAgICAgICAgICAgIGEuTW9kdWxlICE9IG51bGwgJiYgYi5Nb2R1bGUgIT0gbnVsbCAmJiBhLk1vZHVsZS5BbGxvd3NPdmVybGFwV2l0aChiLlR5cGVJZCkgJiYgYi5Nb2R1bGUuQWxsb3dzT3ZlcmxhcFdpdGgoYS5UeXBlSWQpOwogICAgfQp9Cg==
+using System;
+using System.Collections.Generic;
+using CS2AreaSystem.Core.Areas;
+using Game;
+using Game.Areas;
+using Game.Common;
+using Game.Notifications;
+using Game.Prefabs;
+using Game.Simulation;
+using Game.Tools;
+using Unity.Collections;
+using Unity.Entities;
+using UnityEngine.Scripting;
+
+namespace CS2AreaSystem.Core.Prefabs
+{
+    // Additive management-layer policy. Native validation still runs unchanged.
+    // Runs after its Components system and before IconCommandSystem/end barrier.
+    public partial class ManagedAreaOverlapSystem : GameSystemBase
+    {
+        private AreaCoreServicesSystem services;
+        private PrefabSystem prefabs;
+        private ToolSystem tools;
+        private AreaToolSystem areaTool;
+        private Game.Areas.SearchSystem areaSearch;
+        private Game.Objects.SearchSystem objectSearch;
+        private Game.Net.SearchSystem netSearch;
+        private WaterSystem water;
+        private TerrainSystem terrain;
+        private ModificationEndBarrier barrier;
+        private IconCommandSystem icons;
+        private EntityQuery previews, errorPrefabs;
+        private bool failureLogged;
+        [Preserve]
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
+            tools = World.GetOrCreateSystemManaged<ToolSystem>();
+            areaTool = World.GetOrCreateSystemManaged<AreaToolSystem>();
+            areaSearch = World.GetOrCreateSystemManaged<Game.Areas.SearchSystem>();
+            objectSearch = World.GetOrCreateSystemManaged<Game.Objects.SearchSystem>();
+            netSearch = World.GetOrCreateSystemManaged<Game.Net.SearchSystem>();
+            water = World.GetOrCreateSystemManaged<WaterSystem>();
+            terrain = World.GetOrCreateSystemManaged<TerrainSystem>();
+            barrier = World.GetOrCreateSystemManaged<ModificationEndBarrier>();
+            icons = World.GetOrCreateSystemManaged<IconCommandSystem>();
+            previews = GetEntityQuery(ComponentType.ReadOnly<Area>(), ComponentType.ReadOnly<Space>(),
+                ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<PrefabRef>(),
+                ComponentType.ReadOnly<Node>(), ComponentType.ReadOnly<Triangle>(), ComponentType.Exclude<Deleted>());
+            errorPrefabs = GetEntityQuery(ComponentType.ReadOnly<NotificationIconData>(), ComponentType.ReadOnly<ToolErrorData>());
+        }
+        [Preserve]
+        protected override void OnUpdate()
+        {
+            try
+            {
+                if (tools.activeTool != areaTool || areaTool.prefab == null || tools.actionMode.IsEditor() ||
+                    !TryDescribePrefab(prefabs.GetEntity(areaTool.prefab), out _) || previews.IsEmptyIgnoreFilter) return;
+                ApplyManagedPolicy();
+            }
+            catch (Exception error)
+            {
+                // Fail closed: without complete native evidence, keep blocking errors.
+                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Managed overlap validation unavailable; native errors remain authoritative."); }
+            }
+        }
+        private void ApplyManagedPolicy()
+        {
+            var objectTree = objectSearch.GetStaticSearchTree(true, out var objectDependency);
+            var netTree = netSearch.GetNetSearchTree(true, out var netDependency);
+            var areaTree = areaSearch.GetSearchTree(true, out var areaDependency);
+            var surface = water.GetSurfaceData(out var waterDependency);
+            objectDependency.Complete(); netDependency.Complete(); areaDependency.Complete(); waterDependency.Complete();
+            var height = terrain.GetHeightData();
+            var data = new ValidationSystem.EntityData(this);
+            var errors = new List<ErrorData>();
+            using var queue = new NativeQueue<ErrorData>(Allocator.TempJob);
+            var writer = queue.AsParallelWriter();
+            using var entities = previews.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+            {
+                if (!IsOwned(entity)) continue;
+                var temp = EntityManager.GetComponentData<Temp>(entity);
+                if ((temp.m_Flags & (TempFlags.Delete | TempFlags.Select | TempFlags.Duplicate)) != 0) continue;
+                var area = EntityManager.GetComponentData<Area>(entity);
+                if ((area.m_Flags & AreaFlags.Slave) != 0) continue;
+                var owner = EntityManager.HasComponent<Owner>(entity) ? EntityManager.GetComponentData<Owner>(entity) : default;
+                var geometry = EntityManager.HasComponent<Geometry>(entity) ? EntityManager.GetComponentData<Geometry>(entity) : default;
+                var reference = EntityManager.GetComponentData<PrefabRef>(entity);
+                Game.Areas.ValidationHelpers.ValidateArea(false, entity, temp, owner, area, geometry, default,
+                    EntityManager.GetBuffer<Node>(entity, true), reference, data, objectTree, netTree, areaTree, surface, height, writer);
+                foreach (var triangle in EntityManager.GetBuffer<Triangle>(entity, true))
+                    Game.Areas.ValidationHelpers.ValidateTriangle(false, (area.m_Flags & AreaFlags.Complete) == 0,
+                        (area.m_Flags & AreaFlags.CounterClockwise) != 0, entity, temp, owner, triangle,
+                        data, objectTree, netTree, areaTree, surface, height, writer);
+            }
+            while (queue.TryDequeue(out var error)) errors.Add(error);
+            var allowed = new HashSet<Entity>(ManagedOverlapValidation.FindOverlapOnlyEntities(errors, IsOwned, Permits));
+            if (allowed.Count == 0) return;
+            // Queue after native validation's ECB; playback never exposes an unvalidated frame.
+            var commands = barrier.CreateCommandBuffer();
+            foreach (var entity in allowed)
+            {
+                commands.RemoveComponent<Game.Tools.Error>(entity);
+                commands.AddComponent<Warning>(entity);
+                commands.AddComponent<BatchesUpdated>(entity);
+            }
+            Entity overlapIcon = Entity.Null;
+            using var candidates = errorPrefabs.ToEntityArray(Allocator.Temp);
+            foreach (var candidate in candidates)
+                if (EntityManager.GetComponentData<ToolErrorData>(candidate).m_Error == ErrorType.OverlapExisting) { overlapIcon = candidate; break; }
+            if (overlapIcon == Entity.Null) return;
+            var iconCommands = icons.CreateCommandBuffer();
+            foreach (var error in errors)
+                if (error.m_ErrorType == ErrorType.OverlapExisting && allowed.Contains(error.m_TempEntity) && allowed.Contains(error.m_PermanentEntity))
+                    iconCommands.Add(error.m_TempEntity, overlapIcon, error.m_Position, IconPriority.Warning,
+                        IconClusterLayer.Default, (IconFlags)0, error.m_PermanentEntity, isTemp: true);
+        }
+        private bool IsOwned(Entity entity) => TryDescribeArea(entity, out _);
+        private bool TryDescribeArea(Entity entity, out AreaTypeDescriptor type)
+        {
+            type = null;
+            if (!EntityManager.Exists(entity) || !EntityManager.HasComponent<Area>(entity) ||
+                !EntityManager.HasComponent<Space>(entity) || EntityManager.HasComponent<Deleted>(entity) ||
+                !EntityManager.HasComponent<PrefabRef>(entity)) return false;
+            if (!TryDescribePrefab(EntityManager.GetComponentData<PrefabRef>(entity).m_Prefab, out type)) return false;
+            // Unknown future TypeId must retain native validation rather than assume a module policy.
+            if (EntityManager.HasComponent<ManagedArea>(entity))
+                return services.Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(entity).TypeId, out type);
+            return EntityManager.HasComponent<Temp>(entity);
+        }
+        private bool TryDescribePrefab(Entity entity, out AreaTypeDescriptor type)
+        {
+            type = null;
+            if (!EntityManager.Exists(entity) || !EntityManager.HasComponent<SpaceData>(entity) ||
+                !EntityManager.HasComponent<AreaGeometryData>(entity)) return false;
+            var geometry = EntityManager.GetComponentData<AreaGeometryData>(entity);
+            if (geometry.m_Type != AreaType.Space || geometry.m_Flags != 0) return false;
+            foreach (var descriptor in services.Registry.All)
+                if (descriptor.Prefab != null && prefabs.TryGetEntity(descriptor.Prefab, out var registered) && registered == entity)
+                { type = descriptor; return true; }
+            return false;
+        }
+        private bool Permits(Entity first, Entity second) => TryDescribeArea(first, out var a) && TryDescribeArea(second, out var b) &&
+            a.Module != null && b.Module != null && a.Module.AllowsOverlapWith(b.TypeId) && b.Module.AllowsOverlapWith(a.TypeId);
+    }
+}

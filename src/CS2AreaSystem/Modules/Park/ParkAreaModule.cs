@@ -1,1 +1,10 @@
-dXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLkFuY2hvcnM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLk1vZHVsZXM7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLk1vZHVsZXMuUGFyawp7CiAgICBwdWJsaWMgc2VhbGVkIGNsYXNzIFBhcmtBcmVhTW9kdWxlIDogQW5jaG9yQXJlYU1vZHVsZQogICAgewogICAgICAgIHB1YmxpYyBQYXJrQXJlYU1vZHVsZShBcmVhQW5jaG9yU2VydmljZSBhbmNob3JzKSA6IGJhc2UoQXJlYVR5cGVJZC5QYXJrLCBhbmNob3JzLCBBcmVhQW5jaG9yUm9sZS5FbnRyYW5jZSkgeyB9CiAgICB9Cn0K
+using CS2AreaSystem.Core.Anchors;
+using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Modules;
+namespace CS2AreaSystem.Modules.Park
+{
+    public sealed class ParkAreaModule : AnchorAreaModule
+    {
+        public ParkAreaModule(AreaAnchorService anchors) : base(AreaTypeId.Park, anchors, AreaAnchorRole.Entrance) { }
+    }
+}

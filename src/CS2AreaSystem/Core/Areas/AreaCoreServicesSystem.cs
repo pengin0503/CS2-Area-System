@@ -1,1 +1,38 @@
-dXNpbmcgR2FtZTsKdXNpbmcgR2FtZS5Db21tb247CnVzaW5nIEdhbWUuVG9vbHM7CnVzaW5nIFVuaXR5LkVudGl0aWVzOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuQW5jaG9yczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Nb2R1bGVzLlBhcms7CnVzaW5nIENTMkFyZWFTeXN0ZW0uTW9kdWxlcy5JbmR1c3RyaWFsOwp1c2luZyBDUzJBcmVhU3lzdGVtLk1vZHVsZXMuVG91cmlzbTsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhcwp7CiAgICBwdWJsaWMgcGFydGlhbCBjbGFzcyBBcmVhQ29yZVNlcnZpY2VzU3lzdGVtIDogR2FtZVN5c3RlbUJhc2UKICAgIHsKICAgICAgICBwdWJsaWMgQXJlYVR5cGVSZWdpc3RyeSBSZWdpc3RyeSB7IGdldDsgfSA9IG5ldyBBcmVhVHlwZVJlZ2lzdHJ5KCk7CiAgICAgICAgcHVibGljIEFyZWFTdGFibGVJZEFsbG9jYXRvciBTdGFibGVJZHMgeyBnZXQ7IH0gPSBuZXcgQXJlYVN0YWJsZUlkQWxsb2NhdG9yKCk7CiAgICAgICAgcHVibGljIEFyZWFBbmNob3JTZXJ2aWNlIEFuY2hvcnMgeyBnZXQ7IHByaXZhdGUgc2V0OyB9CiAgICAgICAgcHJvdGVjdGVkIG92ZXJyaWRlIHZvaWQgT25DcmVhdGUoKQogICAgICAgIHsKICAgICAgICAgICAgYmFzZS5PbkNyZWF0ZSgpOwogICAgICAgICAgICBBbmNob3JzID0gbmV3IEFyZWFBbmNob3JTZXJ2aWNlKG5ldyBFbnRpdHlBcmVhQW5jaG9yU3RvcmUoRW50aXR5TWFuYWdlciksIElzVmFsaWRFbnRpdHksIElzRWxpZ2libGVBbmNob3IpOwogICAgICAgICAgICBSZWdpc3RyeS5SZWdpc3RlcihuZXcgUGFya0FyZWFNb2R1bGUoQW5jaG9ycykuRGVzY3JpYmVUeXBlKCkpOwogICAgICAgICAgICBSZWdpc3RyeS5SZWdpc3RlcihuZXcgSW5kdXN0cmlhbEFyZWFNb2R1bGUoQW5jaG9ycykuRGVzY3JpYmVUeXBlKCkpOwogICAgICAgICAgICBSZWdpc3RyeS5SZWdpc3RlcihuZXcgVG91cmlzbUFyZWFNb2R1bGUoKS5EZXNjcmliZVR5cGUoKSk7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBib29sIElzVmFsaWRFbnRpdHkoRW50aXR5IGVudGl0eSkgPT4gRW50aXR5TWFuYWdlci5FeGlzdHMoZW50aXR5KSAmJiBlbnRpdHkgIT0gRW50aXR5Lk51bGwgJiYKICAgICAgICAgICAgIUVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PERlbGV0ZWQ+KGVudGl0eSkgJiYgIUVudGl0eU1hbmFnZXIuSGFzQ29tcG9uZW50PERlc3Ryb3llZD4oZW50aXR5KSAmJiAhRW50aXR5TWFuYWdlci5IYXNDb21wb25lbnQ8VGVtcD4oZW50aXR5KTsKICAgICAgICBwcml2YXRlIGJvb2wgSXNFbGlnaWJsZUFuY2hvcihFbnRpdHkgYXJlYSwgRW50aXR5IGFuY2hvciwgQXJlYUFuY2hvclJvbGUgcm9sZSkKICAgICAgICB7CiAgICAgICAgICAgIGlmICghSXNWYWxpZEVudGl0eShhcmVhKSB8fCAhRW50aXR5TWFuYWdlci5IYXNDb21wb25lbnQ8TWFuYWdlZEFyZWE+KGFyZWEpIHx8ICFFbnRpdHlNYW5hZ2VyLkhhc0NvbXBvbmVudDxHYW1lLkJ1aWxkaW5ncy5CdWlsZGluZz4oYW5jaG9yKSkgcmV0dXJuIGZhbHNlOwogICAgICAgICAgICB2YXIgbWFuYWdlZCA9IEVudGl0eU1hbmFnZXIuR2V0Q29tcG9uZW50RGF0YTxNYW5hZ2VkQXJlYT4oYXJlYSk7CiAgICAgICAgICAgIGlmICghUmVnaXN0cnkuVHJ5R2V0KG1hbmFnZWQuVHlwZUlkLCBvdXQgdmFyIGRlc2NyaXB0b3IpIHx8ICEoZGVzY3JpcHRvci5Nb2R1bGUgaXMgSUFyZWFBbmNob3JQb2xpY3kgcG9saWN5KSB8fCBwb2xpY3kuUmVxdWlyZWRBbmNob3JSb2xlICE9IHJvbGUpIHJldHVybiBmYWxzZTsKICAgICAgICAgICAgdmFyIGlkID0gRW50aXR5TWFuYWdlci5HZXRDb21wb25lbnREYXRhPE1hbmFnZWRBcmVhU3RhYmxlSWQ+KGFyZWEpLlZhbHVlOwogICAgICAgICAgICBmb3JlYWNoICh2YXIgbWVtYmVyc2hpcCBpbiBXb3JsZC5HZXRPckNyZWF0ZVN5c3RlbU1hbmFnZWQ8TWVtYmVyc2hpcC5BcmVhTWVtYmVyc2hpcFN5c3RlbT4oKS5JbmRleC5HZXRBcmVhcyhhbmNob3IpKQogICAgICAgICAgICAgICAgaWYgKG1lbWJlcnNoaXAuQXJlYVN0YWJsZUlkID09IGlkKSByZXR1cm4gdHJ1ZTsKICAgICAgICAgICAgcmV0dXJuIGZhbHNlOwogICAgICAgIH0KICAgICAgICBwcm90ZWN0ZWQgb3ZlcnJpZGUgdm9pZCBPblVwZGF0ZSgpIHsgfQogICAgfQp9Cg==
+using Game;
+using Game.Common;
+using Game.Tools;
+using Unity.Entities;
+using CS2AreaSystem.Core.Anchors;
+using CS2AreaSystem.Modules.Park;
+using CS2AreaSystem.Modules.Industrial;
+using CS2AreaSystem.Modules.Tourism;
+namespace CS2AreaSystem.Core.Areas
+{
+    public partial class AreaCoreServicesSystem : GameSystemBase
+    {
+        public AreaTypeRegistry Registry { get; } = new AreaTypeRegistry();
+        public AreaStableIdAllocator StableIds { get; } = new AreaStableIdAllocator();
+        public AreaAnchorService Anchors { get; private set; }
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            Anchors = new AreaAnchorService(new EntityAreaAnchorStore(EntityManager), IsValidEntity, IsEligibleAnchor);
+            Registry.Register(new ParkAreaModule(Anchors).DescribeType());
+            Registry.Register(new IndustrialAreaModule(Anchors).DescribeType());
+            Registry.Register(new TourismAreaModule().DescribeType());
+        }
+        public bool IsValidEntity(Entity entity) => EntityManager.Exists(entity) && entity != Entity.Null &&
+            !EntityManager.HasComponent<Deleted>(entity) && !EntityManager.HasComponent<Destroyed>(entity) && !EntityManager.HasComponent<Temp>(entity);
+        private bool IsEligibleAnchor(Entity area, Entity anchor, AreaAnchorRole role)
+        {
+            if (!IsValidEntity(area) || !EntityManager.HasComponent<ManagedArea>(area) || !EntityManager.HasComponent<Game.Buildings.Building>(anchor)) return false;
+            var managed = EntityManager.GetComponentData<ManagedArea>(area);
+            if (!Registry.TryGet(managed.TypeId, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.RequiredAnchorRole != role) return false;
+            var id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
+            foreach (var membership in World.GetOrCreateSystemManaged<Membership.AreaMembershipSystem>().Index.GetAreas(anchor))
+                if (membership.AreaStableId == id) return true;
+            return false;
+        }
+        protected override void OnUpdate() { }
+    }
+}

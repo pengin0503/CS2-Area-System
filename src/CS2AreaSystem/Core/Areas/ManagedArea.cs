@@ -1,1 +1,27 @@
-dXNpbmcgQ29sb3NzYWwuU2VyaWFsaXphdGlvbi5FbnRpdGllczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlOwp1c2luZyBVbml0eS5FbnRpdGllczsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhcwp7CiAgICBwdWJsaWMgc3RydWN0IE1hbmFnZWRBcmVhIDogSUNvbXBvbmVudERhdGEsIElTZXJpYWxpemFibGUKICAgIHsKICAgICAgICBwdWJsaWMgY29uc3QgdXNob3J0IEN1cnJlbnRTY2hlbWFWZXJzaW9uID0gMTsKICAgICAgICBwdWJsaWMgdXNob3J0IFNjaGVtYVZlcnNpb247CiAgICAgICAgcHVibGljIGludCBUeXBlSWQ7CiAgICAgICAgcHVibGljIEFyZWFMaWZlY3ljbGVTdGF0ZSBTdGF0ZTsKICAgICAgICBwdWJsaWMgdm9pZCBTZXJpYWxpemU8VFdyaXRlcj4oVFdyaXRlciB3cml0ZXIpIHdoZXJlIFRXcml0ZXIgOiBJV3JpdGVyCiAgICAgICAgewogICAgICAgICAgICBDb21wb25lbnRTY2hlbWEuUmVxdWlyZVN1cHBvcnRlZChTY2hlbWFWZXJzaW9uID09IDAgPyBDdXJyZW50U2NoZW1hVmVyc2lvbiA6IFNjaGVtYVZlcnNpb24pOwogICAgICAgICAgICB3cml0ZXIuV3JpdGUoQ3VycmVudFNjaGVtYVZlcnNpb24pOwogICAgICAgICAgICB3cml0ZXIuV3JpdGUoVHlwZUlkKTsKICAgICAgICAgICAgd3JpdGVyLldyaXRlKChieXRlKVN0YXRlKTsKICAgICAgICB9CiAgICAgICAgcHVibGljIHZvaWQgRGVzZXJpYWxpemU8VFJlYWRlcj4oVFJlYWRlciByZWFkZXIpIHdoZXJlIFRSZWFkZXIgOiBJUmVhZGVyCiAgICAgICAgewogICAgICAgICAgICByZWFkZXIuUmVhZChvdXQgU2NoZW1hVmVyc2lvbik7CiAgICAgICAgICAgIENvbXBvbmVudFNjaGVtYS5SZXF1aXJlU3VwcG9ydGVkKFNjaGVtYVZlcnNpb24pOwogICAgICAgICAgICByZWFkZXIuUmVhZChvdXQgVHlwZUlkKTsKICAgICAgICAgICAgcmVhZGVyLlJlYWQob3V0IGJ5dGUgc3RhdGUpOyBTdGF0ZSA9IChBcmVhTGlmZWN5Y2xlU3RhdGUpc3RhdGU7CiAgICAgICAgfQogICAgfQp9Cg==
+using Colossal.Serialization.Entities;
+using CS2AreaSystem.Core.Persistence;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Areas
+{
+    public struct ManagedArea : IComponentData, ISerializable
+    {
+        public const ushort CurrentSchemaVersion = 1;
+        public ushort SchemaVersion;
+        public int TypeId;
+        public AreaLifecycleState State;
+        public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
+        {
+            ComponentSchema.RequireSupported(SchemaVersion == 0 ? CurrentSchemaVersion : SchemaVersion);
+            writer.Write(CurrentSchemaVersion);
+            writer.Write(TypeId);
+            writer.Write((byte)State);
+        }
+        public void Deserialize<TReader>(TReader reader) where TReader : IReader
+        {
+            reader.Read(out SchemaVersion);
+            ComponentSchema.RequireSupported(SchemaVersion);
+            reader.Read(out TypeId);
+            reader.Read(out byte state); State = (AreaLifecycleState)state;
+        }
+    }
+}

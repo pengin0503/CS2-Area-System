@@ -1,1 +1,57 @@
-dXNpbmcgU3lzdGVtOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuQXJlYXM7CnVzaW5nIEdhbWUuUHJlZmFiczsKdXNpbmcgVW5pdHlFbmdpbmU7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLkNvcmUuUHJlZmFicwp7CiAgICBwdWJsaWMgc2VhbGVkIGNsYXNzIEFyZWFQcmVmYWJNZXRhZGF0YQogICAgewogICAgICAgIHB1YmxpYyBzdHJpbmcgTmFtZSB7IGdldDsgfQogICAgICAgIHB1YmxpYyBzdHJpbmcgSWNvblVyaSB7IGdldDsgfQogICAgICAgIHB1YmxpYyBpbnQgVHlwZUlkIHsgZ2V0OyB9CiAgICAgICAgcHVibGljIEdhbWUuQXJlYXMuQXJlYVR5cGUgR2VvbWV0cnlUeXBlID0+IE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeS5OYXRpdmVHZW9tZXRyeVR5cGU7CiAgICAgICAgcHVibGljIGJvb2wgQWxsb3dPdmVybGFwID0+IHRydWU7CiAgICAgICAgcHVibGljIGJvb2wgQWxsb3dFZGl0aW5nID0+IHRydWU7CiAgICAgICAgcHVibGljIEFyZWFQcmVmYWJNZXRhZGF0YShBcmVhVHlwZURlc2NyaXB0b3IgZGVzY3JpcHRvciwgc3RyaW5nIGljb24pIHsgTmFtZSA9IGRlc2NyaXB0b3IuUHJlZmFiTmFtZTsgVHlwZUlkID0gZGVzY3JpcHRvci5UeXBlSWQ7IEljb25VcmkgPSBpY29uOyB9CiAgICB9CiAgICBwdWJsaWMgc3RhdGljIGNsYXNzIEFyZWFQcmVmYWJSZWFkaW5lc3MKICAgIHsKICAgICAgICBwdWJsaWMgc3RhdGljIGJvb2wgQ2FuVXNlKGJvb2wgZW50aXR5RXhpc3RzLCBib29sIGFyY2hldHlwZVZhbGlkLCBib29sIGlzTWFuYWdlbWVudEdlb21ldHJ5KSA9PiBlbnRpdHlFeGlzdHMgJiYgYXJjaGV0eXBlVmFsaWQgJiYgaXNNYW5hZ2VtZW50R2VvbWV0cnk7CiAgICB9CiAgICBwdWJsaWMgc2VhbGVkIGNsYXNzIE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeQogICAgewogICAgICAgIHB1YmxpYyBzdGF0aWMgR2FtZS5BcmVhcy5BcmVhVHlwZSBOYXRpdmVHZW9tZXRyeVR5cGUgPT4gR2FtZS5BcmVhcy5BcmVhVHlwZS5TcGFjZTsKICAgICAgICBwdWJsaWMgY29uc3Qgc3RyaW5nIEZhbGxiYWNrSWNvblVyaSA9ICJjb3VpOi8vZ2FtZXVpL01lZGlhL0dhbWUvSWNvbnMvU3VyZmFjZUFyZWFUb29sLnN2ZyI7CiAgICAgICAgcHVibGljIHN0YXRpYyBBcmVhVHlwZURlc2NyaXB0b3IgRGVzY3JpYmUoQXJlYVR5cGVJZCBraW5kKQogICAgICAgIHsKICAgICAgICAgICAgc3dpdGNoIChraW5kKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICBjYXNlIEFyZWFUeXBlSWQuUGFyazogcmV0dXJuIG5ldyBBcmVhVHlwZURlc2NyaXB0b3IoMSwgIkNTMkFTLlBhcmtBcmVhIiwgIkNTMkFTLlR5cGUuUGFyayIsICJjb3VpOi8vZ2FtZXVpL01lZGlhL0dhbWUvSWNvbnMvTGFyZ2VQYXJrcy5zdmciKTsKICAgICAgICAgICAgICAgIGNhc2UgQXJlYVR5cGVJZC5JbmR1c3RyaWFsOiByZXR1cm4gbmV3IEFyZWFUeXBlRGVzY3JpcHRvcigyLCAiQ1MyQVMuSW5kdXN0cmlhbEFyZWEiLCAiQ1MyQVMuVHlwZS5JbmR1c3RyaWFsIiwgImNvdWk6Ly9nYW1ldWkvTWVkaWEvR2FtZS9JY29ucy9ab25lSW5kdXN0cmlhbC5zdmciKTsKICAgICAgICAgICAgICAgIGNhc2UgQXJlYVR5cGVJZC5Ub3VyaXNtOiByZXR1cm4gbmV3IEFyZWFUeXBlRGVzY3JpcHRvcigzLCAiQ1MyQVMuVG91cmlzbUFyZWEiLCAiQ1MyQVMuVHlwZS5Ub3VyaXNtIiwgImNvdWk6Ly9nYW1ldWkvTWVkaWEvR2FtZS9JY29ucy9BdHRyYWN0aW9uLnN2ZyIpOwogICAgICAgICAgICAgICAgZGVmYXVsdDogdGhyb3cgbmV3IEFyZ3VtZW50T3V0T2ZSYW5nZUV4Y2VwdGlvbihuYW1lb2Yoa2luZCkpOwogICAgICAgICAgICB9CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBzdGF0aWMgQXJlYVByZWZhYk1ldGFkYXRhIE1hcChBcmVhVHlwZURlc2NyaXB0b3IgZGVzY3JpcHRvciwgRnVuYzxzdHJpbmcsIGJvb2w+IGljb25BdmFpbGFibGUpCiAgICAgICAgewogICAgICAgICAgICB2YXIgcHJlZmVycmVkID0gZGVzY3JpcHRvci5JY29uVXJpOwogICAgICAgICAgICByZXR1cm4gbmV3IEFyZWFQcmVmYWJNZXRhZGF0YShkZXNjcmlwdG9yLCAhc3RyaW5nLklzTnVsbE9yV2hpdGVTcGFjZShwcmVmZXJyZWQpICYmIGljb25BdmFpbGFibGUocHJlZmVycmVkKSA/IHByZWZlcnJlZCA6IEZhbGxiYWNrSWNvblVyaSk7CiAgICAgICAgfQogICAgICAgIHB1YmxpYyBTcGFjZVByZWZhYiBDcmVhdGVBcmVhUHJlZmFiKEFyZWFUeXBlRGVzY3JpcHRvciBkZXNjcmlwdG9yKQogICAgICAgIHsKICAgICAgICAgICAgLy8gQWRhcHRlZCBmcm9tIEtydWVtZWxHYW1lcy9QYXJraW5nTG90VG9vbCwgVG9vbHMvUGFya2luZ0xvdExvdEFyZWEuY3MsCiAgICAgICAgICAgIC8vIFRyeVJlc29sdmVMb3RPd25lclByZWZhYjogZGlzcGxheSBjb2xvcnMgZm9yIGEgbm9uLWNsZWFyaW5nIGFyZWEgYm91bmRhcnkuCiAgICAgICAgICAgIC8vIFNwYWNlRGF0YSBpcyBnYW1lcGxheS1jcmVhdGFibGU7IExvdERhdGEgaXMgZWRpdG9yLW9ubHkgaW4gMS42LjJmMS4KICAgICAgICAgICAgdmFyIGxvdCA9IFNjcmlwdGFibGVPYmplY3QuQ3JlYXRlSW5zdGFuY2U8U3BhY2VQcmVmYWI+KCk7CiAgICAgICAgICAgIGxvdC5uYW1lID0gZGVzY3JpcHRvci5QcmVmYWJOYW1lOwogICAgICAgICAgICB2YXIgY29sb3IgPSBkZXNjcmlwdG9yLlR5cGVJZCA9PSAxID8gbmV3IENvbG9yKDAuMjBmLCAwLjY1ZiwgMC4zMGYsIDFmKSA6CiAgICAgICAgICAgICAgICBkZXNjcmlwdG9yLlR5cGVJZCA9PSAyID8gbmV3IENvbG9yKDAuOTBmLCAwLjY1ZiwgMC4xNWYsIDFmKSA6IG5ldyBDb2xvcigwLjMwZiwgMC41NWYsIDAuOTVmLCAxZik7CiAgICAgICAgICAgIGxvdC5tX0NvbG9yID0gbmV3IENvbG9yKGNvbG9yLnIsIGNvbG9yLmcsIGNvbG9yLmIsIDAuMDRmKTsKICAgICAgICAgICAgbG90Lm1fRWRnZUNvbG9yID0gbmV3IENvbG9yKGNvbG9yLnIsIGNvbG9yLmcsIGNvbG9yLmIsIDAuMzBmKTsKICAgICAgICAgICAgbG90Lm1fU2VsZWN0aW9uQ29sb3IgPSBuZXcgQ29sb3IoY29sb3IuciwgY29sb3IuZywgY29sb3IuYiwgMC4xNmYpOwogICAgICAgICAgICBsb3QubV9TZWxlY3Rpb25FZGdlQ29sb3IgPSBjb2xvcjsKICAgICAgICAgICAgbG90LkFkZENvbXBvbmVudDxVSU9iamVjdD4oKS5tX0ljb24gPSBNYXAoZGVzY3JpcHRvciwgdXJpID0+ICFzdHJpbmcuSXNOdWxsT3JFbXB0eSh1cmkpKS5JY29uVXJpOwogICAgICAgICAgICByZXR1cm4gbG90OwogICAgICAgIH0KICAgIH0KfQo=
+using System;
+using CS2AreaSystem.Core.Areas;
+using Game.Prefabs;
+using UnityEngine;
+namespace CS2AreaSystem.Core.Prefabs
+{
+    public sealed class AreaPrefabMetadata
+    {
+        public string Name { get; }
+        public string IconUri { get; }
+        public int TypeId { get; }
+        public Game.Areas.AreaType GeometryType => ManagedAreaPrefabFactory.NativeGeometryType;
+        public bool AllowOverlap => true;
+        public bool AllowEditing => true;
+        public AreaPrefabMetadata(AreaTypeDescriptor descriptor, string icon) { Name = descriptor.PrefabName; TypeId = descriptor.TypeId; IconUri = icon; }
+    }
+    public static class AreaPrefabReadiness
+    {
+        public static bool CanUse(bool entityExists, bool archetypeValid, bool isManagementGeometry) => entityExists && archetypeValid && isManagementGeometry;
+    }
+    public sealed class ManagedAreaPrefabFactory
+    {
+        public static Game.Areas.AreaType NativeGeometryType => Game.Areas.AreaType.Space;
+        public const string FallbackIconUri = "coui://gameui/Media/Game/Icons/SurfaceAreaTool.svg";
+        public static AreaTypeDescriptor Describe(AreaTypeId kind)
+        {
+            switch (kind)
+            {
+                case AreaTypeId.Park: return new AreaTypeDescriptor(1, "CS2AS.ParkArea", "CS2AS.Type.Park", "coui://gameui/Media/Game/Icons/LargeParks.svg");
+                case AreaTypeId.Industrial: return new AreaTypeDescriptor(2, "CS2AS.IndustrialArea", "CS2AS.Type.Industrial", "coui://gameui/Media/Game/Icons/ZoneIndustrial.svg");
+                case AreaTypeId.Tourism: return new AreaTypeDescriptor(3, "CS2AS.TourismArea", "CS2AS.Type.Tourism", "coui://gameui/Media/Game/Icons/Attraction.svg");
+                default: throw new ArgumentOutOfRangeException(nameof(kind));
+            }
+        }
+        public static AreaPrefabMetadata Map(AreaTypeDescriptor descriptor, Func<string, bool> iconAvailable)
+        {
+            var preferred = descriptor.IconUri;
+            return new AreaPrefabMetadata(descriptor, !string.IsNullOrWhiteSpace(preferred) && iconAvailable(preferred) ? preferred : FallbackIconUri);
+        }
+        public SpacePrefab CreateAreaPrefab(AreaTypeDescriptor descriptor)
+        {
+            // Adapted from KruemelGames/ParkingLotTool, Tools/ParkingLotLotArea.cs,
+            // TryResolveLotOwnerPrefab: display colors for a non-clearing area boundary.
+            // SpaceData is gameplay-creatable; LotData is editor-only in 1.6.2f1.
+            var lot = ScriptableObject.CreateInstance<SpacePrefab>();
+            lot.name = descriptor.PrefabName;
+            var color = descriptor.TypeId == 1 ? new Color(0.20f, 0.65f, 0.30f, 1f) :
+                descriptor.TypeId == 2 ? new Color(0.90f, 0.65f, 0.15f, 1f) : new Color(0.30f, 0.55f, 0.95f, 1f);
+            lot.m_Color = new Color(color.r, color.g, color.b, 0.04f);
+            lot.m_EdgeColor = new Color(color.r, color.g, color.b, 0.30f);
+            lot.m_SelectionColor = new Color(color.r, color.g, color.b, 0.16f);
+            lot.m_SelectionEdgeColor = color;
+            lot.AddComponent<UIObject>().m_Icon = Map(descriptor, uri => !string.IsNullOrEmpty(uri)).IconUri;
+            return lot;
+        }
+    }
+}

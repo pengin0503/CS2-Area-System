@@ -1,1 +1,30 @@
-dXNpbmcgTlVuaXQuRnJhbWV3b3JrOwp1c2luZyBDUzJBcmVhU3lzdGVtLkNvcmUuQXJlYXM7CnVzaW5nIENTMkFyZWFTeXN0ZW0uQ29yZS5QcmVmYWJzOwpuYW1lc3BhY2UgQ1MyQXJlYVN5c3RlbS5UZXN0czsKcHVibGljIGNsYXNzIFByZWZhYkRlc2NyaXB0b3JUZXN0cyB7CiAgICBbVGVzdENhc2UoQXJlYVR5cGVJZC5QYXJrLCAiQ1MyQVMuUGFya0FyZWEiLCAiY291aTovL2dhbWV1aS9NZWRpYS9HYW1lL0ljb25zL0xhcmdlUGFya3Muc3ZnIildCiAgICBbVGVzdENhc2UoQXJlYVR5cGVJZC5JbmR1c3RyaWFsLCAiQ1MyQVMuSW5kdXN0cmlhbEFyZWEiLCAiY291aTovL2dhbWV1aS9NZWRpYS9HYW1lL0ljb25zL1pvbmVJbmR1c3RyaWFsLnN2ZyIpXQogICAgW1Rlc3RDYXNlKEFyZWFUeXBlSWQuVG91cmlzbSwgIkNTMkFTLlRvdXJpc21BcmVhIiwgImNvdWk6Ly9nYW1ldWkvTWVkaWEvR2FtZS9JY29ucy9BdHRyYWN0aW9uLnN2ZyIpXQogICAgcHVibGljIHZvaWQgTWFwc1R5cGVUb05hdGl2ZUFzc2V0TWV0YWRhdGEoQXJlYVR5cGVJZCBraW5kLCBzdHJpbmcgbmFtZSwgc3RyaW5nIGljb24pIHsKICAgICAgICB2YXIgZGVzY3JpcHRvciA9IE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeS5EZXNjcmliZShraW5kKTsKICAgICAgICB2YXIgbWV0YWRhdGEgPSBNYW5hZ2VkQXJlYVByZWZhYkZhY3RvcnkuTWFwKGRlc2NyaXB0b3IsIF8gPT4gdHJ1ZSk7CiAgICAgICAgQXNzZXJ0LlRoYXQobWV0YWRhdGEuTmFtZSwgSXMuRXF1YWxUbyhuYW1lKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQobWV0YWRhdGEuSWNvblVyaSwgSXMuRXF1YWxUbyhpY29uKSk7CiAgICAgICAgQXNzZXJ0LlRoYXQobWV0YWRhdGEuQWxsb3dPdmVybGFwLCBJcy5UcnVlKTsKICAgICAgICBBc3NlcnQuVGhhdChtZXRhZGF0YS5BbGxvd0VkaXRpbmcsIElzLlRydWUpOwogICAgfQogICAgW1Rlc3RdIHB1YmxpYyB2b2lkIE1pc3NpbmdJY29uRmFsbHNCYWNrV2l0aG91dENoYW5naW5nVHlwZSgpIHsKICAgICAgICB2YXIgZGVzY3JpcHRvciA9IE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeS5EZXNjcmliZShBcmVhVHlwZUlkLlBhcmspOwogICAgICAgIHZhciBtZXRhZGF0YSA9IE1hbmFnZWRBcmVhUHJlZmFiRmFjdG9yeS5NYXAoZGVzY3JpcHRvciwgdXJpID0+IHVyaS5FbmRzV2l0aCgiU3VyZmFjZUFyZWFUb29sLnN2ZyIpKTsKICAgICAgICBBc3NlcnQuVGhhdChtZXRhZGF0YS5JY29uVXJpLCBJcy5FcXVhbFRvKCJjb3VpOi8vZ2FtZXVpL01lZGlhL0dhbWUvSWNvbnMvU3VyZmFjZUFyZWFUb29sLnN2ZyIpKTsKICAgICAgICBBc3NlcnQuVGhhdChtZXRhZGF0YS5UeXBlSWQsIElzLkVxdWFsVG8oMSkpOwogICAgICAgIEFzc2VydC5UaGF0KGRlc2NyaXB0b3IuUHJlZmFiTmFtZSwgSXMuRXF1YWxUbygiQ1MyQVMuUGFya0FyZWEiKSk7CiAgICB9CiAgICBbVGVzdF0gcHVibGljIHZvaWQgVG9vbGJhclVuYXZhaWxhYmxlRG9lc05vdEJsb2NrSW5pdGlhbGl6ZWRBcmVhU2ltdWxhdGlvbigpIHsKICAgICAgICBBc3NlcnQuVGhhdChBcmVhUHJlZmFiUmVhZGluZXNzLkNhblVzZSh0cnVlLCB0cnVlLCB0cnVlKSwgSXMuVHJ1ZSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoQXJlYVByZWZhYlJlYWRpbmVzcy5DYW5Vc2UodHJ1ZSwgZmFsc2UsIHRydWUpLCBJcy5GYWxzZSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoQXJlYVByZWZhYlJlYWRpbmVzcy5DYW5Vc2UodHJ1ZSwgdHJ1ZSwgZmFsc2UpLCBJcy5GYWxzZSk7CiAgICAgICAgQXNzZXJ0LlRoYXQoQXJlYVRvb2xiYXJQcmVmYWJGYWN0b3J5LlNob3VsZEF0dGFjaChmYWxzZSksIElzLkZhbHNlKTsKICAgIH0KfQo=
+using NUnit.Framework;
+using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Prefabs;
+namespace CS2AreaSystem.Tests;
+public class PrefabDescriptorTests {
+    [TestCase(AreaTypeId.Park, "CS2AS.ParkArea", "coui://gameui/Media/Game/Icons/LargeParks.svg")]
+    [TestCase(AreaTypeId.Industrial, "CS2AS.IndustrialArea", "coui://gameui/Media/Game/Icons/ZoneIndustrial.svg")]
+    [TestCase(AreaTypeId.Tourism, "CS2AS.TourismArea", "coui://gameui/Media/Game/Icons/Attraction.svg")]
+    public void MapsTypeToNativeAssetMetadata(AreaTypeId kind, string name, string icon) {
+        var descriptor = ManagedAreaPrefabFactory.Describe(kind);
+        var metadata = ManagedAreaPrefabFactory.Map(descriptor, _ => true);
+        Assert.That(metadata.Name, Is.EqualTo(name));
+        Assert.That(metadata.IconUri, Is.EqualTo(icon));
+        Assert.That(metadata.AllowOverlap, Is.True);
+        Assert.That(metadata.AllowEditing, Is.True);
+    }
+    [Test] public void MissingIconFallsBackWithoutChangingType() {
+        var descriptor = ManagedAreaPrefabFactory.Describe(AreaTypeId.Park);
+        var metadata = ManagedAreaPrefabFactory.Map(descriptor, uri => uri.EndsWith("SurfaceAreaTool.svg"));
+        Assert.That(metadata.IconUri, Is.EqualTo("coui://gameui/Media/Game/Icons/SurfaceAreaTool.svg"));
+        Assert.That(metadata.TypeId, Is.EqualTo(1));
+        Assert.That(descriptor.PrefabName, Is.EqualTo("CS2AS.ParkArea"));
+    }
+    [Test] public void ToolbarUnavailableDoesNotBlockInitializedAreaSimulation() {
+        Assert.That(AreaPrefabReadiness.CanUse(true, true, true), Is.True);
+        Assert.That(AreaPrefabReadiness.CanUse(true, false, true), Is.False);
+        Assert.That(AreaPrefabReadiness.CanUse(true, true, false), Is.False);
+        Assert.That(AreaToolbarPrefabFactory.ShouldAttach(false), Is.False);
+    }
+}

@@ -1,1 +1,12 @@
-Ly8gQWRhcHRlZCBmcm9tIHRvbWtwdW5rdC9QYXJrTWFuYWdlciBVSS90eXBlcy9hcGkuZC50cyBhbmQgbW9kZGluZy5kLnRzIChHUEwtMy4wKS4KZGVjbGFyZSBtb2R1bGUgJ2NzMi9hcGknIHsKIGV4cG9ydCBpbnRlcmZhY2UgVmFsdWVCaW5kaW5nPFQ+IHsgcmVhZG9ubHkgdmFsdWU6VDsgfQogZXhwb3J0IGZ1bmN0aW9uIGJpbmRWYWx1ZTxUPihncm91cDpzdHJpbmcsbmFtZTpzdHJpbmcsZmFsbGJhY2tWYWx1ZT86VCk6VmFsdWVCaW5kaW5nPFQ+OwogZXhwb3J0IGZ1bmN0aW9uIHVzZVZhbHVlPFQ+KGJpbmRpbmc6VmFsdWVCaW5kaW5nPFQ+KTpUOwogZXhwb3J0IGZ1bmN0aW9uIHRyaWdnZXIoZ3JvdXA6c3RyaW5nLG5hbWU6c3RyaW5nLC4uLmFyZ3M6dW5rbm93bltdKTp2b2lkOwp9CmRlY2xhcmUgbW9kdWxlICdjczIvbW9kZGluZycgewogaW1wb3J0IHtDb21wb25lbnRUeXBlfSBmcm9tICdyZWFjdCc7CiBleHBvcnQgdHlwZSBNb2RSZWdpc3RyYXI9KHJlZ2lzdHJ5OnthcHBlbmQodGFyZ2V0OidHYW1lJyxjb21wb25lbnQ6Q29tcG9uZW50VHlwZSk6dm9pZH0pPT52b2lkOwp9CmRlY2xhcmUgbW9kdWxlICcqLm1vZHVsZS5zY3NzJyB7IGNvbnN0IGNsYXNzZXM6UmVjb3JkPHN0cmluZyxzdHJpbmc+O2V4cG9ydCBkZWZhdWx0IGNsYXNzZXM7IH0K
+// Adapted from tomkpunkt/ParkManager UI/types/api.d.ts and modding.d.ts (GPL-3.0).
+declare module 'cs2/api' {
+ export interface ValueBinding<T> { readonly value:T; }
+ export function bindValue<T>(group:string,name:string,fallbackValue?:T):ValueBinding<T>;
+ export function useValue<T>(binding:ValueBinding<T>):T;
+ export function trigger(group:string,name:string,...args:unknown[]):void;
+}
+declare module 'cs2/modding' {
+ import {ComponentType} from 'react';
+ export type ModRegistrar=(registry:{append(target:'Game',component:ComponentType):void})=>void;
+}
+declare module '*.module.scss' { const classes:Record<string,string>;export default classes; }

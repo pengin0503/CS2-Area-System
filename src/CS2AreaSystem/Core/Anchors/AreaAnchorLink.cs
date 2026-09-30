@@ -1,1 +1,15 @@
-dXNpbmcgQ29sb3NzYWwuU2VyaWFsaXphdGlvbi5FbnRpdGllczsKdXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlBlcnNpc3RlbmNlOwp1c2luZyBVbml0eS5FbnRpdGllczsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BbmNob3JzCnsKICAgIHB1YmxpYyBzdHJ1Y3QgQXJlYUFuY2hvckxpbmsgOiBJQnVmZmVyRWxlbWVudERhdGEsIElTZXJpYWxpemFibGUKICAgIHsKICAgICAgICBwdWJsaWMgRW50aXR5IEFuY2hvcjsKICAgICAgICBwdWJsaWMgQXJlYUFuY2hvclJvbGUgUm9sZTsKICAgICAgICBwdWJsaWMgdm9pZCBTZXJpYWxpemU8VFdyaXRlcj4oVFdyaXRlciB3cml0ZXIpIHdoZXJlIFRXcml0ZXIgOiBJV3JpdGVyCiAgICAgICAgeyB3cml0ZXIuV3JpdGUoKHVzaG9ydCkxKTsgd3JpdGVyLldyaXRlKEFuY2hvcik7IHdyaXRlci5Xcml0ZSgoYnl0ZSlSb2xlKTsgfQogICAgICAgIHB1YmxpYyB2b2lkIERlc2VyaWFsaXplPFRSZWFkZXI+KFRSZWFkZXIgcmVhZGVyKSB3aGVyZSBUUmVhZGVyIDogSVJlYWRlcgogICAgICAgIHsgcmVhZGVyLlJlYWQob3V0IHVzaG9ydCB2ZXJzaW9uKTsgQ29tcG9uZW50U2NoZW1hLlJlcXVpcmVTdXBwb3J0ZWQodmVyc2lvbik7IHJlYWRlci5SZWFkKG91dCBBbmNob3IpOyByZWFkZXIuUmVhZChvdXQgYnl0ZSByb2xlKTsgUm9sZSA9IChBcmVhQW5jaG9yUm9sZSlyb2xlOyB9CiAgICB9Cn0K
+using Colossal.Serialization.Entities;
+using CS2AreaSystem.Core.Persistence;
+using Unity.Entities;
+namespace CS2AreaSystem.Core.Anchors
+{
+    public struct AreaAnchorLink : IBufferElementData, ISerializable
+    {
+        public Entity Anchor;
+        public AreaAnchorRole Role;
+        public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
+        { writer.Write((ushort)1); writer.Write(Anchor); writer.Write((byte)Role); }
+        public void Deserialize<TReader>(TReader reader) where TReader : IReader
+        { reader.Read(out ushort version); ComponentSchema.RequireSupported(version); reader.Read(out Anchor); reader.Read(out byte role); Role = (AreaAnchorRole)role; }
+    }
+}

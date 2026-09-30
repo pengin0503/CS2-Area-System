@@ -1,1 +1,1 @@
-bmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5BcmVhcyB7IHB1YmxpYyBlbnVtIEFyZWFMaWZlY3ljbGVTdGF0ZSA6IGJ5dGUgeyBDcmVhdGVkLCBJbmFjdGl2ZSwgQWN0aXZlLCBTdXNwZW5kZWQsIE1vZHVsZVVuYXZhaWxhYmxlLCBEZWxldGVkIH0gfQo=
+namespace CS2AreaSystem.Core.Areas { public enum AreaLifecycleState : byte { Created, Inactive, Active, Suspended, ModuleUnavailable, Deleted } }

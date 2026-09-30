@@ -1,1 +1,13 @@
-dXNpbmcgQ1MyQXJlYVN5c3RlbS5Db3JlLlVJOwp1c2luZyBOVW5pdC5GcmFtZXdvcms7Cm5hbWVzcGFjZSBDUzJBcmVhU3lzdGVtLlRlc3RzOwpwdWJsaWMgY2xhc3MgTmF0aXZlQXJlYUxvY2FsaXphdGlvblRlc3RzIHsKIFtUZXN0XSBwdWJsaWMgdm9pZCBOYXRpdmVNZW51QW5kQWxsVGhyZWVBc3NldHNIYXZlRGlzcGxheU5hbWVzKCkgewogIHZhciBlbnRyaWVzPU5hdGl2ZUFyZWFMb2NhbGl6YXRpb24uRW50cmllcygiZW4tVVMiKTsKICBBc3NlcnQuVGhhdChlbnRyaWVzWyJBc3NldHMuTkFNRVtDUzJBUyBBcmVhcyBNZW51XSJdLElzLkVxdWFsVG8oIkFyZWFzIikpOwogIEFzc2VydC5UaGF0KGVudHJpZXNbIkFzc2V0cy5OQU1FW0NTMkFTIEFyZWEgVHlwZXNdIl0sSXMuRXF1YWxUbygiQXJlYSBUeXBlcyIpKTsKICBBc3NlcnQuVGhhdChlbnRyaWVzWyJBc3NldHMuTkFNRVtDUzJBUy5QYXJrQXJlYV0iXSxJcy5FcXVhbFRvKCJQYXJrIEFyZWEiKSk7CiAgQXNzZXJ0LlRoYXQoZW50cmllc1siQXNzZXRzLk5BTUVbQ1MyQVMuSW5kdXN0cmlhbEFyZWFdIl0sSXMuRXF1YWxUbygiSW5kdXN0cmlhbCBBcmVhIikpOwogIEFzc2VydC5UaGF0KGVudHJpZXNbIkFzc2V0cy5OQU1FW0NTMkFTLlRvdXJpc21BcmVhXSJdLElzLkVxdWFsVG8oIlRvdXJpc20gQXJlYSIpKTsKIH0KfQo=
+using CS2AreaSystem.Core.UI;
+using NUnit.Framework;
+namespace CS2AreaSystem.Tests;
+public class NativeAreaLocalizationTests {
+ [Test] public void NativeMenuAndAllThreeAssetsHaveDisplayNames() {
+  var entries=NativeAreaLocalization.Entries("en-US");
+  Assert.That(entries["Assets.NAME[CS2AS Areas Menu]"],Is.EqualTo("Areas"));
+  Assert.That(entries["Assets.NAME[CS2AS Area Types]"],Is.EqualTo("Area Types"));
+  Assert.That(entries["Assets.NAME[CS2AS.ParkArea]"],Is.EqualTo("Park Area"));
+  Assert.That(entries["Assets.NAME[CS2AS.IndustrialArea]"],Is.EqualTo("Industrial Area"));
+  Assert.That(entries["Assets.NAME[CS2AS.TourismArea]"],Is.EqualTo("Tourism Area"));
+ }
+}

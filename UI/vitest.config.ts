@@ -1,1 +1,3 @@
-aW1wb3J0IHsgZGVmaW5lQ29uZmlnIH0gZnJvbSAndml0ZXN0L2NvbmZpZyc7CmltcG9ydCBwYXRoIGZyb20gJ25vZGU6cGF0aCc7CmV4cG9ydCBkZWZhdWx0IGRlZmluZUNvbmZpZyh7Y3NzOntwcmVwcm9jZXNzb3JPcHRpb25zOntzY3NzOnthcGk6J21vZGVybid9fX0scmVzb2x2ZTp7YWxpYXM6eydjczIvYXBpJzpwYXRoLnJlc29sdmUoX19kaXJuYW1lLCd0ZXN0L2NzMi1hcGkudHMnKX19LHRlc3Q6e2Vudmlyb25tZW50Oidqc2RvbScsc2V0dXBGaWxlczpbJy4vdGVzdC9zZXR1cC50cyddLG1heFdvcmtlcnM6MSxtaW5Xb3JrZXJzOjF9fSk7Cg==
+import { defineConfig } from 'vitest/config';
+import path from 'node:path';
+export default defineConfig({css:{preprocessorOptions:{scss:{api:'modern'}}},resolve:{alias:{'cs2/api':path.resolve(__dirname,'test/cs2-api.ts')}},test:{environment:'jsdom',setupFiles:['./test/setup.ts'],maxWorkers:1,minWorkers:1}});

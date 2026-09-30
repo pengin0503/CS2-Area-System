@@ -1,1 +1,14 @@
-dXNpbmcgR2FtZS5BcmVhczsKbmFtZXNwYWNlIENTMkFyZWFTeXN0ZW0uQ29yZS5QcmVmYWJzCnsKICAgIC8vIENTMiAxLjYuMmYxIEFyZWFUb29sU3lzdGVtLk9uVXBkYXRlIGdhbWVwbGF5IGVsaWdpYmlsaXR5LCBjaGVja2VkIGJlZm9yZSB0b29sYmFyIGV4cG9zdXJlLgogICAgcHVibGljIHN0YXRpYyBjbGFzcyBOYXRpdmVBcmVhQ3JlYXRpb25Qb2xpY3kKICAgIHsKICAgICAgICBwdWJsaWMgc3RhdGljIGJvb2wgQ2FuQ3JlYXRlKGJvb2wgZWRpdG9yLCBBcmVhVHlwZSB0eXBlLCBHZW9tZXRyeUZsYWdzIGZsYWdzLCBib29sIHJlbmRlcmVkKQogICAgICAgIHsKICAgICAgICAgICAgaWYgKHR5cGUgPT0gQXJlYVR5cGUuTG90ICYmICFlZGl0b3IpIHJldHVybiBmYWxzZTsKICAgICAgICAgICAgaWYgKHR5cGUgPT0gQXJlYVR5cGUuU3VyZmFjZSAmJiAhcmVuZGVyZWQgJiYgKGZsYWdzICYgR2VvbWV0cnlGbGFncy5DbGlwVGVycmFpbikgPT0gMCkgcmV0dXJuIGZhbHNlOwogICAgICAgICAgICByZXR1cm4gdHJ1ZTsKICAgICAgICB9CiAgICB9Cn0K
+using Game.Areas;
+namespace CS2AreaSystem.Core.Prefabs
+{
+    // CS2 1.6.2f1 AreaToolSystem.OnUpdate gameplay eligibility, checked before toolbar exposure.
+    public static class NativeAreaCreationPolicy
+    {
+        public static bool CanCreate(bool editor, AreaType type, GeometryFlags flags, bool rendered)
+        {
+            if (type == AreaType.Lot && !editor) return false;
+            if (type == AreaType.Surface && !rendered && (flags & GeometryFlags.ClipTerrain) == 0) return false;
+            return true;
+        }
+    }
+}
