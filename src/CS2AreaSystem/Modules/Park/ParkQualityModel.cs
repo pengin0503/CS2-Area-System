@@ -130,3 +130,85 @@ namespace CS2AreaSystem.Modules.Park
         }
     }
 }
+namespace CS2AreaSystem.Modules.Park
+{
+    public struct ParkQualityContext
+    {
+        public float AreaSquareMeters, EntranceSpread, Budget, RecentTouristVisits;
+        public int Entrances, ActiveVisitors, Level, AdmissionFee;
+        public ParkLandscapeSnapshot Landscape;
+        public ParkFacilitySnapshot Facilities;
+        public ParkSatisfactionState Satisfaction, TouristSatisfaction;
+        // False when some member building's same-kind primary owner is another Park (exclusive stats go there).
+        public bool IsPrimaryForAllMembers, Active;
+    }
+    public sealed class ParkQualitySnapshot
+    {
+        public ParkMetric Satisfaction, Attractiveness, Accessibility, Variety, Maintenance, Comfort, Landscape;
+        public ParkQualityResult Result;
+        public float Quality => Result.Quality;
+        public float ComfortableCapacity, OccupancyRatio, TourismContribution, ValueForMoney, PathProvision;
+        public int EffectiveFee;
+        public ParkVisitExperience Experience;
+        public System.Collections.Generic.List<string> Warnings = new System.Collections.Generic.List<string>();
+        public string NextActionKey;
+    }
+    // Combines the Park's derived inputs into the six Quality metrics (pure; no ECS access).
+    public static class ParkQualityEvaluator
+    {
+        public const string WarningPrefix = "CS2AS.Park.Warning.", ActionPrefix = "CS2AS.Park.Action.";
+        public const float LowMaintenance = 40f, PoorValue = 40f;
+        public static ParkQualitySnapshot Evaluate(in ParkQualityContext c)
+        {
+            var q = new ParkQualitySnapshot();
+            var facilities = c.Facilities ?? ParkFacilitySnapshot.Build(System.Array.Empty<ParkFacilityTraits>());
+            var landscape = c.Landscape;
+            bool hasLandscape = landscape != null && landscape.Available;
+            q.Landscape = hasLandscape ? ParkMetric.Of(landscape.Result.Score) : ParkMetric.Unavailable;
+            q.PathProvision = hasLandscape ? landscape.Result.Paths / ParkLandscapeModel.PathWeight : 0f;
+            q.Satisfaction = ParkMetric.Of(c.Satisfaction.Display);
+            // Landscape-dependent metrics stay neutral (unavailable) until the first landscape scan completes.
+            q.Attractiveness = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAttractiveness(facilities.AttractivenessSum, c.AreaSquareMeters, landscape.Result.Score)) : ParkMetric.Unavailable;
+            q.Variety = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeVariety(facilities.WeightedCategories, landscape.Result.CategoriesPresent)) : ParkMetric.Unavailable;
+            q.Accessibility = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAccessibility(c.Entrances, c.EntranceSpread, landscape.TransitStops, q.PathProvision)) : ParkMetric.Unavailable;
+            q.Maintenance = ParkMetric.Of(ParkQualityModel.ComputeMaintenance(facilities.VanillaCondition, ParkFinanceModel.ClampBudget(c.Budget)));
+            q.ComfortableCapacity = ParkQualityModel.ComputeComfortableCapacity(new ParkCapacityInputs {
+                AreaSquareMeters = c.AreaSquareMeters, LeisureEfficiencySum = facilities.LeisureEfficiencySum,
+                PathLength = hasLandscape ? landscape.Inputs.PathLength : 0f, AmenityCount = hasLandscape ? landscape.Inputs.Amenities.Count : 0 });
+            q.OccupancyRatio = q.ComfortableCapacity > 0 ? c.ActiveVisitors / q.ComfortableCapacity : 0f;
+            q.Comfort = ParkMetric.Of(ParkQualityModel.ComputeComfort(c.ActiveVisitors, q.ComfortableCapacity));
+            q.Result = ParkQualityModel.ComputeQuality(new ParkQualityInputs {
+                Satisfaction = q.Satisfaction, Attractiveness = q.Attractiveness, Accessibility = q.Accessibility,
+                Variety = q.Variety, Maintenance = q.Maintenance, Comfort = q.Comfort });
+            q.EffectiveFee = ParkFinanceModel.EffectiveFee(c.Level, c.AdmissionFee);
+            q.ValueForMoney = ParkFinanceModel.ComputeValueForMoney(q.EffectiveFee, q.Quality);
+            q.TourismContribution = c.Active ? ParkQualityModel.ComputeTourismContribution(c.Level, q.Quality, c.RecentTouristVisits, c.TouristSatisfaction.Display, Value(q.Attractiveness)) : 0f;
+            q.Experience = new ParkVisitExperience {
+                Facility = ParkVisitModel.NeutralFacilityExperience, Landscape = Value(q.Landscape), Comfort = q.Comfort.Value,
+                Maintenance = q.Maintenance.Value, ValueForMoney = q.ValueForMoney, Accessibility = Value(q.Accessibility) };
+            AddWarnings(q, c, facilities, landscape, hasLandscape);
+            return q;
+        }
+        private static float Value(ParkMetric metric) => metric.Available ? metric.Value : ParkQualityModel.NeutralMetric;
+        private static void AddWarnings(ParkQualitySnapshot q, in ParkQualityContext c, ParkFacilitySnapshot facilities, ParkLandscapeSnapshot landscape, bool hasLandscape)
+        {
+            void Warn(string key) => q.Warnings.Add(WarningPrefix + key);
+            if (c.Entrances <= 0) Warn("NoEntrance");
+            if (!c.IsPrimaryForAllMembers) Warn("NotPrimary");
+            if (q.Result.Degraded) Warn("LowConfidence");
+            if (facilities.RelevantFacilities == 0) Warn("NoFacilities");
+            if (q.OccupancyRatio > 1f) Warn("Crowded");
+            if (q.Maintenance.Value < LowMaintenance) Warn("LowMaintenance");
+            if (hasLandscape && landscape.Inputs.PathLength < 1f) Warn("NoPaths");
+            if (hasLandscape && landscape.Result.Cluttered) Warn("Cluttered");
+            if (q.EffectiveFee > 0 && q.ValueForMoney < PoorValue) Warn("PoorValue");
+            if (c.Entrances <= 0) { q.NextActionKey = ActionPrefix + "Entrance"; return; }
+            // Next recommended action: the weakest available metric.
+            string weakest = null; float lowest = float.MaxValue;
+            void Consider(string name, ParkMetric metric) { if (metric.Available && metric.Value < lowest) { lowest = metric.Value; weakest = name; } }
+            Consider("Attractiveness", q.Attractiveness); Consider("Accessibility", q.Accessibility); Consider("Variety", q.Variety);
+            Consider("Maintenance", q.Maintenance); Consider("Comfort", q.Comfort); Consider("Satisfaction", q.Satisfaction);
+            q.NextActionKey = ActionPrefix + (weakest ?? "Wait");
+        }
+    }
+}

@@ -50,6 +50,9 @@ namespace CS2AreaSystem.Modules.Park
         public float AreaSquareMeters;
         public ParkLandscapeSnapshot Landscape = new ParkLandscapeSnapshot();
         public ParkFacilitySnapshot Facilities;
+        public ParkQualitySnapshot Quality;
+        public uint QualityFrame;
+        public int EntranceCount;
         // Visitors: "recent" = the last in-game day.
         public int PeakOccupancy;
         public readonly ParkRollingWindow RecentVisitors = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
