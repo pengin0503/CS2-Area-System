@@ -104,3 +104,13 @@ public class ParkLandscapeSchedulerTests {
   Assert.That(s.TrackedCount, Is.EqualTo(1));
  }
 }
+public class ParkLandscapeScanSliceTests {
+ [Test] public void LargeScansAreSplitIntoBoundedSlices() {
+  var scan = new ParkLandscapeScan<int>(Enumerable.Range(0, 10_000).ToList());
+  var seen = new List<int>(); int slices = 0;
+  while (!scan.Done) { var before = seen.Count; scan.Process(4096, seen.Add); slices++; Assert.That(seen.Count - before, Is.LessThanOrEqualTo(4096)); }
+  Assert.That(slices, Is.EqualTo(3)); Assert.That(seen, Is.EqualTo(Enumerable.Range(0, 10_000)));
+  var empty = new ParkLandscapeScan<int>(new List<int>());
+  Assert.That(empty.Done, Is.True);
+ }
+}

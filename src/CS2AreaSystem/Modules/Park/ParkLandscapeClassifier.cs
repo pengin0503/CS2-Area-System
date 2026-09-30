@@ -88,3 +88,20 @@ namespace CS2AreaSystem.Modules.Park
         }
     }
 }
+namespace CS2AreaSystem.Modules.Park
+{
+    // Cursor over one Park's scan candidates so classification can be spread across frames.
+    public sealed class ParkLandscapeScan<T>
+    {
+        private readonly List<T> items;
+        private int cursor;
+        public ParkLandscapeScan(List<T> items) { this.items = items ?? new List<T>(); }
+        public bool Done => cursor >= items.Count;
+        public int Remaining => items.Count - cursor;
+        public void Process(int budget, System.Action<T> visit)
+        {
+            int end = System.Math.Min(items.Count, cursor + System.Math.Max(1, budget));
+            for (; cursor < end; cursor++) visit(items[cursor]);
+        }
+    }
+}

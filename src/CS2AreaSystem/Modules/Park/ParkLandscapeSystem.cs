@@ -17,13 +17,15 @@ namespace CS2AreaSystem.Modules.Park
     // paths are read here, only inside Park bounds, only for Parks the scheduler selects within a strict budget.
     public partial class ParkLandscapeSystem : GameSystemBase
     {
-        // At most this many Park scans every ScanFrameInterval rendered frames.
-        public const int ScanBudget = 1, ScanFrameInterval = 8;
+        // One Park scan at a time, a new one starting at most every ScanFrameInterval rendered frames.
+        public const int ScanFrameInterval = 8;
         // Fallback refresh (vegetation growth, undetected changes): every 3 in-game hours.
         public const uint RefreshFrames = ParkRuntimeSystem.FramesPerDay / 8;
         // Above this many changed objects in one frame, every Park is simply re-queued.
         public const int MaxTrackedChanges = 512;
         public const float TransitRadius = 120f;
+        // Candidate objects classified per frame; a large Park is scanned over several frames.
+        public const int ObjectsPerFrame = 4096;
         private const int PathSamples = 8;
         private ParkRuntimeSystem runtime;
         private Game.Objects.SearchSystem objectSearch;
@@ -34,6 +36,16 @@ namespace CS2AreaSystem.Modules.Park
         private readonly Dictionary<ulong, Bounds2> bounds = new Dictionary<ulong, Bounds2>();
         private int frameCounter, loadGeneration = -1;
         private bool failureLogged, parksDirty = true;
+        private sealed class ActiveScan
+        {
+            public ParkRuntimeSnapshot Snapshot;
+            public Geometry Geometry;
+            public List<Triangle2> Triangles;
+            public ParkLandscapeScan<Entity> Objects;
+            public ParkLandscapeTally Tally = new ParkLandscapeTally();
+            public int Transit;
+        }
+        private ActiveScan current;
         public int ScanCount { get; private set; }
         [Preserve]
         protected override void OnCreate()
@@ -49,7 +61,8 @@ namespace CS2AreaSystem.Modules.Park
             changedObjects = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<Game.Objects.Object>(), ComponentType.ReadOnly<Static>(), ComponentType.ReadOnly<Transform>() },
                 Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<Deleted>() },
-                None = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Game.Buildings.Building>() } });
+                // Owned sub-objects (building/net furniture) are never landscape, so their updates are ignored.
+                None = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Game.Buildings.Building>(), ComponentType.ReadOnly<Owner>() } });
             changedNets = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<Game.Net.Edge>(), ComponentType.ReadOnly<Game.Net.Curve>() },
                 Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<Deleted>() },
@@ -59,14 +72,17 @@ namespace CS2AreaSystem.Modules.Park
         protected override void OnUpdate()
         {
             if (!runtime.Ready) return;
-            if (loadGeneration != runtime.LoadGeneration) { loadGeneration = runtime.LoadGeneration; scheduler.Clear(); parksDirty = true; }
+            if (loadGeneration != runtime.LoadGeneration) { loadGeneration = runtime.LoadGeneration; scheduler.Clear(); parksDirty = true; current = null; }
             if (!changedParks.IsEmptyIgnoreFilter) parksDirty = true;
             if (parksDirty || frameCounter % 256 == 0) SyncParks();
             if (scheduler.TrackedCount == 0) { frameCounter++; return; }
             MarkChanged(changedObjects, true);
             MarkChanged(changedNets, false);
-            if (frameCounter++ % ScanFrameInterval != 0) return;
-            foreach (var id in scheduler.Take(runtime.SimulationFrame, ScanBudget)) Scan(id);
+            frameCounter++;
+            if (current != null) { Continue(); return; }
+            if (frameCounter % ScanFrameInterval != 0) return;
+            var next = scheduler.Take(runtime.SimulationFrame, 1);
+            if (next.Count > 0) Begin(next[0]);
         }
         private void SyncParks()
         {
@@ -104,48 +120,64 @@ namespace CS2AreaSystem.Modules.Park
                     if (math.all(position >= pair.Value.min) && math.all(position <= pair.Value.max)) scheduler.MarkDirty(pair.Key);
             }
         }
-        private void Scan(ulong id)
+        private void Begin(ulong id)
         {
-            if (!runtime.Store.TryGet(id, out var snapshot) || !EntityManager.Exists(snapshot.Area)) return;
+            if (!runtime.Store.TryGet(id, out var snapshot) || !EntityManager.Exists(snapshot.Area) || !EntityManager.HasComponent<Geometry>(snapshot.Area)) return;
             try
             {
-                ScanCount++;
-                var area = snapshot.Area;
-                var geometry = EntityManager.GetComponentData<Geometry>(area);
-                var triangles = ParkGeometry.Triangles(EntityManager, area);
-                snapshot.AreaSquareMeters = geometry.m_SurfaceArea;
-                var tally = new ParkLandscapeTally();
-                int transit = 0;
+                var geometry = EntityManager.GetComponentData<Geometry>(snapshot.Area);
                 var candidates = new List<Entity>();
                 var search = new Bounds2(geometry.m_Bounds.xz.min - TransitRadius, geometry.m_Bounds.xz.max + TransitRadius);
-                var objectTree = objectSearch.GetStaticSearchTree(true, out var objectDependency);
-                objectDependency.Complete();
-                var objectIterator = new BoundsIterator { Bounds = search, Items = candidates };
-                objectTree.Iterate(ref objectIterator);
-                foreach (var entity in candidates)
-                {
-                    if (!EntityManager.Exists(entity) || !EntityManager.HasComponent<Transform>(entity)) continue;
-                    var position = EntityManager.GetComponentData<Transform>(entity).m_Position.xz;
-                    if (IsTransit(entity))
-                    {
-                        if (ParkGeometry.Distance(triangles, position) <= TransitRadius) transit++;
-                        continue;
-                    }
-                    if (!ParkGeometry.Contains(triangles, position)) continue;
-                    var traits = ReadObject(entity, out int prefabKey);
-                    tally.Add(ParkLandscapeClassifier.Classify(traits), prefabKey);
-                }
-                float pathLength = MeasurePaths(geometry.m_Bounds.xz, triangles);
-                snapshot.Landscape = new ParkLandscapeSnapshot {
-                    Inputs = tally.ToInputs(geometry.m_SurfaceArea, pathLength), TransitStops = transit, ScannedFrame = runtime.SimulationFrame, Available = true };
-                snapshot.Landscape.Result = ParkLandscapeModel.ComputeLandscape(snapshot.Landscape.Inputs);
+                var tree = objectSearch.GetStaticSearchTree(true, out var dependency);
+                dependency.Complete();
+                var iterator = new BoundsIterator { Bounds = search, Items = candidates };
+                tree.Iterate(ref iterator);
+                current = new ActiveScan { Snapshot = snapshot, Geometry = geometry, Triangles = ParkGeometry.Triangles(EntityManager, snapshot.Area),
+                    Objects = new ParkLandscapeScan<Entity>(candidates) };
+                Continue();
+            }
+            catch (System.Exception error) { Fail(error); }
+        }
+        private void Continue()
+        {
+            var scan = current;
+            try
+            {
+                // The Park may be deleted or edited while a sliced scan runs: drop the partial result.
+                if (!EntityManager.Exists(scan.Snapshot.Area) || !EntityManager.HasComponent<Geometry>(scan.Snapshot.Area)) { current = null; return; }
+                scan.Objects.Process(ObjectsPerFrame, entity => Classify(scan, entity));
+                if (!scan.Objects.Done) return;
+                current = null;
+                ScanCount++;
+                float pathLength = MeasurePaths(scan.Geometry.m_Bounds.xz, scan.Triangles);
+                var snapshot = scan.Snapshot;
+                snapshot.AreaSquareMeters = scan.Geometry.m_SurfaceArea;
+                var landscape = new ParkLandscapeSnapshot {
+                    Inputs = scan.Tally.ToInputs(scan.Geometry.m_SurfaceArea, pathLength), TransitStops = scan.Transit, ScannedFrame = runtime.SimulationFrame, Available = true };
+                landscape.Result = ParkLandscapeModel.ComputeLandscape(landscape.Inputs);
+                snapshot.Landscape = landscape;
                 failureLogged = false;
             }
-            catch (System.Exception error)
+            catch (System.Exception error) { Fail(error); }
+        }
+        // Keep the last good snapshot; without one the metric stays unavailable (neutral in Quality).
+        private void Fail(System.Exception error)
+        {
+            current = null;
+            if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park landscape analysis failed; last result kept"); }
+        }
+        private void Classify(ActiveScan scan, Entity entity)
+        {
+            if (!EntityManager.Exists(entity) || !EntityManager.HasComponent<Transform>(entity)) return;
+            var position = EntityManager.GetComponentData<Transform>(entity).m_Position.xz;
+            if (IsTransit(entity))
             {
-                // Keep the last good snapshot; without one the metric stays unavailable (neutral in Quality).
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park landscape analysis failed; last result kept"); }
+                if (ParkGeometry.Distance(scan.Triangles, position) <= TransitRadius) scan.Transit++;
+                return;
             }
+            if (!ParkGeometry.Contains(scan.Triangles, position)) return;
+            var traits = ReadObject(entity, out int prefabKey);
+            scan.Tally.Add(ParkLandscapeClassifier.Classify(traits), prefabKey);
         }
         private bool IsTransit(Entity entity) =>
             !EntityManager.HasComponent<Temp>(entity) && !EntityManager.HasComponent<Deleted>(entity) &&
