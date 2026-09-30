@@ -153,3 +153,26 @@ namespace CS2AreaSystem.Modules.Park
         private static string Hours(double frames) => Math.Floor(frames / (ParkProgressionModel.FramesPerDay / 24.0)).ToString("0", Invariant) + " h";
     }
 }
+namespace CS2AreaSystem.Modules.Park
+{
+    // The selected-info section asks for the panel every rendered frame, while Park numbers change every simulation
+    // tick. Rebuilding (and rebinding the vanilla panel) a few times per second is enough; actions invalidate at once.
+    public sealed class ParkPanelCache
+    {
+        private readonly long intervalMilliseconds;
+        private readonly Func<long> clockMilliseconds;
+        private Unity.Entities.Entity area;
+        private long builtAt;
+        private AreaPanelDocument document;
+        public ParkPanelCache(long intervalMilliseconds, Func<long> clockMilliseconds)
+        { this.intervalMilliseconds = intervalMilliseconds; this.clockMilliseconds = clockMilliseconds; }
+        public AreaPanelDocument Get(Unity.Entities.Entity key, Func<AreaPanelDocument> build)
+        {
+            long now = clockMilliseconds();
+            if (document != null && key == area && now >= builtAt && now - builtAt < intervalMilliseconds) return document;
+            document = build(); area = key; builtAt = now;
+            return document;
+        }
+        public void Invalidate() => document = null;
+    }
+}

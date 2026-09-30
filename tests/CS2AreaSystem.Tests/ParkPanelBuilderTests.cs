@@ -106,3 +106,16 @@ public class ParkPanelBuilderTests {
   foreach (var key in keys) Assert.That(entries.ContainsKey(key), Is.True, locale + " is missing " + key);
  }
 }
+public class ParkPanelCacheTests {
+ [Test] public void RebuildsOnlyForANewAreaAfterTheIntervalOrAfterAnAction() {
+  long now = 0; int builds = 0;
+  var cache = new ParkPanelCache(250, () => now);
+  var a = new Unity.Entities.Entity { Index = 1, Version = 1 }; var b = new Unity.Entities.Entity { Index = 2, Version = 1 };
+  AreaPanelDocument Build() { builds++; return new AreaPanelDocument(); }
+  var first = cache.Get(a, Build);
+  now = 100; Assert.That(cache.Get(a, Build), Is.SameAs(first)); Assert.That(builds, Is.EqualTo(1));
+  Assert.That(cache.Get(b, Build), Is.Not.SameAs(first), "another Park is never served a cached document"); Assert.That(builds, Is.EqualTo(2));
+  now = 400; cache.Get(b, Build); Assert.That(builds, Is.EqualTo(3), "refreshes after the interval");
+  cache.Invalidate(); cache.Get(b, Build); Assert.That(builds, Is.EqualTo(4), "an applied action shows immediately");
+ }
+}
