@@ -3,8 +3,15 @@ import {bindValue} from 'cs2/api';
 export interface AreaSectionData {
  stableId:string;typeKey:string;state:string;level:number|null;experience:string|null;summary:string;
  anchorRole:'Entrance'|'Headquarters'|null;anchorName:string|null;pendingAnchor:boolean;confirmDelete:boolean;
- tabs:{id:string;labelKey:string}[];
+ tabs:AreaPanelTab[];anchors?:AreaAnchor[];
 }
+// Module-neutral structured panel content written by CS2AreaSystem.Core.Modules.AreaPanelDocument.
+export interface AreaPanelItem {
+ kind:string;id:string;labelKey:string;value:string|null;valueKey:string|null;numericValue:number|null;
+ min:number|null;max:number|null;step:number|null;disabled:boolean;tooltipKey:string|null;action:string|null;
+}
+export interface AreaPanelTab {id:string;labelKey:string;items?:AreaPanelItem[];}
+export interface AreaAnchor {key:string;name:string;}
 export interface AreaListItem {stableId:string;name:string;typeKey:string;state:string;}
 export interface PendingAssignment {stableId:string;name:string;role:'Entrance'|'Headquarters';}
 type Binding<T>=ReturnType<typeof bindValue<T>>;

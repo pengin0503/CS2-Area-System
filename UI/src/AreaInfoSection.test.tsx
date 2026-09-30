@@ -8,7 +8,7 @@ const env=vi.hoisted(()=>({trigger:vi.fn(),registryFails:false,dictionaries:{
   'CS2AS.Summary.AnchorRequired':'Assign a required facility to activate this area.','CS2AS.UI.AssignHeadquarters':'Assign headquarters','CS2AS.UI.ChangeHeadquarters':'Change headquarters',
   'CS2AS.UI.AssignEntrance':'Assign entrance','CS2AS.UI.SelectAnchor':'Select an existing building inside this area.','CS2AS.UI.CancelAssignment':'Cancel assignment',
   'CS2AS.UI.EditArea':'Edit area','CS2AS.UI.DeleteArea':'Delete area','CS2AS.UI.DeleteConfirm':'Delete this management boundary?','CS2AS.UI.ConfirmDelete':'Confirm delete','CS2AS.UI.Cancel':'Cancel',
-  'CS2AS.UI.Level':'Level','CS2AS.UI.Experience':'Experience','Module.Tab.Visitors':'Visitors'},
+  'CS2AS.UI.Level':'Level','CS2AS.UI.Entrances':'Entrances','CS2AS.UI.AddEntrance':'Add entrance','CS2AS.UI.RemoveEntrance':'Remove','M.Visitors':'Visitors','M.Budget':'Budget','Module.Tab.Finances':'Finances','CS2AS.UI.Experience':'Experience','Module.Tab.Visitors':'Visitors'},
  'ja-JP':{'CS2AS.UI.Type':'種類','CS2AS.UI.Status':'状態','CS2AS.UI.Entrance':'入口','CS2AS.UI.NotAssigned':'未割り当て','CS2AS.Type.Park':'公園エリア','CS2AS.State.Suspended':'停止中',
   'CS2AS.UI.AssignEntrance':'入口を割り当て','Module.Tab.Visitors':'来園者'}
 } as Record<string,Record<string,string>>}));
@@ -91,5 +91,32 @@ describe('managed area selected-info section',()=>{
   const broken={...industrial,tabs:undefined as unknown as AreaSectionData['tabs']};
   expect(()=>render(<AreaInfoSection {...broken}/>)).not.toThrow();
   expect(env.trigger).not.toHaveBeenCalled();consoleError.mockRestore();
+ });
+ it('lists every entrance with remove actions keyed by the opaque link key',()=>{
+  const park={...industrial,typeKey:'CS2AS.Type.Park',state:'CS2AS.State.Active',anchorRole:'Entrance' as const,anchorName:'North Gate',
+   anchors:[{key:'30.1',name:'North Gate'},{key:'31.4',name:'South Gate'}]};
+  render(<AreaInfoSection {...park}/>);
+  expect(row('Entrances')).toHaveTextContent('2');
+  expect(screen.getByText('North Gate')).toBeInTheDocument();expect(screen.getByText('South Gate')).toBeInTheDocument();
+  fireEvent.click(screen.getAllByRole('button',{name:'Remove'})[1]);
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','removeAnchor','9007199254740993','31.4');
+  fireEvent.click(screen.getByRole('button',{name:'Add entrance'}));
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','assignEntrance','9007199254740993');
+ });
+ it('renders structured items of the selected module tab',()=>{
+  const item=(over:object)=>({kind:'row',id:'x',labelKey:'M.Visitors',value:'12',valueKey:null,numericValue:null,min:null,max:null,step:null,disabled:false,tooltipKey:null,action:null,...over});
+  const tabs=[{id:'overview',labelKey:'Module.Tab.Visitors',items:[item({})]},{id:'finances',labelKey:'Module.Tab.Finances',items:[item({id:'b',labelKey:'M.Budget',value:'100%'})]}];
+  render(<AreaInfoSection {...industrial} tabs={tabs}/>);
+  expect(row('Visitors')).toHaveTextContent('12');expect(screen.queryByText('Budget')).toBeNull();
+  fireEvent.click(screen.getByRole('button',{name:'Finances'}));
+  expect(row('Budget')).toHaveTextContent('100%');expect(screen.queryByText('12')).toBeNull();
+ });
+ it('keeps core rows and actions when a module tab fails to render',()=>{
+  const consoleError=vi.spyOn(console,'error').mockImplementation(()=>{});
+  const tabs=[{id:'overview',labelKey:'Module.Tab.Visitors',items:[null as unknown as never]}];
+  render(<AreaInfoSection {...industrial} tabs={tabs}/>);
+  expect(row('Type')).toHaveTextContent('Industrial Area');
+  expect(screen.getByRole('button',{name:'Edit area'})).toBeInTheDocument();
+  consoleError.mockRestore();
  });
 });

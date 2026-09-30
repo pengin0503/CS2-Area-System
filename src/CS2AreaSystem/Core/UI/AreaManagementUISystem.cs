@@ -68,6 +68,9 @@ namespace CS2AreaSystem.Core.UI
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignHeadquarters", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Headquarters))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignEntrance", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Entrance))));
+            AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "removeAnchor", (id, key) => Act(id, area => RemoveAnchor(area, key))));
+            // Generic module action: (expected stable ID, action, value). Guarded like every other mutating action.
+            AddBinding(new TriggerBinding<string, string, string>("cs2AreaSystem", "moduleAction", ModuleAction));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", CancelAssignment));
             // Registers itself as a middle section of the vanilla selected-info panel.
             World.GetOrCreateSystemManaged<AreaInfoSection>();
@@ -121,20 +124,70 @@ namespace CS2AreaSystem.Core.UI
             var area = EntityManager.GetComponentData<ManagedArea>(entity);
             bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
             var role = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole;
+            var context = new Core.Modules.AreaPanelContext(World, EntityManager);
+            var provider = descriptor?.Module?.PanelProvider;
+            var anchors = role.HasValue ? services.Anchors.GetValidAnchors(entity, role.Value) : System.Array.Empty<Entity>();
             view = new AreaManagementViewModel {
                 StableId = EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value.ToString(CultureInfo.InvariantCulture),
                 TypeKey = known ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
                 State = "CS2AS.State." + area.State,
-                Summary = descriptor?.Module?.PanelProvider?.BuildSummary(entity) ?? "CS2AS.Summary.ModuleUnavailable",
-                Tabs = descriptor?.Module?.PanelProvider?.Tabs ?? new Core.Modules.AreaPanelTab[0],
+                Summary = BuildSummary(provider, entity, context),
+                Panel = BuildPanel(provider, entity, context),
                 AnchorRole = role?.ToString(),
-                AnchorName = role.HasValue && services.Anchors.TryGetValidAnchor(entity, role.Value, out var anchor) ? names.GetRenderedLabelName(anchor) : null,
+                AnchorName = anchors.Count > 0 ? names.GetRenderedLabelName(anchors[0]) : null,
+                Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(anchors, anchor =>
+                    new AreaAnchorView { Key = AreaAnchorLinkKey.Format(anchor), Name = names.GetRenderedLabelName(anchor) })),
                 PendingAnchor = pendingArea == entity,
                 ConfirmDelete = CS2AreaSystem.Core.Settings.AreaSettings.Current.ConfirmAreaDeletion
             };
             if (EntityManager.HasComponent<ManagedAreaProgress>(entity))
             { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(entity); view.Level = progress.Level; view.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
             return true;
+        }
+        // A failing module panel degrades to the Overview fallback; Core rows/actions keep working.
+        private Core.Modules.AreaPanelDocument BuildPanel(Core.Modules.IAreaPanelProvider provider, Entity entity, in Core.Modules.AreaPanelContext context)
+        {
+            if (provider == null) return Core.Modules.AreaPanelDocument.Overview();
+            try { return provider.BuildPanel(entity, context) ?? Core.Modules.AreaPanelDocument.Overview(); }
+            catch (Exception error)
+            {
+                if (!panelFailureLogged) { panelFailureLogged = true; Mod.Log.Error(error, "Area module panel unavailable"); }
+                return Core.Modules.AreaPanelDocument.Overview();
+            }
+        }
+        private string BuildSummary(Core.Modules.IAreaPanelProvider provider, Entity entity, in Core.Modules.AreaPanelContext context)
+        {
+            if (provider == null) return "CS2AS.Summary.ModuleUnavailable";
+            try { return provider.BuildSummary(entity, context) ?? "CS2AS.Summary.ModuleUnavailable"; }
+            catch (Exception error)
+            {
+                if (!panelFailureLogged) { panelFailureLogged = true; Mod.Log.Error(error, "Area module summary unavailable"); }
+                return "CS2AS.Summary.ModuleUnavailable";
+            }
+        }
+        private bool panelFailureLogged;
+        private void ModuleAction(string expectedId, string action, string value)
+        {
+            try
+            {
+                var area = selection.selectedEntity;
+                if (!IsReady || !IsArea(area)) return;
+                var id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
+                bool guard = AreaUIActionGuard.Matches(area, selection.selectedEntity, tools.selected, id, expectedId, true);
+                services.Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor);
+                if (Core.Modules.AreaModuleActionDispatcher.Dispatch(guard, descriptor?.Module?.PanelProvider, area, action, value,
+                        new Core.Modules.AreaPanelContext(World, EntityManager), error => Mod.Log.Error(error, "Area module action failed: " + action)))
+                    selection.SetDirty();
+            }
+            catch (Exception error) { Mod.Log.Error(error, "Area module action rejected"); }
+        }
+        private void RemoveAnchor(Entity area, string key)
+        {
+            var type = EntityManager.GetComponentData<ManagedArea>(area).TypeId;
+            if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || !policy.RequiredAnchorRole.HasValue) return;
+            var role = policy.RequiredAnchorRole.Value;
+            var links = EntityManager.HasBuffer<AreaAnchorLink>(area) ? new EntityAreaAnchorStore(EntityManager).Read(area) : System.Array.Empty<AreaAnchorLink>();
+            if (AreaAnchorLinkKey.TryResolve(links, role, key, out var anchor) && services.Anchors.Remove(area, anchor, role)) selection.SetDirty();
         }
         private void SetPending(PendingAssignmentView next)
         {

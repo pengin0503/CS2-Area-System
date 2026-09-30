@@ -11,7 +11,9 @@ namespace CS2AreaSystem.Core.UI
         public string StableId, TypeKey, State, Experience, Summary, AnchorRole, AnchorName;
         public int? Level;
         public bool PendingAnchor, ConfirmDelete = true;
-        public IReadOnlyList<AreaPanelTab> Tabs = new AreaPanelTab[0];
+        public AreaPanelDocument Panel = AreaPanelDocument.Overview();
+        // Every valid anchor of the module's role (several Entrances, at most one Headquarters).
+        public IReadOnlyList<AreaAnchorView> Anchors = new AreaAnchorView[0];
         // Comparing avoids rewriting the selected-info sections every frame.
         public static bool Equivalent(AreaManagementViewModel a, AreaManagementViewModel b)
         {
@@ -20,12 +22,12 @@ namespace CS2AreaSystem.Core.UI
             if (a.StableId != b.StableId || a.TypeKey != b.TypeKey || a.State != b.State ||
                 a.Experience != b.Experience || a.Summary != b.Summary || a.AnchorRole != b.AnchorRole || a.AnchorName != b.AnchorName ||
                 a.Level != b.Level || a.PendingAnchor != b.PendingAnchor || a.ConfirmDelete != b.ConfirmDelete) return false;
-            var left = a.Tabs ?? new AreaPanelTab[0];
-            var right = b.Tabs ?? new AreaPanelTab[0];
+            var left = a.Anchors ?? new AreaAnchorView[0];
+            var right = b.Anchors ?? new AreaAnchorView[0];
             if (left.Count != right.Count) return false;
             for (int i = 0; i < left.Count; i++)
-                if (left[i]?.Id != right[i]?.Id || left[i]?.LabelKey != right[i]?.LabelKey) return false;
-            return true;
+                if (left[i]?.Key != right[i]?.Key || left[i]?.Name != right[i]?.Name) return false;
+            return AreaPanelDocument.Equivalent(a.Panel, b.Panel);
         }
         public void WriteProperties(IJsonWriter writer)
         {
@@ -39,15 +41,21 @@ namespace CS2AreaSystem.Core.UI
             writer.PropertyName("anchorName"); if (AnchorName != null) writer.Write(AnchorName); else writer.WriteNull();
             writer.PropertyName("pendingAnchor"); writer.Write(PendingAnchor);
             writer.PropertyName("confirmDelete"); writer.Write(ConfirmDelete);
-            writer.PropertyName("tabs"); writer.ArrayBegin((uint)Tabs.Count);
-            foreach (var tab in Tabs)
+            writer.PropertyName("tabs"); (Panel ?? new AreaPanelDocument()).Write(writer);
+            var anchors = Anchors ?? new AreaAnchorView[0];
+            writer.PropertyName("anchors"); writer.ArrayBegin((uint)anchors.Count);
+            foreach (var anchor in anchors)
             {
-                writer.TypeBegin("CS2AreaSystem.AreaPanelTab");
-                writer.PropertyName("id"); writer.Write(tab.Id);
-                writer.PropertyName("labelKey"); writer.Write(tab.LabelKey);
+                writer.TypeBegin("CS2AreaSystem.AreaAnchorView");
+                writer.PropertyName("key"); writer.Write(anchor.Key);
+                writer.PropertyName("name"); writer.Write(anchor.Name);
                 writer.TypeEnd();
             }
             writer.ArrayEnd();
         }
+    }
+    public sealed class AreaAnchorView
+    {
+        public string Key, Name;
     }
 }

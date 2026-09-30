@@ -25,3 +25,15 @@
 }
 .tabs{display:flex;margin:4rem 0;}
 .empty{padding:12rem 16rem;}
+// Structured module content (generic item renderer).
+.module{margin:4rem 0;}
+.anchors{list-style:none;margin:0 0 4rem;padding:0;
+ li{display:flex;align-items:center;justify-content:space-between;margin:2rem 0;}
+}
+.bar{margin:4rem 0;}
+.barLabel{display:flex;justify-content:space-between;font-size:var(--fontSizeS,14rem);}
+.barTrack{height:6rem;margin-top:2rem;background:rgba(255,255,255,.12);border-radius:3rem;overflow:hidden;}
+.barFill{height:100%;background:var(--accentColorNormal,#7fc4ff);}
+.warning{margin:4rem 0;padding:4rem 8rem;border-left:3rem solid #f0b44c;font-size:var(--fontSizeS,14rem);}
+.note{margin:4rem 0;font-size:var(--fontSizeXS,12rem);opacity:.75;}
+.slider{margin:4rem 0;}
