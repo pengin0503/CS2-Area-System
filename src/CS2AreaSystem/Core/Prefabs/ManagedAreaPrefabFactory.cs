@@ -22,21 +22,22 @@ namespace CS2AreaSystem.Core.Prefabs
     public sealed class ManagedAreaPrefabFactory
     {
         public static Game.Areas.AreaType NativeGeometryType => Game.Areas.AreaType.Space;
-        public const string FallbackIconUri = "coui://gameui/Media/Game/Icons/SurfaceAreaTool.svg";
+        // Vanilla 1.6.2f1 icons are host-less paths resolved by the game UI; coui://gameui is not a registered host.
+        public const string FallbackIconUri ="Media/Game/Icons/SurfaceAreaTool.svg";
         private static readonly HashSet<string> VerifiedGameIcons = new HashSet<string>(StringComparer.Ordinal)
         {
             FallbackIconUri,
-            "coui://gameui/Media/Game/Icons/LargeParks.svg",
-            "coui://gameui/Media/Game/Icons/ZoneIndustrial.svg",
-            "coui://gameui/Media/Game/Icons/Attraction.svg"
+            "Media/Game/Icons/LargeParks.svg",
+            "Media/Game/Icons/ZoneIndustrial.svg",
+            "Media/Game/Icons/Attraction.svg"
         };
         public static AreaTypeDescriptor Describe(AreaTypeId kind)
         {
             switch (kind)
             {
-                case AreaTypeId.Park: return new AreaTypeDescriptor(1, "CS2AS.ParkArea", "CS2AS.Type.Park", "coui://gameui/Media/Game/Icons/LargeParks.svg");
-                case AreaTypeId.Industrial: return new AreaTypeDescriptor(2, "CS2AS.IndustrialArea", "CS2AS.Type.Industrial", "coui://gameui/Media/Game/Icons/ZoneIndustrial.svg");
-                case AreaTypeId.Tourism: return new AreaTypeDescriptor(3, "CS2AS.TourismArea", "CS2AS.Type.Tourism", "coui://gameui/Media/Game/Icons/Attraction.svg");
+                case AreaTypeId.Park: return new AreaTypeDescriptor(1, "CS2AS.ParkArea", "CS2AS.Type.Park", "Media/Game/Icons/LargeParks.svg");
+                case AreaTypeId.Industrial: return new AreaTypeDescriptor(2, "CS2AS.IndustrialArea", "CS2AS.Type.Industrial", "Media/Game/Icons/ZoneIndustrial.svg");
+                case AreaTypeId.Tourism: return new AreaTypeDescriptor(3, "CS2AS.TourismArea", "CS2AS.Type.Tourism", "Media/Game/Icons/Attraction.svg");
                 default: throw new ArgumentOutOfRangeException(nameof(kind));
             }
         }

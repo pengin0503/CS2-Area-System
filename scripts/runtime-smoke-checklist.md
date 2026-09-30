@@ -14,5 +14,6 @@ Status: **NOT RUN**. Start a fresh 1.6.2f1 session with an official-toolchain bu
 8. Create/move/delete one candidate building and verify incremental counters change without FullRebuildCount increasing. Resize/shrink an Area and verify old memberships disappear and new candidates are found.
 9. Temporarily break/disable the UI bundle and verify the save still loads and area simulation/state remains intact.
 10. Confirm normal roads, paths, vegetation, and vanilla assets remain in their original menus rather than being duplicated.
+11. Start the game with the game language set to ja-JP and then en-US, open the Areas menu and a management panel, then exit the game. Menu, asset and panel text must be localized (no raw `Assets.NAME[...]`/`CS2AS.*` keys), the Areas menu/Area Types/three asset icons must render, and `Logs/CS2AreaSystem.log`/`Player.log` must contain no `Area menu localization unavailable`, `Error disposing mod CS2AreaSystem` or `ResourceHandler: Invalid host locations map` errors (issues #15, #16).
 
 Diagnostic access: ECS systems expose `AreaMembershipSystem.FullRebuildCount`, `IncrementalMemberUpdateCount`, `IncrementalAreaUpdateCount`, `Index.GetAreas(member)`, `Index.GetMembers(stableId)` and `AreaLoadCoordinatorSystem.RebuildPending`. Use the mod/debug tooling; there is no diagnostics UI in v1.

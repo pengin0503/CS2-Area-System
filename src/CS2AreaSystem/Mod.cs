@@ -2,14 +2,18 @@ using Game;
 using CS2AreaSystem.Core.Membership;
 using Game.Modding;
 using Colossal.Logging;
+using Colossal.Localization;
 using CS2AreaSystem.Core.Prefabs;
+using CS2AreaSystem.Core.UI;
 using Game.Prefabs;
 using CS2AreaSystem.Core.Areas;
 namespace CS2AreaSystem
 {
     public sealed class Mod : IMod
     {
-        private readonly System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, Colossal.Localization.MemorySource>> locales = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, Colossal.Localization.MemorySource>>();
+        // ModManager creates IMod instances with FormatterServices.GetUninitializedObject:
+        // constructors and instance field initializers never run, so state is created in OnLoad.
+        private LocalizationSourceRegistration<MemorySource> locales;
         internal static readonly ILog Log = LogManager.GetLogger(nameof(CS2AreaSystem));
         public void OnLoad(UpdateSystem updateSystem)
         {
@@ -21,24 +25,31 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
-            try
-            {
-                var localization = Game.SceneFlow.GameManager.instance.localizationManager;
-                foreach (var locale in localization.GetSupportedLocales())
-                {
-                    var source = new Colossal.Localization.MemorySource(Core.UI.NativeAreaLocalization.Entries(locale));
-                    localization.AddSource(locale, source); locales.Add(new System.Collections.Generic.KeyValuePair<string, Colossal.Localization.MemorySource>(locale, source));
-                }
-            }
-            catch (System.Exception error) { Log.Error(error, "Area menu localization unavailable"); }
-            try { updateSystem.UpdateAfter<CS2AreaSystem.Core.UI.AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
+            RegisterLocalization();
+            try { updateSystem.UpdateAfter<AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
             catch (System.Exception error) { Log.Error(error, "Area management UI registration failed; simulation remains registered."); }
         }
         public void OnDispose()
         {
             CS2AreaSystem.Core.Persistence.ComponentSchema.ReportUnsupported = null;
-            foreach (var locale in locales) Game.SceneFlow.GameManager.instance.localizationManager.RemoveSource(locale.Key, locale.Value);
-            locales.Clear();
+            var registered = locales;
+            locales = null;
+            if (registered == null || registered.Count == 0) return;
+            var manager = Game.SceneFlow.GameManager.instance;
+            var localization = manager == null ? null : manager.localizationManager;
+            if (localization == null) return;
+            registered.Unregister(localization.RemoveSource, (locale, error) => Log.Error(error, "Area localization removal failed: " + locale));
+        }
+        private void RegisterLocalization()
+        {
+            locales = new LocalizationSourceRegistration<MemorySource>();
+            try
+            {
+                var localization = Game.SceneFlow.GameManager.instance.localizationManager;
+                locales.Register(localization.GetSupportedLocales(), locale => new MemorySource(NativeAreaLocalization.Entries(locale)),
+                    localization.AddSource, (locale, error) => Log.Error(error, "Area localization unavailable for " + locale));
+            }
+            catch (System.Exception error) { Log.Error(error, "Area menu localization unavailable"); }
         }
     }
 }
