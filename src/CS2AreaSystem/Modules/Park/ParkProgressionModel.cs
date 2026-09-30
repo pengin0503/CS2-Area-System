@@ -28,6 +28,14 @@ namespace CS2AreaSystem.Modules.Park
         public ParkPromotionTarget Target;
         public IReadOnlyList<ParkPromotionCheck> Checklist = Array.Empty<ParkPromotionCheck>();
     }
+    public struct ParkProgressStep
+    {
+        public int Level;
+        public long Experience;
+        public ParkAreaState State;
+        public bool Promoted;
+        public ParkPromotionResult Promotion;
+    }
     // Five persistent levels, no demotion (design §17). Targets are initial balancing values.
     public static class ParkProgressionModel
     {
@@ -107,6 +115,50 @@ namespace CS2AreaSystem.Modules.Park
             if (!active || recentVisitors <= 0 || float.IsNaN(quality) || quality < PassiveXpMinQuality) return 0;
             int amount = Math.Max(1, (int)Math.Round((quality - PassiveXpMinQuality) / 8f));
             return Math.Max(0, Math.Min(amount, PassiveXpDailyCap - Math.Max(0, grantedToday)));
+        }
+        public static long AwardVisitXp(long experience, double satisfaction, bool parkActive)
+        {
+            if (!parkActive) return experience;
+            long gain = ComputeVisitXp(satisfaction);
+            return experience > long.MaxValue - gain ? long.MaxValue : experience + gain;
+        }
+        // One progression tick: capped passive Quality XP, promotion hold and at most one promotion. Suspended Parks
+        // keep Level/XP/statistics but earn nothing and restart the hold.
+        public static ParkProgressStep Step(ParkProgressStep previous, ParkProgressInputs inputs, bool active, long recentVisitors, uint frame, uint elapsedFrames)
+        {
+            var step = previous;
+            step.Level = NormalizeLevel(step.Level);
+            step.Promoted = false;
+            var state = step.State;
+            if (!active)
+            {
+                state.PromotionHoldFrames = 0;
+                inputs.HoldFrames = 0;
+                step.State = state;
+                step.Promotion = EvaluatePromotion(step.Level, step.Experience, inputs);
+                return step;
+            }
+            uint day = frame / FramesPerDay;
+            if (state.PassiveXpDay != day) { state.PassiveXpDay = day; state.PassiveXpToday = 0; }
+            int passive = ComputePassiveXp(inputs.Quality, recentVisitors, true, state.PassiveXpToday);
+            state.PassiveXpToday += passive;
+            step.Experience = step.Experience > long.MaxValue - passive ? long.MaxValue : step.Experience + passive;
+            inputs.HoldFrames = state.PromotionHoldFrames;
+            var result = EvaluatePromotion(step.Level, step.Experience, inputs);
+            state.PromotionHoldFrames = result.Target == null ? 0 : UpdateHold(state.PromotionHoldFrames, result.QualityRequirementsMet, elapsedFrames);
+            inputs.HoldFrames = state.PromotionHoldFrames;
+            result = EvaluatePromotion(step.Level, step.Experience, inputs);
+            if (result.CanPromote)
+            {
+                step.Level = ApplyPromotion(step.Level, true);
+                step.Promoted = true;
+                state.PromotionHoldFrames = 0;
+                inputs.HoldFrames = 0;
+                result = EvaluatePromotion(step.Level, step.Experience, inputs);
+            }
+            step.State = state;
+            step.Promotion = result;
+            return step;
         }
     }
 }

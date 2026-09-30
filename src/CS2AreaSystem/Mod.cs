@@ -62,6 +62,7 @@ namespace CS2AreaSystem
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkVisitSystem>(SystemUpdatePhase.GameSimulation);
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkQualitySystem>(SystemUpdatePhase.GameSimulation);
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkFinanceSystem>(SystemUpdatePhase.GameSimulation);
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkProgressionSystem>(SystemUpdatePhase.GameSimulation);
             }
             catch (System.Exception error) { Log.Error(error, "Park gameplay systems unavailable; Area Core remains registered."); }
         }
