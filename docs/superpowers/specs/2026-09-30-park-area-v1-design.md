@@ -409,7 +409,7 @@ When a visitor's building belongs to multiple Park Areas, only Core's determinis
 - XP;
 - occupancy.
 
-Non-primary overlapping Parks may still expose geometric/facility relationships, but do not double-count the person.
+Non-primary overlapping Parks may still expose geometric/facility relationships, but do not double-count the person. When same-kind overlap is enabled, the UI should warn when a Park is not the primary owner for overlapping exclusive visitor statistics so low usage is not mysterious to the player.
 
 ### 8.7 Cross-kind overlap
 
@@ -482,7 +482,9 @@ It derives from:
 - internal pedestrian path provision;
 - relevant leisure facility capacity proxies such as provider efficiency;
 - amenity provision;
-- limited level/management context where appropriate.
+- active management inputs that are directly measurable.
+
+Park Level itself is **not** a comfortable-capacity multiplier. Level should describe earned progression/prestige rather than manufacture extra physical capacity.
 
 The model must use diminishing returns and remain cheap to update.
 
@@ -684,6 +686,8 @@ Finance tab reports at least:
 
 Normal member-building revenues and vanilla building upkeep are **not** booked again as Park Area transactions. The UI should make this distinction clear to avoid double-counting.
 
+The Park Finances tab is the authoritative breakdown for Park-specific admission and Area-management transactions in v1. If a stable native budget-category extension point is not available, the mod must not fake or overwrite an existing vanilla budget category merely to make these transactions appear there; native budget categorization can be added later.
+
 ## 16. Park Quality
 
 Park Quality is a 0–100 composite.
@@ -703,11 +707,11 @@ The exact weights are balance constants, but the six dimensions are the v1 conce
 
 ### 16.1 Missing data
 
-A temporary failure of one optional analyzer must not force Quality to zero.
+A temporary failure of one optional analyzer must not force Quality to zero or improve it by removing a difficult metric.
 
-Metrics have availability/confidence. When a genuinely optional source is unavailable, the remaining available metrics may be renormalized and the missing dimension shown as unavailable, while errors are logged/throttled.
+Metrics have availability/confidence. When an expected optional source is temporarily unavailable, use a conservative neutral contribution (normally near 50) with a degraded-confidence indicator rather than renormalizing the remaining weights upward. A metric that is genuinely not applicable by design may be handled separately.
 
-Visitor Satisfaction is treated differently: before enough samples exist, a neutral low-confidence prior is used.
+Visitor Satisfaction follows the same principle through its neutral low-confidence prior before enough samples exist.
 
 ### 16.2 Suspended Park
 
@@ -1135,6 +1139,7 @@ The following are intentionally outside Park v1 even if desirable later:
 - scheduled Park events/festivals;
 - deep commercial-spending attribution to Park Area;
 - charging/reassigning vanilla member-building upkeep into Park accounting;
+- native vanilla-budget-category presentation for Park-specific transactions unless a stable supported extension point is found;
 - arbitrary modded prop semantic classification without an explicit registration/config mechanism;
 - persistent detailed time-series charts.
 
@@ -1223,7 +1228,7 @@ The Park v1 design is therefore:
 - no physical gate enforcement in v1;
 - resident/tourist separation;
 - runtime-only short ParkVisitSessions;
-- comfortable-capacity-based crowding;
+- comfortable-capacity-based crowding without a direct Level capacity bonus;
 - real city-funded management budget;
 - real household-to-city admission transactions from Level 2;
 - no v1 ticket-price modification of vanilla destination selection;
