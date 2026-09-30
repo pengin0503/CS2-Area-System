@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CS2AreaSystem.Core.Areas;
 using Game;
 using Game.Areas;
@@ -13,11 +14,30 @@ namespace CS2AreaSystem.Core.Prefabs
         private PrefabSystem prefabs;
         private AreaCoreServicesSystem services;
         private EntityQuery toolbarGroups;
+        private UIAssetMenuPrefab menu;
         private UIAssetCategoryPrefab category;
-        private bool registered;
-        private bool toolbarAttached;
+        private readonly AreaTypeReadiness readiness = new AreaTypeReadiness();
+        private readonly Dictionary<int, AreaPrefab> pendingPrefabs = new Dictionary<int, AreaPrefab>();
+        private readonly HashSet<int> registrationFailureLogged = new HashSet<int>();
+        private readonly HashSet<int> toolbarTypes = new HashSet<int>();
+        private readonly HashSet<int> toolbarItemFailureLogged = new HashSet<int>();
         private bool missingHostLogged;
-        public bool IsReady { get; private set; }
+        private bool toolbarRegistrationFailureLogged;
+        public bool IsReady
+        {
+            get
+            {
+                if (services == null) return false;
+                bool any = false;
+                foreach (var type in services.Registry.All)
+                {
+                    any = true;
+                    if (!readiness.IsReady(type.TypeId)) return false;
+                }
+                return any;
+            }
+        }
+        public bool IsTypeReady(int typeId) => readiness.IsReady(typeId);
         [Preserve]
         protected override void OnCreate()
         {
@@ -29,26 +49,60 @@ namespace CS2AreaSystem.Core.Prefabs
         [Preserve]
         protected override void OnUpdate()
         {
-            if (!registered)
-            {
-                registered = true;
-                foreach (var type in services.Registry.All)
-                {
-                    try
-                    {
-                        type.Prefab = new ManagedAreaPrefabFactory().CreateAreaPrefab(type);
-                        if (!prefabs.AddPrefab(type.Prefab)) Mod.Log.Error("Could not register " + type.PrefabName);
-                    }
-                    catch (Exception error) { Mod.Log.Error(error, "Area prefab registration failed: " + type.PrefabName); }
-                }
-            }
-            IsReady = true;
             foreach (var type in services.Registry.All)
             {
-                if (!IsPrefabReady(type)) IsReady = false;
+                EnsurePrefabRegistered(type);
+                readiness.Set(type.TypeId, IsPrefabReady(type));
             }
-            // Only expose native toolbar assets once every archetype is initialized.
-            if (IsReady && !toolbarAttached) TryAttachToolbar();
+            TryAttachToolbar();
+        }
+        private void EnsurePrefabRegistered(AreaTypeDescriptor type)
+        {
+            bool registeredWithPrefabSystem = type.Prefab != null && prefabs.TryGetEntity(type.Prefab, out var registeredEntity) && EntityManager.Exists(registeredEntity);
+            if (!AreaPrefabRegistrationPolicy.ShouldAttempt(type.Prefab != null, registeredWithPrefabSystem)) return;
+
+            AreaPrefab candidate = type.Prefab;
+            if (candidate != null)
+            {
+                type.Prefab = null;
+                pendingPrefabs[type.TypeId] = candidate;
+            }
+            if (candidate == null && !pendingPrefabs.TryGetValue(type.TypeId, out candidate))
+            {
+                try
+                {
+                    candidate = new ManagedAreaPrefabFactory().CreateAreaPrefab(type);
+                    pendingPrefabs[type.TypeId] = candidate;
+                }
+                catch (Exception error)
+                {
+                    if (registrationFailureLogged.Add(type.TypeId)) Mod.Log.Error(error, "Area prefab creation failed: " + type.PrefabName);
+                    return;
+                }
+            }
+            try
+            {
+                if (prefabs.TryGetEntity(candidate, out var existing) && EntityManager.Exists(existing))
+                {
+                    type.Prefab = candidate;
+                    pendingPrefabs.Remove(type.TypeId);
+                    registrationFailureLogged.Remove(type.TypeId);
+                    return;
+                }
+                if (prefabs.AddPrefab(candidate))
+                {
+                    type.Prefab = candidate;
+                    pendingPrefabs.Remove(type.TypeId);
+                    registrationFailureLogged.Remove(type.TypeId);
+                    return;
+                }
+                if (registrationFailureLogged.Add(type.TypeId))
+                    Mod.Log.Error("Could not register " + type.PrefabName + "; this area type will retry without blocking other types.");
+            }
+            catch (Exception error)
+            {
+                if (registrationFailureLogged.Add(type.TypeId)) Mod.Log.Error(error, "Area prefab registration failed: " + type.PrefabName);
+            }
         }
         public bool IsPrefabReady(AreaTypeDescriptor type)
         {
@@ -59,8 +113,15 @@ namespace CS2AreaSystem.Core.Prefabs
                 geometry.m_Type == ManagedAreaPrefabFactory.NativeGeometryType && geometry.m_Flags == 0 &&
                 NativeAreaCreationPolicy.CanCreate(false, geometry.m_Type, geometry.m_Flags, EntityManager.HasComponent<RenderedAreaData>(entity)));
         }
+        private bool NeedsToolbarWork()
+        {
+            foreach (var type in services.Registry.All)
+                if (IsTypeReady(type.TypeId) && !toolbarTypes.Contains(type.TypeId)) return true;
+            return false;
+        }
         private void TryAttachToolbar()
         {
+            if (!NeedsToolbarWork()) return;
             UIToolbarGroupPrefab host = null;
             using var candidates = toolbarGroups.ToEntityArray(Allocator.Temp);
             foreach (var entity in candidates)
@@ -70,24 +131,55 @@ namespace CS2AreaSystem.Core.Prefabs
                 if (!missingHostLogged) { missingHostLogged = true; Mod.Log.Warn("Tools Toolbar Group unavailable; areas remain loadable. Toolbar attachment will retry."); }
                 return;
             }
+            missingHostLogged = false;
             try
             {
                 var factory = new AreaToolbarPrefabFactory();
-                var menu = factory.CreateAreasMenu(host);
-                category = factory.CreateAreaTypesCategory(menu);
-                if (!prefabs.AddPrefab(menu) || !prefabs.AddPrefab(category)) { Mod.Log.Error("Area toolbar registration failed; simulation remains available."); return; }
-                var categoryEntity = prefabs.GetEntity(category);
-                int priority = 0;
+                if (menu == null) menu = factory.CreateAreasMenu(host);
+                if (!prefabs.TryGetEntity(menu, out var menuEntity) || !EntityManager.Exists(menuEntity))
+                {
+                    if (!prefabs.AddPrefab(menu))
+                    {
+                        if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error("Area toolbar menu registration failed; simulation remains available and registration will retry."); }
+                        return;
+                    }
+                }
+                if (category == null) category = factory.CreateAreaTypesCategory(menu);
+                if (!prefabs.TryGetEntity(category, out var categoryEntity) || !EntityManager.Exists(categoryEntity))
+                {
+                    if (!prefabs.AddPrefab(category))
+                    {
+                        if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error("Area toolbar category registration failed; simulation remains available and registration will retry."); }
+                        return;
+                    }
+                    categoryEntity = prefabs.GetEntity(category);
+                }
+                toolbarRegistrationFailureLogged = false;
                 foreach (var type in services.Registry.All)
                 {
-                    factory.AttachAreaPrefab(type.Prefab, category, priority++, type.IconUri);
-                    var areaPrefabEntity = prefabs.GetEntity(type.Prefab);
-                    EntityManager.SetComponentData(areaPrefabEntity, new UIObjectData { m_Group = categoryEntity, m_Priority = priority });
-                    category.AddElement(EntityManager, areaPrefabEntity);
+                    if (!IsTypeReady(type.TypeId) || toolbarTypes.Contains(type.TypeId)) continue;
+                    try
+                    {
+                        int priority = Math.Max(0, type.TypeId - 1);
+                        string icon = ManagedAreaPrefabFactory.ResolveIcon(type);
+                        factory.AttachAreaPrefab(type.Prefab, category, priority, icon);
+                        var areaPrefabEntity = prefabs.GetEntity(type.Prefab);
+                        EntityManager.SetComponentData(areaPrefabEntity, new UIObjectData { m_Group = categoryEntity, m_Priority = priority });
+                        category.AddElement(EntityManager, areaPrefabEntity);
+                        toolbarTypes.Add(type.TypeId);
+                        toolbarItemFailureLogged.Remove(type.TypeId);
+                    }
+                    catch (Exception error)
+                    {
+                        if (toolbarItemFailureLogged.Add(type.TypeId))
+                            Mod.Log.Error(error, "Area toolbar item failed: " + type.PrefabName + "; other area types remain available and this item will retry.");
+                    }
                 }
-                toolbarAttached = true;
             }
-            catch (Exception error) { Mod.Log.Error(error, "Area toolbar failed; simulation remains available."); }
+            catch (Exception error)
+            {
+                if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error(error, "Area toolbar failed; simulation remains available and registration will retry."); }
+            }
         }
     }
 }

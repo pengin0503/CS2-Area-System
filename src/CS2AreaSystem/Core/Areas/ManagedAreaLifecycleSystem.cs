@@ -23,7 +23,7 @@ namespace CS2AreaSystem.Core.Areas
         private bool observedSavedIds;
         private readonly HashSet<int> blockedTypes = new HashSet<int>();
         private readonly ManagedAreaTypeResolver resolver = new ManagedAreaTypeResolver();
-        public bool CanCreate(int typeId) => registration.IsReady && !blockedTypes.Contains(typeId);
+        public bool CanCreate(int typeId) => registration.IsTypeReady(typeId) && !blockedTypes.Contains(typeId);
         [Preserve]
         protected override void OnCreate()
         {
@@ -44,7 +44,7 @@ namespace CS2AreaSystem.Core.Areas
         protected override void OnUpdate()
         {
             ValidateTool();
-            if (GameManager.instance.isGameLoading || !registration.IsReady ||
+            if (GameManager.instance.isGameLoading ||
                 !World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>().Ready) return;
             if (!observedSavedIds)
             {
