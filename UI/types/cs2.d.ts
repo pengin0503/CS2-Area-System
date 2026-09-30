@@ -10,6 +10,6 @@ declare module 'cs2/modding' {
  export type ModRegistrar=(registry:{append(target:'Game',component:ComponentType):void})=>void;
 }
 declare module 'cs2/l10n' {
- export function useLocalization():{translate(key:string):string|null};
+ export function useLocalization():{translate(key:string,fallback?:string|null):string|null};
 }
 declare module '*.module.scss' { const classes:Record<string,string>;export default classes; }

@@ -3,10 +3,12 @@ import {trigger,useValue} from 'cs2/api';
 import {useLocalization} from 'cs2/l10n';
 import {getBindings,AreaView} from './bindings';
 import styles from './AreaManagementPanel.module.scss';
+import {localize} from './localization';
 
 export function AreaManagementPanel({area}:{area:AreaView}){
  const {translate}=useLocalization();
- const text=(key:string)=>translate(key)??key;
+ // Resolved on every render so a runtime locale change is reflected immediately.
+ const text=(key:string)=>localize(translate,key);
  const [name,setName]=useState(area.name);
  const [tab,setTab]=useState(area.tabs[0]?.id??'');
  const [confirmDelete,setConfirmDelete]=useState(false);
