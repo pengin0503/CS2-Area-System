@@ -41,7 +41,9 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.DeleteArea"] = ja ? "エリアを削除" : "Delete area",
                 ["CS2AS.UI.DeleteConfirm"] = ja ? "この管理境界を削除しますか？" : "Delete this management boundary?",
                 ["CS2AS.UI.ConfirmDelete"] = ja ? "削除を確定" : "Confirm delete",
-                ["CS2AS.UI.Cancel"] = ja ? "キャンセル" : "Cancel"
+                ["CS2AS.UI.Cancel"] = ja ? "キャンセル" : "Cancel",
+                ["CS2AS.UI.AreaList"] = ja ? "管理エリア一覧" : "Managed areas",
+                ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };
         }
     }

@@ -4,6 +4,7 @@ import {useLocalization} from 'cs2/l10n';
 import {getBindings,AreaView} from './bindings';
 import styles from './AreaManagementPanel.module.scss';
 import {localize} from './localization';
+import {AreaListPanel} from './AreaListPanel';
 
 export function AreaManagementPanel({area}:{area:AreaView}){
  const {translate}=useLocalization();
@@ -58,4 +59,9 @@ function BoundPanel(){
  const bindings=getBindings();const area=useValue(bindings.selectedArea);const visible=useValue(bindings.panelVisible);
  return visible&&area?<AreaManagementPanel key={area.stableId} area={area}/>:null;
 }
-export function AreaManagementPanelHost(){return <PanelBoundary><BoundPanel/></PanelBoundary>;}
+function BoundList(){
+ const bindings=getBindings();const available=useValue(bindings.areaListAvailable);const open=useValue(bindings.areaListOpen);const areas=useValue(bindings.areaList);
+ return available?<AreaListPanel open={open} areas={areas??[]}/>:null;
+}
+// The list and the management panel fail and recover independently.
+export function AreaManagementPanelHost(){return <div className={styles.host}><PanelBoundary><BoundList/></PanelBoundary><PanelBoundary><BoundPanel/></PanelBoundary></div>;}

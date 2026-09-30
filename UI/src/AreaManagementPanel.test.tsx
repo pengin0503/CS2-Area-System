@@ -3,7 +3,7 @@ import {render,screen,fireEvent,act} from '@testing-library/react';
 import {describe,it,expect,vi,afterEach} from 'vitest';
 import {AreaManagementPanel,AreaManagementPanelHost,PANEL_RETRY_BASE_MS,PANEL_RETRY_MAX_MS} from './AreaManagementPanel';
 import type {AreaView} from './bindings';
-const binding=vi.hoisted(()=>({selected:null as unknown,visible:true,fail:false,reads:0,trigger:vi.fn()}));
+const binding=vi.hoisted(()=>({selected:null as unknown,visible:true,fail:false,reads:0,listAvailable:false,listOpen:false,list:[] as unknown[],trigger:vi.fn()}));
 const translations:Record<string,string>={
  'CS2AS.Type.Park':'Park Area','CS2AS.Type.Industrial':'Industrial Area','CS2AS.Type.Tourism':'Tourism Area',
  'CS2AS.Tab.Overview':'Overview','CS2AS.Summary.Active':'Active','CS2AS.Summary.AnchorRequired':'Assign a required facility to activate this area.',
@@ -11,12 +11,12 @@ const translations:Record<string,string>={
  'CS2AS.UI.EditArea':'Edit area','CS2AS.UI.Locate':'Locate','CS2AS.UI.AreaName':'Area name','CS2AS.UI.Rename':'Rename',
  'CS2AS.UI.AssignHeadquarters':'Assign headquarters','CS2AS.UI.AssignEntrance':'Assign entrance','CS2AS.UI.SelectAnchor':'Select an existing building inside this area.',
  'CS2AS.UI.CancelAssignment':'Cancel assignment','CS2AS.UI.DeleteArea':'Delete area','CS2AS.UI.DeleteConfirm':'Delete this management boundary?',
- 'CS2AS.UI.ConfirmDelete':'Confirm delete','CS2AS.UI.Cancel':'Cancel'
+ 'CS2AS.UI.ConfirmDelete':'Confirm delete','CS2AS.UI.Cancel':'Cancel','CS2AS.UI.AreaList':'Managed areas','CS2AS.UI.NoAreas':'No managed areas yet.','CS2AS.State.Active':'Active'
 };
-vi.mock('cs2/api',()=>({bindValue:(_group:string,name:string)=>({name}),useValue:(value:{name:string})=>{binding.reads++;if(binding.fail)throw new Error('binding unavailable');return value.name==='panelVisible'?binding.visible:binding.selected;},trigger:binding.trigger}));
+vi.mock('cs2/api',()=>({bindValue:(_group:string,name:string)=>({name}),useValue:(value:{name:string})=>{binding.reads++;if(binding.fail)throw new Error('binding unavailable');return ({panelVisible:binding.visible,selectedArea:binding.selected,areaListAvailable:binding.listAvailable,areaListOpen:binding.listOpen,areaList:binding.list} as Record<string,unknown>)[value.name];},trigger:binding.trigger}));
 vi.mock('cs2/l10n',()=>({useLocalization:()=>({translate:(key:string)=>translations[key]??key})}));
 const industrial:AreaView={stableId:'9007199254740993',name:'Harbor Industry',typeKey:'CS2AS.Type.Industrial',state:'CS2AS.State.Suspended',level:null,experience:null,tabs:[{id:'overview',labelKey:'CS2AS.Tab.Overview'}],summary:'CS2AS.Summary.AnchorRequired',anchorRole:'Headquarters',pendingAnchor:false};
-afterEach(()=>{binding.fail=false;binding.selected=null;binding.reads=0;binding.trigger.mockClear();vi.useRealTimers();});
+afterEach(()=>{binding.fail=false;binding.selected=null;binding.reads=0;binding.listAvailable=false;binding.listOpen=false;binding.list=[];binding.trigger.mockClear();vi.useRealTimers();});
 describe('managed area panel',()=>{
  it('host reads the selected area binding',()=>{binding.selected=industrial;render(<AreaManagementPanelHost/>);expect(screen.getByText('Harbor Industry')).toBeInTheDocument();});
  it('renders nothing without a managed selection',()=>{render(<AreaManagementPanelHost/>);expect(screen.queryByRole('complementary')).toBeNull();});
@@ -45,4 +45,15 @@ describe('managed area panel',()=>{
   expect(PANEL_RETRY_MAX_MS).toBe(30000);
   expect(screen.queryByRole('complementary')).toBeNull();expect(binding.trigger).not.toHaveBeenCalled();consoleError.mockRestore();
  });
+ it('hides the area list until the game reports managed-area data is ready',()=>{render(<AreaManagementPanelHost/>);expect(screen.queryByRole('button',{name:'Managed areas'})).toBeNull();});
+ it('toggles the mod-owned area list through the backend',()=>{binding.listAvailable=true;render(<AreaManagementPanelHost/>);fireEvent.click(screen.getByRole('button',{name:'Managed areas'}));expect(binding.trigger).toHaveBeenCalledWith('cs2AreaSystem','setAreaListOpen',true);});
+ it('lists completed areas and selects one by persisted stable ID',()=>{
+  binding.listAvailable=true;binding.listOpen=true;binding.list=[{stableId:'3',name:'Harbor Industry',typeKey:'CS2AS.Type.Industrial',state:'CS2AS.State.Suspended'},{stableId:'9007199254740993',name:'Central Park',typeKey:'CS2AS.Type.Park',state:'CS2AS.State.Active'}];
+  render(<AreaManagementPanelHost/>);
+  expect(screen.getByRole('button',{name:'Managed areas'})).toHaveAttribute('aria-expanded','true');
+  expect(screen.getByText('Industrial Area · Suspended')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('Central Park'));
+  expect(binding.trigger).toHaveBeenCalledWith('cs2AreaSystem','selectArea','9007199254740993');
+ });
+ it('explains an empty area list',()=>{binding.listAvailable=true;binding.listOpen=true;render(<AreaManagementPanelHost/>);expect(screen.getByRole('status')).toHaveTextContent('No managed areas yet.');});
 });

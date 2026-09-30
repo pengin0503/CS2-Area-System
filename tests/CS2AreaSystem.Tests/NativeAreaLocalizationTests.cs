@@ -29,9 +29,11 @@ public class NativeAreaLocalizationTests {
    var d=CS2AreaSystem.Core.Prefabs.ManagedAreaPrefabFactory.Describe(kind);
    keys.Add(d.DisplayNameKey); keys.Add("Assets.NAME["+d.PrefabName+"]");
   }
-  var panel=File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory,"../../../../../UI/src/AreaManagementPanel.tsx"));
+  var uiSource=Path.Combine(TestContext.CurrentContext.TestDirectory,"../../../../../UI/src");
+  var panel=string.Join("\n",Directory.GetFiles(uiSource,"*.tsx").Where(f=>!f.EndsWith(".test.tsx")).Select(File.ReadAllText));
   keys.AddRange(System.Text.RegularExpressions.Regex.Matches(panel,@"'(CS2AS\.[A-Za-z.]+)'").Select(m=>m.Groups[1].Value));
   Assert.That(keys.Count(k=>k.StartsWith("CS2AS.UI.")),Is.GreaterThanOrEqualTo(10),"panel key extraction must find the UI keys");
+  Assert.That(keys,Does.Contain("CS2AS.UI.AreaList").And.Contain("CS2AS.UI.NoAreas"),"area list component keys must be scanned");
   foreach(var key in keys.Distinct()) Assert.That(entries.ContainsKey(key),Is.True,locale+" is missing "+key);
  }
 }

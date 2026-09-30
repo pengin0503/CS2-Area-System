@@ -26,8 +26,10 @@ namespace CS2AreaSystem.Core.UI
         private EndFrameBarrier endFrameBarrier;
         private Game.Audio.AudioManager audio;
         private EntityQuery soundSettings;
-        private RawValueBinding selectedArea;
-        private ValueBinding<bool> visible;
+        private RawValueBinding selectedArea, areaList;
+        private ValueBinding<bool> visible, listAvailable, listOpen;
+        private EntityQuery managedAreas;
+        private System.Collections.Generic.List<AreaListEntry> listView = new System.Collections.Generic.List<AreaListEntry>();
         private Entity published, pendingArea;
         private ulong pendingId;
         private AreaAnchorRole pendingRole;
@@ -48,6 +50,15 @@ namespace CS2AreaSystem.Core.UI
             soundSettings = GetEntityQuery(ComponentType.ReadOnly<ToolUXSoundSettingsData>());
             AddBinding(selectedArea = new RawValueBinding("cs2AreaSystem", "selectedArea", writer => { if (view == null) writer.WriteNull(); else view.Write(writer); }));
             AddBinding(visible = new ValueBinding<bool>("cs2AreaSystem", "panelVisible", false));
+            managedAreas = GetEntityQuery(new EntityQueryDesc {
+                All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
+                None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() }
+            });
+            AddBinding(areaList = new RawValueBinding("cs2AreaSystem", "areaList", writer => AreaListViewModel.Write(writer, listView)));
+            AddBinding(listAvailable = new ValueBinding<bool>("cs2AreaSystem", "areaListAvailable", false));
+            AddBinding(listOpen = new ValueBinding<bool>("cs2AreaSystem", "areaListOpen", false));
+            AddBinding(new TriggerBinding<bool>("cs2AreaSystem", "setAreaListOpen", open => { listOpen.Update(open); if (!open) SetList(new System.Collections.Generic.List<AreaListEntry>()); }));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "selectArea", SelectArea));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "locateArea", id => Act(id, selection.Focus)));
             AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "renameArea", (id, name) => Act(id, area => {
@@ -64,12 +75,15 @@ namespace CS2AreaSystem.Core.UI
             pendingArea = published = Entity.Null; failureLogged = false;
             // The system is disabled outside gameplay, so clear the UI now instead of on the next update.
             SetView(null);
+            listAvailable.Update(false); listOpen.Update(false); SetList(new System.Collections.Generic.List<AreaListEntry>());
         }
         protected override void OnUpdate()
         {
             try
             {
-                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) { Publish(Entity.Null); return; }
+                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) { Publish(Entity.Null); listAvailable.Update(false); return; }
+                listAvailable.Update(true);
+                if (listOpen.value) PublishList();
                 var selected = selection.selectedEntity;
                 if (pendingArea != Entity.Null)
                 {
@@ -116,6 +130,43 @@ namespace CS2AreaSystem.Core.UI
         {
             view = next;
             visible.Update(view != null); selectedArea.Update();
+        }
+        private void PublishList()
+        {
+            var entries = new System.Collections.Generic.List<AreaListEntry>();
+            using (var areas = managedAreas.ToEntityArray(Unity.Collections.Allocator.Temp))
+                foreach (var area in areas)
+                {
+                    var managed = EntityManager.GetComponentData<ManagedArea>(area);
+                    entries.Add(new AreaListEntry {
+                        StableId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value,
+                        Name = names.GetRenderedLabelName(area),
+                        TypeKey = services.Registry.TryGet(managed.TypeId, out var descriptor) ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
+                        State = "CS2AS.State." + managed.State
+                    });
+                }
+            SetList(AreaListViewModel.Sort(entries));
+        }
+        private void SetList(System.Collections.Generic.List<AreaListEntry> next)
+        {
+            if (AreaListViewModel.Equivalent(listView, next)) return;
+            listView = next; areaList.Update();
+        }
+        private void SelectArea(string expectedId)
+        {
+            try
+            {
+                if (GameManager.instance.isGameLoading || !World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) return;
+                var candidates = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<Entity, ulong>>();
+                using (var areas = managedAreas.ToEntityArray(Unity.Collections.Allocator.Temp))
+                    foreach (var area in areas)
+                        candidates.Add(new System.Collections.Generic.KeyValuePair<Entity, ulong>(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value));
+                if (!AreaListViewModel.TryFind(candidates, expectedId, out var selected) || !IsArea(selected)) return;
+                pendingArea = Entity.Null;
+                selection.SetSelection(selected);
+                selection.Focus(selected);
+            }
+            catch (Exception error) { Mod.Log.Error(error, "Area selection from the list rejected"); }
         }
         private void Act(string expectedId, Action<Entity> action)
         {

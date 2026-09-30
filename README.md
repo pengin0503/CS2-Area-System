@@ -27,7 +27,7 @@ This profile targets net8, uses the actual game references, and deliberately ski
 
 ## Run and required game verification
 
-Use an official-toolchain build in a fresh 1.6.2f1 session. Open **Areas → Area Types**, select one of the three kinds and use native area controls. Select a completed area to open its management panel. For Park/Industrial, choose Assign entrance/headquarters, then select an existing vanilla building inside that area. Tourism requires no anchor. Reassign facilities through the same flow. A management boundary does not place or clear normal city assets.
+Use an official-toolchain build in a fresh 1.6.2f1 session. Open **Areas → Area Types**, select one of the three kinds and use native area controls. Completed areas are not selectable with the vanilla default tool, so open **Managed areas** (top right, above the management panel) and pick an area to select it and open its management panel. For Park/Industrial, choose Assign entrance/headquarters, then select an existing vanilla building inside that area. Tourism requires no anchor. Reassign facilities through the same flow. A management boundary does not place or clear normal city assets.
 
 Follow [the eleven runtime checks](scripts/runtime-smoke-checklist.md). They have **not been run in this workspace**; runtime readiness, native menu/tool behavior, real save/load and UI deployment need game verification before declaring Area Core operational.
 
