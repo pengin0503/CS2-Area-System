@@ -1,29 +1,42 @@
 # Area Core requirements audit — 2026-09-30
 
-Final automated result after the single review fix pass: source guard tests and official/API build-target evaluation contracts passed; NUnit **56/56**; UI **7/7**; fresh UI bundle and net8/net48 API compilations passed (C# 0 warnings/errors). `scripts/verify.ps1 -ApiCheck` passed. These are not game runtime results.
+This file describes the **current repository state** after the Area Core implementation was committed to `main` and the subsequent offline-review repair work. The detailed execution ledger in `area-core-execution-record.md` is historical and intentionally preserves the branch/state that existed when each task originally ran.
 
-| Requirement | Implementation / automatic evidence | Game check |
-|---|---|---|
-| Native creation/edit/delete; no polygon tool | SpacePrefab/AreaToolSystem, native ActionsSection edit API; native gameplay gate regression and prefab/type/readiness tests | 1–3 pending |
-| Three native menu assets, no duplicate vanilla assets | native menu/category/groups, native locale names; descriptor/menu tests | 1,2,10 pending |
-| Native geometry/search authoritative | native area/object quadtrees, AreaUtils.GetTriangle2; point/edge/outside tests | 3–5,8 pending |
-| Derived incremental membership, bidirectional cleanup | updater/index tests prohibit city enumeration during ordinary changes; counters; cache has no serializer | 4,5,7,8 pending |
-| Cross-kind overlap, one primary same-kind owner | Public native validators recheck only updated owned previews; allowed managed-pair overlap becomes Warning; invalid shapes/city limits/vanilla conflicts/module veto stay blocking. Ownership tests choose smallest stable ID independent of input order | 4,5 pending, including ECB/icon ordering |
-| Save authoritative fields, Entity remapping | actual ISerializable/IReader/IWriter contract tests; schema first; anchor Entity overload/remapping test | 7 pending |
-| Unknown TypeId retained | TypeId=9999 serialization + ModuleUnavailable policy regression | 7 pending |
-| Recovery order / one rebuild | readiness-gated observe→rebuild→activation sequence tests; native search job completion/entry checks | 7 pending |
-| Industrial HQ loss scoped, progress preserved | anchor loss/reassignment tests, reverse anchor invalidation; progress is never modified by activation | 6,7 pending |
-| Park entrance / Tourism immediate activation | module anchor tests; eligible existing vanilla Building, no new models | 3,6 pending |
-| Modules isolated, classifier exception localized | module contract + classifier error tests; runtime activation exception handler | 6,9 pending |
-| Mod-owned vanilla-styled panel / no private patch | append Game host; binding failure + tab/action tests; source guards | 9 pending |
-| Stale UI actions rejected | persisted ID string + Entity/version/selection guard tests | 3,6 pending |
-| UI build/deploy current output | fresh webpack .js/.css build; missing dependencies refuse deployment | runtime deployment pending |
-| No Harmony / shipped files untouched | source guard negative fixtures and real source checks | 1,9 pending |
-| Third-party provenance | GPL area-color and UI packaging/type adaptations recorded in THIRD_PARTY.md; license text included | no game prerequisite |
-| No invented visitor/production/tourism algorithms | module stubs expose activation and Overview only | source review |
+## Current implementation status
 
-Official postprocess was attempted and refused with `Modding toolchain is incomplete`. The supplied processor PathSet requires Windows User Unity-version variables, Windows registry Unity installation, Unity ILPP runner, complete Unity Mod Project packages and codegen assemblies. Those runtime resources are not supplied by the DLL/toolchain-reference ZIPs. No synthetic runner, game assembly or bypass was used. A Windows official-toolchain build and all ten in-game checks remain mandatory before calling this operational.
+Area Core source is present on `main`. The original implementation verification recorded **56/56 C# tests**, **7/7 UI tests**, source/provenance guards, a fresh UI bundle, and net8/net48 API compilation. Those results predate the repair below and are historical evidence only; they must not be treated as a fresh verification of the repaired sources.
 
-The fresh-context review covered `bd732ae..5217c74`. Its two Critical findings were the gameplay Lot creation gate and an accidental override of the official BuildGetFullPaths target. Both were reproduced RED and addressed in one fix pass, followed by the complete GREEN suite and net48 API compile. The API-only target now has a separate name. The verified native SpaceData path replaces editor-only LotData; no global tool/error bypass or Harmony was added. The reviewer's two Minor findings are recorded as deferred in the execution record.
+A post-merge review found issues that can be corrected without running Cities: Skylines II. The repair is developed on `fix/area-core-offline-review` and includes regression coverage for each source-level defect:
 
-The approved spec/plan are unchanged. Main is unchanged; all implementation commits are on feat/area-core. No push, merge or remote branch writes. The permanent ledger and review disposition are in [area-core-execution-record.md](area-core-execution-record.md).
+| Requirement / defect | Repair |
+|---|---|
+| Approved spec/plan remain readable source-of-truth documents | Restored the exact approved UTF-8 blobs from `bd732ae5f10628bb4f28739a293e978268466ce0`. |
+| Edit Area targets the selected native area | Management UI now follows the native edit sequence: `recreate = area` → `prefab` → `Mode.Edit` → activate `AreaToolSystem`. |
+| One failed area prefab must not disable unrelated types | Prefab readiness is tracked per TypeId; missing/unregistered prefabs retry; ready types can attach to the toolbar independently. |
+| Existing saves must recover independently of construction-menu readiness | `AreaLoadCoordinatorSystem` no longer waits for every managed prefab to be ready; native loaded search geometry remains the recovery gate. |
+| Missing icon must not be accepted merely because its URI is non-empty | Production icon selection uses the 1.6.2f1 game-media URIs verified for Park, Industrial, Tourism, and the fallback icon, with fallback for unverified URIs. |
+| Deleted areas must not leave reverse anchor entries | `AreaAnchorService.ForgetArea` removes reverse entries; deletion queues one final lifecycle validation. |
+| Management panel must use the game's localization path | Panel strings, area types, summaries, lifecycle states, and actions now flow through `cs2/l10n`; English and Japanese entries are supplied by the C# localization source. |
+| Rename field must reflect backend name changes | React name state resynchronizes from `area.name`. |
+| UI failure should not flood the log every frame | Repeated management-UI update failures are logged once until a successful update occurs. |
+| Offline regressions should be reproducible | `scripts/test-offline-contracts.mjs` is part of `scripts/verify.ps1`, and focused C#/UI regression tests cover readiness, anchor pruning, icon fallback, localization, and rename synchronization. |
+
+## Verification boundary
+
+The repaired branch still requires a fresh Windows/game-toolchain run before any claim that it builds or works in-game:
+
+```powershell
+cd UI
+npm ci
+cd ..
+./scripts/verify.ps1 -ApiCheck
+./scripts/verify.ps1
+```
+
+The first command set exercises source guards, offline contracts, NUnit tests, UI tests/build, and API compilation. The second additionally requires the official Windows CS2 modding toolchain/postprocessor/deployment environment.
+
+After a playable build is produced, all cases in `scripts/runtime-smoke-checklist.md` remain mandatory. In particular, native menu/tool input, actual area editing/rendering, overlap warning/barrier ordering, real save/load reconstruction, deployed UI discovery, and city-scale performance cannot be established from source inspection alone.
+
+## Scope boundary
+
+Detailed Park visitor simulation, Industrial production/progression, and Tourism scoring remain outside Area Core v1 exactly as defined by the approved specification. The repair does not invent those deferred gameplay systems and does not introduce Harmony or modify the shipped game UI bundle.
