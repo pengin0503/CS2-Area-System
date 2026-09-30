@@ -25,13 +25,31 @@ namespace CS2AreaSystem.Core.Areas
             !EntityManager.HasComponent<Deleted>(entity) && !EntityManager.HasComponent<Destroyed>(entity) && !EntityManager.HasComponent<Temp>(entity);
         private bool IsEligibleAnchor(Entity area, Entity anchor, AreaAnchorRole role)
         {
-            if (!IsValidEntity(area) || !EntityManager.HasComponent<ManagedArea>(area) || !EntityManager.HasComponent<Game.Buildings.Building>(anchor)) return false;
-            var managed = EntityManager.GetComponentData<ManagedArea>(area);
-            if (!Registry.TryGet(managed.TypeId, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.RequiredAnchorRole != role) return false;
+            IAreaAnchorPolicy policy = null;
+            return AreaAnchorEligibility.Evaluate(
+                () => IsValidEntity(area) && EntityManager.HasComponent<ManagedArea>(area) && EntityManager.HasComponent<ManagedAreaStableId>(area),
+                () => IsValidEntity(anchor) && EntityManager.HasComponent<Game.Buildings.Building>(anchor),
+                () => Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor) &&
+                      (policy = descriptor.Module as IAreaAnchorPolicy) != null && policy.RequiredAnchorRole == role,
+                () => IsMember(area, anchor),
+                () => AcceptsSafely(policy, area, anchor, role));
+        }
+        private bool IsMember(Entity area, Entity anchor)
+        {
             var id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
             foreach (var membership in World.GetOrCreateSystemManaged<Membership.AreaMembershipSystem>().Index.GetAreas(anchor))
                 if (membership.AreaStableId == id) return true;
             return false;
+        }
+        private bool policyFailureLogged;
+        private bool AcceptsSafely(IAreaAnchorPolicy policy, Entity area, Entity anchor, AreaAnchorRole role)
+        {
+            try { return policy.AcceptsAnchor(area, anchor, role, EntityManager); }
+            catch (System.Exception error)
+            {
+                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area anchor policy failed; anchor rejected"); }
+                return false;
+            }
         }
         protected override void OnUpdate() { }
     }

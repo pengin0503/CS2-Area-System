@@ -34,12 +34,20 @@ namespace CS2AreaSystem.Core.Anchors
             store.Write(area, links); Reindex(area, old, links); dirty.Add(area); return true;
         }
         public bool HasValidAnchor(Entity area, AreaAnchorRole role) => TryGetValidAnchor(area, role, out _);
+        // First valid anchor of the role; kept for single-anchor roles and existing callers.
         public bool TryGetValidAnchor(Entity area, AreaAnchorRole role, out Entity anchor)
         {
+            var anchors = GetValidAnchors(area, role);
+            anchor = anchors.Count > 0 ? anchors[0] : Entity.Null;
+            return anchors.Count > 0;
+        }
+        // Every persisted link of the role that is still valid and eligible, in link order without duplicates.
+        public IReadOnlyList<Entity> GetValidAnchors(Entity area, AreaAnchorRole role)
+        {
+            var result = new List<Entity>();
             foreach (var link in store.Read(area))
-                if (link.Role == role && valid(link.Anchor) && eligible(area, link.Anchor, role)) { anchor = link.Anchor; return true; }
-            anchor = Entity.Null;
-            return false;
+                if (link.Role == role && !result.Contains(link.Anchor) && valid(link.Anchor) && eligible(area, link.Anchor, role)) result.Add(link.Anchor);
+            return result;
         }
         public void RebuildReverseIndex(IEnumerable<Entity> areas)
         {

@@ -18,6 +18,8 @@ namespace CS2AreaSystem.Core.Modules
             var metadata = ManagedAreaPrefabFactory.Describe(kind);
             return new AreaTypeDescriptor(metadata.TypeId, metadata.PrefabName, metadata.DisplayNameKey, metadata.IconUri, this);
         }
+        // Generic Core checks (valid building, role, membership) already ran; modules may be stricter.
+        public virtual bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => true;
         public bool ValidateActivation(Entity area) => !RequiredAnchorRole.HasValue || anchors.HasValidAnchor(area, RequiredAnchorRole.Value);
         public IAreaMemberClassifier MemberClassifier => this;
         public IAreaPanelProvider PanelProvider => this;

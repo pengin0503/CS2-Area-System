@@ -86,3 +86,61 @@ public class AreaAnchorServiceTests {
   Assert.That(anchors.TryGetValidAnchor(area,AreaAnchorRole.Headquarters,out _),Is.False,"demolished anchor is not shown");
  }
 }
+public class AreaAnchorPolicyTests {
+ private sealed class Store : IAreaAnchorStore {
+  public Dictionary<Entity,IReadOnlyList<AreaAnchorLink>> Values = new();
+  public IReadOnlyList<AreaAnchorLink> Read(Entity area) => Values.TryGetValue(area,out var links)?links:Array.Empty<AreaAnchorLink>();
+  public void Write(Entity area,IReadOnlyList<AreaAnchorLink> links) => Values[area]=links.ToArray();
+ }
+ private static readonly Entity area=new(){Index=10,Version=1}, park=new(){Index=30,Version=1}, gate=new(){Index=31,Version=1}, office=new(){Index=40,Version=1}, hq=new(){Index=50,Version=1};
+ private static ParkFacilityTraits Traits(Entity e) =>
+  e==park ? new ParkFacilityTraits{IsBuilding=true,HasRoadAccess=true,HasPark=true,HasLeisureProvider=true,LeisureType=Game.Agents.LeisureType.CityPark,LeisureEfficiency=40} :
+  e==gate ? new ParkFacilityTraits{IsBuilding=true,HasRoadAccess=true,Attractiveness=12} :
+  new ParkFacilityTraits{IsBuilding=true,HasRoadAccess=true};
+ [Test] public void ParkAcceptsOnlyPlausibleLeisureOrAttractionEntrances() {
+  var module=new ParkAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),(e,_)=>Traits(e));
+  IAreaAnchorPolicy policy=module;
+  Assert.That(policy.AcceptsAnchor(area,park,AreaAnchorRole.Entrance,default),Is.True);
+  Assert.That(policy.AcceptsAnchor(area,gate,AreaAnchorRole.Entrance,default),Is.True,"attraction building");
+  Assert.That(policy.AcceptsAnchor(area,office,AreaAnchorRole.Entrance,default),Is.False,"unrelated building");
+  Assert.That(policy.AcceptsAnchor(area,park,AreaAnchorRole.Headquarters,default),Is.False,"Park has no HQ role");
+ }
+ [Test] public void ParkEntranceRequiresRoadAccessWhenKnown() {
+  var module=new ParkAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),(e,_)=>new ParkFacilityTraits{IsBuilding=true,HasPark=true,HasRoadAccess=false});
+  Assert.That(((IAreaAnchorPolicy)module).AcceptsAnchor(area,park,AreaAnchorRole.Entrance,default),Is.False);
+ }
+ [Test] public void ParkPolicyFailureRejectsInsteadOfThrowing() {
+  var module=new ParkAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),(e,_)=>throw new InvalidOperationException("reader"));
+  Assert.That(((IAreaAnchorPolicy)module).AcceptsAnchor(area,park,AreaAnchorRole.Entrance,default),Is.False);
+ }
+ [Test] public void IndustrialKeepsDefaultAcceptanceAfterGenericChecks() {
+  IAreaAnchorPolicy industrial=new IndustrialAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true));
+  Assert.That(industrial.AcceptsAnchor(area,office,AreaAnchorRole.Headquarters,default),Is.True);
+ }
+ [Test] public void MultipleEntrancesAreEnumeratedAndHeadquartersStaysSingle() {
+  var invalid=new HashSet<Entity>();
+  var store=new Store();
+  var service=new AreaAnchorService(store,e=>e!=Entity.Null&&!invalid.Contains(e),(a,e,r)=>true);
+  Assert.That(service.Assign(area,park,AreaAnchorRole.Entrance),Is.True);
+  Assert.That(service.Assign(area,gate,AreaAnchorRole.Entrance),Is.True);
+  Assert.That(service.Assign(area,park,AreaAnchorRole.Entrance),Is.True,"reassigning is idempotent");
+  Assert.That(service.GetValidAnchors(area,AreaAnchorRole.Entrance),Is.EquivalentTo(new[]{park,gate}));
+  invalid.Add(park);
+  Assert.That(service.GetValidAnchors(area,AreaAnchorRole.Entrance),Is.EqualTo(new[]{gate}));
+  Assert.That(service.TryGetValidAnchor(area,AreaAnchorRole.Entrance,out var first),Is.True); Assert.That(first,Is.EqualTo(gate));
+  service.Assign(area,hq,AreaAnchorRole.Headquarters); service.Assign(area,office,AreaAnchorRole.Headquarters);
+  Assert.That(service.GetValidAnchors(area,AreaAnchorRole.Headquarters),Is.EqualTo(new[]{office}));
+ }
+ [Test] public void EligibilityChecksRunInGenericThenModuleOrder() {
+  var consulted=new List<string>();
+  bool Run(bool area,bool building,bool role,bool member,bool accepts) {
+   consulted.Clear();
+   return AreaAnchorEligibility.Evaluate(()=>{consulted.Add("area");return area;},()=>{consulted.Add("building");return building;},
+    ()=>{consulted.Add("role");return role;},()=>{consulted.Add("member");return member;},()=>{consulted.Add("policy");return accepts;});
+  }
+  Assert.That(Run(true,true,true,true,true),Is.True); Assert.That(consulted,Is.EqualTo(new[]{"area","building","role","member","policy"}));
+  Assert.That(Run(true,true,true,false,true),Is.False); Assert.That(consulted,Does.Not.Contain("policy"),"module policy only sees current members");
+  Assert.That(Run(true,false,true,true,true),Is.False); Assert.That(consulted,Is.EqualTo(new[]{"area","building"}));
+  Assert.That(Run(true,true,true,true,false),Is.False);
+ }
+}
