@@ -51,7 +51,11 @@ public class ParkLandscapeClassificationTests {
   Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, ActivityMask = Mask(Game.Prefabs.ActivityType.BenchSitting) }), Is.EqualTo(ParkLandscapeCategory.Amenity));
   Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, ActivityMask = Mask(Game.Prefabs.ActivityType.Yoga, Game.Prefabs.ActivityType.Standing) }), Is.EqualTo(ParkLandscapeCategory.Amenity));
   Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsStreetLight = true }), Is.EqualTo(ParkLandscapeCategory.Lighting));
-  Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsPlaceable = true }), Is.EqualTo(ParkLandscapeCategory.Decoration));
+  Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsPlaceable = true, PropCategory = ParkPropCategory.Park }), Is.EqualTo(ParkLandscapeCategory.Decoration));
+  Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsPlaceable = true, PropCategory = ParkPropCategory.Stone }), Is.EqualTo(ParkLandscapeCategory.Decoration));
+  Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsPlaceable = true, PropCategory = ParkPropCategory.Plants }), Is.EqualTo(ParkLandscapeCategory.Vegetation));
+  Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsPlaceable = true }), Is.EqualTo(ParkLandscapeCategory.Unknown), "placeable alone is not decoration");
+  Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsPlaceable = true, PropCategory = ParkPropCategory.Other }), Is.EqualTo(ParkLandscapeCategory.Unknown), "industrial/commercial/residential props");
   Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true }), Is.EqualTo(ParkLandscapeCategory.Unknown), "no semantics: density only");
   Assert.That(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, ActivityMask = Mask(Game.Prefabs.ActivityType.Standing, Game.Prefabs.ActivityType.Enter) }), Is.EqualTo(ParkLandscapeCategory.Unknown));
  }
@@ -112,5 +116,19 @@ public class ParkLandscapeScanSliceTests {
   Assert.That(slices, Is.EqualTo(3)); Assert.That(seen, Is.EqualTo(Enumerable.Range(0, 10_000)));
   var empty = new ParkLandscapeScan<int>(new List<int>());
   Assert.That(empty.Done, Is.True);
+ }
+}
+public class ParkPropCategoryTests {
+ [TestCase("PropsPark", null, ParkPropCategory.Park)] [TestCase("SomeGroup", "Media/Game/Icons/PropsPark.svg", ParkPropCategory.Park)]
+ [TestCase("PropsStone", null, ParkPropCategory.Stone)] [TestCase("PropsPlants", null, ParkPropCategory.Plants)]
+ [TestCase("PropsIndustrial", "Media/Game/Icons/PropsIndustrial.svg", ParkPropCategory.Other)] [TestCase("PropsCommercial", null, ParkPropCategory.Other)]
+ [TestCase(null, null, ParkPropCategory.None)] [TestCase("PropsParking", null, ParkPropCategory.Other)]
+ public void VanillaPropMenuCategoriesMapToCuratedLandscapeCategories(string group, string icon, ParkPropCategory expected) =>
+  Assert.That(ParkPropCategories.FromGroup(group, icon), Is.EqualTo(expected));
+ [Test] public void MassesOfUnknownPropsAddNeitherDecorationNorDiversity() {
+  var tally = new ParkLandscapeTally();
+  for (int i = 0; i < 200; i++) tally.Add(ParkLandscapeClassifier.Classify(new ParkObjectTraits { IsStaticObject = true, IsPlaceable = true, PropCategory = ParkPropCategory.Other }), i);
+  var result = ParkLandscapeModel.ComputeLandscape(tally.ToInputs(10_000, 0));
+  Assert.That(result.Decoration, Is.Zero); Assert.That(result.Diversity, Is.Zero); Assert.That(result.CategoriesPresent, Is.Zero);
  }
 }

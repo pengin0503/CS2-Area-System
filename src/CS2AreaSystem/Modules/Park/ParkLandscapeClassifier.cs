@@ -3,11 +3,42 @@ using Game.Prefabs;
 namespace CS2AreaSystem.Modules.Park
 {
     public enum ParkLandscapeCategory : byte { None, Vegetation, Amenity, Decoration, Lighting, Unknown }
+    // Vanilla asset-menu prop category of a prefab (curated mapping; design §7.2 allows it where no semantic tag exists).
+    public enum ParkPropCategory : byte { None, Park, Stone, Plants, Other }
+    public static class ParkPropCategories
+    {
+        // 1.6.2f1 prop categories use these names/icons (Media/Game/Icons/PropsPark.svg, ...). Exact matches only.
+        public static ParkPropCategory FromGroup(string groupName, string groupIcon)
+        {
+            if (string.IsNullOrEmpty(groupName) && string.IsNullOrEmpty(groupIcon)) return ParkPropCategory.None;
+            var fromIcon = Match(IconToken(groupIcon));
+            return fromIcon != ParkPropCategory.Other ? fromIcon : Match(groupName);
+        }
+        private static string IconToken(string icon)
+        {
+            if (string.IsNullOrEmpty(icon)) return null;
+            int slash = icon.LastIndexOf('/');
+            var file = slash >= 0 ? icon.Substring(slash + 1) : icon;
+            int dot = file.LastIndexOf('.');
+            return dot > 0 ? file.Substring(0, dot) : file;
+        }
+        private static ParkPropCategory Match(string token)
+        {
+            switch (token)
+            {
+                case "PropsPark": return ParkPropCategory.Park;
+                case "PropsStone": return ParkPropCategory.Stone;
+                case "PropsPlants": return ParkPropCategory.Plants;
+                default: return ParkPropCategory.Other;
+            }
+        }
+    }
     // Typed facts about one static object inside a Park (read from vanilla components/prefab data).
     public struct ParkObjectTraits
     {
         public bool IsStaticObject, IsBuilding, HasOwner, IsTempOrDeleted, IsNetObject, IsTransportStop, IsUtility;
         public bool IsTree, IsPlant, IsStreetLight, IsPlaceable;
+        public ParkPropCategory PropCategory;
         // Activities offered by the prefab's activity locations (SpawnLocationData.m_ActivityMask).
         public uint ActivityMask;
     }
@@ -24,12 +55,12 @@ namespace CS2AreaSystem.Modules.Park
         {
             if (!t.IsStaticObject || t.IsBuilding || t.HasOwner || t.IsTempOrDeleted || t.IsNetObject || t.IsTransportStop || t.IsUtility)
                 return ParkLandscapeCategory.None;
-            if (t.IsTree || t.IsPlant) return ParkLandscapeCategory.Vegetation;
+            if (t.IsTree || t.IsPlant || (t.IsPlaceable && t.PropCategory == ParkPropCategory.Plants)) return ParkLandscapeCategory.Vegetation;
             if ((t.ActivityMask & AmenityActivities) != 0) return ParkLandscapeCategory.Amenity;
             if (t.IsStreetLight) return ParkLandscapeCategory.Lighting;
-            // Remaining placeable props (statues, fountains, signs...) have no finer vanilla tag: Decoration, whose
-            // value is still bounded by per-prefab diminishing returns. Anything else only adds density.
-            if (t.IsPlaceable) return ParkLandscapeCategory.Decoration;
+            // Statues, fountains, rocks... have no semantic tag: only props from the vanilla Park/Stone prop menus count
+            // as Decoration. Other props (industrial, commercial, residential, mod assets) only add density.
+            if (t.IsPlaceable && (t.PropCategory == ParkPropCategory.Park || t.PropCategory == ParkPropCategory.Stone)) return ParkLandscapeCategory.Decoration;
             return ParkLandscapeCategory.Unknown;
         }
     }

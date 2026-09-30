@@ -31,7 +31,7 @@ Diagnostic access: `ParkRuntimeSystem.Store` (per-Park landscape/facility/qualit
 4. Remove the first Entrance with its Remove button (or demolish it) → remains Active while the second survives.
 5. Remove/demolish all Entrances → **Suspended**; Level, XP, lifetime visitors, admission settings, budget and statistics are unchanged; no management cost is charged and no XP is earned while suspended.
 6. Add real park/leisure/attraction buildings inside → Facility categories, Attractiveness and Variety change within a few in-game minutes. Unrelated buildings inside must not change them.
-7. Place trees, benches/tables, statues/fountains, lamps and footpaths → Landscape tab categories change after the next scan; `AreaMembershipSystem.Index.GetMembers(id)` still contains buildings only (no trees/props).
+7. Place trees, benches/tables, statues/fountains, lamps and footpaths → Landscape tab categories change after the next scan (props from the vanilla Park and Stone prop menus count as Decoration; confirm those menu categories resolve as `PropsPark`/`PropsStone` in 1.6.2f1, and that industrial/commercial props add no Decoration); `AreaMembershipSystem.Index.GetMembers(id)` still contains buildings only (no trees/props).
 8. Spam one tree prefab (hundreds) → Vegetation saturates rather than growing linearly; extreme density shows the clutter warning with a bounded penalty.
 9. Watch real citizens doing leisure at member park/leisure/attraction buildings → Visitors now / Visits (last day) / Total visits increase; satisfaction starts near 50 and moves as visits complete.
 10. Workers at unrelated member buildings and residents living inside the boundary, and people only walking through, must not produce visits.

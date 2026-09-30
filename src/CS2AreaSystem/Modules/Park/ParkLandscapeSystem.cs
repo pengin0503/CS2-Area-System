@@ -72,7 +72,7 @@ namespace CS2AreaSystem.Modules.Park
         protected override void OnUpdate()
         {
             if (!runtime.Ready) return;
-            if (loadGeneration != runtime.LoadGeneration) { loadGeneration = runtime.LoadGeneration; scheduler.Clear(); parksDirty = true; current = null; }
+            if (loadGeneration != runtime.LoadGeneration) { loadGeneration = runtime.LoadGeneration; scheduler.Clear(); parksDirty = true; current = null; propCategories.Clear(); }
             if (!changedParks.IsEmptyIgnoreFilter) parksDirty = true;
             if (parksDirty || frameCounter % 256 == 0) SyncParks();
             if (scheduler.TrackedCount == 0) { frameCounter++; return; }
@@ -205,7 +205,24 @@ namespace CS2AreaSystem.Modules.Park
             traits.IsPlant |= EntityManager.HasComponent<PlantData>(prefab);
             traits.IsStreetLight |= EntityManager.HasComponent<StreetLightData>(prefab);
             traits.IsPlaceable = EntityManager.HasComponent<PlaceableObjectData>(prefab);
+            if (traits.IsPlaceable) traits.PropCategory = PropCategory(prefab);
             return traits;
+        }
+        // Menu category per prefab entity, resolved once through the managed prefab (UIObject.m_Group).
+        private readonly Dictionary<Entity, ParkPropCategory> propCategories = new Dictionary<Entity, ParkPropCategory>();
+        private PrefabSystem prefabSystem;
+        private ParkPropCategory PropCategory(Entity prefab)
+        {
+            if (propCategories.TryGetValue(prefab, out var cached)) return cached;
+            var category = ParkPropCategory.None;
+            prefabSystem ??= World.GetOrCreateSystemManaged<PrefabSystem>();
+            if (prefabSystem.TryGetPrefab<PrefabBase>(prefab, out var managed) && managed.TryGet<UIObject>(out var ui) && ui.m_Group != null)
+            {
+                string icon = ui.m_Group.TryGet<UIObject>(out var groupUi) ? groupUi.m_Icon : null;
+                category = ParkPropCategories.FromGroup(ui.m_Group.name, icon);
+            }
+            propCategories[prefab] = category;
+            return category;
         }
         // Pedestrian pathway length inside the Park (edge length weighted by sampled inside fraction).
         private float MeasurePaths(Bounds2 box, List<Triangle2> triangles)
