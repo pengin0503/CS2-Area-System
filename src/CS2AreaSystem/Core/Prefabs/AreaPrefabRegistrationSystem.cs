@@ -21,6 +21,8 @@ namespace CS2AreaSystem.Core.Prefabs
         private readonly HashSet<int> registrationFailureLogged = new HashSet<int>();
         private readonly HashSet<int> toolbarTypes = new HashSet<int>();
         private readonly HashSet<int> toolbarItemFailureLogged = new HashSet<int>();
+        private readonly GameUIResourceAvailability uiResources = new GameUIResourceAvailability();
+        private readonly Dictionary<int, string> resolvedIcons = new Dictionary<int, string>();
         private bool missingHostLogged;
         private bool toolbarRegistrationFailureLogged;
         public bool IsReady
@@ -71,7 +73,7 @@ namespace CS2AreaSystem.Core.Prefabs
             {
                 try
                 {
-                    candidate = new ManagedAreaPrefabFactory().CreateAreaPrefab(type);
+                    candidate = new ManagedAreaPrefabFactory().CreateAreaPrefab(type, ResolveIcon(type));
                     pendingPrefabs[type.TypeId] = candidate;
                 }
                 catch (Exception error)
@@ -103,6 +105,21 @@ namespace CS2AreaSystem.Core.Prefabs
             {
                 if (registrationFailureLogged.Add(type.TypeId)) Mod.Log.Error(error, "Area prefab registration failed: " + type.PrefabName);
             }
+        }
+        // Resolved once per type so the prefab and its toolbar entry always use the same icon.
+        private string ResolveIcon(AreaTypeDescriptor type)
+        {
+            if (resolvedIcons.TryGetValue(type.TypeId, out var icon)) return icon;
+            icon = ManagedAreaPrefabFactory.ResolveIcon(type, IconAvailable);
+            if (icon != type.IconUri) Mod.Log.Warn("Area icon " + type.IconUri + " is unavailable in this game version; using " + icon + " for " + type.PrefabName);
+            else if (!IconAvailable(icon)) Mod.Log.Warn("Game UI resources could not be verified; keeping area icon " + icon + " for " + type.PrefabName);
+            resolvedIcons[type.TypeId] = icon;
+            return icon;
+        }
+        private bool IconAvailable(string path)
+        {
+            try { return uiResources.Exists(path); }
+            catch (Exception error) { Mod.Log.Warn(error, "Game UI resource lookup failed for " + path); return false; }
         }
         public bool IsPrefabReady(AreaTypeDescriptor type)
         {
@@ -161,7 +178,7 @@ namespace CS2AreaSystem.Core.Prefabs
                     try
                     {
                         int priority = Math.Max(0, type.TypeId - 1);
-                        string icon = ManagedAreaPrefabFactory.ResolveIcon(type);
+                        string icon = ResolveIcon(type);
                         factory.AttachAreaPrefab(type.Prefab, category, priority, icon);
                         var areaPrefabEntity = prefabs.GetEntity(type.Prefab);
                         EntityManager.SetComponentData(areaPrefabEntity, new UIObjectData { m_Group = categoryEntity, m_Priority = priority });

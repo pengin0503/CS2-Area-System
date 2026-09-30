@@ -23,14 +23,7 @@ namespace CS2AreaSystem.Core.Prefabs
     {
         public static Game.Areas.AreaType NativeGeometryType => Game.Areas.AreaType.Space;
         // Vanilla 1.6.2f1 icons are host-less paths resolved by the game UI; coui://gameui is not a registered host.
-        public const string FallbackIconUri ="Media/Game/Icons/SurfaceAreaTool.svg";
-        private static readonly HashSet<string> VerifiedGameIcons = new HashSet<string>(StringComparer.Ordinal)
-        {
-            FallbackIconUri,
-            "Media/Game/Icons/LargeParks.svg",
-            "Media/Game/Icons/ZoneIndustrial.svg",
-            "Media/Game/Icons/Attraction.svg"
-        };
+        public const string FallbackIconUri = "Media/Game/Icons/SurfaceAreaTool.svg";
         public static AreaTypeDescriptor Describe(AreaTypeId kind)
         {
             switch (kind)
@@ -46,8 +39,17 @@ namespace CS2AreaSystem.Core.Prefabs
             var preferred = descriptor.IconUri;
             return new AreaPrefabMetadata(descriptor, !string.IsNullOrWhiteSpace(preferred) && iconAvailable(preferred) ? preferred : FallbackIconUri);
         }
-        public static string ResolveIcon(AreaTypeDescriptor descriptor) => Map(descriptor, VerifiedGameIcons.Contains).IconUri;
-        public SpacePrefab CreateAreaPrefab(AreaTypeDescriptor descriptor)
+        // Availability comes from the running game (GameUIResourceAvailability); tests inject it.
+        // Fall back only when the fallback is verifiably present: if neither resource can be verified the lookup
+        // itself is unreliable, and the preferred vanilla icon is kept rather than degrading every area type.
+        public static string ResolveIcon(AreaTypeDescriptor descriptor, Func<string, bool> iconAvailable)
+        {
+            var preferred = descriptor.IconUri;
+            if (string.IsNullOrWhiteSpace(preferred) || iconAvailable(preferred) || !iconAvailable(FallbackIconUri))
+                return string.IsNullOrWhiteSpace(preferred) ? FallbackIconUri : preferred;
+            return FallbackIconUri;
+        }
+        public SpacePrefab CreateAreaPrefab(AreaTypeDescriptor descriptor, string iconUri)
         {
             // Adapted from KruemelGames/ParkingLotTool, Tools/ParkingLotLotArea.cs,
             // TryResolveLotOwnerPrefab: display colors for a non-clearing area boundary.
@@ -60,7 +62,7 @@ namespace CS2AreaSystem.Core.Prefabs
             lot.m_EdgeColor = new Color(color.r, color.g, color.b, 0.30f);
             lot.m_SelectionColor = new Color(color.r, color.g, color.b, 0.16f);
             lot.m_SelectionEdgeColor = color;
-            lot.AddComponent<UIObject>().m_Icon = ResolveIcon(descriptor);
+            lot.AddComponent<UIObject>().m_Icon = string.IsNullOrWhiteSpace(iconUri) ? FallbackIconUri : iconUri;
             return lot;
         }
     }

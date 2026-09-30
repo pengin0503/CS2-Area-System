@@ -21,13 +21,22 @@ public class PrefabDescriptorTests {
         Assert.That(metadata.TypeId, Is.EqualTo(1));
         Assert.That(descriptor.PrefabName, Is.EqualTo("CS2AS.ParkArea"));
     }
-    [Test] public void ProductionResolverRejectsUnknownIconsAndKeepsVerifiedOnes() {
+    [Test] public void RuntimeAvailabilityDecidesBetweenPreferredAndFallbackIcons() {
         foreach (var kind in new[]{AreaTypeId.Park,AreaTypeId.Industrial,AreaTypeId.Tourism}) {
             var descriptor=ManagedAreaPrefabFactory.Describe(kind);
-            Assert.That(ManagedAreaPrefabFactory.ResolveIcon(descriptor),Is.EqualTo(descriptor.IconUri));
+            Assert.That(ManagedAreaPrefabFactory.ResolveIcon(descriptor,_=>true),Is.EqualTo(descriptor.IconUri));
+            // A non-empty URI whose resource is missing at runtime must fall back without changing identity.
+            Assert.That(ManagedAreaPrefabFactory.ResolveIcon(descriptor,uri=>uri==ManagedAreaPrefabFactory.FallbackIconUri),Is.EqualTo(ManagedAreaPrefabFactory.FallbackIconUri));
+            Assert.That(descriptor.TypeId,Is.EqualTo((int)kind));
         }
         var unknown=new AreaTypeDescriptor(99,"CS2AS.Unknown","CS2AS.Type.Unknown","Media/Game/Icons/DoesNotExist.svg");
-        Assert.That(ManagedAreaPrefabFactory.ResolveIcon(unknown),Is.EqualTo(ManagedAreaPrefabFactory.FallbackIconUri));
+        Assert.That(ManagedAreaPrefabFactory.ResolveIcon(unknown,uri=>uri!="Media/Game/Icons/DoesNotExist.svg"),Is.EqualTo(ManagedAreaPrefabFactory.FallbackIconUri));
+    }
+    [Test] public void UnverifiableLookupKeepsThePreferredIconInsteadOfDegradingEveryType() {
+        var park=ManagedAreaPrefabFactory.Describe(AreaTypeId.Park);
+        Assert.That(ManagedAreaPrefabFactory.ResolveIcon(park,_=>false),Is.EqualTo(park.IconUri));
+        var blank=new AreaTypeDescriptor(98,"CS2AS.Blank","CS2AS.Type.Blank","");
+        Assert.That(ManagedAreaPrefabFactory.ResolveIcon(blank,_=>false),Is.EqualTo(ManagedAreaPrefabFactory.FallbackIconUri));
     }
     [Test] public void ToolbarUnavailableDoesNotBlockInitializedAreaSimulation() {
         Assert.That(AreaPrefabReadiness.CanUse(true, true, true), Is.True);
@@ -44,11 +53,23 @@ public class GameIconPathTests {
         foreach (var kind in new[]{AreaTypeId.Park,AreaTypeId.Industrial,AreaTypeId.Tourism}) {
             var descriptor = ManagedAreaPrefabFactory.Describe(kind);
             icons.Add(descriptor.IconUri);
-            icons.Add(ManagedAreaPrefabFactory.ResolveIcon(descriptor));
+            icons.Add(ManagedAreaPrefabFactory.ResolveIcon(descriptor,_=>true));
         }
         foreach (var icon in icons) {
             Assert.That(icon, Does.StartWith("Media/Game/Icons/"));
             Assert.That(icon, Does.Not.Contain("://"));
         }
     }
+}
+public class GameUIResourcePathTests {
+    [Test] public void CombinesLikeTheGameAssetDatabaseResourceHandler() {
+        var root=new Uri("assetdb://global/5f1c2a/");
+        Assert.That(GameUIResourcePath.Combine(root,"Media/Game/Icons/LargeParks.svg").ToString(),Is.EqualTo("assetdb://global/5f1c2a/Media/Game/Icons/LargeParks.svg"));
+    }
+    [TestCase("Media/Game/Icons/LargeParks.svg",true)]
+    [TestCase("coui://gameui/Media/Game/Icons/LargeParks.svg",false)]
+    [TestCase("/Media/Game/Icons/LargeParks.svg",false)]
+    [TestCase("Media/../../secret.svg",false)]
+    [TestCase("",false)]
+    public void OnlyHostlessGameUIPathsAreLookedUp(string path,bool expected) => Assert.That(GameUIResourcePath.IsHostless(path),Is.EqualTo(expected));
 }
