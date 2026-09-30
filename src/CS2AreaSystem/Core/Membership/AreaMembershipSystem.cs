@@ -121,6 +121,7 @@ namespace CS2AreaSystem.Core.Membership
                 dependency.Complete();
                 tree.Iterate(ref iterator);
             }
+            var containing = new List<ContainingArea>();
             foreach (var area in iterator.Candidates)
             {
                 if (!EntityManager.Exists(area) || EntityManager.HasComponent<Deleted>(area) || EntityManager.HasComponent<Temp>(area) ||
@@ -133,13 +134,14 @@ namespace CS2AreaSystem.Core.Membership
                     {
                         var typeId = EntityManager.GetComponentData<ManagedArea>(area).TypeId;
                         services.Registry.TryGet(typeId, out var descriptor);
-                        if (AreaMembershipClassification.Include(descriptor?.Module?.MemberClassifier, member, area, error => {
-                            if (failedClassifiers.Add(typeId)) Mod.Log.Error(error, "Area classifier unavailable: " + typeId);
-                        })) results.Add(new AreaMembership(EntityManager.GetComponentData<ManagedAreaStableId>(area).Value, typeId, false));
+                        containing.Add(new ContainingArea(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value, typeId, descriptor?.Module));
                         break;
                     }
             }
-            return results;
+            if (containing.Count == 0) return results;
+            return AreaMembershipClassification.Collect(containing, member, (typeId, error) => {
+                if (failedClassifiers.Add(typeId)) Mod.Log.Error(error, "Area classifier unavailable: " + typeId);
+            });
         }
         private bool IsCandidate(Entity entity) => EntityManager.Exists(entity) && AreaMembershipCandidatePolicy.IsCandidate(
             EntityManager.HasComponent<Transform>(entity), EntityManager.HasComponent<Static>(entity), EntityManager.HasComponent<Game.Buildings.Building>(entity),
