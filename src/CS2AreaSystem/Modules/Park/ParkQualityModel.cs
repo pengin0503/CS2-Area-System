@@ -70,14 +70,18 @@ namespace CS2AreaSystem.Modules.Park
             return (float)(area + paths + facilities + amenities);
         }
         // 40% baseline entrance, 20% additional/distributed entrances, 20% nearby transit, 20% internal paths (design §11).
+        // Internal pedestrian provision (20%) = path supply inside the Park + paths reaching the entrances (design §7.6).
+        public const float InternalPathWeight = 14f, EntrancePathWeight = 6f;
         // transitScore: 0–1 from ParkTransitAccess.Score (distinct nearby access points and transport modes).
-        public static float ComputeAccessibility(int entrances, float spread, float transitScore, float internalPathProvision)
+        // entrancePathShare: 0–1 share of entrances with a footpath nearby (ParkPathAccess.EntranceShare).
+        public static float ComputeAccessibility(int entrances, float spread, float transitScore, float internalPathProvision, float entrancePathShare)
         {
             if (entrances <= 0) return 0f;
             double extra = entrances > 1 ? (1 - Math.Exp(-(entrances - 1) / 1.5)) * (0.4 + 0.6 * Math.Min(1, Math.Max(0, spread))) : 0;
             double transit = Math.Min(1, Math.Max(0, float.IsNaN(transitScore) ? 0 : transitScore));
             double paths = Math.Min(1, Math.Max(0, internalPathProvision));
-            return Clamp((float)(40 + 20 * extra + 20 * transit + 20 * paths));
+            double entrancePaths = Math.Min(1, Math.Max(0, float.IsNaN(entrancePathShare) ? 0 : entrancePathShare));
+            return Clamp((float)(40 + 20 * extra + 20 * transit + InternalPathWeight * paths + EntrancePathWeight * entrancePaths));
         }
         // 0 for one or stacked entrances, 1 when entrances are about one park-width apart.
         public static float ComputeEntranceSpread(IReadOnlyList<(float X, float Z)> positions, float areaSquareMeters)
@@ -139,6 +143,7 @@ namespace CS2AreaSystem.Modules.Park
         public int Entrances, ActiveVisitors, Level, AdmissionFee;
         public ParkLandscapeSnapshot Landscape;
         public ParkFacilitySnapshot Facilities;
+        public IReadOnlyList<(float X, float Z)> EntrancePositions;
         public ParkSatisfactionState Satisfaction, TouristSatisfaction;
         // False when some member building's same-kind primary owner is another Park (exclusive stats go there).
         public bool IsPrimaryForAllMembers, Active;
@@ -171,7 +176,8 @@ namespace CS2AreaSystem.Modules.Park
             // Landscape-dependent metrics stay neutral (unavailable) until the first landscape scan completes.
             q.Attractiveness = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAttractiveness(facilities.AttractivenessSum, c.AreaSquareMeters, landscape.Result.Score)) : ParkMetric.Unavailable;
             q.Variety = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeVariety(facilities.WeightedCategories, landscape.Result.CategoriesPresent)) : ParkMetric.Unavailable;
-            q.Accessibility = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAccessibility(c.Entrances, c.EntranceSpread, ParkTransitAccess.Score(landscape.TransitPoints, landscape.TransitTypes), q.PathProvision)) : ParkMetric.Unavailable;
+            q.Accessibility = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAccessibility(c.Entrances, c.EntranceSpread, ParkTransitAccess.Score(landscape.TransitPoints, landscape.TransitTypes), q.PathProvision,
+                ParkPathAccess.EntranceShare(c.EntrancePositions, landscape.PathSamples, ParkPathAccess.EntranceRadius))) : ParkMetric.Unavailable;
             q.Maintenance = ParkMetric.Of(ParkQualityModel.ComputeMaintenance(facilities.VanillaCondition, ParkFinanceModel.ClampBudget(c.Budget)));
             q.ComfortableCapacity = ParkQualityModel.ComputeComfortableCapacity(new ParkCapacityInputs {
                 AreaSquareMeters = c.AreaSquareMeters, LeisureEfficiencySum = facilities.LeisureEfficiencySum,
@@ -257,6 +263,26 @@ namespace CS2AreaSystem.Modules.Park
             double access = 1 - Math.Exp(-points / 2.5);
             double modes = Math.Min(1.0, Math.Max(0, types) / 3.0);
             return (float)Math.Min(1.0, 0.75 * access + 0.25 * modes);
+        }
+    }
+}
+namespace CS2AreaSystem.Modules.Park
+{
+    public static class ParkPathAccess
+    {
+        // A footpath sample this close to an entrance building's position connects that entrance.
+        public const float EntranceRadius = 60f;
+        public static float EntranceShare(IReadOnlyList<(float X, float Z)> entrances, IReadOnlyList<(float X, float Z)> pathSamples, float radius)
+        {
+            if (entrances == null || pathSamples == null || entrances.Count == 0 || pathSamples.Count == 0) return 0f;
+            float r2 = radius * radius; int connected = 0;
+            foreach (var e in entrances)
+                foreach (var p in pathSamples)
+                {
+                    float dx = e.X - p.X, dz = e.Z - p.Z;
+                    if (dx * dx + dz * dz <= r2) { connected++; break; }
+                }
+            return (float)connected / entrances.Count;
         }
     }
 }

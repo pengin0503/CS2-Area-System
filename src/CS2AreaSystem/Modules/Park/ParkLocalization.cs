@@ -30,7 +30,7 @@ namespace CS2AreaSystem.Modules.Park
             Add(P + "Metric.Attractiveness", "Attractiveness", "魅力");
             Add(P + "Metric.Attractiveness.Tip", "About 60% real facility attractiveness and 40% landscape.", "実際の施設の魅力 約60%と景観 約40%。");
             Add(P + "Metric.Accessibility", "Accessibility", "アクセス");
-            Add(P + "Metric.Accessibility.Tip", "Entrances (and how spread out they are), nearby public transport stops and internal footpaths.", "入口（数と配置の広がり）、近くの公共交通の停留所、園内の歩道。");
+            Add(P + "Metric.Accessibility.Tip", "Entrances (and how spread out they are), nearby public transport, footpaths inside the Park and footpaths reaching each entrance.", "入口（数と配置の広がり）、近くの公共交通、園内の歩道、各入口につながる歩道。");
             Add(P + "Metric.Variety", "Variety", "多様性");
             Add(P + "Metric.Variety.Tip", "Different kinds of leisure facilities and landscape categories. Breadth beats repetition.", "余暇施設と景観カテゴリーの種類の幅。同じものを増やすより種類を増やす方が効果的です。");
             Add(P + "Metric.Maintenance", "Maintenance", "維持管理");

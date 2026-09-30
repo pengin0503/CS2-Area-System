@@ -68,6 +68,7 @@ namespace CS2AreaSystem.Modules.Park
                 uint frame = runtime.SimulationFrame;
                 snapshot.Quality = ParkQualityEvaluator.Evaluate(new ParkQualityContext {
                     AreaSquareMeters = area, Entrances = entrances.Count, EntranceSpread = ParkQualityModel.ComputeEntranceSpread(positions, area),
+                    EntrancePositions = positions.ToArray(),
                     Landscape = snapshot.Landscape, Facilities = snapshot.Facilities, Satisfaction = state.Satisfaction, TouristSatisfaction = state.TouristSatisfaction,
                     ActiveVisitors = snapshot.ActiveVisitors, Budget = budget, Level = level, AdmissionFee = state.AdmissionFee,
                     RecentTouristVisits = snapshot.RecentTouristVisitors.Sum(frame), IsPrimaryForAllMembers = primaryForAll,

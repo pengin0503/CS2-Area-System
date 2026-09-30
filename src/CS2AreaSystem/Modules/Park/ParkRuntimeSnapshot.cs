@@ -38,6 +38,8 @@ namespace CS2AreaSystem.Modules.Park
         public ParkLandscapeResult Result;
         // Distinct nearby public-transport access points and transport modes (see ParkTransitAccess).
         public int TransitPoints, TransitTypes;
+        // Footpath sample points inside or within EntranceRadius of the Park (for entrance connectivity).
+        public System.Collections.Generic.List<(float X, float Z)> PathSamples = new System.Collections.Generic.List<(float X, float Z)>();
         public uint ScannedFrame;
         public bool Available;
     }

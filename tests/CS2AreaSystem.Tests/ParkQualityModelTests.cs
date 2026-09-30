@@ -43,7 +43,7 @@ public class ParkQualityModelTests {
   Assert.That(ParkQualityModel.ComputeComfortableCapacity(big), Is.LessThan(4 * ParkQualityModel.ComputeComfortableCapacity(small)));
  }
  [Test] public void AccessibilityRewardsEntrancesWithDiminishingReturnsAndSpread() {
-  float A(int n, float spread = 1, float transit = 0, float path = 0) => ParkQualityModel.ComputeAccessibility(n, spread, transit, path);
+  float A(int n, float spread = 1, float transit = 0, float path = 0, float entrancePaths = -1) => ParkQualityModel.ComputeAccessibility(n, spread, transit, path, entrancePaths < 0 ? path : entrancePaths);
   Assert.That(A(0), Is.Zero);
   Assert.That(A(1), Is.EqualTo(40f).Within(0.001), "one valid entrance = baseline 40%");
   Assert.That(A(2), Is.GreaterThan(A(1))); Assert.That(A(3), Is.GreaterThan(A(2)));
@@ -186,5 +186,28 @@ public class ParkTransitAccessTests {
   Assert.That(ParkTransitAccess.Score(0, 0), Is.Zero);
   Assert.That(ParkTransitAccess.Score(100, 10), Is.LessThanOrEqualTo(1f));
   Assert.That(ParkTransitAccess.Score(5, 1) - ParkTransitAccess.Score(4, 1), Is.LessThan(ParkTransitAccess.Score(2, 1) - ParkTransitAccess.Score(1, 1)), "diminishing returns");
+ }
+}
+public class ParkEntrancePathTests {
+ [Test] public void InternalPathsCountFullyOnlyWhenEntrancesAreConnected() {
+  float full = ParkQualityModel.ComputeAccessibility(1, 1, 0, 1, 1), remote = ParkQualityModel.ComputeAccessibility(1, 1, 0, 1, 0);
+  Assert.That(full - ParkQualityModel.ComputeAccessibility(1, 1, 0, 0, 0), Is.EqualTo(20f).Within(0.001), "paths keep their 20% share");
+  Assert.That(remote, Is.LessThan(full), "paths far from every entrance are worth less");
+  Assert.That(full - remote, Is.EqualTo(ParkQualityModel.EntrancePathWeight).Within(0.001));
+ }
+ [Test] public void EntranceShareCountsEntrancesWithAPathSampleWithinTheRadius() {
+  var entrances = new List<(float X, float Z)> { (0, 0), (500, 0) };
+  var samples = new List<(float X, float Z)> { (30, 10), (1000, 1000) };
+  Assert.That(ParkPathAccess.EntranceShare(entrances, samples, 60), Is.EqualTo(0.5f));
+  Assert.That(ParkPathAccess.EntranceShare(entrances, new List<(float X, float Z)>(), 60), Is.Zero);
+  Assert.That(ParkPathAccess.EntranceShare(new List<(float X, float Z)>(), samples, 60), Is.Zero);
+ }
+ [Test] public void EvaluatorUsesEntrancePositionsAndPathSamples() {
+  var inputs = new ParkLandscapeInputs { AreaSquareMeters = 10_000, PathLength = 400 };
+  var landscape = new ParkLandscapeSnapshot { Available = true, Inputs = inputs, Result = ParkLandscapeModel.ComputeLandscape(inputs),
+   PathSamples = new List<(float X, float Z)> { (5, 5) } };
+  var near = new ParkQualityContext { AreaSquareMeters = 10_000, Entrances = 1, EntrancePositions = new List<(float X, float Z)> { (0, 0) }, Landscape = landscape, Budget = 1 };
+  var far = near; far.EntrancePositions = new List<(float X, float Z)> { (400, 400) };
+  Assert.That(ParkQualityEvaluator.Evaluate(near).Accessibility.Value, Is.GreaterThan(ParkQualityEvaluator.Evaluate(far).Accessibility.Value));
  }
 }

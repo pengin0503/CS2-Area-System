@@ -149,11 +149,13 @@ namespace CS2AreaSystem.Modules.Park
                 if (!scan.Objects.Done) return;
                 current = null;
                 ScanCount++;
-                float pathLength = MeasurePaths(scan.Geometry.m_Bounds.xz, scan.Polygon);
+                var pathSamples = new List<(float X, float Z)>();
+                float pathLength = MeasurePaths(scan.Geometry.m_Bounds.xz, scan.Polygon, pathSamples);
                 var snapshot = scan.Snapshot;
                 snapshot.AreaSquareMeters = scan.Geometry.m_SurfaceArea;
                 var landscape = new ParkLandscapeSnapshot {
                     Inputs = scan.Tally.ToInputs(scan.Geometry.m_SurfaceArea, pathLength), ScannedFrame = runtime.SimulationFrame, Available = true };
+                landscape.PathSamples = pathSamples;
                 var transit = ParkTransitAccess.Summarize(scan.Transit);
                 landscape.TransitPoints = transit.Points; landscape.TransitTypes = transit.Types;
                 landscape.Result = ParkLandscapeModel.ComputeLandscape(landscape.Inputs);
@@ -245,12 +247,12 @@ namespace CS2AreaSystem.Modules.Park
             return category;
         }
         // Pedestrian pathway length inside the Park (edge length weighted by sampled inside fraction).
-        private float MeasurePaths(Bounds2 box, ParkPolygon polygon)
+        private float MeasurePaths(Bounds2 box, ParkPolygon polygon, List<(float X, float Z)> samples)
         {
             var edges = new List<Entity>();
             var tree = netSearch.GetNetSearchTree(true, out var dependency);
             dependency.Complete();
-            var iterator = new BoundsIterator { Bounds = box, Items = edges };
+            var iterator = new BoundsIterator { Bounds = new Bounds2(box.min - ParkPathAccess.EntranceRadius, box.max + ParkPathAccess.EntranceRadius), Items = edges };
             tree.Iterate(ref iterator);
             float length = 0f;
             foreach (var edge in edges)
@@ -262,7 +264,11 @@ namespace CS2AreaSystem.Modules.Park
                 var curve = EntityManager.GetComponentData<Game.Net.Curve>(edge);
                 int inside = 0;
                 for (int i = 0; i < PathSamples; i++)
-                    if (polygon.Contains(MathUtils.Position(curve.m_Bezier, (i + 0.5f) / PathSamples).xz)) inside++;
+                {
+                    var point = MathUtils.Position(curve.m_Bezier, (i + 0.5f) / PathSamples).xz;
+                    if (polygon.Contains(point)) { inside++; samples.Add((point.x, point.y)); }
+                    else if (polygon.Distance(point) <= ParkPathAccess.EntranceRadius) samples.Add((point.x, point.y));
+                }
                 length += curve.m_Length * inside / PathSamples;
             }
             return length;
