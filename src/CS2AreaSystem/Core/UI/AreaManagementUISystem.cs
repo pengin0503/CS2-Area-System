@@ -23,6 +23,9 @@ namespace CS2AreaSystem.Core.UI
         private NameSystem names;
         private ToolSystem tools;
         private AreaToolSystem areaTool;
+        private EndFrameBarrier endFrameBarrier;
+        private Game.Audio.AudioManager audio;
+        private EntityQuery soundSettings;
         private RawValueBinding selectedArea;
         private ValueBinding<bool> visible;
         private Entity published, pendingArea;
@@ -30,6 +33,7 @@ namespace CS2AreaSystem.Core.UI
         private AreaAnchorRole pendingRole;
         private AreaManagementViewModel view;
         private bool failureLogged;
+        public override GameMode gameMode => GameMode.Game;
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -39,6 +43,9 @@ namespace CS2AreaSystem.Core.UI
             names = World.GetOrCreateSystemManaged<NameSystem>();
             tools = World.GetOrCreateSystemManaged<ToolSystem>();
             areaTool = World.GetOrCreateSystemManaged<AreaToolSystem>();
+            endFrameBarrier = World.GetOrCreateSystemManaged<EndFrameBarrier>();
+            audio = World.GetOrCreateSystemManaged<Game.Audio.AudioManager>();
+            soundSettings = GetEntityQuery(ComponentType.ReadOnly<ToolUXSoundSettingsData>());
             AddBinding(selectedArea = new RawValueBinding("cs2AreaSystem", "selectedArea", writer => { if (view == null) writer.WriteNull(); else view.Write(writer); }));
             AddBinding(visible = new ValueBinding<bool>("cs2AreaSystem", "panelVisible", false));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
@@ -46,9 +53,7 @@ namespace CS2AreaSystem.Core.UI
             AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "renameArea", (id, name) => Act(id, area => {
                 if (!string.IsNullOrWhiteSpace(name) && name.Length <= 128) names.SetCustomName(area, name.Trim());
             })));
-            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, area => {
-                EntityManager.AddComponent<Deleted>(area); selection.SetSelection(Entity.Null); pendingArea = Entity.Null;
-            })));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignHeadquarters", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Headquarters))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignEntrance", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Entrance))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", id => {
@@ -56,7 +61,12 @@ namespace CS2AreaSystem.Core.UI
             }));
         }
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
-        { base.OnGamePreload(purpose, mode); pendingArea = published = Entity.Null; view = null; failureLogged = false; }
+        {
+            base.OnGamePreload(purpose, mode);
+            pendingArea = published = Entity.Null; failureLogged = false;
+            // The system is disabled outside gameplay, so clear the UI now instead of on the next update.
+            SetView(null);
+        }
         protected override void OnUpdate()
         {
             try
@@ -78,19 +88,19 @@ namespace CS2AreaSystem.Core.UI
             catch (Exception error)
             {
                 if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Area management UI unavailable"); }
-                view = null; published = Entity.Null; visible.Update(false);
+                published = Entity.Null; if (view != null) SetView(null);
             }
         }
         private bool IsArea(Entity entity) => services.IsValidEntity(entity) && EntityManager.HasComponent<ManagedArea>(entity) && EntityManager.HasComponent<ManagedAreaStableId>(entity);
         private void Publish(Entity entity)
         {
             published = IsArea(entity) ? entity : Entity.Null;
-            view = null;
+            AreaManagementViewModel next = null;
             if (published != Entity.Null)
             {
                 var area = EntityManager.GetComponentData<ManagedArea>(published);
                 bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
-                view = new AreaManagementViewModel {
+                next = new AreaManagementViewModel {
                     StableId = EntityManager.GetComponentData<ManagedAreaStableId>(published).Value.ToString(CultureInfo.InvariantCulture),
                     Name = names.GetRenderedLabelName(published),
                     TypeKey = known ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
@@ -100,8 +110,13 @@ namespace CS2AreaSystem.Core.UI
                     AnchorRole = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole?.ToString(), PendingAnchor = pendingArea != Entity.Null
                 };
                 if (EntityManager.HasComponent<ManagedAreaProgress>(published))
-                { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(published); view.Level = progress.Level; view.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
+                { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(published); next.Level = progress.Level; next.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
             }
+            if (!AreaManagementViewModel.Equivalent(view, next)) SetView(next);
+        }
+        private void SetView(AreaManagementViewModel next)
+        {
+            view = next;
             visible.Update(view != null); selectedArea.Update();
         }
         private void Act(string expectedId, Action<Entity> action)
@@ -121,6 +136,14 @@ namespace CS2AreaSystem.Core.UI
                 () => areaTool.prefab = prefab,
                 () => areaTool.mode = AreaToolSystem.Mode.Edit,
                 () => tools.activeTool = areaTool, selection.Focus);
+        }
+        private void Delete(Entity area)
+        {
+            // Same path as the vanilla selected-info delete action (Game.UI.InGame.ActionsSection).
+            if (!soundSettings.IsEmptyIgnoreFilter)
+                audio.PlayUISound(soundSettings.GetSingleton<ToolUXSoundSettingsData>().m_DeletetEntitySound);
+            endFrameBarrier.CreateCommandBuffer().AddComponent<Deleted>(area);
+            selection.SetSelection(Entity.Null); pendingArea = Entity.Null;
         }
         private void BeginAssignment(Entity area, AreaAnchorRole role)
         {

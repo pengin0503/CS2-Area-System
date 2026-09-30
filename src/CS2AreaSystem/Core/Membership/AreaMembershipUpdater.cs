@@ -4,6 +4,7 @@ namespace CS2AreaSystem.Core.Membership
 {
     public interface IAreaMembershipSpatialSource
     {
+        bool HasManagedAreas { get; }
         IEnumerable<Entity> GetAllMembers();
         IEnumerable<Entity> GetSpatialCandidates(Entity area);
         IReadOnlyList<AreaMembership> FindContainingAreas(Entity member);
@@ -19,12 +20,15 @@ namespace CS2AreaSystem.Core.Membership
         public void Rebuild()
         {
             index.Clear();
-            foreach (var member in spatial.GetAllMembers()) index.ReplaceMembership(member, spatial.FindContainingAreas(member));
+            // Without managed areas no member can have a relation; skip the city-wide candidate scan.
+            if (spatial.HasManagedAreas)
+                foreach (var member in spatial.GetAllMembers()) index.ReplaceMembership(member, spatial.FindContainingAreas(member));
             FullRebuildCount++;
         }
         public void UpdateMember(Entity member)
         {
-            index.ReplaceMembership(member, spatial.FindContainingAreas(member));
+            if (spatial.HasManagedAreas) index.ReplaceMembership(member, spatial.FindContainingAreas(member));
+            else index.RemoveMember(member);
             IncrementalMemberUpdateCount++;
         }
         public void UpdateArea(Entity area, ulong stableId, bool deleted)

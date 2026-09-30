@@ -20,6 +20,7 @@ namespace CS2AreaSystem.Core.Areas
         private ToolSystem tools;
         private EntityQuery changedAreas;
         private EntityQuery savedIds;
+        private EntityQuery missingAnchorLinks;
         private bool observedSavedIds;
         private readonly HashSet<int> blockedTypes = new HashSet<int>();
         private readonly ManagedAreaTypeResolver resolver = new ManagedAreaTypeResolver();
@@ -33,11 +34,18 @@ namespace CS2AreaSystem.Core.Areas
             registration = World.GetOrCreateSystemManaged<AreaPrefabRegistrationSystem>();
             tools = World.GetOrCreateSystemManaged<ToolSystem>();
             changedAreas = GetEntityQuery(new EntityQueryDesc {
-                All = new[] { ComponentType.ReadOnly<Area>(), ComponentType.ReadOnly<PrefabRef>() },
+                // Managed areas are SpacePrefab instances; skip districts, lots and other vanilla areas.
+                All = new[] { ComponentType.ReadOnly<Area>(), ComponentType.ReadOnly<Space>(), ComponentType.ReadOnly<PrefabRef>() },
                 Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>() },
                 None = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() }
             });
             savedIds = GetEntityQuery(ComponentType.ReadOnly<ManagedAreaStableId>());
+            // The management UI edits anchor links during UIUpdate; creating the buffer here keeps that a
+            // buffer-content write instead of a structural change outside the modification phase.
+            missingAnchorLinks = GetEntityQuery(new EntityQueryDesc {
+                All = new[] { ComponentType.ReadOnly<ManagedArea>() },
+                None = new[] { ComponentType.ReadOnly<Anchors.AreaAnchorLink>(), ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() }
+            });
         }
         protected override void OnGameLoaded(Context context) { observedSavedIds = false; }
         [Preserve]
@@ -66,6 +74,7 @@ namespace CS2AreaSystem.Core.Areas
                 if (!hasManaged) EntityManager.AddComponentData(entity, identity.Managed);
                 if (!hasId) EntityManager.AddComponentData(entity, identity.StableId);
             }
+            if (!missingAnchorLinks.IsEmptyIgnoreFilter) EntityManager.AddComponent<Anchors.AreaAnchorLink>(missingAnchorLinks);
         }
         private void ValidateTool()
         {
