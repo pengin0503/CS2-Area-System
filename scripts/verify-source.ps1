@@ -11,5 +11,10 @@ foreach($file in $production) {
 }
 # Packaging config may also include adaptations.
 if(Test-Path "$Root/UI/webpack.config.js") {if((Get-Content "$Root/UI/webpack.config.js" -Raw) -match 'Adapted from|Copied from') {$adapted=$true}}
+if(Test-Path "$Root/UI/types") {
+ foreach($file in Get-ChildItem "$Root/UI/types" -Recurse -File -Filter '*.ts') {
+  if((Get-Content $file.FullName -Raw) -match 'Adapted from|Copied from') {$adapted=$true}
+ }
+}
 if($adapted -and !(Test-Path "$Root/THIRD_PARTY.md")) {throw 'THIRD_PARTY.md required for adapted/copied production source.'}
 Write-Host 'Area Core source/policy guards passed.'

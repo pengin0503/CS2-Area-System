@@ -8,7 +8,7 @@ Final review covered bd732ae..5217c74. Both Critical findings were accepted and 
 
 Final scripts/verify.ps1 -ApiCheck: exit 0; 56/56 C# tests, 7/7 UI tests, source/provenance guards and official/API target contracts passed; C# net8 build had 0 warnings/errors; webpack produced fresh CS2AreaSystem.js and CS2AreaSystem.css. Separate net48 API compile against the restored game DLLs: exit 0, 0 warnings/errors. Neither API profile assembly is presented as a playable mod.
 
-The supplied ModPostProcessor was attempted and reported `Modding toolchain is incomplete`. A Windows Unity Editor installation/registry, ILPP runner and complete Unity Mod Project are unavailable here. Official postprocessing/deployment and all ten game checks are NOT RUN. This record therefore establishes source/unit/API verification, not in-game acceptance. See area-core-requirements.md and scripts/runtime-smoke-checklist.md for the remaining acceptance checks.
+The supplied ModPostProcessor was attempted and reported `Modding toolchain is incomplete`. A Windows Unity Editor installation/registry, ILPP runner and complete Unity Mod Project are unavailable here. Official postprocessing/deployment and all twelve game checks are NOT RUN. This record therefore establishes source/unit/API verification, not in-game acceptance. See area-core-requirements.md and scripts/runtime-smoke-checklist.md for the remaining acceptance checks.
 
 The task ledger below preserves task-specific RED/GREEN evidence, commits, interface pre-flight, all rulings, review deferrals and their costs. Scratch paths have been normalized. The original per-task/final logs are preserved in the handoff evidence artifact; no game DLLs/media are included.
 

@@ -1,6 +1,6 @@
 # Third-party provenance
 
-The area display-color construction pattern below is adapted under GPL-3.0. Additional UI packaging/type declaration adaptations are listed below. Remaining code is original. The license text is included at `licenses/GPL-3.0.txt`.
+The area display-color construction pattern below is adapted under GPL-3.0. Additional UI packaging/type declaration adaptations are listed below. Remaining code is original and is licensed under GPL-3.0-only. The project is licensed under GPL-3.0-only; see [LICENSE](LICENSE). A copy of the license text is also retained at `licenses/GPL-3.0.txt`.
 Game APIs and the supplied UI bundle are reference material only; game DLLs and media are not redistributed.
 
 | Source repository | Source file/path | License | Copied/adapted portion | Local destination | Modification notes |

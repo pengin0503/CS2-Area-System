@@ -14,6 +14,10 @@ try {
   Verify-Fixture $true 'Forbidden production dependency or shipped UI mutation'
  }
  Remove-Item "$fixture/src/Bad.cs"
+ New-Item -ItemType Directory -Path "$fixture/UI/types" | Out-Null
+ Set-Content "$fixture/UI/types/cs2.d.ts" '// Adapted from example'
+ Verify-Fixture $true 'THIRD_PARTY.md'
+ Remove-Item "$fixture/UI/types/cs2.d.ts"
  Set-Content "$fixture/src/Adapted.cs" '// Adapted from example'
  Verify-Fixture $true 'THIRD_PARTY.md'
  Set-Content "$fixture/THIRD_PARTY.md" 'Provenance recorded'
