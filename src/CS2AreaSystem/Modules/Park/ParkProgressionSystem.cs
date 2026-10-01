@@ -11,10 +11,11 @@ namespace CS2AreaSystem.Modules.Park
     {
         public const uint UpdateFrames = ParkProgressionModel.FramesPerDay / 32;
         private ParkRuntimeSystem runtime;
+        private CS2AreaSystem.Core.Policies.AreaPolicySystem policies;
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private uint lastFrame;
         private int loadGeneration = -1;
-        private bool failureLogged;
+        private bool failureLogged, policyFailureLogged;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => (int)UpdateFrames;
         public static ParkProgressInputs BuildInputs(ParkQualitySnapshot quality, in ParkAreaState state)
         {
@@ -31,6 +32,7 @@ namespace CS2AreaSystem.Modules.Park
         {
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
+            policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
             World.GetOrCreateSystemManaged<ParkVisitSystem>().AddListener(this);
         }
         [Preserve]
@@ -55,7 +57,7 @@ namespace CS2AreaSystem.Modules.Park
                 var progress = EntityManager.GetComponentData<ManagedAreaProgress>(park.Area);
                 var state = EntityManager.GetComponentData<ParkAreaState>(park.Area);
                 var step = ParkProgressionModel.Step(new ParkProgressStep { Level = progress.Level, Experience = progress.Experience, State = state },
-                    BuildInputs(snapshot.Quality, state), park.State == AreaLifecycleState.Active, snapshot.RecentVisitors.Sum(frame), frame, elapsed);
+                    BuildInputs(snapshot.Quality, state), park.State == AreaLifecycleState.Active, snapshot.RecentVisitors.Sum(frame), frame, elapsed, XpMultiplier(park.Area));
                 progress.Level = step.Level; progress.Experience = step.Experience;
                 EntityManager.SetComponentData(park.Area, progress);
                 EntityManager.SetComponentData(park.Area, step.State);
@@ -66,12 +68,22 @@ namespace CS2AreaSystem.Modules.Park
                 if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park progression update failed"); }
             }
         }
+        // Policy bonus to XP the Park already earned; a policy failure only removes the bonus.
+        private double XpMultiplier(Entity area)
+        {
+            try { return policies.GetExperienceMultiplier(area); }
+            catch (System.Exception error)
+            {
+                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area policy XP bonus unavailable; Park XP continues without it"); }
+                return 1.0;
+            }
+        }
         public void OnVisitStarted(in ParkVisitEvent visit, Entity area, ParkRuntimeSnapshot snapshot, ParkVisitTracker tracker) { }
         public void OnVisitCompleted(in ParkVisitEvent visit, Entity area, ParkRuntimeSnapshot snapshot, bool parkActive)
         {
             if (!parkActive || !EntityManager.Exists(area) || !EntityManager.HasComponent<ManagedAreaProgress>(area)) return;
             var progress = EntityManager.GetComponentData<ManagedAreaProgress>(area);
-            progress.Experience = ParkProgressionModel.AwardVisitXp(progress.Experience, visit.Satisfaction, true);
+            progress.Experience = ParkProgressionModel.AwardVisitXp(progress.Experience, visit.Satisfaction, true, XpMultiplier(area));
             EntityManager.SetComponentData(area, progress);
         }
     }

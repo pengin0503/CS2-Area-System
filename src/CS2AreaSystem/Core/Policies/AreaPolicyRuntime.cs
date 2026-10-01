@@ -26,8 +26,8 @@ namespace CS2AreaSystem.Core.Policies
     // Resolves per-Area policy state from the saved desired entries every time; derived state is never stored.
     public sealed class AreaPolicyRuntime
     {
-        public const double FocusedManagementMultiplier = 1.10;
-        private const string AvailabilityFailure = "availability";
+        public const double FocusedManagementMultiplier = AreaPolicyExperience.FocusedManagementMultiplier;
+        private const string AvailabilityFailure = "availability", UpkeepInputsFailure = "upkeep-inputs";
         private readonly Dictionary<int, IAreaPolicyProvider> owners = new Dictionary<int, IAreaPolicyProvider>();
         private readonly AreaPolicyFailureLog failures = new AreaPolicyFailureLog();
         private readonly Action<string> reportError;
@@ -74,6 +74,40 @@ namespace CS2AreaSystem.Core.Policies
         public bool IsEffective(IAreaPolicyStore store, Entity area, int policyId, in AreaPolicyContext context) => GetState(store, area, policyId, context).Effective;
         public double GetExperienceMultiplier(IAreaPolicyStore store, Entity area, in AreaPolicyContext context) =>
             IsEffective(store, area, AreaPolicyIds.FocusedManagement, context) ? FocusedManagementMultiplier : 1.0;
+        // Upkeep formula inputs: Core geometry for per-hectare upkeep, the owning module's stable counts for per-facility or
+        // per-activity upkeep. Missing or failing module inputs count as zero, so base and per-hectare upkeep still apply.
+        public AreaPolicyUpkeepInputs GetUpkeepInputs(Entity area, ulong stableId, AreaPolicyDefinition definition, in AreaPolicyContext context, Func<double> areaSquareMeters)
+        {
+            var inputs = new AreaPolicyUpkeepInputs();
+            var upkeep = definition.Upkeep;
+            if (upkeep.PerHectare > 0 && areaSquareMeters != null)
+            {
+                double squareMeters = areaSquareMeters();
+                inputs.AreaSquareMeters = double.IsNaN(squareMeters) || double.IsInfinity(squareMeters) ? 0 : Math.Max(0, squareMeters);
+            }
+            if ((upkeep.PerEligibleFacility > 0 || upkeep.PerActivityUnit > 0) && owners.TryGetValue(definition.PolicyId, out var owner) && owner is IAreaPolicyUpkeepProvider provider)
+            {
+                try
+                {
+                    if (provider.TryGetPolicyUpkeepInputs(area, definition.PolicyId, context, out var module))
+                    {
+                        inputs.EligibleFacilityCount = Math.Max(0, module.EligibleFacilityCount);
+                        inputs.ActivityUnits = double.IsNaN(module.ActivityUnits) || double.IsInfinity(module.ActivityUnits) ? 0 : Math.Max(0, module.ActivityUnits);
+                    }
+                }
+                catch (Exception error)
+                {
+                    if (failures.ShouldLog(stableId, definition.PolicyId, UpkeepInputsFailure))
+                        reportError("Area policy " + definition.PolicyId + " upkeep inputs failed for Area " + stableId + "; base upkeep is charged: " + error.Message);
+                }
+            }
+            return inputs;
+        }
+        public double EstimateDailyUpkeep(IAreaPolicyStore store, Entity area, AreaPolicyDefinition definition, in AreaPolicyContext context, Func<double> areaSquareMeters)
+        {
+            ulong stableId = store.TryGetArea(area, out var info) ? info.StableId : 0;
+            return AreaPolicyUpkeepSettlement.DailyUpkeep(definition, GetUpkeepInputs(area, stableId, definition, context, areaSquareMeters));
+        }
         // Validates and applies one toggle as a single buffer write: conflicting policies switch OFF in the same write
         // that switches this one ON. Enabling also requires the effect to be available; turning OFF is always allowed.
         public bool TrySetDesired(IAreaPolicyStore store, Entity area, int policyId, bool enabled, in AreaPolicyContext context, out string reasonKey)

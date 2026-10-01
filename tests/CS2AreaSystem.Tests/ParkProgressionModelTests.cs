@@ -58,12 +58,12 @@ public class ParkProgressionModelTests {
   Assert.That(ParkProgressionModel.ComputeVisitXp(double.NaN), Is.GreaterThanOrEqualTo(0));
  }
  [Test] public void PassiveQualityXpNeedsActivityAndIsCappedPerDay() {
-  Assert.That(ParkProgressionModel.ComputePassiveXp(90, recentVisitors: 0, active: true, grantedToday: 0), Is.Zero);
-  Assert.That(ParkProgressionModel.ComputePassiveXp(90, 10, active: false, grantedToday: 0), Is.Zero, "suspended parks earn nothing");
-  Assert.That(ParkProgressionModel.ComputePassiveXp(40, 10, true, 0), Is.Zero, "only strong quality");
-  Assert.That(ParkProgressionModel.ComputePassiveXp(90, 10, true, 0), Is.GreaterThan(0));
-  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, true, ParkProgressionModel.PassiveXpDailyCap), Is.Zero, "daily cap reached");
-  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, true, ParkProgressionModel.PassiveXpDailyCap - 1), Is.EqualTo(1));
+  Assert.That(ParkProgressionModel.ComputePassiveXp(90, recentVisitors: 0, active: true, grantedToday: 0, 1.0), Is.Zero);
+  Assert.That(ParkProgressionModel.ComputePassiveXp(90, 10, active: false, grantedToday: 0, 1.0), Is.Zero, "suspended parks earn nothing");
+  Assert.That(ParkProgressionModel.ComputePassiveXp(40, 10, true, 0, 1.0), Is.Zero, "only strong quality");
+  Assert.That(ParkProgressionModel.ComputePassiveXp(90, 10, true, 0, 1.0), Is.GreaterThan(0));
+  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, true, ParkProgressionModel.PassiveXpDailyCap, 1.0), Is.Zero, "daily cap reached");
+  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, true, ParkProgressionModel.PassiveXpDailyCap - 1, 1.0), Is.EqualTo(1));
  }
 }
 public class ParkProgressionStepTests {
@@ -75,11 +75,11 @@ public class ParkProgressionStepTests {
  }
  private static ParkAreaState Visited(long visitors) { var s = ParkAreaState.CreateDefault(); s.LifetimeVisitors = visitors; s.Satisfaction = new ParkSatisfactionState { Mean = 80, Weight = 50 }; return s; }
  private static ParkProgressStep Step(int level, long xp, ParkAreaState state, bool active, float quality, uint frame, uint elapsed = ParkProgressionSystem.UpdateFrames, long recent = 10) =>
-  ParkProgressionModel.Step(new ParkProgressStep { Level = level, Experience = xp, State = state }, ParkProgressionSystem.BuildInputs(Quality(quality), state), active, recent, frame, elapsed);
+  ParkProgressionModel.Step(new ParkProgressStep { Level = level, Experience = xp, State = state }, ParkProgressionSystem.BuildInputs(Quality(quality), state), active, recent, frame, elapsed, 1.0);
  [Test] public void PromotesOnlyAfterRequirementsHoldForADay() {
   var step = Step(1, 1_000, Visited(300), true, 60, 10_000);
   Assert.That(step.Level, Is.EqualTo(1)); Assert.That(step.State.PromotionHoldFrames, Is.EqualTo(ParkProgressionSystem.UpdateFrames));
-  for (uint f = 1; f <= 40 && step.Level == 1; f++) step = ParkProgressionModel.Step(step, ParkProgressionSystem.BuildInputs(Quality(60), step.State), true, 10, 10_000 + f * ParkProgressionSystem.UpdateFrames, ParkProgressionSystem.UpdateFrames);
+  for (uint f = 1; f <= 40 && step.Level == 1; f++) step = ParkProgressionModel.Step(step, ParkProgressionSystem.BuildInputs(Quality(60), step.State), true, 10, 10_000 + f * ParkProgressionSystem.UpdateFrames, ParkProgressionSystem.UpdateFrames, 1.0);
   Assert.That(step.Level, Is.EqualTo(2)); Assert.That(step.Promoted, Is.True); Assert.That(step.State.PromotionHoldFrames, Is.Zero, "hold restarts for the next level");
  }
  [Test] public void SuspendedParksNeitherEarnNorPromoteButKeepProgress() {
@@ -95,18 +95,18 @@ public class ParkProgressionStepTests {
  [Test] public void PassiveXpIsCappedPerInGameDayAndResetsNextDay() {
   var state = Visited(300); long xp = 0; var step = new ParkProgressStep { Level = 1, Experience = 0, State = state };
   uint frame = 5;
-  for (int i = 0; i < 32; i++) { frame += ParkProgressionSystem.UpdateFrames; step = ParkProgressionModel.Step(step, ParkProgressionSystem.BuildInputs(Quality(100), step.State), true, 10, frame, ParkProgressionSystem.UpdateFrames); }
+  for (int i = 0; i < 32; i++) { frame += ParkProgressionSystem.UpdateFrames; step = ParkProgressionModel.Step(step, ParkProgressionSystem.BuildInputs(Quality(100), step.State), true, 10, frame, ParkProgressionSystem.UpdateFrames, 1.0); }
   xp = step.Experience;
   Assert.That(xp, Is.LessThanOrEqualTo(ParkProgressionModel.PassiveXpDailyCap * 2), "at most one cap per in-game day crossed");
   long before = step.Experience;
-  step = ParkProgressionModel.Step(step, ParkProgressionSystem.BuildInputs(Quality(100), step.State), true, 0, frame + ParkProgressionSystem.UpdateFrames, ParkProgressionSystem.UpdateFrames);
+  step = ParkProgressionModel.Step(step, ParkProgressionSystem.BuildInputs(Quality(100), step.State), true, 0, frame + ParkProgressionSystem.UpdateFrames, ParkProgressionSystem.UpdateFrames, 1.0);
   Assert.That(step.Experience, Is.EqualTo(before), "no recent visitors, no passive XP");
   Assert.That(step.State.PassiveXpToday, Is.LessThanOrEqualTo(ParkProgressionModel.PassiveXpDailyCap));
  }
  [Test] public void VisitXpGoesToActiveParksOnly() {
-  Assert.That(ParkProgressionModel.AwardVisitXp(100, 80, true), Is.EqualTo(100 + ParkProgressionModel.ComputeVisitXp(80)));
-  Assert.That(ParkProgressionModel.AwardVisitXp(100, 80, false), Is.EqualTo(100));
-  Assert.That(ParkProgressionModel.AwardVisitXp(long.MaxValue, 100, true), Is.EqualTo(long.MaxValue), "saturates");
+  Assert.That(ParkProgressionModel.AwardVisitXp(100, 80, true, 1.0), Is.EqualTo(100 + ParkProgressionModel.ComputeVisitXp(80)));
+  Assert.That(ParkProgressionModel.AwardVisitXp(100, 80, false, 1.0), Is.EqualTo(100));
+  Assert.That(ParkProgressionModel.AwardVisitXp(long.MaxValue, 100, true, 1.0), Is.EqualTo(long.MaxValue), "saturates");
  }
 }
 public class ParkGameplayFacadeTests {
@@ -134,3 +134,46 @@ public class ParkGameplayFacadeTests {
    Assert.That(ParkGameplayFacade.TryApplyAction(action, "1", 5, ref settings, ref state), Is.False);
  }
 }
+public class ParkFocusedManagementXpTests {
+ private static ParkQualitySnapshot Q(float value) {
+  var q = new ParkQualitySnapshot { Satisfaction = ParkMetric.Of(value), Attractiveness = ParkMetric.Of(value), Accessibility = ParkMetric.Of(value),
+   Variety = ParkMetric.Of(value), Maintenance = ParkMetric.Of(value), Comfort = ParkMetric.Of(value), Landscape = ParkMetric.Of(value) };
+  q.Result = new ParkQualityResult { Quality = value, Confidence = 1 };
+  return q;
+ }
+ [Test] public void VisitXpIsRaisedByTenPercent() {
+  Assert.That(ParkProgressionModel.ComputeVisitXp(100), Is.EqualTo(10));
+  Assert.That(ParkProgressionModel.AwardVisitXp(100, 100, true, 1.10), Is.EqualTo(111));
+  Assert.That(ParkProgressionModel.AwardVisitXp(100, 100, false, 1.10), Is.EqualTo(100), "a suspended Park earns nothing");
+  Assert.That(ParkProgressionModel.AwardVisitXp(long.MaxValue - 3, 100, true, 1.10), Is.EqualTo(long.MaxValue));
+ }
+ [Test] public void PassiveXpIsMultipliedBeforeTheDailyCap() {
+  int baseAward = ParkProgressionModel.ComputePassiveXp(100, 10, true, 0, 1.0);
+  Assert.That(baseAward, Is.EqualTo(5));
+  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, true, 0, 1.10), Is.EqualTo(6));
+  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, true, ParkProgressionModel.PassiveXpDailyCap - 2, 1.10), Is.EqualTo(2), "the cap still holds");
+  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, true, ParkProgressionModel.PassiveXpDailyCap, 1.10), Is.Zero);
+  Assert.That(ParkProgressionModel.ComputePassiveXp(40, 10, true, 0, 1.10), Is.Zero, "no base award: no bonus");
+  Assert.That(ParkProgressionModel.ComputePassiveXp(100, 10, false, 0, 1.10), Is.Zero);
+ }
+ [Test] public void ADayOfFocusedManagementNeverExceedsTheFortyXpCap() {
+  var step = new ParkProgressStep { Level = 1, State = ParkAreaState.CreateDefault() };
+  // Every tick of one in-game day (32 ticks of 1/32 day).
+  for (uint i = 0; i < 32; i++) {
+   uint frame = 5 * ParkProgressionModel.FramesPerDay + i * ParkProgressionSystem.UpdateFrames;
+   step = ParkProgressionModel.Step(step, ParkProgressionSystem.BuildInputs(Q(100), step.State), true, 10, frame, ParkProgressionSystem.UpdateFrames, 1.10);
+  }
+  Assert.That(step.Experience, Is.EqualTo(ParkProgressionModel.PassiveXpDailyCap));
+ }
+ [Test] public void StepAppliesTheMultiplierToPassiveXp() {
+  var state = ParkAreaState.CreateDefault();
+  var inputs = ParkProgressionSystem.BuildInputs(Q(100), state);
+  var plain = ParkProgressionModel.Step(new ParkProgressStep { Level = 1, State = state }, inputs, true, 10, 1000, ParkProgressionSystem.UpdateFrames, 1.0);
+  var focused = ParkProgressionModel.Step(new ParkProgressStep { Level = 1, State = state }, inputs, true, 10, 1000, ParkProgressionSystem.UpdateFrames, 1.10);
+  Assert.That(plain.Experience, Is.EqualTo(5)); Assert.That(focused.Experience, Is.EqualTo(6));
+  Assert.That(focused.State.PassiveXpToday, Is.EqualTo(6), "the cap counts the multiplied award");
+  var suspended = ParkProgressionModel.Step(new ParkProgressStep { Level = 1, State = state }, inputs, false, 10, 1000, ParkProgressionSystem.UpdateFrames, 1.10);
+  Assert.That(suspended.Experience, Is.Zero);
+ }
+}
+

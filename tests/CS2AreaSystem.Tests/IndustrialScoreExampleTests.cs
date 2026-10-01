@@ -85,7 +85,7 @@ public class IndustrialScoreExampleTests {
    var s = Compute(e);
    var inputs = new IndustrialProgressInputs { Production = s.Production, Logistics = s.Logistics, Employment = s.Employment, Efficiency = s.Efficiency,
     Performance = s.Performance, ActiveProductiveFacilities = s.OperatingProducers, Fresh = true };
-   var xp = IndustrialProgressionModel.ComputeHourlyXp(inputs, true, 0);
+   var xp = IndustrialProgressionModel.ComputeHourlyXp(inputs, true, 0, 1.0);
    Assert.That(xp.Award, Is.EqualTo(hourly.GetInt32()), id + " hourly XP");
    if (x.TryGetProperty("xpOperatingScore", out var score)) {
     if (score.ValueKind == JsonValueKind.Null) Assert.That(xp.OperatingScore, Is.Null, id);

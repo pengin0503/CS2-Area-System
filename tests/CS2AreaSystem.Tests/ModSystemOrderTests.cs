@@ -94,4 +94,14 @@ public class ModSystemOrderTests {
         Assert.That(park, Is.LessThan(area), "admission income is recorded and Park counters exist before Area finance settles");
         Assert.That(area, Is.LessThan(order.IndexOf(typeof(Game.Serialization.SerializerSystem))));
     }
+    [Test] public void PolicyUpkeepIsQueuedBeforeAreaFinanceAppliesTheBatch() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAt", typeof(CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem), null, SystemUpdatePhase.GameSimulation) }));
+        var order = Schedule(SystemUpdatePhase.GameSimulation);
+        int upkeep = order.IndexOf(typeof(CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem));
+        Assert.That(upkeep, Is.GreaterThanOrEqualTo(0));
+        Assert.That(upkeep, Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Core.Finance.AreaFinanceSystem))));
+        // Policy state is resolved on demand from the saved buffer; AreaPolicySystem itself runs earlier, in ModificationEnd.
+        Assert.That(Schedule(SystemUpdatePhase.ModificationEnd), Does.Contain(typeof(CS2AreaSystem.Core.Policies.AreaPolicySystem)));
+    }
 }

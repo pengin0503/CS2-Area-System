@@ -8,7 +8,7 @@ public class IndustrialProgressionModelTests {
  private static IndustrialProgressInputs All(double v, int facilities = 30, int employees = 2000) => new() {
   Production = M(v), Logistics = M(v), Employment = M(v), Efficiency = M(v), Performance = M(v),
   ActiveProductiveFacilities = facilities, EmployedWorkers = employees, Fresh = true };
- private static IndustrialXpResult Xp(in IndustrialProgressInputs inputs, bool active = true, int granted = 0) => IndustrialProgressionModel.ComputeHourlyXp(inputs, active, granted);
+ private static IndustrialXpResult Xp(in IndustrialProgressInputs inputs, bool active = true, int granted = 0) => IndustrialProgressionModel.ComputeHourlyXp(inputs, active, granted, 1.0);
  // ---- promotion gates
  private static IndustrialPromotionCheck Check(IndustrialPromotionResult r, string key) => r.Checklist.Single(c => c.Key == key);
  [Test] public void Level1To2Gates() {
@@ -92,17 +92,17 @@ public class IndustrialProgressionModelTests {
   Assert.That(IndustrialProgressionModel.EvaluatePromotion(5, 0, default).CanPromote, Is.False);
   var state = IndustrialAreaState.CreateDefault(0);
   var progress = new IndustrialLevelProgress { Level = 4, Experience = 40_000 };
-  var step = IndustrialProgressionModel.Step(ref progress, ref state, All(0, 0, 0), new IndustrialObservationStamp { HourBucket = 10, Active = true, Fresh = true });
+  var step = IndustrialProgressionModel.Step(ref progress, ref state, All(0, 0, 0), new IndustrialObservationStamp { HourBucket = 10, Active = true, Fresh = true }, 1.0);
   Assert.That(progress.Level, Is.EqualTo(4), "poor scores never demote"); Assert.That(step.Promoted, Is.False);
   var bogus = new IndustrialLevelProgress { Level = 0, Experience = 0 };
-  IndustrialProgressionModel.Step(ref bogus, ref state, All(0), new IndustrialObservationStamp { HourBucket = 11, Active = true, Fresh = true });
+  IndustrialProgressionModel.Step(ref bogus, ref state, All(0), new IndustrialObservationStamp { HourBucket = 11, Active = true, Fresh = true }, 1.0);
   Assert.That(bogus.Level, Is.EqualTo(1));
  }
  [Test] public void PromotionAppliesAtMostOneLevelPerObservation() {
   var state = IndustrialAreaState.CreateDefault(0);
   var progress = new IndustrialLevelProgress { Level = 1, Experience = 1_000_000 };
   var step = IndustrialProgressionModel.Step(ref progress, ref state, All(100, 100, 5000) with { MeaningfulOutputs = 3, StreakDays = 7, FunctionalCargo = true },
-   new IndustrialObservationStamp { HourBucket = 5, Active = true, Fresh = true });
+   new IndustrialObservationStamp { HourBucket = 5, Active = true, Fresh = true }, 1.0);
   Assert.That(step.Promoted, Is.True); Assert.That(progress.Level, Is.EqualTo(2));
  }
  // ---- XP
@@ -110,7 +110,7 @@ public class IndustrialProgressionModelTests {
   Assert.That(Xp(All(100)).Hourly, Is.EqualTo(10));
   var state = IndustrialAreaState.CreateDefault(3);
   var progress = new IndustrialLevelProgress { Level = 1 };
-  for (int h = 0; h < 24; h++) IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 3 * 24 + h, Active = true, Fresh = true });
+  for (int h = 0; h < 24; h++) IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 3 * 24 + h, Active = true, Fresh = true }, 1.0);
   Assert.That(progress.Experience, Is.EqualTo(240)); Assert.That(state.XpGrantedToday, Is.EqualTo(240));
   Assert.That(Xp(All(100), true, 240).Award, Is.Zero); Assert.That(Xp(All(100), true, 240).BlockedReason, Is.EqualTo("DailyCap"));
   Assert.That(Xp(All(100), true, 235).Award, Is.EqualTo(5), "award = min(hourly, 240 - granted)");
@@ -119,9 +119,9 @@ public class IndustrialProgressionModelTests {
   var state = IndustrialAreaState.CreateDefault(3);
   var progress = new IndustrialLevelProgress { Level = 1 };
   state.XpGrantedToday = 240; state.XpDay = 3;
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 3 * 24 + 23, Active = true, Fresh = true });
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 3 * 24 + 23, Active = true, Fresh = true }, 1.0);
   Assert.That(progress.Experience, Is.Zero, "same day, cap exhausted");
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 4 * 24, Active = true, Fresh = true });
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 4 * 24, Active = true, Fresh = true }, 1.0);
   Assert.That(progress.Experience, Is.EqualTo(10)); Assert.That(state.XpDay, Is.EqualTo(4u)); Assert.That(state.XpGrantedToday, Is.EqualTo(10));
  }
  [Test] public void MissingProductionReweightsToSeven() {
@@ -156,20 +156,20 @@ public class IndustrialProgressionModelTests {
   var state = IndustrialAreaState.CreateDefault(0);
   var progress = new IndustrialLevelProgress { Level = 1 };
   var stamp = new IndustrialObservationStamp { HourBucket = 7, Active = true, Fresh = true };
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp);
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp, 1.0);
   state = Support.MemorySerializer.RoundTrip(state); // save/load in the same hour
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp);
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp); // observation retry / HQ reassignment
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp, 1.0);
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp, 1.0); // observation retry / HQ reassignment
   Assert.That(progress.Experience, Is.EqualTo(10)); Assert.That(state.LastSettledXpHour, Is.EqualTo(7));
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp with { HourBucket = 8 });
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), stamp with { HourBucket = 8 }, 1.0);
   Assert.That(progress.Experience, Is.EqualTo(20));
   Assert.That(state.XpGrantedToday, Is.EqualTo(20));
  }
  [Test] public void MissingHoursAreNotBackfilled() {
   var state = IndustrialAreaState.CreateDefault(0);
   var progress = new IndustrialLevelProgress { Level = 1 };
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 1, Active = true, Fresh = true });
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 9, Active = true, Fresh = true });
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 1, Active = true, Fresh = true }, 1.0);
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 9, Active = true, Fresh = true }, 1.0);
   Assert.That(progress.Experience, Is.EqualTo(20), "hours 2..8 earn nothing");
  }
  [Test] public void AllZeroGivesZeroAndRoundingIsAwayFromZero() {
@@ -184,15 +184,15 @@ public class IndustrialProgressionModelTests {
  [Test] public void ExperienceSaturatesAtLongMaxValue() {
   var state = IndustrialAreaState.CreateDefault(0);
   var progress = new IndustrialLevelProgress { Level = 5, Experience = long.MaxValue - 3 };
-  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 1, Active = true, Fresh = true });
+  IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 1, Active = true, Fresh = true }, 1.0);
   Assert.That(progress.Experience, Is.EqualTo(long.MaxValue));
  }
  [Test] public void PeakEmployeesUpdateOnlyFromActiveObservations() {
   var state = IndustrialAreaState.CreateDefault(0);
   var progress = new IndustrialLevelProgress { Level = 1 };
-  IndustrialProgressionModel.Step(ref progress, ref state, All(50, 3, 400), new IndustrialObservationStamp { HourBucket = 1, Active = true, Fresh = true });
-  IndustrialProgressionModel.Step(ref progress, ref state, All(50, 3, 900), new IndustrialObservationStamp { HourBucket = 2, Active = false, Fresh = true });
-  IndustrialProgressionModel.Step(ref progress, ref state, All(50, 3, 100), new IndustrialObservationStamp { HourBucket = 3, Active = true, Fresh = true });
+  IndustrialProgressionModel.Step(ref progress, ref state, All(50, 3, 400), new IndustrialObservationStamp { HourBucket = 1, Active = true, Fresh = true }, 1.0);
+  IndustrialProgressionModel.Step(ref progress, ref state, All(50, 3, 900), new IndustrialObservationStamp { HourBucket = 2, Active = false, Fresh = true }, 1.0);
+  IndustrialProgressionModel.Step(ref progress, ref state, All(50, 3, 100), new IndustrialObservationStamp { HourBucket = 3, Active = true, Fresh = true }, 1.0);
   Assert.That(state.LifetimePeakEmployees, Is.EqualTo(400));
  }
  // ---- daily productive-activity streak
@@ -304,3 +304,39 @@ public class IndustrialProgressionModelTests {
   Assert.That(state.ActivityObservedHours, Is.Zero); Assert.That(state.HighThroughputStreakDays, Is.Zero);
  }
 }
+public class IndustrialFocusedManagementXpTests {
+ private static IndustrialProgressInputs All(double v) => new() {
+  Production = IndustrialMetric.Of(v), Logistics = IndustrialMetric.Of(v), Employment = IndustrialMetric.Of(v), Efficiency = IndustrialMetric.Of(v),
+  Performance = IndustrialMetric.Of(v), ActiveProductiveFacilities = 30, EmployedWorkers = 2000, Fresh = true };
+ [Test] public void HourlyXpIsRaisedByTenPercentBeforeTheDailyCap() {
+  var plain = IndustrialProgressionModel.ComputeHourlyXp(All(100), true, 0, 1.0);
+  var focused = IndustrialProgressionModel.ComputeHourlyXp(All(100), true, 0, 1.10);
+  Assert.That(plain.Award, Is.EqualTo(10)); Assert.That(focused.Award, Is.EqualTo(11));
+  Assert.That(focused.Hourly, Is.EqualTo(10), "the scored hourly value is unchanged; the policy scales the award");
+  Assert.That(focused.BlockedReason, Is.Null);
+  var capped = IndustrialProgressionModel.ComputeHourlyXp(All(100), true, IndustrialProgressionModel.DailyXpCap - 5, 1.10);
+  Assert.That(capped.Award, Is.EqualTo(5)); Assert.That(capped.BlockedReason, Is.EqualTo("DailyCap"));
+  Assert.That(IndustrialProgressionModel.ComputeHourlyXp(All(100), true, IndustrialProgressionModel.DailyXpCap, 1.10).Award, Is.Zero);
+ }
+ [Test] public void ZeroOrIneligibleHoursStayZero() {
+  Assert.That(IndustrialProgressionModel.ComputeHourlyXp(All(0), true, 0, 1.10).Award, Is.Zero);
+  Assert.That(IndustrialProgressionModel.ComputeHourlyXp(All(100), false, 0, 1.10).Award, Is.Zero);
+  var stale = All(100); stale.Fresh = false;
+  Assert.That(IndustrialProgressionModel.ComputeHourlyXp(stale, true, 0, 1.10).Award, Is.Zero);
+  var idle = All(100); idle.ActiveProductiveFacilities = 0;
+  Assert.That(IndustrialProgressionModel.ComputeHourlyXp(idle, true, 0, 1.10).Award, Is.Zero);
+ }
+ [Test] public void ADayOfFocusedManagementNeverExceedsTheDailyCap() {
+  var progress = new IndustrialLevelProgress { Level = 1 }; var state = IndustrialAreaState.CreateDefault(0);
+  for (int h = 0; h < 24; h++)
+   IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 3 * 24 + h, Active = true, Fresh = true }, 1.10);
+  Assert.That(progress.Experience, Is.EqualTo(IndustrialProgressionModel.DailyXpCap));
+  Assert.That(state.XpGrantedToday, Is.EqualTo(IndustrialProgressionModel.DailyXpCap));
+ }
+ [Test] public void StepAwardsTheMultipliedXp() {
+  var progress = new IndustrialLevelProgress { Level = 1 }; var state = IndustrialAreaState.CreateDefault(0);
+  var step = IndustrialProgressionModel.Step(ref progress, ref state, All(100), new IndustrialObservationStamp { HourBucket = 5, Active = true, Fresh = true }, 1.10);
+  Assert.That(step.Xp.Award, Is.EqualTo(11)); Assert.That(progress.Experience, Is.EqualTo(11));
+ }
+}
+

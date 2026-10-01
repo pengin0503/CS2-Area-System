@@ -24,6 +24,27 @@ namespace CS2AreaSystem.Modules.Industrial
             reasonKey = AreaPolicyReasons.EffectUnavailable;
             return false;
         }
+        // Per-facility upkeep basis: classified member facilities from the latest observation cycle (roles, not
+        // throughput or jobs). Producer policies count producer facilities; site-wide policies count every eligible
+        // industrial facility. null until the first observation after load, so billing falls back to base upkeep.
+        public static int? EligibleFacilities(int policyId, IndustrialObservationResult observed)
+        {
+            if (observed == null) return null;
+            switch (policyId)
+            {
+                case AreaPolicyIds.EnvironmentalRegulation:
+                case AreaPolicyIds.ProductionPriority:
+                case AreaPolicyIds.AdvancedAutomation:
+                    return System.Math.Max(0, observed.ProducerFacilities);
+                case AreaPolicyIds.EnhancedSafetyAudits:
+                case AreaPolicyIds.LogisticsPriority:
+                case AreaPolicyIds.TwentyFourHourOperations:
+                case AreaPolicyIds.RestrictedOperatingHours:
+                    return System.Math.Max(0, observed.Members - observed.IgnoredMembers);
+                default:
+                    return null;
+            }
+        }
         private static AreaPolicyDefinition Define(int id, string name, string icon, int level, double baseDaily, double perFacility, string conflictGroup) =>
             new AreaPolicyDefinition(id, "Policy.TITLE[CS2AS.Policy." + name + "]", "Policy.DESCRIPTION[CS2AS.Policy." + name + "]",
                 "Media/Game/Icons/" + icon + ".svg", new[] { (int)AreaTypeId.Industrial }, level,

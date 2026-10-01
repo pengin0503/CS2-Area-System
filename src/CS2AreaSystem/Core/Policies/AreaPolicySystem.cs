@@ -13,6 +13,7 @@ namespace CS2AreaSystem.Core.Policies
     {
         private AreaPolicyRuntime runtime;
         private EntityAreaPolicyStore store;
+        private AreaPolicyUpkeepSettlement upkeep;
         public AreaPolicyRegistry Registry => runtime.Registry;
         public int LoadGeneration => runtime.LoadGeneration;
         private AreaPolicyContext Context => new AreaPolicyContext(World, EntityManager);
@@ -25,8 +26,14 @@ namespace CS2AreaSystem.Core.Policies
                 if (descriptor.Module is IAreaPolicyProvider provider) modules[descriptor.TypeId] = provider;
             runtime = AreaPolicyRuntime.Build(CommonAreaPolicies.Provider, modules, message => Mod.Log.Error(message));
             store = new EntityAreaPolicyStore(EntityManager);
+            upkeep = new AreaPolicyUpkeepSettlement(runtime);
         }
-        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) => runtime.NewLoadGeneration();
+        // A new city starts a new failure-log generation and no upkeep carry from the previous one.
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
+        {
+            runtime.NewLoadGeneration();
+            upkeep.Clear();
+        }
         // Policy state is resolved on demand; consumers registered later in the frame read the current buffer.
         [Preserve]
         protected override void OnUpdate() { }
@@ -35,6 +42,15 @@ namespace CS2AreaSystem.Core.Policies
         public AreaPolicyRuntimeState GetState(Entity area, int policyId) => runtime.GetState(store, area, policyId, Context);
         public bool IsEffective(Entity area, int policyId) => runtime.IsEffective(store, area, policyId, Context);
         public double GetExperienceMultiplier(Entity area) => runtime.GetExperienceMultiplier(store, area, Context);
+        // Same inputs as the settlement, so the UI estimate and the charged amount use one formula.
+        public double EstimateDailyUpkeep(Entity area, AreaPolicyDefinition definition) =>
+            runtime.EstimateDailyUpkeep(store, area, definition, Context, () => SurfaceArea(area));
+        internal void SettleUpkeep(Entity area, uint frames, List<AreaPolicyUpkeepCharge> into) =>
+            upkeep.Settle(store, area, frames, Context, () => SurfaceArea(area), into);
+        internal void ClearUpkeep() => upkeep.Clear();
+        // Area geometry is the hectare source (Game.Areas.Geometry.m_SurfaceArea, square metres).
+        private double SurfaceArea(Entity area) =>
+            EntityManager.HasComponent<Game.Areas.Geometry>(area) ? EntityManager.GetComponentData<Game.Areas.Geometry>(area).m_SurfaceArea : 0;
         private sealed class EntityAreaPolicyStore : IAreaPolicyStore
         {
             private readonly EntityManager entities;

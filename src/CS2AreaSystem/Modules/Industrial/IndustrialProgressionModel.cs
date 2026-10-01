@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CS2AreaSystem.Core.Policies;
 namespace CS2AreaSystem.Modules.Industrial
 {
     public struct IndustrialProgressInputs
@@ -145,7 +146,7 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         // operatingScore = Σ available·w / Σ available w over Production .35, Employment .25, Logistics .20,
         // Performance .20; three of four required; hourly = clamp(roundAwayFromZero(score / 10), 0, 10).
-        public static IndustrialXpResult ComputeHourlyXp(in IndustrialProgressInputs inputs, bool active, int grantedToday)
+        public static IndustrialXpResult ComputeHourlyXp(in IndustrialProgressInputs inputs, bool active, int grantedToday, double xpMultiplier)
         {
             var result = new IndustrialXpResult();
             var parts = new[] { IndustrialScoreMath.Of(inputs.Production, ProductionXpWeight), IndustrialScoreMath.Of(inputs.Employment, EmploymentXpWeight),
@@ -159,9 +160,11 @@ namespace CS2AreaSystem.Modules.Industrial
             if (!inputs.Fresh) return Blocked(result, "Stale");
             if (inputs.ActiveProductiveFacilities < 1) return Blocked(result, "NoOperatingProducer");
             if (!result.OperatingScore.HasValue) return Blocked(result, "InsufficientInputs");
+            // A policy multiplier scales the qualified award before the daily cap (Focused Management, design §10.1).
             int remaining = Math.Max(0, DailyXpCap - Math.Max(0, grantedToday));
-            result.Award = Math.Min(result.Hourly, remaining);
-            if (result.Award < result.Hourly) result.BlockedReason = "DailyCap";
+            int earned = (int)AreaPolicyExperience.Apply(result.Hourly, xpMultiplier, int.MaxValue);
+            result.Award = Math.Min(earned, remaining);
+            if (result.Award < earned) result.BlockedReason = "DailyCap";
             return result;
         }
         private static IndustrialXpResult Blocked(IndustrialXpResult result, string reason) { result.Award = 0; result.BlockedReason = reason; return result; }
@@ -169,7 +172,7 @@ namespace CS2AreaSystem.Modules.Industrial
             award <= 0 ? experience : experience > long.MaxValue - award ? long.MaxValue : experience + award;
         public static uint DayOfHour(long hourBucket) => hourBucket <= 0 ? 0u : (uint)(hourBucket / 24);
         // Settles one hourly observation at most once (persisted LastSettledXpHour), then applies at most one promotion.
-        public static IndustrialProgressStep Step(ref IndustrialLevelProgress progress, ref IndustrialAreaState state, in IndustrialProgressInputs inputs, in IndustrialObservationStamp stamp)
+        public static IndustrialProgressStep Step(ref IndustrialLevelProgress progress, ref IndustrialAreaState state, in IndustrialProgressInputs inputs, in IndustrialObservationStamp stamp, double xpMultiplier)
         {
             var step = new IndustrialProgressStep();
             progress.Level = NormalizeLevel(progress.Level);
@@ -180,7 +183,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 uint day = DayOfHour(stamp.HourBucket);
                 // The cap is per game calendar day and resets only when the day changes.
                 if (day != state.XpDay) { state.XpDay = day; state.XpGrantedToday = 0; }
-                step.Xp = ComputeHourlyXp(current, stamp.Active, state.XpGrantedToday);
+                step.Xp = ComputeHourlyXp(current, stamp.Active, state.XpGrantedToday, xpMultiplier);
                 if (stamp.Active && current.Fresh)
                 {
                     // A fresh Active hour is settled once, even when it earned nothing; missing hours are never backfilled.

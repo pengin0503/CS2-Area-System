@@ -187,7 +187,7 @@ namespace CS2AreaSystem.Core.UI
                 int type = EntityManager.GetComponentData<ManagedArea>(entity).TypeId;
                 view = new AreaPolicySectionView {
                     StableId = EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value.ToString(CultureInfo.InvariantCulture),
-                    Policies = AreaPolicyViews.Build(policies.Registry.ForAreaType(type), id => policies.GetState(entity, id), d => d.Upkeep.EstimateDaily(0, 0, 0))
+                    Policies = AreaPolicyViews.Build(policies.Registry.ForAreaType(type), id => policies.GetState(entity, id), d => policies.EstimateDailyUpkeep(entity, d))
                 };
                 return true;
             }

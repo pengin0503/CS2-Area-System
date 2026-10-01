@@ -6,7 +6,7 @@ using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Industrial
 {
-    public sealed class IndustrialAreaModule : AnchorAreaModule, IAreaExistingAnchorPolicy, IAreaPolicyProvider
+    public sealed class IndustrialAreaModule : AnchorAreaModule, IAreaExistingAnchorPolicy, IAreaPolicyProvider, IAreaPolicyUpkeepProvider
     {
         private readonly Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
@@ -49,5 +49,16 @@ namespace CS2AreaSystem.Modules.Industrial
         public System.Collections.Generic.IReadOnlyList<AreaPolicyDefinition> PolicyDefinitions => IndustrialPolicyCatalog.Definitions;
         public bool IsPolicyEffectAvailable(Entity area, int policyId, in AreaPolicyContext context, out string reasonKey) =>
             IndustrialPolicyCatalog.IsEffectAvailable(policyId, out reasonKey);
+        public bool TryGetPolicyUpkeepInputs(Entity area, int policyId, in AreaPolicyContext context, out AreaPolicyUpkeepInputs inputs)
+        {
+            inputs = default;
+            var runtime = context.World?.GetExistingSystemManaged<IndustrialRuntimeSystem>();
+            if (runtime == null || !context.Entities.HasComponent<ManagedAreaStableId>(area) ||
+                !runtime.Store.TryGet(context.Entities.GetComponentData<ManagedAreaStableId>(area).Value, out var snapshot)) return false;
+            var facilities = IndustrialPolicyCatalog.EligibleFacilities(policyId, snapshot.Current);
+            if (!facilities.HasValue) return false;
+            inputs.EligibleFacilityCount = facilities.Value;
+            return true;
+        }
     }
 }

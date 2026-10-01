@@ -21,6 +21,9 @@ namespace CS2AreaSystem.Modules.Park
             reasonKey = AreaPolicyReasons.EffectUnavailable;
             return false;
         }
+        // Per-facility upkeep basis: the Park's relevant managed facilities (the same count Park management uses).
+        // null until the first facility scan after load, so billing falls back to base and per-hectare upkeep.
+        public static int? EligibleFacilities(ParkFacilitySnapshot facilities) => facilities?.RelevantFacilities;
         private static AreaPolicyDefinition Define(int id, string name, string icon, int level, double baseDaily, double perHectare,
             double perFacility, string conflictGroup, AreaPolicyEffectClass effectClass) =>
             new AreaPolicyDefinition(id, "Policy.TITLE[CS2AS.Policy." + name + "]", "Policy.DESCRIPTION[CS2AS.Policy." + name + "]",

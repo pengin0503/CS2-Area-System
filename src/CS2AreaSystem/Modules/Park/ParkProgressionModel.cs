@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CS2AreaSystem.Core.Policies;
 namespace CS2AreaSystem.Modules.Park
 {
     public struct ParkProgressInputs
@@ -109,22 +110,23 @@ namespace CS2AreaSystem.Modules.Park
             double s = double.IsNaN(satisfaction) ? 0 : Math.Min(100, Math.Max(0, satisfaction)) / 100.0;
             return (long)Math.Round(2 + 8 * s * s);
         }
-        // Hourly reward for sustaining strong Quality while genuinely receiving visitors, capped per in-game day.
-        public static int ComputePassiveXp(float quality, long recentVisitors, bool active, int grantedToday)
+        // Hourly reward for sustaining strong Quality while genuinely receiving visitors, capped per in-game day. A policy
+        // multiplier scales the earned award before the cap (Focused Management, design §10.1).
+        public static int ComputePassiveXp(float quality, long recentVisitors, bool active, int grantedToday, double xpMultiplier)
         {
             if (!active || recentVisitors <= 0 || float.IsNaN(quality) || quality < PassiveXpMinQuality) return 0;
             int amount = Math.Max(1, (int)Math.Round((quality - PassiveXpMinQuality) / 8f));
-            return Math.Max(0, Math.Min(amount, PassiveXpDailyCap - Math.Max(0, grantedToday)));
+            return (int)AreaPolicyExperience.Apply(amount, xpMultiplier, PassiveXpDailyCap - Math.Max(0, grantedToday));
         }
-        public static long AwardVisitXp(long experience, double satisfaction, bool parkActive)
+        public static long AwardVisitXp(long experience, double satisfaction, bool parkActive, double xpMultiplier)
         {
             if (!parkActive) return experience;
-            long gain = ComputeVisitXp(satisfaction);
+            long gain = AreaPolicyExperience.Apply(ComputeVisitXp(satisfaction), xpMultiplier, long.MaxValue);
             return experience > long.MaxValue - gain ? long.MaxValue : experience + gain;
         }
         // One progression tick: capped passive Quality XP, promotion hold and at most one promotion. Suspended Parks
         // keep Level/XP/statistics but earn nothing and restart the hold.
-        public static ParkProgressStep Step(ParkProgressStep previous, ParkProgressInputs inputs, bool active, long recentVisitors, uint frame, uint elapsedFrames)
+        public static ParkProgressStep Step(ParkProgressStep previous, ParkProgressInputs inputs, bool active, long recentVisitors, uint frame, uint elapsedFrames, double xpMultiplier)
         {
             var step = previous;
             step.Level = NormalizeLevel(step.Level);
@@ -140,7 +142,7 @@ namespace CS2AreaSystem.Modules.Park
             }
             uint day = frame / FramesPerDay;
             if (state.PassiveXpDay != day) { state.PassiveXpDay = day; state.PassiveXpToday = 0; }
-            int passive = ComputePassiveXp(inputs.Quality, recentVisitors, true, state.PassiveXpToday);
+            int passive = ComputePassiveXp(inputs.Quality, recentVisitors, true, state.PassiveXpToday, xpMultiplier);
             state.PassiveXpToday += passive;
             step.Experience = step.Experience > long.MaxValue - passive ? long.MaxValue : step.Experience + passive;
             inputs.HoldFrames = state.PromotionHoldFrames;

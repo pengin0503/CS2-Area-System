@@ -6,7 +6,7 @@ using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Park
 {
-    public sealed class ParkAreaModule : AnchorAreaModule, IAreaPolicyProvider
+    public sealed class ParkAreaModule : AnchorAreaModule, IAreaPolicyProvider, IAreaPolicyUpkeepProvider
     {
         private readonly Func<Entity, EntityManager, ParkFacilityTraits> readTraits;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
@@ -41,5 +41,16 @@ namespace CS2AreaSystem.Modules.Park
         public System.Collections.Generic.IReadOnlyList<AreaPolicyDefinition> PolicyDefinitions => ParkPolicyCatalog.Definitions;
         public bool IsPolicyEffectAvailable(Entity area, int policyId, in AreaPolicyContext context, out string reasonKey) =>
             ParkPolicyCatalog.IsEffectAvailable(policyId, out reasonKey);
+        public bool TryGetPolicyUpkeepInputs(Entity area, int policyId, in AreaPolicyContext context, out AreaPolicyUpkeepInputs inputs)
+        {
+            inputs = default;
+            var runtime = context.World?.GetExistingSystemManaged<ParkRuntimeSystem>();
+            if (runtime == null || !context.Entities.HasComponent<ManagedAreaStableId>(area) ||
+                !runtime.Store.TryGet(context.Entities.GetComponentData<ManagedAreaStableId>(area).Value, out var snapshot)) return false;
+            var facilities = ParkPolicyCatalog.EligibleFacilities(snapshot.Facilities);
+            if (!facilities.HasValue) return false;
+            inputs.EligibleFacilityCount = facilities.Value;
+            return true;
+        }
     }
 }

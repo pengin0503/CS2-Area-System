@@ -20,6 +20,10 @@ namespace CS2AreaSystem.Core.Finance
             carry = Math.Max(0, exact - amount);
             return amount;
         }
+        // Frames to settle since the previous settlement, capped so a time jump never back-charges; a frame counter that
+        // moved backwards (a load) settles nothing.
+        public static uint ElapsedFrames(uint lastFrame, uint frame, uint maxFrames) =>
+            frame <= lastFrame ? 0u : Math.Min(maxFrames, frame - lastFrame);
         public static long SaturatingAdd(long a, long b)
         {
             if (b > 0 && a > long.MaxValue - b) return long.MaxValue;

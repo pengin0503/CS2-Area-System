@@ -10,6 +10,8 @@ namespace CS2AreaSystem.Modules.Industrial
     public partial class IndustrialProgressionSystem : GameSystemBase
     {
         private IndustrialRuntimeSystem runtime;
+        private CS2AreaSystem.Core.Policies.AreaPolicySystem policies;
+        private bool policyFailureLogged;
         private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
         private int failuresLogged;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => IndustrialObservationSystem.UpdateFrames;
@@ -26,6 +28,7 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<IndustrialRuntimeSystem>();
+            policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
         }
         [Preserve]
         protected override void OnUpdate()
@@ -40,6 +43,16 @@ namespace CS2AreaSystem.Modules.Industrial
                 {
                     if (failuresLogged++ < 3) Mod.Log.Error(error, "Industrial progression update failed for one Area; others continue");
                 }
+            }
+        }
+        // Policy bonus to XP the Area already earned; a policy failure only removes the bonus.
+        private double XpMultiplier(Unity.Entities.Entity area)
+        {
+            try { return policies.GetExperienceMultiplier(area); }
+            catch (System.Exception error)
+            {
+                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area policy XP bonus unavailable; Industrial XP continues without it"); }
+                return 1.0;
             }
         }
         private void Tick(IndustrialAreaRef area, uint day)
@@ -62,7 +75,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 inputs.StreakDays = state.HighThroughputStreakDays;
                 var level = new IndustrialLevelProgress { Level = progress.Level, Experience = progress.Experience };
                 var step = IndustrialProgressionModel.Step(ref level, ref state, inputs,
-                    new IndustrialObservationStamp { HourBucket = result.HourBucket, Active = active, Fresh = inputs.Fresh });
+                    new IndustrialObservationStamp { HourBucket = result.HourBucket, Active = active, Fresh = inputs.Fresh }, XpMultiplier(area.Area));
                 snapshot.LastXp = step.Xp; snapshot.HasXpResult = true;
                 // Level is permanent: a stored higher level is never lowered.
                 progress.Level = System.Math.Max(IndustrialProgressionModel.NormalizeLevel(progress.Level), level.Level);

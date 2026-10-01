@@ -68,6 +68,9 @@ namespace CS2AreaSystem
                 updateSystem.UpdateBefore<CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize);
             }
             catch (System.Exception error) { Log.Error(error, "Area finance unavailable; Area Core and modules remain registered."); }
+            // Policy upkeep is a GameSimulation producer (UpdateAt), so AreaFinanceSystem (UpdateAfter) applies it in the same frame.
+            try { updateSystem.UpdateAt<CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem>(SystemUpdatePhase.GameSimulation); }
+            catch (System.Exception error) { Log.Error(error, "Area policy upkeep unavailable; Area Core and modules remain registered."); }
         }
         // Park gameplay observes the city after Core. A Park registration failure leaves Core geometry, lifecycle,
         // persistence and the other area types running.
