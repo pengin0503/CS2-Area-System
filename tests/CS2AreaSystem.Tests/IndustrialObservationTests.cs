@@ -102,6 +102,9 @@ public class IndustrialObservationTests {
   tracker.MemberChanged(house, index);
   ulong before = tracker.Get(10); tracker.Remove(10);
   Assert.That(tracker.Get(10), Is.Not.EqualTo(before), "removed token never equals a captured one");
+  tracker.Bump(10); tracker.Bump(77);
+  tracker.RetainOnly(new[] { Area(10), Area(30, AreaLifecycleState.Suspended) });
+  Assert.That(tracker.Get(77), Is.EqualTo(0UL), "deleted Area's token is dropped"); Assert.That(tracker.Count, Is.EqualTo(2));
   tracker.Clear(); Assert.That(tracker.Get(30), Is.EqualTo(0UL));
  }
  [Test] public void CompletedCyclesPublishOnlyWithUnchangedTokens() {
@@ -148,6 +151,22 @@ public class IndustrialObservationTests {
   Assert.That(first.Count(r => r.AreaId == 20), Is.EqualTo(5), "the small Area is not starved by the large one");
   Assert.That(Drain(scheduler), Has.Count.EqualTo(77), "remaining reads continue next update");
   Assert.That(Drain(scheduler), Is.Empty);
+ }
+ [Test] public void DroppedReadsAreReadAgainInsteadOfBlockingTheCycle() {
+  var source = new Source();
+  source.Index.ReplaceMembership(factory, new[] { new AreaMembership(10, Industrial, true) });
+  source.Index.ReplaceMembership(mine, new[] { new AreaMembership(10, Industrial, true) });
+  var scheduler = new IndustrialObservationScheduler();
+  scheduler.Sync(new[] { Area(10) }, 0, 0, 0, source);
+  var lost = Drain(scheduler);
+  Assert.That(lost, Has.Count.EqualTo(2));
+  scheduler.Abandon(); // job results dropped
+  Assert.That(scheduler.TakeFinished(source, 0, 10, 0.01), Is.Empty);
+  var again = Drain(scheduler);
+  Assert.That(again.Select(r => r.Building), Is.EquivalentTo(new[] { factory, mine }));
+  foreach (var r in again) scheduler.Complete(r, Producer(r.Building, 50, 10, 10));
+  var finished = scheduler.TakeFinished(source, 0, 20, 0.02);
+  Assert.That(finished, Has.Count.EqualTo(1)); Assert.That(finished[0].Accumulator.ProducerFacilities, Is.EqualTo(2));
  }
  [Test] public void LoadClearsAllCycles() {
   var source = new Source();

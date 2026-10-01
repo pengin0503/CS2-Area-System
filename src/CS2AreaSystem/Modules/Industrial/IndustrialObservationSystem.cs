@@ -57,6 +57,15 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (relation.TypeId == (int)AreaTypeId.Industrial) Bump(relation.AreaStableId);
         }
         public void Remove(ulong areaId) => tokens.Remove(areaId);
+        public int Count => tokens.Count;
+        public void RetainOnly(IEnumerable<IndustrialAreaRef> alive)
+        {
+            var ids = new HashSet<ulong>();
+            foreach (var area in alive) ids.Add(area.StableId);
+            var gone = new List<ulong>();
+            foreach (var id in tokens.Keys) if (!ids.Contains(id)) gone.Add(id);
+            foreach (var id in gone) tokens.Remove(id);
+        }
         public void Clear() => tokens.Clear();
     }
     public sealed class IndustrialCycle
@@ -133,6 +142,13 @@ namespace CS2AreaSystem.Modules.Industrial
                 into.Add(new IndustrialReadRequest(cycle.Members[cycle.NextMember++], cycle.AreaId, cycle.CycleId));
                 cycle.Outstanding++;
             }
+        }
+        // Reads that were handed out but will never be completed (dropped job results): rewind those cycles so they
+        // are read again instead of waiting forever. Their partial totals are discarded.
+        public void Abandon()
+        {
+            foreach (var cycle in cycles.Values)
+                if (cycle.Outstanding > 0) { cycle.Outstanding = 0; cycle.NextMember = 0; cycle.Accumulator = new IndustrialCycleAccumulator(); }
         }
         // Results of restarted/dropped cycles are ignored, so generations never mix.
         public bool Complete(in IndustrialReadRequest request, in IndustrialEntityObservation observation, bool failed = false)
@@ -224,6 +240,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 scheduler.Sync(areas, bucket, frame, hours, source);
                 foreach (var cycle in scheduler.TakeFinished(source, bucket, frame, hours)) Publish(cycle, frame, hours);
                 MarkPaused();
+                // Reads are handed out only when they can be scheduled, so no cycle waits on a read that never runs.
+                if (economyQuery.IsEmptyIgnoreFilter) return;
                 scheduler.NextReads(requests);
                 if (requests.Count > 0) Schedule();
             }
@@ -235,6 +253,8 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         private void DropPending()
         {
+            // Any read handed out but not consumed (dropped results or a failed schedule) is read again later.
+            scheduler.Abandon();
             hasPending = false;
             if (pendingRequests.IsCreated) pendingRequests.Dispose();
             buildingReads.Clear(); companyReads.Clear();
@@ -277,7 +297,6 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         private void Schedule()
         {
-            if (economyQuery.IsEmptyIgnoreFilter) return;
             pendingRequests = new NativeArray<IndustrialReadRequest>(requests.Count, Allocator.Persistent);
             for (int i = 0; i < requests.Count; i++) pendingRequests[i] = requests[i];
             var job = new ReadJob { Requests = pendingRequests, Buildings = buildingReads, Companies = companyReads, Reader = CreateReader() };

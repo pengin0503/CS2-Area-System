@@ -114,12 +114,11 @@ namespace CS2AreaSystem.Modules.Industrial
                 rows.Add((entity, EntityManager.GetComponentData<ManagedArea>(entity), EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value));
             IndustrialAreaSelection.Select(rows, result);
         }
+        // Drops runtime snapshots and structure tokens of deleted Industrial Areas; Suspended Areas stay.
         public void PruneStore(List<IndustrialAreaRef> alive)
         {
             Store.Prune(alive);
-            var ids = new HashSet<ulong>();
-            foreach (var area in alive) ids.Add(area.StableId);
-            foreach (var snapshot in new List<IndustrialRuntimeSnapshot>(Store.All)) if (!ids.Contains(snapshot.StableId)) Structure.Remove(snapshot.StableId);
+            Structure.RetainOnly(alive);
         }
         private void TrackStructureChanges()
         {
