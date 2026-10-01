@@ -13,6 +13,9 @@ public class ModSystemOrderTests {
     private static readonly List<UpdateSystemCall> Vanilla = UpdateSystemCallReader.Read(typeof(SystemOrder));
     private static readonly List<UpdateSystemCall> ModCalls = UpdateSystemCallReader.Read(typeof(Mod));
     private static UpdateSystemCall VanillaRegistration<T>() => Vanilla.Single(c => c.System == typeof(T));
+    private static readonly List<UpdateSystemCall> ModExecution = UpdateSystemCallReader.ReadExecution(typeof(Mod).GetMethod(nameof(Mod.OnLoad))!);
+    private static readonly List<UpdateSystemCall> VanillaExecution = UpdateSystemCallReader.ReadExecution(typeof(SystemOrder).GetMethod(nameof(SystemOrder.Initialize))!);
+    internal static List<Type> Schedule(SystemUpdatePhase phase) => UpdateSchedule.Resolve(phase, VanillaExecution, ModExecution);
     [Test] public void VanillaToolbarRebindRunsInsideMainLoopBeforeEventsAreDestroyed() {
         Assert.That(Vanilla, Has.Count.GreaterThan(500), "the whole vanilla schedule was read");
         Assert.That(VanillaRegistration<ToolbarUISystem>(), Is.EqualTo(new UpdateSystemCall("UpdateAt", typeof(ToolbarUISystem), null, SystemUpdatePhase.UIUpdate)));
@@ -29,5 +32,27 @@ public class ModSystemOrderTests {
         // A MainLoop UpdateAt sorts after UIUpdateSystem (registered first by the game), so ToolbarUISystem never saw the event.
         Assert.That(registrations, Is.EqualTo(new[] { new UpdateSystemCall("UpdateBefore", typeof(AreaToolbarUnlockSystem), typeof(ToolbarUISystem), VanillaRegistration<ToolbarUISystem>().Phase) }),
             "UpdateBefore only takes effect in the phase where the anchor itself is registered");
+    }
+    [Test] public void ExecutionReaderFollowsModRegistrationHelpersInCallOrder() {
+        Assert.That(ModExecution.Select(c => c.System), Is.EquivalentTo(ModCalls.Select(c => c.System)), "every compiled registration is replayed once");
+        int lifecycle = ModExecution.FindIndex(c => c.System == typeof(CS2AreaSystem.Core.Areas.ManagedAreaLifecycleSystem));
+        int park = ModExecution.FindIndex(c => c.System == typeof(CS2AreaSystem.Modules.Park.ParkVisitSystem));
+        int ui = ModExecution.FindIndex(c => c.System == typeof(CS2AreaSystem.Core.UI.AreaManagementUISystem));
+        Assert.That(lifecycle, Is.LessThan(park)); Assert.That(park, Is.LessThan(ui));
+    }
+    [Test] public void ScheduleReplayMatchesKnownVanillaAnchors() {
+        var ui = Schedule(SystemUpdatePhase.UIUpdate);
+        Assert.That(ui.IndexOf(typeof(AreaToolbarUnlockSystem)), Is.EqualTo(ui.IndexOf(typeof(ToolbarUISystem)) - 1));
+    }
+    [Test] public void PolicyBootstrapRunsOnceAfterLoadCoordinatorInModificationEnd() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Policies.AreaPolicyBootstrapSystem)).Select(c => c.Phase),
+            Is.EqualTo(new[] { SystemUpdatePhase.ModificationEnd }));
+        var order = Schedule(SystemUpdatePhase.ModificationEnd);
+        int coordinator = order.IndexOf(typeof(CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem));
+        int lifecycle = order.IndexOf(typeof(CS2AreaSystem.Core.Areas.ManagedAreaLifecycleSystem));
+        int bootstrap = order.IndexOf(typeof(CS2AreaSystem.Core.Policies.AreaPolicyBootstrapSystem));
+        Assert.That(coordinator, Is.GreaterThanOrEqualTo(0)); Assert.That(lifecycle, Is.GreaterThanOrEqualTo(0));
+        Assert.That(bootstrap, Is.GreaterThan(coordinator), "load readiness is known before buffers are created");
+        Assert.That(bootstrap, Is.GreaterThan(lifecycle), "ManagedArea exists before its policy buffer is added");
     }
 }

@@ -26,6 +26,7 @@ namespace CS2AreaSystem
             updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.PreTool);
             updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
+            updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicyBootstrapSystem, CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
             RegisterParkSystems(updateSystem);

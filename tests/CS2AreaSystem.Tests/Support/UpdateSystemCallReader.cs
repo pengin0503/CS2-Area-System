@@ -16,7 +16,12 @@ public static class UpdateSystemCallReader {
             calls.AddRange(Read(method));
         return calls;
     }
-    public static List<UpdateSystemCall> Read(MethodInfo method) {
+    public static List<UpdateSystemCall> Read(MethodInfo method) => Read(method, false, 0);
+    // Calls in the order an entry point executes them: calls into other methods of the same type (Mod's
+    // RegisterParkSystems helpers) are followed inline, so the result can be replayed as UpdateSystem add indices.
+    public static List<UpdateSystemCall> ReadExecution(MethodInfo entry) => Read(entry, true, 0);
+    private static List<UpdateSystemCall> Read(MethodInfo method, bool followOwnType, int depth) {
+        if (depth > 16) throw new InvalidOperationException("recursive registration helpers are not supported");
         var calls = new List<UpdateSystemCall>();
         var il = method.GetMethodBody()?.GetILAsByteArray();
         if (il == null) return calls;
@@ -33,6 +38,11 @@ public static class UpdateSystemCallReader {
                 if (constant == null) throw new InvalidOperationException($"{method.DeclaringType}.{method.Name}: phase of {target.Name} is not a constant");
                 var generic = target.IsGenericMethod ? target.GetGenericArguments() : Type.EmptyTypes;
                 calls.Add(new UpdateSystemCall(target.Name, generic.ElementAtOrDefault(0), generic.ElementAtOrDefault(1), (SystemUpdatePhase)constant.Value));
+            }
+            else if (followOwnType && (opCode == OpCodes.Call || opCode == OpCodes.Callvirt) &&
+                method.Module.ResolveMethod(BitConverter.ToInt32(il, offset), GenericArguments(method.DeclaringType), method.GetGenericArguments()) is MethodInfo helper &&
+                helper.DeclaringType == method.DeclaringType && helper != method) {
+                calls.AddRange(Read(helper, true, depth + 1));
             }
             offset += OperandSize(opCode.OperandType, il, offset);
             constant = loaded;
