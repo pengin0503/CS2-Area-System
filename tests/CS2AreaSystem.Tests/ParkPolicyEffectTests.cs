@@ -63,12 +63,19 @@ public class ParkPolicyEffectTests {
  }
  [Test] public void AFailingPolicyReadFallsBackToTheBaselineAndReportsOnce() {
   var errors = new List<Exception>();
-  var reader = new ParkPolicyEffectReader((area, id) => throw new InvalidOperationException("policy store"), errors.Add);
+  var log = new CS2AreaSystem.Core.Diagnostics.AreaFailureLog((e, _) => errors.Add(e), _ => { });
+  var reader = new ParkPolicyEffectReader((area, id) => throw new InvalidOperationException("policy store"), log, "Park.PolicyEffects", "effects unavailable");
   Assert.That(reader.Read(Entity.Null), Is.EqualTo(ParkPolicyEffects.None));
   Assert.That(reader.Read(Entity.Null), Is.EqualTo(ParkPolicyEffects.None));
   Assert.That(errors, Has.Count.EqualTo(1));
+  var other = new Entity { Index = 9, Version = 1 };
+  Assert.That(reader.Read(other), Is.EqualTo(ParkPolicyEffects.None));
+  Assert.That(errors, Has.Count.EqualTo(2), "another Area's failure is diagnosed on its own");
+  log.NewGeneration();
+  reader.Read(Entity.Null);
+  Assert.That(errors, Has.Count.EqualTo(3), "a new load diagnoses again");
   var area = new Entity { Index = 3, Version = 1 };
-  var working = new ParkPolicyEffectReader((a, id) => a == area && id == AreaPolicyIds.PremiumServices, errors.Add);
+  var working = new ParkPolicyEffectReader((a, id) => a == area && id == AreaPolicyIds.PremiumServices, log, "Park.PolicyEffects", "effects unavailable");
   Assert.That(working.Read(area), Is.EqualTo(Only(AreaPolicyIds.PremiumServices)));
   Assert.That(working.Read(Entity.Null), Is.EqualTo(ParkPolicyEffects.None), "effects are read per Area");
  }

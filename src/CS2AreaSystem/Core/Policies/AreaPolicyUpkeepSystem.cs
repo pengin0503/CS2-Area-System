@@ -26,7 +26,7 @@ namespace CS2AreaSystem.Core.Policies
         private EntityQuery areas;
         private uint lastFrame;
         private int loadGeneration, startedGeneration = -1;
-        private int failuresLogged;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => (int)UpdateFrames;
         [Preserve]
         protected override void OnCreate()
@@ -36,6 +36,7 @@ namespace CS2AreaSystem.Core.Policies
             finance = World.GetOrCreateSystemManaged<AreaFinanceSystem>();
             simulation = World.GetOrCreateSystemManaged<SimulationSystem>();
             load = World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>();
+            failures = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>().Failures;
             areas = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>(), ComponentType.ReadOnly<ManagedAreaPolicyEntry>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() }
@@ -44,7 +45,6 @@ namespace CS2AreaSystem.Core.Policies
         protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
         {
             loadGeneration++;
-            failuresLogged = 0;
         }
         [Preserve]
         protected override void OnUpdate()
@@ -66,11 +66,11 @@ namespace CS2AreaSystem.Core.Policies
                 foreach (var area in entities)
                 {
                     charges.Clear();
-                    try { policies.SettleUpkeep(area, elapsed, charges); }
+                    try { policies.SettleUpkeep(area, elapsed, charges); failures.Recovered(area, "Policy.Upkeep"); }
                     catch (System.Exception error)
                     {
                         // One Area's failure leaves the other Areas billed and running.
-                        if (failuresLogged++ < 3) Mod.Log.Error(error, "Area policy upkeep could not be settled for one Area; others continue");
+                        failures.Report(area, "Policy.Upkeep", error, "Area policy upkeep could not be settled for managed area " + area + "; others continue");
                         continue;
                     }
                     foreach (var charge in charges) finance.EnqueueExpense(charge.AreaStableId, AreaFinanceKind.PolicyUpkeep, charge.Amount);

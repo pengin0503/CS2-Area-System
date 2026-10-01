@@ -35,7 +35,7 @@ namespace CS2AreaSystem.Modules.Park
         private JobHandle pending;
         private uint lastSettlement, inFlightFrame;
         private int loadGeneration = -1;
-        private bool admissionFailureLogged, settlementFailureLogged;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => (int)UpdateFrames;
         [Preserve]
         protected override void OnCreate()
@@ -46,8 +46,9 @@ namespace CS2AreaSystem.Modules.Park
             areaFinance = World.GetOrCreateSystemManaged<AreaFinanceSystem>();
             areaFinance.AddListener(this);
             var policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
-            policyEffects = new ParkPolicyEffectReader((area, id) => policies.IsEffective(area, id),
-                error => Mod.Log.Error(error, "Area policy effects unavailable; Park management continues at the budget setting"));
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
+            policyEffects = new ParkPolicyEffectReader((area, id) => policies.IsEffective(area, id), failures, "Park.Finance.PolicyEffects",
+                "Area policy effects unavailable; Park management continues at the budget setting");
             World.GetOrCreateSystemManaged<ParkVisitSystem>().AddListener(this);
         }
         [Preserve]
@@ -67,7 +68,7 @@ namespace CS2AreaSystem.Modules.Park
             pending.Complete();
             if (loadGeneration != runtime.LoadGeneration)
             {
-                loadGeneration = runtime.LoadGeneration; lastSettlement = frame; recordFailuresLogged = 0;
+                loadGeneration = runtime.LoadGeneration; lastSettlement = frame;
                 inFlight = null; DisposeBuffers(); ledger.Clear();
                 return;
             }
@@ -98,11 +99,11 @@ namespace CS2AreaSystem.Modules.Park
                     policyEffects.Read(park.Area).ManagementFundingMultiplier);
                 if (!ParkFinanceModel.ShouldSettleManagement(park.State)) return;
                 areaFinance.EnqueueExpense(park.StableId, AreaFinanceKind.ParkManagement, ParkFinanceModel.Settle(snapshot.ManagementCostPerDay, elapsed, ref snapshot.ExpenseCarry));
-                settlementFailureLogged = false;
+                failures.Recovered(park.Area, "Park.Settlement");
             }
             catch (System.Exception error)
             {
-                if (!settlementFailureLogged) { settlementFailureLogged = true; Mod.Log.Error(error, "Park management settlement failed"); }
+                failures.Report(park.Area, "Park.Settlement", error, "Park management settlement failed for managed area " + park.Area);
             }
         }
         internal void FlushForSave() => AreaFinanceSaveBoundary.Flush(runtime.Ready, loadGeneration, runtime.LoadGeneration,
@@ -126,7 +127,7 @@ namespace CS2AreaSystem.Modules.Park
             }
             catch (System.Exception error)
             {
-                if (!admissionFailureLogged) { admissionFailureLogged = true; Mod.Log.Error(error, "Park admission failed; nothing collected for this visit"); }
+                failures.Report(area, "Park.Admission", error, "Park admission failed for managed area " + area + "; nothing collected for this visit");
             }
         }
         public void OnVisitCompleted(in ParkVisitEvent visit, Entity area, ParkRuntimeSnapshot snapshot, bool parkActive) { }
@@ -155,13 +156,11 @@ namespace CS2AreaSystem.Modules.Park
             var outcomes = ParkTransactionLedger.Resolve(batch, amounts);
             DisposeBuffers();
             // The household transfers already credited the city; these are records only, one failure never skips the rest.
-            ParkAdmissionRecording.RecordAll(outcomes.Admissions, recordSink ??= new RecordSink(this), (error, outcome, what) => {
-                if (recordFailuresLogged++ < 3)
-                    Mod.Log.Error(error, "Park admission " + what + " could not be recorded for Park " + outcome.Request.ParkId + " (collected " + outcome.Collected + "); other admissions are recorded");
-            });
+            ParkAdmissionRecording.RecordAll(outcomes.Admissions, recordSink ??= new RecordSink(this), (error, outcome, what) =>
+                failures.Report(outcome.Request.Area, "Park.AdmissionRecord:" + what, error, "Park admission " + what + " could not be recorded for Park " +
+                    outcome.Request.ParkId + " (collected " + outcome.Collected + "); other admissions are recorded"));
         }
         private RecordSink recordSink;
-        private int recordFailuresLogged;
         private sealed class RecordSink : IParkAdmissionRecordSink
         {
             private readonly ParkFinanceSystem system;

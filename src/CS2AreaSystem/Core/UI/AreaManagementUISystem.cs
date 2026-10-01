@@ -39,7 +39,6 @@ namespace CS2AreaSystem.Core.UI
         private Entity pendingArea;
         private ulong pendingId;
         private AreaAnchorRole pendingRole;
-        private bool failureLogged;
         public override GameMode gameMode => GameMode.Game;
         public bool IsReady => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
         protected override void OnCreate()
@@ -86,7 +85,7 @@ namespace CS2AreaSystem.Core.UI
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
         {
             base.OnGamePreload(purpose, mode);
-            pendingArea = Entity.Null; failureLogged = false;
+            pendingArea = Entity.Null;
             listVisibility.Update(false, false);
             // The system is disabled outside gameplay, so clear the UI now instead of on the next update.
             SetPending(null);
@@ -117,11 +116,11 @@ namespace CS2AreaSystem.Core.UI
                 SetPending(pendingArea != Entity.Null && selected != pendingArea ? new PendingAssignmentView {
                     StableId = pendingId.ToString(CultureInfo.InvariantCulture), Name = names.GetRenderedLabelName(pendingArea), Role = pendingRole.ToString()
                 } : null);
-                failureLogged = false;
+                services.Failures.Recovered(Entity.Null, "UI.Management");
             }
             catch (Exception error)
             {
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Area management UI unavailable"); }
+                services.Failures.Report(Entity.Null, "UI.Management", error, "Area management UI unavailable");
                 SetPending(null);
             }
         }
@@ -170,24 +169,23 @@ namespace CS2AreaSystem.Core.UI
         private Core.Modules.AreaPanelDocument BuildPanel(Core.Modules.IAreaPanelProvider provider, Entity entity, in Core.Modules.AreaPanelContext context)
         {
             if (provider == null) return Core.Modules.AreaPanelDocument.Overview();
-            try { return provider.BuildPanel(entity, context) ?? Core.Modules.AreaPanelDocument.Overview(); }
+            try { var panel = provider.BuildPanel(entity, context) ?? Core.Modules.AreaPanelDocument.Overview(); services.Failures.Recovered(entity, "UI.Panel"); return panel; }
             catch (Exception error)
             {
-                if (!panelFailureLogged) { panelFailureLogged = true; Mod.Log.Error(error, "Area module panel unavailable"); }
+                services.Failures.Report(entity, "UI.Panel", error, "Area module panel unavailable for managed area " + entity);
                 return Core.Modules.AreaPanelDocument.Overview();
             }
         }
         private string BuildSummary(Core.Modules.IAreaPanelProvider provider, Entity entity, in Core.Modules.AreaPanelContext context)
         {
             if (provider == null) return "CS2AS.Summary.ModuleUnavailable";
-            try { return provider.BuildSummary(entity, context) ?? "CS2AS.Summary.ModuleUnavailable"; }
+            try { var summary = provider.BuildSummary(entity, context) ?? "CS2AS.Summary.ModuleUnavailable"; services.Failures.Recovered(entity, "UI.Summary"); return summary; }
             catch (Exception error)
             {
-                if (!panelFailureLogged) { panelFailureLogged = true; Mod.Log.Error(error, "Area module summary unavailable"); }
+                services.Failures.Report(entity, "UI.Summary", error, "Area module summary unavailable for managed area " + entity);
                 return "CS2AS.Summary.ModuleUnavailable";
             }
         }
-        private bool panelFailureLogged, policyFailureLogged;
         public bool TryBuildPolicySection(Entity entity, out AreaPolicySectionView view)
         {
             view = null;
@@ -201,11 +199,12 @@ namespace CS2AreaSystem.Core.UI
                     StableId = EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value.ToString(CultureInfo.InvariantCulture),
                     Policies = AreaPolicyViews.Build(policies.Registry.ForAreaType(type), id => policies.GetState(entity, id), d => policies.EstimateDailyUpkeep(entity, d))
                 };
+                services.Failures.Recovered(entity, "UI.Policy");
                 return true;
             }
             catch (Exception error)
             {
-                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area policy section unavailable"); }
+                services.Failures.Report(entity, "UI.Policy", error, "Area policy section unavailable for managed area " + entity);
                 return false;
             }
         }

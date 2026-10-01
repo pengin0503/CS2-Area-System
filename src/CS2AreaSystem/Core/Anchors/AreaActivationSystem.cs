@@ -62,7 +62,15 @@ namespace CS2AreaSystem.Core.Anchors
                     if (area.State == AreaLifecycleState.Deleted) descriptor.Module.OnAreaDeleted(entity);
                 }
             }
-            catch (System.Exception error) { Mod.Log.Error(error, "Area module failed: " + area.TypeId); area.State = deleted ? AreaLifecycleState.Deleted : AreaLifecycleState.ModuleUnavailable; }
+            catch (System.Exception error)
+            {
+                // #68: a persistently failing module is logged once per Area, module and failure class until it recovers or a new load.
+                services.Failures.Report(entity, "Activation:" + area.TypeId, error, "Area module " + area.TypeId + " failed for managed area " + entity + "; it is marked unavailable");
+                area.State = deleted ? AreaLifecycleState.Deleted : AreaLifecycleState.ModuleUnavailable;
+                EntityManager.SetComponentData(entity, area);
+                return;
+            }
+            services.Failures.Recovered(entity, "Activation:" + area.TypeId);
             EntityManager.SetComponentData(entity, area);
         }
     }

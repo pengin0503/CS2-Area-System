@@ -11,9 +11,8 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         private IndustrialRuntimeSystem runtime;
         private CS2AreaSystem.Core.Policies.AreaPolicySystem policies;
-        private bool policyFailureLogged;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
-        private int failuresLogged;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => IndustrialObservationSystem.UpdateFrames;
         public static IndustrialProgressInputs BuildInputs(IndustrialObservationResult result, in IndustrialAreaState state)
         {
@@ -29,6 +28,7 @@ namespace CS2AreaSystem.Modules.Industrial
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<IndustrialRuntimeSystem>();
             policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
         }
         [Preserve]
         protected override void OnUpdate()
@@ -38,20 +38,20 @@ namespace CS2AreaSystem.Modules.Industrial
             runtime.CollectAreas(areas);
             foreach (var area in areas)
             {
-                try { Tick(area, day); }
+                try { Tick(area, day); failures.Recovered(area.Area, "Industrial.Progression"); }
                 catch (System.Exception error)
                 {
-                    if (failuresLogged++ < 3) Mod.Log.Error(error, "Industrial progression update failed for one Area; others continue");
+                    failures.Report(area.Area, "Industrial.Progression", error, "Industrial progression update failed for managed area " + area.Area + "; others continue");
                 }
             }
         }
         // Policy bonus to XP the Area already earned; a policy failure only removes the bonus.
         private double XpMultiplier(Unity.Entities.Entity area)
         {
-            try { return policies.GetExperienceMultiplier(area); }
+            try { double multiplier = policies.GetExperienceMultiplier(area); failures.Recovered(area, "Industrial.PolicyXp"); return multiplier; }
             catch (System.Exception error)
             {
-                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area policy XP bonus unavailable; Industrial XP continues without it"); }
+                failures.Report(area, "Industrial.PolicyXp", error, "Area policy XP bonus unavailable for managed area " + area + "; Industrial XP continues without it");
                 return 1.0;
             }
         }

@@ -194,7 +194,8 @@ namespace CS2AreaSystem.Modules.Industrial
         private NativeList<IndustrialCompanyRead> companyReads;
         private JobHandle pending;
         private bool hasPending;
-        private int loadGeneration = -1, failuresLogged;
+        private int loadGeneration = -1;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public IndustrialObservationScheduler Scheduler => scheduler;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => UpdateFrames;
         [Preserve]
@@ -204,6 +205,7 @@ namespace CS2AreaSystem.Modules.Industrial
             runtime = World.GetOrCreateSystemManaged<IndustrialRuntimeSystem>();
             simulation = World.GetOrCreateSystemManaged<Game.Simulation.SimulationSystem>();
             resourceSystem = World.GetOrCreateSystemManaged<ResourceSystem>();
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
             economyQuery = GetEntityQuery(ComponentType.ReadOnly<EconomyParameterData>());
             buildingReads = new NativeList<IndustrialBuildingRead>(IndustrialObservationScheduler.DefaultBudget, Allocator.Persistent);
             companyReads = new NativeList<IndustrialCompanyRead>(IndustrialObservationScheduler.DefaultBudget, Allocator.Persistent);
@@ -244,11 +246,12 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (economyQuery.IsEmptyIgnoreFilter) return;
                 scheduler.NextReads(requests);
                 if (requests.Count > 0) Schedule();
+                failures.Recovered(Entity.Null, "Industrial.Observation");
             }
             catch (System.Exception error)
             {
                 DropPending();
-                if (failuresLogged++ < 3) Mod.Log.Error(error, "Industrial observation update failed; Area Core and other modules continue");
+                failures.Report(Entity.Null, "Industrial.Observation", error, "Industrial observation update failed; Area Core and other modules continue");
             }
         }
         private void DropPending()
@@ -270,7 +273,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 companies.Clear();
                 while (c < companyReads.Length && companyReads[c].Building == read.Building) companies.Add(companyReads[c++]);
                 var request = new IndustrialReadRequest(read.Building, read.AreaId, read.CycleId);
-                if (read.Failed && failuresLogged++ < 3) Mod.Log.Warn("Industrial observation skipped an entity it could not read: " + read.Building);
+                if (read.Failed) failures.Warn(read.Building, "Industrial.Read", "Unreadable", "Industrial observation skipped an entity it could not read: " + read.Building);
+                else failures.Recovered(read.Building, "Industrial.Read");
                 scheduler.Complete(request, IndustrialObservationMapper.ToObservation(read, companies), read.Failed);
             }
             if (pendingRequests.IsCreated) pendingRequests.Dispose();
@@ -307,8 +311,9 @@ namespace CS2AreaSystem.Modules.Industrial
             // failed registration: the reads exist and are consumed next update, so no cycle stays outstanding.
             if (outcome == Core.Jobs.ScheduledJobOutcome.NotScheduled) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw();
             hasPending = true;
-            if (outcome == Core.Jobs.ScheduledJobOutcome.CompletedAfterRegistrationFailure && failuresLogged++ < 3)
-                Mod.Log.Error(error, "Industrial observation could not register its resource-prefab read; this batch was completed immediately");
+            if (outcome == Core.Jobs.ScheduledJobOutcome.CompletedAfterRegistrationFailure)
+                failures.Report(Entity.Null, "Industrial.ReadRegistration", error, "Industrial observation could not register its resource-prefab read; this batch was completed immediately");
+            else failures.Recovered(Entity.Null, "Industrial.ReadRegistration");
         }
         private IndustrialObservationReader CreateReader() => new IndustrialObservationReader {
             Buildings = GetComponentLookup<Building>(true), Prefabs = GetComponentLookup<PrefabRef>(true),

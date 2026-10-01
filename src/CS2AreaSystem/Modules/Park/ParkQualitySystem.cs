@@ -19,7 +19,6 @@ namespace CS2AreaSystem.Modules.Park
         private readonly List<(float X, float Z)> positions = new List<(float X, float Z)>();
         private readonly List<ParkFacilityTraits> members = new List<ParkFacilityTraits>();
         private int cursor;
-        private bool failureLogged;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => UpdateFrames;
         [Preserve]
         protected override void OnCreate()
@@ -28,8 +27,8 @@ namespace CS2AreaSystem.Modules.Park
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
             services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
             var policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
-            policyEffects = new ParkPolicyEffectReader((area, id) => policies.IsEffective(area, id),
-                error => Mod.Log.Error(error, "Area policy effects unavailable; Park Quality continues without them"));
+            policyEffects = new ParkPolicyEffectReader((area, id) => policies.IsEffective(area, id), services.Failures, "Park.Quality.PolicyEffects",
+                "Area policy effects unavailable; Park Quality continues without them");
         }
         [Preserve]
         protected override void OnUpdate()
@@ -79,12 +78,12 @@ namespace CS2AreaSystem.Modules.Park
                     Active = park.State == AreaLifecycleState.Active, Policies = policyEffects.Read(park.Area) });
                 snapshot.Experience = snapshot.Quality.Experience;
                 snapshot.QualityFrame = frame;
-                failureLogged = false;
+                services.Failures.Recovered(park.Area, "Park.Quality");
             }
             catch (System.Exception error)
             {
                 // The previous snapshot (if any) is retained; Core lifecycle and other Parks continue.
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park quality evaluation failed; last result kept"); }
+                services.Failures.Report(park.Area, "Park.Quality", error, "Park quality evaluation failed for managed area " + park.Area + "; last result kept");
             }
         }
     }

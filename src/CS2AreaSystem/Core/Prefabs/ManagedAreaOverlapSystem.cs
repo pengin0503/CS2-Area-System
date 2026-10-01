@@ -30,7 +30,6 @@ namespace CS2AreaSystem.Core.Prefabs
         private ModificationEndBarrier barrier;
         private IconCommandSystem icons;
         private EntityQuery previews, errorPrefabs;
-        private bool failureLogged;
         [Preserve]
         protected override void OnCreate()
         {
@@ -60,11 +59,12 @@ namespace CS2AreaSystem.Core.Prefabs
                     tools.activeTool != areaTool || areaTool.prefab == null || tools.actionMode.IsEditor() ||
                     !TryDescribePrefab(prefabs.GetEntity(areaTool.prefab), out _) || previews.IsEmptyIgnoreFilter) return;
                 ApplyManagedPolicy();
+                services.Failures.Recovered(Entity.Null, "Overlap");
             }
             catch (Exception error)
             {
                 // Fail closed: without complete native evidence, keep blocking errors.
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Managed overlap validation unavailable; native errors remain authoritative."); }
+                services.Failures.Report(Entity.Null, "Overlap", error, "Managed overlap validation unavailable; native errors remain authoritative.");
             }
         }
         private void ApplyManagedPolicy()

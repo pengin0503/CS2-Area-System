@@ -35,7 +35,8 @@ namespace CS2AreaSystem.Modules.Park
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private readonly Dictionary<ulong, Bounds2> bounds = new Dictionary<ulong, Bounds2>();
         private int frameCounter, loadGeneration = -1;
-        private bool failureLogged, parksDirty = true;
+        private bool parksDirty = true;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         private sealed class ActiveScan
         {
             public ParkRuntimeSnapshot Snapshot;
@@ -53,6 +54,7 @@ namespace CS2AreaSystem.Modules.Park
         {
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
             objectSearch = World.GetOrCreateSystemManaged<Game.Objects.SearchSystem>();
             netSearch = World.GetOrCreateSystemManaged<Game.Net.SearchSystem>();
             changedParks = GetEntityQuery(new EntityQueryDesc {
@@ -143,7 +145,7 @@ namespace CS2AreaSystem.Modules.Park
                     Objects = new ParkLandscapeScan<Entity>(candidates) };
                 Continue();
             }
-            catch (System.Exception error) { Fail(error); }
+            catch (System.Exception error) { Fail(error, snapshot.Area); }
         }
         private void Continue()
         {
@@ -168,15 +170,16 @@ namespace CS2AreaSystem.Modules.Park
                 landscape.TransitPoints = transit.Points; landscape.TransitTypes = transit.Types;
                 landscape.Result = ParkLandscapeModel.ComputeLandscape(landscape.Inputs);
                 snapshot.Landscape = landscape;
-                failureLogged = false;
+                failures.Recovered(scan.Snapshot.Area, "Park.Landscape");
             }
             catch (System.Exception error) { Fail(error); }
         }
         // Keep the last good snapshot; without one the metric stays unavailable (neutral in Quality).
-        private void Fail(System.Exception error)
+        private void Fail(System.Exception error, Entity area = default)
         {
+            if (area == Entity.Null) area = current?.Snapshot?.Area ?? Entity.Null;
             current = null;
-            if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park landscape analysis failed; last result kept"); }
+            failures.Report(area, "Park.Landscape", error, "Park landscape analysis failed for managed area " + area + "; last result kept");
         }
         private void Classify(ActiveScan scan, Entity entity)
         {

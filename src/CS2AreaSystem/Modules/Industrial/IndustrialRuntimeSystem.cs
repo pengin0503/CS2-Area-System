@@ -67,7 +67,6 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialStructureTracker Structure { get; } = new IndustrialStructureTracker();
         private EntityQuery managedAreas, timeData, rentersUpdated, damagedMembers;
         private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
-        private bool failureLogged;
         private AreaCoreServicesSystem services;
         public bool Ready => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
         // Incremented on every load so dependent systems drop cycles, baselines and windows.
@@ -101,11 +100,11 @@ namespace CS2AreaSystem.Modules.Industrial
                 PruneStore(areas);
                 EnsureIndustrialState(areas);
                 TrackStructureChanges();
-                failureLogged = false;
+                services.Failures.Recovered(Entity.Null, "Industrial.Runtime");
             }
             catch (System.Exception error)
             {
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Industrial runtime update failed; Area Core continues"); }
+                services.Failures.Report(Entity.Null, "Industrial.Runtime", error, "Industrial runtime update failed; Area Core continues");
             }
         }
         public void CollectAreas(List<IndustrialAreaRef> result)

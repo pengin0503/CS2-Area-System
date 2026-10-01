@@ -27,7 +27,7 @@ namespace CS2AreaSystem.Core.Finance
         private NativeArray<long> applied;
         private JobHandle pending;
         private int loadGeneration, startedGeneration = -1;
-        private bool failureLogged, listenerFailureLogged;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public bool Ready => !GameManager.instance.isGameLoading && load.Ready;
         public int LoadGeneration => loadGeneration;
         public uint SimulationFrame => simulation.frameIndex;
@@ -43,12 +43,9 @@ namespace CS2AreaSystem.Core.Finance
         protected override void OnCreate()
         {
             base.OnCreate();
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
             runtime = new AreaFinanceRuntime(error =>
-            {
-                if (listenerFailureLogged) return;
-                listenerFailureLogged = true;
-                Mod.Log.Error(error, "An Area finance listener failed; city money and other listeners are unaffected");
-            });
+                failures.Report(Entity.Null, "Finance.Listener", error, "An Area finance listener failed; city money and other listeners are unaffected"));
             city = World.GetOrCreateSystemManaged<CitySystem>();
             simulation = World.GetOrCreateSystemManaged<SimulationSystem>();
             statistics = World.GetOrCreateSystemManaged<CityStatisticsSystem>();
@@ -68,7 +65,6 @@ namespace CS2AreaSystem.Core.Finance
             DisposeBuffers();
             runtime.Reset();
             loadGeneration++;
-            listenerFailureLogged = false;
         }
         [Preserve]
         protected override void OnUpdate()
@@ -132,14 +128,9 @@ namespace CS2AreaSystem.Core.Finance
             long expense = applied.IsCreated ? applied[0] : 0, income = applied.IsCreated ? applied[1] : 0;
             DisposeBuffers();
             runtime.CompleteApply(expense, income);
-            failureLogged = false;
+            failures.Recovered(Entity.Null, "Finance.Apply");
         }
-        private void LogOnce(Exception error, string message)
-        {
-            if (failureLogged) return;
-            failureLogged = true;
-            Mod.Log.Error(error, message);
-        }
+        private void LogOnce(Exception error, string message) => failures.Report(Entity.Null, "Finance.Apply", error, message);
         private void DisposeBuffers()
         {
             if (applied.IsCreated) applied.Dispose();

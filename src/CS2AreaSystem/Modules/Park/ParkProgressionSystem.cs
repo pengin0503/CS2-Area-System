@@ -15,7 +15,7 @@ namespace CS2AreaSystem.Modules.Park
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private uint lastFrame;
         private int loadGeneration = -1;
-        private bool failureLogged, policyFailureLogged;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public override int GetUpdateInterval(SystemUpdatePhase phase) => (int)UpdateFrames;
         public static ParkProgressInputs BuildInputs(ParkQualitySnapshot quality, in ParkAreaState state)
         {
@@ -33,6 +33,7 @@ namespace CS2AreaSystem.Modules.Park
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
             policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
             World.GetOrCreateSystemManaged<ParkVisitSystem>().AddListener(this);
         }
         [Preserve]
@@ -67,20 +68,20 @@ namespace CS2AreaSystem.Modules.Park
                 progress.Level = step.Level; progress.Experience = step.Experience;
                 EntityManager.SetComponentData(park.Area, progress);
                 EntityManager.SetComponentData(park.Area, step.State);
-                failureLogged = false;
+                failures.Recovered(park.Area, "Park.Progression");
             }
             catch (System.Exception error)
             {
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park progression update failed"); }
+                failures.Report(park.Area, "Park.Progression", error, "Park progression update failed for managed area " + park.Area);
             }
         }
         // Policy bonus to XP the Park already earned; a policy failure only removes the bonus.
         private double XpMultiplier(Entity area)
         {
-            try { return policies.GetExperienceMultiplier(area); }
+            try { double multiplier = policies.GetExperienceMultiplier(area); failures.Recovered(area, "Park.PolicyXp"); return multiplier; }
             catch (System.Exception error)
             {
-                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area policy XP bonus unavailable; Park XP continues without it"); }
+                failures.Report(area, "Park.PolicyXp", error, "Area policy XP bonus unavailable for managed area " + area + "; Park XP continues without it");
                 return 1.0;
             }
         }

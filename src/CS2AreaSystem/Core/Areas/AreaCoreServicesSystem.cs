@@ -16,6 +16,8 @@ namespace CS2AreaSystem.Core.Areas
         public AreaStableIdAllocator StableIds => Identity.StableIds;
         public AreaQuarantine Quarantine => Identity.Quarantine;
         public bool IsQuarantined(Entity area) => Identity.Quarantine.Contains(area);
+        // Shared failure-log suppression; a new generation starts with every load (AreaLoadCoordinatorSystem).
+        public Diagnostics.AreaFailureLog Failures { get; } = new Diagnostics.AreaFailureLog((error, message) => Mod.Log.Error(error, message), message => Mod.Log.Warn(message));
         public AreaAnchorService Anchors { get; private set; }
         protected override void OnCreate()
         {
@@ -49,22 +51,21 @@ namespace CS2AreaSystem.Core.Areas
                 if (membership.AreaStableId == id) return true;
             return false;
         }
-        private bool policyFailureLogged;
         private bool AcceptsSafely(IAreaAnchorPolicy policy, Entity area, Entity anchor, AreaAnchorRole role)
         {
-            try { return policy.AcceptsAnchor(area, anchor, role, EntityManager); }
+            try { bool accepted = policy.AcceptsAnchor(area, anchor, role, EntityManager); Failures.Recovered(area, "Anchors.Policy"); return accepted; }
             catch (System.Exception error)
             {
-                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area anchor policy failed; anchor rejected"); }
+                Failures.Report(area, "Anchors.Policy", error, "Area anchor policy failed for managed area " + area + "; anchor rejected");
                 return false;
             }
         }
         private bool AcceptsExistingSafely(IAreaExistingAnchorPolicy policy, Entity area, Entity anchor, AreaAnchorRole role)
         {
-            try { return policy.AcceptsExistingAnchor(area, anchor, role, EntityManager); }
+            try { bool accepted = policy.AcceptsExistingAnchor(area, anchor, role, EntityManager); Failures.Recovered(area, "Anchors.ExistingPolicy"); return accepted; }
             catch (System.Exception error)
             {
-                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area existing-anchor policy failed; anchor rejected"); }
+                Failures.Report(area, "Anchors.ExistingPolicy", error, "Area existing-anchor policy failed for managed area " + area + "; anchor rejected");
                 return false;
             }
         }

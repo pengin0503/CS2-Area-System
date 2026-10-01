@@ -36,7 +36,7 @@ namespace CS2AreaSystem.Modules.Park
         private uint pendingFrame;
         private string activeSignature = "";
         private int loadGeneration = -1;
-        private bool failureLogged;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public ParkVisitTracker Tracker => tracker;
         public int ObservedLastUpdate { get; private set; }
         public bool AddListener(IParkVisitListener listener) => listeners.Add(listener);
@@ -48,6 +48,7 @@ namespace CS2AreaSystem.Modules.Park
         {
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
             simulation = World.GetOrCreateSystemManaged<SimulationSystem>();
             visitors = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<Citizen>(), ComponentType.ReadOnly<Leisure>(), ComponentType.ReadOnly<CurrentBuilding>(),
@@ -88,12 +89,12 @@ namespace CS2AreaSystem.Modules.Park
                 Dispatch(frame);
                 if (targetsDirty) RebuildTargets();
                 if (!targets.IsEmpty) Schedule(group, frame);
-                failureLogged = false;
+                failures.Recovered(Entity.Null, "Park.Visits");
             }
             catch (System.Exception error)
             {
                 events.Clear(); hasPending = false;
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Park visit observation failed this update"); }
+                failures.Report(Entity.Null, "Park.Visits", error, "Park visit observation failed this update");
             }
         }
         private void RefreshParks()
@@ -165,7 +166,7 @@ namespace CS2AreaSystem.Modules.Park
             {
                 if (EntityManager.Exists(park.Area) && EntityManager.HasComponent<ParkAreaState>(park.Area))
                     EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction, e.HasSatisfaction));
-            }, listeners.Items, error => Mod.Log.Error(error, "Park visit listener failed"));
+            }, listeners.Items, error => failures.Report(Entity.Null, "Park.VisitListener", error, "Park visit listener failed"));
             events.Clear();
             foreach (var park in parks)
                 if (runtime.Store.TryGet(park.StableId, out var snapshot)) snapshot.ActiveVisitors = tracker.ActiveCount(park.StableId);

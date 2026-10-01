@@ -16,7 +16,7 @@ namespace CS2AreaSystem.Modules.Industrial
         private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
         private readonly Dictionary<ulong, Unity.Entities.Entity> synced = new Dictionary<ulong, Unity.Entities.Entity>();
         private readonly HashSet<ulong> alive = new HashSet<ulong>();
-        private bool failureLogged;
+        private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public IndustrialPolicyEffectController Controller { get; private set; }
         public override int GetUpdateInterval(SystemUpdatePhase phase) => UpdateFrames;
         [Preserve]
@@ -25,6 +25,7 @@ namespace CS2AreaSystem.Modules.Industrial
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<IndustrialRuntimeSystem>();
             policies = World.GetOrCreateSystemManaged<AreaPolicySystem>();
+            failures = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Failures;
             Controller = new IndustrialPolicyEffectController(IndustrialPolicyAdapters.Create(),
                 (error, key) => Mod.Log.Error(error, "Industrial policy effect disabled for this load (" + key + ")"));
         }
@@ -51,12 +52,12 @@ namespace CS2AreaSystem.Modules.Industrial
                 var gone = new List<ulong>();
                 foreach (var entry in synced) if (!alive.Contains(entry.Key)) gone.Add(entry.Key);
                 foreach (var id in gone) { Controller.Release(synced[id], id, context); synced.Remove(id); }
-                failureLogged = false;
+                failures.Recovered(Unity.Entities.Entity.Null, "Industrial.PolicyEffects");
             }
             catch (System.Exception error)
             {
                 // Adapter failures are isolated by the controller; this guards the policy-state reads.
-                if (!failureLogged) { failureLogged = true; Mod.Log.Error(error, "Industrial policy effect update failed; effects keep their last state"); }
+                failures.Report(Unity.Entities.Entity.Null, "Industrial.PolicyEffects", error, "Industrial policy effect update failed; effects keep their last state");
             }
         }
     }

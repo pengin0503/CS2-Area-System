@@ -24,7 +24,6 @@ namespace CS2AreaSystem.Core.Membership
         private NativeQuadTree<AreaSearchItem, QuadTreeBoundsXZ> batchAreaTree;
         private bool batchActive;
         private AreaCoreServicesSystem services;
-        private readonly HashSet<int> failedClassifiers = new HashSet<int>();
         private AreaMembershipUpdater updater;
         private bool rebuildPending = true;
         public AreaMembershipIndex Index { get; } = new AreaMembershipIndex();
@@ -144,7 +143,7 @@ namespace CS2AreaSystem.Core.Membership
             }
             if (containing.Count == 0) return results;
             return AreaMembershipClassification.Collect(containing, member, (typeId, error) => {
-                if (failedClassifiers.Add(typeId)) Mod.Log.Error(error, "Area classifier unavailable: " + typeId);
+                services.Failures.Report(Entity.Null, "Membership.Classifier:" + typeId, error, "Area classifier unavailable: " + typeId);
             });
         }
         private bool IsCandidate(Entity entity) => EntityManager.Exists(entity) && AreaMembershipCandidatePolicy.IsCandidate(

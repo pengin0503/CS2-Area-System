@@ -40,6 +40,8 @@ namespace CS2AreaSystem.Core.Persistence
             loadingComplete = false; sequence.Reset(); membership.RequestRebuild();
             // A new load generation: no stable ID or quarantine of the previous city survives (#62).
             services.Identity.BeginLoad();
+            // ... and every failure is diagnosed again in the new city (#67).
+            services.Failures.NewGeneration();
         }
         protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) => loadingComplete = true;
         protected override void OnUpdate()

@@ -33,20 +33,25 @@ namespace CS2AreaSystem.Modules.Park
         public override string ToString() => $"EnhancedMaintenance={EnhancedMaintenance}, LandscapeProtection={LandscapeProtection}, PremiumServices={PremiumServices}";
     }
     // Reads one Area's Park policy effects for a Park system. A failing policy read keeps the Park on the neutral baseline
-    // (failure isolation) and is reported once.
+    // (failure isolation) and is reported through the shared failure log: once per Area and load, again after a recovery.
     public sealed class ParkPolicyEffectReader
     {
         private readonly Func<Entity, int, bool> isEffective;
-        private readonly Action<Exception> report;
-        private bool reported;
-        public ParkPolicyEffectReader(Func<Entity, int, bool> isEffective, Action<Exception> report)
-        { this.isEffective = isEffective; this.report = report; }
+        private readonly Core.Diagnostics.AreaFailureLog failures;
+        private readonly string subject, message;
+        public ParkPolicyEffectReader(Func<Entity, int, bool> isEffective, Core.Diagnostics.AreaFailureLog failures, string subject, string message)
+        { this.isEffective = isEffective; this.failures = failures; this.subject = subject; this.message = message; }
         public ParkPolicyEffects Read(Entity area)
         {
-            try { return ParkPolicyEffects.From(id => isEffective(area, id)); }
+            try
+            {
+                var effects = ParkPolicyEffects.From(id => isEffective(area, id));
+                failures?.Recovered(area, subject);
+                return effects;
+            }
             catch (Exception error)
             {
-                if (!reported) { reported = true; report?.Invoke(error); }
+                failures?.Report(area, subject, error, message + " (managed area " + area + ")");
                 return ParkPolicyEffects.None;
             }
         }
