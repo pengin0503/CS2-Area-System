@@ -290,4 +290,17 @@ public class IndustrialObservationTests {
   Assert.That(IndustrialFlowRules.ProcessorOutput(false, 0, 400), Is.EqualTo(IndustrialFlowState.Unavailable), "no storage limit");
   Assert.That(IndustrialFlowRules.ProcessorOutput(true, 0, 0), Is.EqualTo(IndustrialFlowState.Unavailable), "invalid limit");
  }
+ [Test] public void RollingMeaningfulOutputsAverageTheSixHourWindow() {
+  var snapshot = new IndustrialRuntimeSnapshot();
+  // Two hours with three equal outputs, then four hours where only furniture is produced.
+  for (int h = 0; h < 6; h++) {
+   var list = new List<IndustrialEntityObservation> { Producer(factory, 100, 40, 40, (ulong)Resource.Furniture) };
+   if (h < 2) { list.Add(Producer(mine, 100, 40, 40, (ulong)Resource.Steel)); list.Add(Producer(E(210), 100, 40, 40, (ulong)Resource.Paper)); }
+   var r = Run(snapshot, Info(h, h + 0.1), list.ToArray());
+   if (h == 1) Assert.That(r.RollingMeaningfulOutputs, Is.EqualTo(3));
+   if (h == 5) { Assert.That(r.MeaningfulOutputs, Is.EqualTo(1)); Assert.That(r.RollingMeaningfulOutputs, Is.EqualTo(3), "2/6 of the dominant output is still >= 20%"); }
+  }
+  var later = Run(snapshot, Info(7, 7.1), Producer(factory, 100, 40, 40, (ulong)Resource.Furniture));
+  Assert.That(later.RollingMeaningfulOutputs, Is.EqualTo(1), "older samples left the window");
+ }
 }

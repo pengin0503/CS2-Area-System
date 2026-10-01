@@ -141,6 +141,8 @@ namespace CS2AreaSystem.Modules.Industrial
             result.MeaningfulOutputs = activity.HasValue && activity.Value > 0 ? IndustrialProductionModel.MeaningfulOutputs(outputs) : 0;
             result.Production = IndustrialProductionModel.Compute(new IndustrialProductionInputs {
                 Activity = activity, KnownProducers = acc.ProducerFacilities, OperatingProducers = acc.OperatingProducers, OutputActivity = outputList });
+            if (!result.Delayed && result.Active && activity.HasValue) snapshot.ResourceHistory.Add(info.StartHours, result.Resources);
+            result.RollingMeaningfulOutputs = snapshot.ResourceHistory.MeaningfulOutputs(info.StartHours);
             // Logistics: integrate the previous endpoint over the elapsed interval, then score the rolling window.
             IntegrateFlow(snapshot, result);
             double now = info.StartHours;

@@ -77,4 +77,21 @@ public class IndustrialScoreExampleTests {
   Assert.That(examples["healthy-large"].GetProperty("cargoFacilities").GetInt32(), Is.GreaterThan(0));
   Assert.That(Compute(examples["healthy-large"]).Logistics.Value, Is.EqualTo(Compute(examples["no-dedicated-infrastructure"]).Logistics.Value).Within(Tol));
  }
+ [Test] public void EveryExampleXpMatchesTheRealProgressionModel() {
+  foreach (var e in Examples()) {
+   string id = e.GetProperty("id").GetString()!;
+   var x = e.GetProperty("expected");
+   if (!x.TryGetProperty("hourlyXp", out var hourly)) continue;
+   var s = Compute(e);
+   var inputs = new IndustrialProgressInputs { Production = s.Production, Logistics = s.Logistics, Employment = s.Employment, Efficiency = s.Efficiency,
+    Performance = s.Performance, ActiveProductiveFacilities = s.OperatingProducers, Fresh = true };
+   var xp = IndustrialProgressionModel.ComputeHourlyXp(inputs, true, 0);
+   Assert.That(xp.Award, Is.EqualTo(hourly.GetInt32()), id + " hourly XP");
+   if (x.TryGetProperty("xpOperatingScore", out var score)) {
+    if (score.ValueKind == JsonValueKind.Null) Assert.That(xp.OperatingScore, Is.Null, id);
+    else Assert.That(xp.OperatingScore!.Value, Is.EqualTo(score.GetDouble()).Within(Tol), id + " XP score");
+   }
+   if (x.TryGetProperty("xpBlockedReason", out var reason)) Assert.That(xp.BlockedReason, Is.EqualTo(reason.GetString()), id);
+  }
+ }
 }

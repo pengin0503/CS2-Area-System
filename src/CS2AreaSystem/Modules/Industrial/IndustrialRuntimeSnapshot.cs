@@ -75,7 +75,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public int StorageObserved;
         public IndustrialFlowSample InputSample, OutputSample;
         public double InputObservedHours, OutputObservedHours;
-        public int MeaningfulOutputs;
+        public int MeaningfulOutputs, RollingMeaningfulOutputs;
         public IndustrialMetric Activity, ActiveShare, Diversity, Production, InputContinuity, OutputContinuity, Logistics,
             JobFill, StaffingBalance, Employment, BuildingEfficiency, Profitability, Efficiency, Performance;
         public IReadOnlyList<IndustrialBottleneck> Bottlenecks = Array.Empty<IndustrialBottleneck>();
@@ -129,6 +129,34 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         public void Clear() => intervals.Clear();
     }
+    // Rolling per-output activity over the six-hour window (Level 5 "meaningful output classes" prestige).
+    public sealed class IndustrialResourceHistory
+    {
+        private struct Sample { public double Hours; public Dictionary<ulong, double> Activity; }
+        private readonly List<Sample> samples = new List<Sample>();
+        public void Add(double hours, IEnumerable<IndustrialResourceTotal> totals)
+        {
+            var activity = new Dictionary<ulong, double>();
+            foreach (var t in totals) activity[t.Resource] = t.WeightedActivity;
+            samples.Add(new Sample { Hours = hours, Activity = activity });
+            samples.RemoveAll(s => s.Hours <= hours - IndustrialFlowWindow.WindowHours);
+        }
+        public int MeaningfulOutputs(double now)
+        {
+            var sums = new Dictionary<ulong, double>(); int count = 0;
+            foreach (var s in samples)
+            {
+                if (s.Hours <= now - IndustrialFlowWindow.WindowHours || s.Hours > now) continue;
+                count++;
+                foreach (var pair in s.Activity) { sums.TryGetValue(pair.Key, out var v); sums[pair.Key] = v + pair.Value; }
+            }
+            if (count == 0) return 0;
+            var averages = new List<double>();
+            foreach (var v in sums.Values) averages.Add(v / count);
+            return IndustrialProductionModel.MeaningfulOutputs(averages);
+        }
+        public void Clear() => samples.Clear();
+    }
     // Derived, runtime-only view of one Industrial Area. Never serialized; cleared on load.
     public sealed class IndustrialRuntimeSnapshot
     {
@@ -146,6 +174,10 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialFlowSample FlowBaselineInput, FlowBaselineOutput;
         public bool HasFlowBaseline;
         public IndustrialActivitySample? ActivityBaseline;
+        public readonly IndustrialResourceHistory ResourceHistory = new IndustrialResourceHistory();
+        // Latest XP settlement/promotion evaluation, for the panel (runtime only).
+        public IndustrialXpResult LastXp;
+        public bool HasXpResult;
         // Last observation cycle consumed by progression (runtime de-duplication; hour/day de-duplication is persisted).
         public long LastConsumedCycle = -1;
         // Recorded for tuning: cycles that took more than one game hour.
