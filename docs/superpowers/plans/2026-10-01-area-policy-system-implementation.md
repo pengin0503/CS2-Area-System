@@ -27,7 +27,8 @@
 - Policy ON/OFF takes effect immediately at the next relevant simulation update; finance settles from the same simulation-time boundary.
 - No Area wallet, no Area debt ledger, no “insufficient city funds” suppression. Negative city balance does not stop Area expenses.
 - Expenses must feed real city accounting and target **Service Upkeep → Area Management**.
-- Income must feed real city accounting and target **Service Fees → Area Service Fees**.
+- Income must feed real city money and target **Service Fees → Area Service Fees** in the budget UI; 1.6.2f1 has no generic `IncomeSource.ServiceFee`, so Park admission must not be mislabeled as `FeeParking`, `FeePublicTransport`, or any unrelated fixed source.
+- `CollectedCityServiceFeeData` / `PlayerResource` may be used only when an Area charge genuinely maps to an existing vanilla resource; Park admission does not.
 - Never double-book vanilla building upkeep or vanilla service fees.
 - Vanilla-simulation policies must not directly manipulate Industrial/Park scores as a substitute for changing the real underlying state.
 - If a vanilla effect path cannot be verified, keep that policy visible but effect-unavailable/disabled; do not fabricate a substitute effect.
@@ -45,7 +46,7 @@
 2. **Atomic conflict swap near a finance settlement boundary:** old and new policies must never overlap for effect or billing and must not create a zero-length double charge. Tasks 2 and 4 add transition/settlement tests.
 3. **City balance already negative:** Area expenses must still settle and appear in real Service Upkeep totals; no “paid amount” clamp may survive from Park finance. Tasks 4–5 add model/API/runtime checks.
 4. **Vanilla effect adapter unavailable after a game/API change:** desired state is preserved, the policy becomes effect-unavailable and non-billable, other policies/Areas continue, and repeated logs are suppressed per Area+Policy+failure class per load generation. Tasks 2, 7, and 8 add tests.
-5. **Save during pending household admission + Area finance work:** household debit and city-side admitted income must not diverge after reload. Task 5 owns the save-boundary regression.
+5. **Park admission at save/accounting boundaries:** household debit and city credit must not diverge after reload, and the amount must remain Area Service Fees rather than being classified as Parking/Public Transport/etc. Tasks 5 and 9 own the transaction and presentation regressions.
 
 ---
 
@@ -249,14 +250,15 @@ Expected: tests PASS, `npm run build` PASS.
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceKind.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceModel.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceLedger.cs`
+- Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceVanillaAdapter.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceSystem.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceSaveSystem.cs`
-- Create: `src/CS2AreaSystem/Core/Finance/AreaFinancePrefabRegistrationSystem.cs`
 - Modify: `src/CS2AreaSystem/Mod.cs`
 - Create: `docs/verification/area-finance-contracts.md`
 - Test: `tests/CS2AreaSystem.Tests/AreaFinanceModelTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/AreaFinanceLedgerTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/AreaFinanceApiContractTests.cs`
+- Test: `tests/CS2AreaSystem.Tests/AreaFinanceVanillaAdapterTests.cs`
 - Modify: `tests/CS2AreaSystem.Tests/ModSystemOrderTests.cs`
 
 **Interfaces:**
@@ -266,32 +268,36 @@ Expected: tests PASS, `npm run build` PASS.
 - `AreaFinanceLedger.EnqueueExpense(ulong areaStableId, AreaFinanceKind kind, long amount)`.
 - `AreaFinanceLedger.EnqueueIncome(ulong areaStableId, AreaFinanceKind kind, long amount)`.
 - `AreaFinanceLedger.TakeBatch() -> AreaFinanceBatch` aggregates without losing per-kind/per-Area audit detail.
+- `AreaFinanceVanillaAdapter.ApplyExpense(long amount) -> long` returns the amount actually applied to real city money/accounting.
+- `AreaFinanceVanillaAdapter.ApplyIncome(long amount) -> long` returns the amount actually credited to real city money. For Park admission it must **not** write `CollectedCityServiceFeeData` and must not select any unrelated fixed `IncomeSource`.
 - `AreaFinanceSystem.EnqueueExpense(...)`, `EnqueueIncome(...)`, and `FlushForSave()` are the only city-side finance entry points for policy/Park code after Task 5.
-- The runtime system exposes current settled `AreaManagement` expense and `AreaServiceFees` income totals for UI-detail presentation; those values must be derived from the same batches applied to city accounting.
-- Register a dedicated Area accounting prefab/data source early enough for vanilla service accounting, following the same retry/failure-isolation style as `AreaPrefabRegistrationSystem`.
-- Before implementing Game API writes, inspect the supplied 1.6.2f1 Game.dll and document exact fields/consumers for `ServicePrefab`, `ServiceData`, `CollectedCityServiceUpkeepData`, `CollectedCityServiceFeeData`, `CityServiceBudgetSystem`, the relevant fee/upkeep systems, and `PlayerMoney`.
-- Reflection/API tests must assert every game member the adapter will use. A compiling guessed member is not sufficient.
-- If a dedicated ServicePrefab contributes real ServiceUpkeep/ServiceFee totals but cannot expose a distinct “Area Management / Area Service Fees” detail row because `CityService` or vanilla UI grouping is fixed, keep real accounting in this task and leave distinct detail-row presentation for Task 9's version-pinned UI adapter. Do not create fake totals.
+- `AreaFinanceSystem.AreaManagementSettled` and `AreaFinanceSystem.AreaServiceFeesSettled` expose authoritative settled totals for Task 9 budget presentation. They are derived from the same batches applied to city money, never independent UI counters.
+- Expense target: prefer the verified public `ExpenseSource.ServiceUpkeep`/service-upkeep accounting route. If 1.6.2f1 fixed `CityService` semantics prevent a synthetic service from joining safely, `AreaFinanceVanillaAdapter` uses the narrow version-pinned budget-accounting boundary documented in `area-finance-contracts.md`; it must still debit real city money and never repurpose an unrelated expense source.
+- Income target: 1.6.2f1 has no generic `IncomeSource.ServiceFee`. The fixed fee sources are resource-specific. Park admission therefore credits real city money through the Area adapter and is presented/reconciled under the Service Fees UI group in Task 9 using `AreaServiceFeesSettled`.
+- Before implementing writes, inspect the supplied 1.6.2f1 Game.dll and document exact fields/consumers for `PlayerMoney`, `ExpenseSource`, `IncomeSource`, `PlayerResource`, `ServicePrefab`, `ServiceData`, `CollectedCityServiceUpkeepData`, `CollectedCityServiceFeeData`, `CityServiceBudgetSystem`, `ServiceFeeSystem`, and the relevant upkeep systems.
+- The contract document must explicitly record that `EconomyUtils.GetIncomeSource(PlayerResource)` has no Park/admission mapping and returns `IncomeSource.Count` for unsupported resources.
+- Reflection/API tests assert every game member the adapter actually uses. Existence alone is not semantic proof; the document names the vanilla consumer and units/order.
+- Pending finance batches are flushable before `SerializerSystem`; no save may serialize counters before the corresponding real city-money transfer is settled.
 
 - [ ] **Step 1: Write pure finance model/ledger failing tests**
 
 Cover fractional carry, partial-day proration, invalid/negative inputs, very large finite values, zero-length conflict transitions, and no duplicate aggregation.
 
-- [ ] **Step 2: Inspect 1.6.2f1 finance APIs and write contract tests/doc**
+- [ ] **Step 2: Inspect 1.6.2f1 finance APIs and write the contract tests/document**
 
-Use the supplied Managed zip. Record exact source/member names and system order in `area-finance-contracts.md`.
+Use the supplied Managed zip. Assert the fixed enum members and explicitly prove there is no generic `IncomeSource.ServiceFee` or Park `PlayerResource`. Document the exact supported expense path and the exact city-money write path for Area income.
 
-- [ ] **Step 3: Verify API contract tests fail before adapter implementation**
+- [ ] **Step 3: Run contract tests before the Area adapter exists and verify RED**
 
-Expected: missing Area finance runtime/prefab types, while reflection confirms game members.
+Expected: reflection assertions for vanilla members PASS; Area adapter tests FAIL because `AreaFinanceVanillaAdapter` is not implemented.
 
-- [ ] **Step 4: Implement prefab registration, ledger, runtime settlement and save flush**
+- [ ] **Step 4: Implement ledger, real city-money adapter, runtime settlement, and save flush**
 
-The city balance may be negative; do not clamp expenses to available city funds. Keep pending finance flushable before `SerializerSystem`.
+Do not clamp Area expenses to available city funds. Do not cap Park-admission city credit at the old `PlayerMoney` upper-bound acceptance logic in `ParkFinanceModel`; the adapter owns the real transfer semantics. Do not write Park admission into any unrelated `IncomeSource`.
 
 - [ ] **Step 5: Add system-order tests**
 
-Ensure finance prefab registration is before required prefab initialization, settlement is ordered correctly relative to the verified vanilla budget/fee/upkeep consumers, and save flush is before serializer.
+Ensure settlement runs after the producers that enqueue Area charges and before the verified vanilla consumer/save boundary required by the chosen 1.6.2f1 path; ensure `AreaFinanceSaveSystem` runs before `SerializerSystem`.
 
 - [ ] **Step 6: Run focused tests + full API-check verification**
 
@@ -514,12 +520,18 @@ Synthetic tests must show the policy layer does not bypass observation: only cha
 ### Task 9: Finance Detail Presentation, Localization, Offline Guards, and Runtime Verification
 
 **Files:**
-- Create: `src/CS2AreaSystem/Core/Finance/AreaBudgetViewModel.cs` if the dedicated service prefab cannot expose distinct detail labels by itself.
-- Create/modify the narrow UI budget-detail extension discovered from the 1.6.2f1 UI contract only if required.
+- Create: `src/CS2AreaSystem/Core/Finance/AreaBudgetBindingSystem.cs`
+- Create: `src/CS2AreaSystem/Core/Finance/AreaBudgetViewModel.cs`
+- Modify: `src/CS2AreaSystem/Mod.cs`
 - Modify: `src/CS2AreaSystem/Core/UI/NativeAreaLocalization.cs`
-- Modify: `UI/src/localization.ts` only if needed by existing fallback behavior.
+- Create: `UI/src/AreaBudgetDetails.tsx`
+- Create: `UI/src/AreaBudgetDetails.test.tsx`
+- Modify: `UI/src/index.tsx`
+- Modify: `UI/src/bindings.ts`
+- Modify: `UI/src/localization.ts` only if required by the existing fallback-localization mechanism
 - Modify: `scripts/test-offline-contracts.mjs`
 - Modify: `scripts/runtime-smoke-checklist.md`
+- Create: `docs/verification/area-budget-ui-contracts.md`
 - Create: `docs/verification/area-policy-system-runtime.md`
 - Modify fixtures/tests as needed:
   - `UI/src/__fixtures__/park-panel.json`
@@ -528,32 +540,51 @@ Synthetic tests must show the policy layer does not bypass observation: only cha
   - `tests/CS2AreaSystem.Tests/IndustrialPanelFixtureTests.cs`
 
 **Interfaces / completion evidence:**
+- `AreaBudgetViewModel` fields: `long AreaManagement`, `long AreaServiceFees`; both come directly from `AreaFinanceSystem` settled totals for the current budget reporting window.
+- `AreaBudgetBindingSystem` publishes `cs2AreaSystem/areaBudget` and never moves money itself.
+- `AreaBudgetDetails` is the only Area-specific budget-presentation component. It receives the authoritative values from the binding and extends the verified vanilla Budget UI presentation.
+- Before implementing `AreaBudgetDetails`, inspect the supplied 1.6.2f1 UI bundle/runtime modules and document in `area-budget-ui-contracts.md` the exact Budget component/module extension point, the structure of the **Service Upkeep** expense group and **Service Fees** income group, and how their displayed subtotals/total income/total expense are computed.
+- Target presentation is exactly:
+  - Expenses → Service Upkeep → **Area Management**
+  - Income → Service Fees → **Area Service Fees**
+- Because `IncomeSource` is fixed and there is no generic ServiceFee source, `AreaBudgetDetails` must not inject Park admission as `FeeParking`, `FeePublicTransport`, or any other existing source. It appends the distinct Area row from `AreaServiceFees` and reconciles the displayed Service Fees subtotal/total income using that same already-settled real city transaction.
+- For expenses, if Task 4's verified public service-upkeep route already makes Area expense part of the native Service Upkeep subtotal/total, the UI extension adds only the distinct **Area Management** detail row and must not add the amount a second time. If Task 4 had to use the version-pinned fallback accounting boundary, the UI extension reconciles the displayed Service Upkeep subtotal/total exactly once from `AreaManagement`.
+- The UI component must fail closed: if the exact 1.6.2f1 Budget extension point cannot be verified, do not render an out-of-category substitute and record runtime failure instead.
 - Localize all policy names/descriptions/lock reasons/effect-unavailable/suspended labels in the project's supported locale pattern.
 - Budget detail labels are exactly “Area Management” and “Area Service Fees” in English, with project-consistent Japanese translations.
-- If vanilla service-prefab accounting already produces the distinct detail rows, do not add an extra UI adapter.
-- If a UI detail adapter is required, it reads the settled totals from `AreaFinanceSystem`; it never alters top-level totals and never displays an amount that was not applied to real city finance.
 - Extend offline guards to catch:
-  - reintroduction of direct Park management `PlayerMoney` clamping;
+  - reintroduction of direct Park management available-balance clamping;
+  - Park admission being mapped to `FeeParking`, `FeePublicTransport`, or any unrelated `IncomeSource`/PlayerResource;
   - direct Industrial score mutation from policy files;
   - policy definitions without positive base upkeep;
   - Tourism policy registration;
-  - missing policy system registration/order.
-- Runtime document records actual observed results, game version/build, and any policies intentionally left effect-unavailable.
+  - missing policy/finance system registration or required order.
+- Runtime document records actual observed results, game version/build, chosen finance adapter mode, and any policies intentionally left effect-unavailable.
 
-- [ ] **Step 1: Add localization and offline-contract tests**
+- [ ] **Step 1: Write budget binding/UI/localization/offline-contract failing tests**
 
-- [ ] **Step 2: Run full automated verification**
+Assert the two authoritative values, exact labels, no unrelated fee-source mapping, exactly-once subtotal/total reconciliation, and no rendering outside the intended vanilla groups.
+
+- [ ] **Step 2: Verify and document the 1.6.2f1 Budget UI contract**
+
+Use the supplied UI reference/runtime registry. Record exact paths/exports/props or extension boundaries; do not infer them from decompiled C# type names.
+
+- [ ] **Step 3: Implement binding and verified Budget UI extension**
+
+The component reads settled values only. It never mutates city money and never invents a finance amount.
+
+- [ ] **Step 4: Run full automated verification**
 
 Run:
 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -ApiCheck`
 
 Expected: source guards PASS, offline contracts PASS, NUnit PASS, C# API-check build PASS, Vitest PASS, UI production build PASS.
 
-- [ ] **Step 3: Build/deploy with the normal official toolchain**
+- [ ] **Step 5: Build/deploy with the normal official toolchain**
 
 Use the user's configured CS2 paths/toolchain. Do not call the API-check artifact playable.
 
-- [ ] **Step 4: Execute the runtime checklist on 1.6.2f1**
+- [ ] **Step 6: Execute the runtime checklist on 1.6.2f1**
 
 Record at minimum:
 1. policy UI interaction/visual parity with District policies;
@@ -561,25 +592,26 @@ Record at minimum:
 3. atomic conflicts;
 4. locked Level behavior;
 5. Suspended → Active preservation/resume;
-6. Service Upkeep includes real Area Management expense;
-7. Service Fees includes real Area Service Fees income;
-8. expense continues while city balance is negative;
-9. no Park building upkeep double-charge;
-10. Park admission household debit equals city-side income;
-11. each enabled vanilla-effect policy changes its documented real target;
-12. Industrial scores move only through observation;
-13. save/load restores desired/effective state and finance without back-charge;
-14. unverified adapters remain visibly unavailable and non-billable.
+6. Service Upkeep contains real Area Management expense exactly once;
+7. Service Fees contains Area Service Fees backed by the real admission city credit and not an unrelated fixed fee source;
+8. top-level displayed income/expense totals reconcile with the city-money changes and Area rows;
+9. expense continues while city balance is negative;
+10. no Park building upkeep double-charge;
+11. Park admission household debit equals city credit equals Area Service Fees amount;
+12. each enabled vanilla-effect policy changes its documented real target;
+13. Industrial scores move only through observation;
+14. save/load restores desired/effective state and finance without back-charge;
+15. unverified adapters remain visibly unavailable and non-billable.
 
-- [ ] **Step 5: Update runtime evidence document with PASS/FAIL per item**
+- [ ] **Step 7: Update runtime evidence document with PASS/FAIL per item**
 
-Do not mark a policy complete without a real runtime observation.
+Do not mark a policy or finance presentation complete without a real runtime observation.
 
-- [ ] **Step 6: Run final automated verification again after runtime-driven fixes**
+- [ ] **Step 8: Run final automated verification again after runtime-driven fixes**
 
 Expected: full verification PASS.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 `git commit -am "test: verify area policy system integration"`.
 
@@ -595,8 +627,9 @@ Before opening/merging a PR or treating the work as implemented:
 - [ ] Runtime evidence identifies which vanilla-effect policies are enabled and which remain unavailable.
 - [ ] No unverified policy is presented as working.
 - [ ] Park management expense no longer uses the old available-balance clamp.
-- [ ] Real Area expense/income is visible in vanilla city totals.
-- [ ] “Area Management” / “Area Service Fees” detail presentation is backed by those same settled totals.
+- [ ] Real Area expenses change city money and are reconciled into Service Upkeep; real Area income changes city money and is reconciled into the Service Fees presentation.
+- [ ] Park admission is not mislabeled as any unrelated fixed `IncomeSource` or `PlayerResource`.
+- [ ] “Area Management” / “Area Service Fees” detail presentation is backed by the exact same settled real transactions and is counted exactly once.
 - [ ] Negative city balance does not suppress Area expense.
 - [ ] Unknown policy IDs survive save/load inertly.
 - [ ] Conflict swaps are atomic.
