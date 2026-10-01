@@ -71,6 +71,15 @@ namespace CS2AreaSystem.Modules.Industrial
         // Fresh, coherent, Active observation with validated productive activity.
         public bool Valid;
     }
+    // Outcome of one completed calendar day for the streak (runtime display; the authoritative streak is persisted).
+    public struct IndustrialDayResult
+    {
+        public uint Day;
+        public double ObservedHours, Average;
+        public bool Qualified;
+        // Qualified, InsufficientCoverage (< 18 valid observed hours) or LowAverage (< 80).
+        public string Reason;
+    }
     // Permanent Industrial progression (design §14). All thresholds live here; the panel only renders the checklist.
     public static class IndustrialProgressionModel
     {
@@ -192,13 +201,15 @@ namespace CS2AreaSystem.Modules.Industrial
         public static bool Qualifies(double weightedSum, double observedHours) =>
             observedHours >= StreakHours - 1e-9 && observedHours > 0 && weightedSum / observedHours >= StreakActivity - 1e-9;
         // Integrates [previous endpoint, this endpoint) with the earlier validated value, split at day boundaries.
-        public static void AccumulateDailyActivity(in IndustrialDailyActivityObservation observation, ref IndustrialAreaState state, ref IndustrialActivitySample? baseline)
+        // Returns the day completed while crediting (an interval crossing midnight), if any.
+        public static IndustrialDayResult? AccumulateDailyActivity(in IndustrialDailyActivityObservation observation, ref IndustrialAreaState state, ref IndustrialActivitySample? baseline)
         {
+            IndustrialDayResult? completed = null;
             if (!observation.Valid || double.IsNaN(observation.Activity) || double.IsInfinity(observation.Activity) || observation.HourBucket < state.LastCreditedActivityHour)
             {
                 // Unavailable, stale or suspended: no coverage, and the next valid sample starts a new bracket.
                 baseline = null;
-                return;
+                return null;
             }
             if (baseline.HasValue)
             {
@@ -206,20 +217,22 @@ namespace CS2AreaSystem.Modules.Industrial
                 double gap = observation.Hours - previous.Hours;
                 if (previous.Generation == observation.Generation && gap > 0 && gap <= IndustrialTiming.MaxSampleGapHours)
                 {
-                    Credit(previous.Hours, observation.Hours, previous.Activity, ref state);
+                    completed = Credit(previous.Hours, observation.Hours, previous.Activity, ref state);
                     state.LastCreditedActivityHour = observation.HourBucket;
                 }
             }
             baseline = new IndustrialActivitySample { Hours = observation.Hours, HourBucket = observation.HourBucket, Activity = IndustrialMetric.Clamp(observation.Activity), Generation = observation.Generation };
+            return completed;
         }
-        private static void Credit(double start, double end, double activity, ref IndustrialAreaState state)
+        private static IndustrialDayResult? Credit(double start, double end, double activity, ref IndustrialAreaState state)
         {
+            IndustrialDayResult? completed = null;
             activity = IndustrialMetric.Clamp(activity);
             while (end > start)
             {
                 uint day = (uint)Math.Max(0, Math.Floor(start / 24.0));
                 double dayEnd = Math.Min(end, (day + 1) * 24.0);
-                if (day > state.ActivityDay) AdvanceToDay(day, ref state);
+                if (day > state.ActivityDay) completed = AdvanceToDay(day, ref state);
                 // A segment of an already completed day is never credited again.
                 if (day == state.ActivityDay)
                 {
@@ -229,12 +242,13 @@ namespace CS2AreaSystem.Modules.Industrial
                 }
                 start = dayEnd;
             }
+            return completed;
         }
         // Completes every day before currentDay exactly once (including days crossed while Suspended).
-        public static void AdvanceToDay(uint currentDay, ref IndustrialAreaState state)
+        public static IndustrialDayResult? AdvanceToDay(uint currentDay, ref IndustrialAreaState state)
         {
-            if (currentDay <= state.ActivityDay) return;
-            FinalizeActivityDay(state.ActivityDay, ref state);
+            if (currentDay <= state.ActivityDay) return null;
+            var completed = FinalizeActivityDay(state.ActivityDay, ref state);
             uint firstSkipped = state.ActivityDay + 1;
             if (currentDay > firstSkipped)
             {
@@ -245,11 +259,18 @@ namespace CS2AreaSystem.Modules.Industrial
             state.ActivityDay = currentDay;
             state.ActivityWeightedSum = 0;
             state.ActivityObservedHours = 0;
+            // A later uncovered day is the most recent completed day when days were skipped.
+            if (currentDay > firstSkipped) return new IndustrialDayResult { Day = currentDay - 1, Reason = "InsufficientCoverage" };
+            return completed;
         }
-        public static void FinalizeActivityDay(uint completedDay, ref IndustrialAreaState state)
+        public static IndustrialDayResult FinalizeActivityDay(uint completedDay, ref IndustrialAreaState state)
         {
-            bool qualifies = completedDay == state.ActivityDay && Qualifies(state.ActivityWeightedSum, state.ActivityObservedHours);
+            bool current = completedDay == state.ActivityDay;
+            double hours = current ? state.ActivityObservedHours : 0, average = hours > 0 ? state.ActivityWeightedSum / hours : 0;
+            bool qualifies = current && Qualifies(state.ActivityWeightedSum, state.ActivityObservedHours);
             UpdateHighThroughputStreak(completedDay, qualifies, ref state);
+            return new IndustrialDayResult { Day = completedDay, ObservedHours = hours, Average = average, Qualified = qualifies,
+                Reason = qualifies ? "Qualified" : hours < StreakHours - 1e-9 ? "InsufficientCoverage" : "LowAverage" };
         }
         public static void UpdateHighThroughputStreak(uint completedDay, bool qualifies, ref IndustrialAreaState state)
         {

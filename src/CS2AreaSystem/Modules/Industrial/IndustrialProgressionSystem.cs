@@ -55,9 +55,11 @@ namespace CS2AreaSystem.Modules.Industrial
                 bool active = area.State == AreaLifecycleState.Active && result.Active;
                 var inputs = BuildInputs(result, state);
                 // Interval coverage first, so a cycle straddling midnight credits the completed day before it closes.
-                IndustrialProgressionModel.AccumulateDailyActivity(new IndustrialDailyActivityObservation {
+                var completedDay = IndustrialProgressionModel.AccumulateDailyActivity(new IndustrialDailyActivityObservation {
                     Hours = result.StartHours, HourBucket = result.HourBucket, Activity = result.Activity.HasValue ? result.Activity.Value : double.NaN,
                     Generation = result.Generation, Valid = active && inputs.Fresh && result.Activity.HasValue }, ref state, ref snapshot.ActivityBaseline);
+                if (completedDay.HasValue) snapshot.LastCompletedDay = completedDay;
+                inputs.StreakDays = state.HighThroughputStreakDays;
                 var level = new IndustrialLevelProgress { Level = progress.Level, Experience = progress.Experience };
                 var step = IndustrialProgressionModel.Step(ref level, ref state, inputs,
                     new IndustrialObservationStamp { HourBucket = result.HourBucket, Active = active, Fresh = inputs.Fresh });
@@ -68,7 +70,12 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (progress.SchemaVersion == 0) progress.SchemaVersion = ManagedAreaProgress.CurrentSchemaVersion;
                 changed = true;
             }
-            if (day > state.ActivityDay) { IndustrialProgressionModel.AdvanceToDay(day, ref state); changed = true; }
+            if (day > state.ActivityDay)
+            {
+                var completed = IndustrialProgressionModel.AdvanceToDay(day, ref state);
+                if (completed.HasValue && runtime.Store.TryGet(area.StableId, out var display)) display.LastCompletedDay = completed;
+                changed = true;
+            }
             if (!changed) return;
             EntityManager.SetComponentData(area.Area, state);
             EntityManager.SetComponentData(area.Area, progress);

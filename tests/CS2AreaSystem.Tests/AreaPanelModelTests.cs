@@ -59,13 +59,17 @@ public class AreaPanelModelTests {
  }
  [Test] public void ModulesWithoutStructuredContentKeepASafeOverviewFallback() {
   var anchors = new AreaAnchorService(new Store(), e => true, (a, e, r) => true);
-  foreach (IAreaPanelProvider provider in new IAreaPanelProvider[] { new IndustrialAreaModule(anchors), new TourismAreaModule() }) {
+  // Industrial now builds its own five tabs (IndustrialPanelBuilderTests); Tourism remains a stub.
+  foreach (IAreaPanelProvider provider in new IAreaPanelProvider[] { new TourismAreaModule() }) {
    var panel = provider.BuildPanel(default, default);
    Assert.That(panel.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview" }));
    Assert.That(panel.Tabs[0].Items, Is.Empty);
    Assert.That(provider.HandleAction(default, "setBudget", "120", default), Is.False, "stub modules accept no module actions");
    Assert.That(provider.BuildSummary(default, default), Is.Not.Empty);
   }
+  IAreaPanelProvider industrial = new IndustrialAreaModule(anchors);
+  Assert.That(industrial.HandleAction(default, "setBudget", "120", default), Is.False, "Industrial v1 accepts no module actions");
+  Assert.That(industrial.BuildSummary(default, default), Is.EqualTo("CS2AS.Industrial.Summary.HeadquartersRequired"));
  }
  private sealed class Provider : IAreaPanelProvider {
   public readonly List<(Entity, string, string)> Calls = new(); public bool Throws;

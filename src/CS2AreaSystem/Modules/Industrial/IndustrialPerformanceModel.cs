@@ -36,7 +36,14 @@ namespace CS2AreaSystem.Modules.Industrial
             if (!IndustrialScoreMath.TryCombine(parts, 3, out var value, out var available, out var anyPartial)) return IndustrialMetric.Unavailable(available, parts.Length);
             return available < parts.Length || anyPartial ? IndustrialMetric.Partial(value, available, parts.Length) : IndustrialMetric.Of(value, available, parts.Length);
         }
+        // The top three diagnostics by severity.
         public static IReadOnlyList<IndustrialBottleneck> FindBottlenecks(in IndustrialBottleneckInputs inputs)
+        {
+            var all = FindAllBottlenecks(inputs);
+            return all.Count > MaxBottlenecks ? all.GetRange(0, MaxBottlenecks) : all;
+        }
+        // Every current diagnostic, ordered by severity then key.
+        public static List<IndustrialBottleneck> FindAllBottlenecks(in IndustrialBottleneckInputs inputs)
         {
             var found = new List<IndustrialBottleneck>();
             void Add(string key, IndustrialMetric metric, double threshold, int affected, double hours)
@@ -58,7 +65,6 @@ namespace CS2AreaSystem.Modules.Industrial
             Add("LowActiveProducerShare", inputs.ActiveShare, ActiveShareThreshold, inputs.IdleProducers, inputs.SampleHours);
             // Stable order: severity, then the fixed key order.
             found.Sort((a, b) => a.Severity != b.Severity ? b.Severity.CompareTo(a.Severity) : System.Array.IndexOf(BottleneckKeys, a.Key).CompareTo(System.Array.IndexOf(BottleneckKeys, b.Key)));
-            if (found.Count > MaxBottlenecks) found.RemoveRange(MaxBottlenecks, found.Count - MaxBottlenecks);
             return found;
         }
     }

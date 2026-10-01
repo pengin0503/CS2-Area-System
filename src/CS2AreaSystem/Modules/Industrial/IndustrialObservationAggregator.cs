@@ -160,13 +160,15 @@ namespace CS2AreaSystem.Modules.Industrial
             result.Profitability = NotApplicableToUnavailable(IndustrialWeighting.Mean(acc.Profitability), result.Members - result.IgnoredMembers);
             result.Efficiency = IndustrialPerformanceModel.ComputeEfficiency(result.BuildingEfficiency, result.Profitability);
             result.Performance = IndustrialPerformanceModel.ComputePerformance(result.Production, result.Logistics, result.Employment, result.Efficiency);
-            result.Bottlenecks = IndustrialPerformanceModel.FindBottlenecks(new IndustrialBottleneckInputs {
+            result.AllBottlenecks = IndustrialPerformanceModel.FindAllBottlenecks(new IndustrialBottleneckInputs {
                 JobFill = result.JobFill, BuildingEfficiency = result.BuildingEfficiency, Profitability = result.Profitability,
                 InputContinuity = result.InputContinuity, OutputContinuity = result.OutputContinuity, ActiveShare = result.ActiveShare,
                 ProducerFacilities = acc.ProducerFacilities, UnderstaffedFacilities = acc.Understaffed, LowEfficiencyFacilities = acc.LowEfficiency,
                 LowProfitFacilities = acc.LowProfit, InputAffectedFacilities = acc.InputAffected, OutputAffectedFacilities = acc.OutputAffected,
                 IdleProducers = acc.IdleProducers, InputObservedHours = result.InputObservedHours, OutputObservedHours = result.OutputObservedHours,
                 SampleHours = Math.Max(0, info.EndHours - info.StartHours), CargoFacilities = acc.CargoFacilities, CargoNonOperational = acc.CargoFacilities - acc.CargoOperational });
+            result.Bottlenecks = result.AllBottlenecks.Count > IndustrialPerformanceModel.MaxBottlenecks
+                ? result.AllBottlenecks.GetRange(0, IndustrialPerformanceModel.MaxBottlenecks) : result.AllBottlenecks;
             snapshot.Publish(result);
             return result;
         }

@@ -78,7 +78,9 @@ namespace CS2AreaSystem.Modules.Industrial
         public int MeaningfulOutputs, RollingMeaningfulOutputs;
         public IndustrialMetric Activity, ActiveShare, Diversity, Production, InputContinuity, OutputContinuity, Logistics,
             JobFill, StaffingBalance, Employment, BuildingEfficiency, Profitability, Efficiency, Performance;
+        // Top three diagnostics, and every current diagnostic (for the Logistics tab).
         public IReadOnlyList<IndustrialBottleneck> Bottlenecks = Array.Empty<IndustrialBottleneck>();
+        public List<IndustrialBottleneck> AllBottlenecks = new List<IndustrialBottleneck>();
         public ulong Generation => IndustrialGenerations.Combine(MembershipToken, StructureToken);
     }
     public static class IndustrialGenerations
@@ -178,6 +180,7 @@ namespace CS2AreaSystem.Modules.Industrial
         // Latest XP settlement/promotion evaluation, for the panel (runtime only).
         public IndustrialXpResult LastXp;
         public bool HasXpResult;
+        public IndustrialDayResult? LastCompletedDay;
         // Last observation cycle consumed by progression (runtime de-duplication; hour/day de-duplication is persisted).
         public long LastConsumedCycle = -1;
         // Recorded for tuning: cycles that took more than one game hour.
