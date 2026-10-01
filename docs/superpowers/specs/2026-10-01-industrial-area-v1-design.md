@@ -124,9 +124,9 @@ A completed Industrial Area without a valid headquarters is Suspended.
 - exactly one Headquarters role is authoritative for an Industrial Area;
 - assigning a new headquarters replaces the previous link through the existing Core anchor flow;
 - the headquarters must be a valid building inside the Industrial Area;
-- it must be a plausible industrial-administration facility: an industrial/processing/storage/cargo workplace or an office/workplace that can reasonably serve the district;
-- ordinary residential buildings, parks, attractions and unrelated civic buildings are rejected;
-- exact component/prefab predicates are finalized against public 1.6.2f1 metadata during implementation;
+- it must be an industrial facility recognizable through supported public state: an extractor/cargo/storage building, or a building whose company/tenant is identified as `IndustrialCompany`, `ProcessingCompany` or `StorageCompany`;
+- generic offices, ordinary residential buildings, parks, attractions and unrelated civic buildings are rejected in v1 even if they contain workplaces;
+- modded buildings are eligible when they expose the same supported industrial components; names or asset titles are not used as the eligibility rule;
 - v1 does not require a custom 3D headquarters asset.
 
 If the headquarters is deleted, leaves the Area, or ceases to satisfy eligibility, the Area becomes Suspended and retains all progression and lifetime state. Reassignment returns it to Active without resetting Level or XP.
@@ -241,6 +241,8 @@ Derived throughput must:
 
 - use bounded rolling windows;
 - survive ordinary update-order noise;
+- never treat raw inventory delta alone as production, because transfers and consumption can change inventory without production;
+- combine only signals whose direction/meaning can be validated against 1.6.2f1 public state;
 - avoid counting a stock transfer as new production where the available signals can distinguish them;
 - be labeled as throughput/activity, not falsely presented as an exact lifetime production counter;
 - never be used to mutate vanilla inventory.
@@ -373,7 +375,7 @@ Initial Efficiency score:
 
 Weight individual entities by a bounded proxy such as workplace or productive relevance so one tiny company does not dominate the Area.
 
-If a metric is temporarily unavailable, the composite must degrade gracefully and mark that submetric unavailable rather than replacing missing data with a misleading hard zero.
+If one of Efficiency's two source signals is unavailable, reweight the available signal to 100% for that subscore and mark the missing signal unavailable in UI. If both are unavailable, Efficiency itself is unavailable rather than zero.
 
 Industrial v1 does not change these vanilla values.
 
@@ -387,6 +389,8 @@ Industrial Performance is a transparent 0–100 composite:
 - Efficiency: 20%
 
 The UI must expose all four components; the composite must never be a hidden opaque rating.
+
+If one component score is unavailable, Industrial Performance renormalizes the remaining three weights to 100% and explicitly marks the missing component. If two or more component scores are unavailable, Industrial Performance is shown as unavailable rather than inferring a rating from too little evidence.
 
 The module also derives a short ordered bottleneck list from current conditions. Candidate diagnostics include:
 
@@ -465,8 +469,8 @@ These are implementation tuning constants and may be adjusted after runtime test
   - Logistics >= 80;
   - Employment >= 85;
   - Efficiency >= 80;
-  - meaningful multi-resource production diversity;
-  - a high sustained observed-throughput milestone defined by the implemented throughput source.
+  - at least 3 distinct output resource classes, each with rolling activity at least 20% of the dominant output resource;
+  - the normalized productive-activity/throughput component remains >= 80 for 7 consecutive in-game days.
 
 The alternative prestige objectives allow specialized, manufacturing-heavy, logistics-heavy and employment-heavy districts to remain viable instead of enforcing one layout.
 
