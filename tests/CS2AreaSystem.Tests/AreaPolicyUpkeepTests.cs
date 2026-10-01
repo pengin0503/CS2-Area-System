@@ -191,4 +191,47 @@ public class AreaPolicyUpkeepTests {
   var field = typeof(Game.Areas.Geometry).GetField("m_SurfaceArea");
   Assert.That(field?.FieldType, Is.EqualTo(typeof(float)), "square metres; Park quality and landscape already read it");
  }
+ // #66: carry lifecycle. Suspension keeps it, turning the policy off or deleting the Area drops it, a load clears all.
+ [Test] public void CarrySurvivesSuspensionButNotPolicyOffDeletionOrLoad() {
+  var (runtime, store, _, _) = Create();
+  var settlement = new AreaPolicyUpkeepSettlement(runtime);
+  store.Add(A, 10, Park, 1, AreaLifecycleState.Active, 2001);
+  store.Add(B, 11, Park, 1, AreaLifecycleState.Active, 2001);
+  Settle(settlement, store, A, 1); Settle(settlement, store, B, 1);
+  Assert.That(settlement.HasCarry(10, 2001), Is.True); Assert.That(settlement.HasCarry(11, 2001), Is.True);
+  store.Add(A, 10, Park, 1, AreaLifecycleState.Suspended, 2001);
+  Assert.That(Settle(settlement, store, A, Day), Is.Empty, "a suspended Area is not billed");
+  Assert.That(settlement.HasCarry(10, 2001), Is.True, "suspend keeps the fraction already accrued");
+  store.Add(A, 10, Park, 1, AreaLifecycleState.Active);
+  Settle(settlement, store, A, 1);
+  Assert.That(settlement.HasCarry(10, 2001), Is.False, "a policy that is no longer desired loses its carry");
+  settlement.RetainAreas(new HashSet<ulong> { 10 });
+  Assert.That(settlement.HasCarry(11, 2001), Is.False, "a deleted Area's carry is pruned");
+  Assert.That(settlement.CarryAreaCount, Is.LessThanOrEqualTo(1));
+  Settle(settlement, store, B, 1);
+  settlement.Clear();
+  Assert.That(settlement.CarryAreaCount, Is.EqualTo(0));
+ }
+ [Test] public void ReEnabledPolicyStartsWithoutTheOldCarry() {
+  var (runtime, store, _, _) = Create();
+  var settlement = new AreaPolicyUpkeepSettlement(runtime);
+  store.Add(A, 10, Park, 1, AreaLifecycleState.Active, 2001);
+  var fresh = new AreaPolicyUpkeepSettlement(runtime);
+  Settle(settlement, store, A, Day / 3);
+  store.Add(A, 10, Park, 1, AreaLifecycleState.Active);
+  Settle(settlement, store, A, 1);
+  store.Add(A, 10, Park, 1, AreaLifecycleState.Active, 2001);
+  Assert.That(Settle(settlement, store, A, Day / 3), Is.EqualTo(Settle(fresh, store, A, Day / 3)));
+ }
+ // #73: duplicate saved entries settle once, in stable PolicyId order.
+ [Test] public void DuplicateDesiredEntriesSettleOnceInPolicyIdOrder() {
+  var (runtime, store, _, _) = Create();
+  var settlement = new AreaPolicyUpkeepSettlement(runtime);
+  store.Add(A, 10, Park, 3, AreaLifecycleState.Active, 2004, 2001, 2004, 2001, 2001);
+  var charges = Settle(settlement, store, A, Day);
+  Assert.That(charges.Select(c => c.PolicyId), Is.EqualTo(new[] { 2001, 2004 }));
+  var single = new AreaPolicyUpkeepSettlement(runtime);
+  store.Add(B, 10, Park, 3, AreaLifecycleState.Active, 2001, 2004);
+  Assert.That(Settle(single, store, B, Day), Is.EqualTo(charges));
+ }
 }

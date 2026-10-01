@@ -19,6 +19,7 @@ namespace CS2AreaSystem.Core.Policies
     {
         public const uint UpdateFrames = AreaFinanceModel.FramesPerDay / 1024;
         private readonly List<AreaPolicyUpkeepCharge> charges = new List<AreaPolicyUpkeepCharge>();
+        private readonly HashSet<ulong> liveAreas = new HashSet<ulong>();
         private AreaPolicySystem policies;
         private AreaFinanceSystem finance;
         private SimulationSystem simulation;
@@ -60,11 +61,13 @@ namespace CS2AreaSystem.Core.Policies
             }
             uint elapsed = AreaFinanceModel.ElapsedFrames(lastFrame, frame, UpdateFrames * 2);
             lastFrame = frame;
-            if (elapsed == 0 || areas.IsEmptyIgnoreFilter) return;
+            if (elapsed == 0) return;
+            liveAreas.Clear();
             using (var entities = areas.ToEntityArray(Allocator.Temp))
             {
                 foreach (var area in entities)
                 {
+                    liveAreas.Add(EntityManager.GetComponentData<ManagedAreaStableId>(area).Value);
                     charges.Clear();
                     try { policies.SettleUpkeep(area, elapsed, charges); failures.Recovered(area, "Policy.Upkeep"); }
                     catch (System.Exception error)
@@ -76,6 +79,8 @@ namespace CS2AreaSystem.Core.Policies
                     foreach (var charge in charges) finance.EnqueueExpense(charge.AreaStableId, AreaFinanceKind.PolicyUpkeep, charge.Amount);
                 }
             }
+            // A deleted Area's fractional carry goes with it (#66).
+            policies.RetainUpkeepAreas(liveAreas);
         }
     }
 }

@@ -49,6 +49,7 @@ namespace CS2AreaSystem.Core.Policies
         internal void SettleUpkeep(Entity area, uint frames, List<AreaPolicyUpkeepCharge> into) =>
             upkeep.Settle(store, area, frames, Context, () => SurfaceArea(area), into);
         internal void ClearUpkeep() => upkeep.Clear();
+        internal void RetainUpkeepAreas(ICollection<ulong> liveAreaStableIds) => upkeep.RetainAreas(liveAreaStableIds);
         // Area geometry is the hectare source (Game.Areas.Geometry.m_SurfaceArea, square metres).
         private double SurfaceArea(Entity area) =>
             EntityManager.HasComponent<Game.Areas.Geometry>(area) ? EntityManager.GetComponentData<Game.Areas.Geometry>(area).m_SurfaceArea : 0;
