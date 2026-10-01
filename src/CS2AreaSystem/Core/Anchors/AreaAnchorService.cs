@@ -23,10 +23,13 @@ namespace CS2AreaSystem.Core.Anchors
         private readonly IAreaAnchorStore store;
         private readonly Func<Entity, bool> valid;
         private readonly Func<Entity, Entity, AreaAnchorRole, bool> eligible;
+        // Validation of persisted links; defaults to the assignment predicate.
+        private readonly Func<Entity, Entity, AreaAnchorRole, bool> existingEligible;
         private readonly Dictionary<Entity, HashSet<Entity>> byAnchor = new Dictionary<Entity, HashSet<Entity>>();
         private readonly HashSet<Entity> dirty = new HashSet<Entity>();
-        public AreaAnchorService(IAreaAnchorStore store, Func<Entity, bool> valid, Func<Entity, Entity, AreaAnchorRole, bool> eligible)
-        { this.store = store; this.valid = valid; this.eligible = eligible; }
+        public AreaAnchorService(IAreaAnchorStore store, Func<Entity, bool> valid, Func<Entity, Entity, AreaAnchorRole, bool> eligible,
+            Func<Entity, Entity, AreaAnchorRole, bool> existingEligible = null)
+        { this.store = store; this.valid = valid; this.eligible = eligible; this.existingEligible = existingEligible ?? eligible; }
         public bool Assign(Entity area, Entity anchor, AreaAnchorRole role)
         {
             if (!valid(area) || !valid(anchor) || !eligible(area, anchor, role)) return false;
@@ -50,12 +53,12 @@ namespace CS2AreaSystem.Core.Anchors
             anchor = anchors.Count > 0 ? anchors[0] : Entity.Null;
             return anchors.Count > 0;
         }
-        // Every persisted link of the role that is still valid and eligible, in link order without duplicates.
+        // Every persisted link of the role that is still valid and still accepted, in link order without duplicates.
         public IReadOnlyList<Entity> GetValidAnchors(Entity area, AreaAnchorRole role)
         {
             var result = new List<Entity>();
             foreach (var link in store.Read(area))
-                if (link.Role == role && !result.Contains(link.Anchor) && valid(link.Anchor) && eligible(area, link.Anchor, role)) result.Add(link.Anchor);
+                if (link.Role == role && !result.Contains(link.Anchor) && valid(link.Anchor) && existingEligible(area, link.Anchor, role)) result.Add(link.Anchor);
             return result;
         }
         // Every persisted link of the role (valid or not) in link order without duplicates, so stale links stay
@@ -68,7 +71,7 @@ namespace CS2AreaSystem.Core.Anchors
             {
                 if (link.Role != role || !seen.Add(link.Anchor)) continue;
                 bool exists = valid(link.Anchor);
-                result.Add(new AreaAnchorLinkState(link.Anchor, exists, exists && eligible(area, link.Anchor, role)));
+                result.Add(new AreaAnchorLinkState(link.Anchor, exists, exists && existingEligible(area, link.Anchor, role)));
             }
             return result;
         }

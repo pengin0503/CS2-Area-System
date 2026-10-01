@@ -113,9 +113,34 @@ public class AreaAnchorPolicyTests {
   var module=new ParkAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),(e,_)=>throw new InvalidOperationException("reader"));
   Assert.That(((IAreaAnchorPolicy)module).AcceptsAnchor(area,park,AreaAnchorRole.Entrance,default),Is.False);
  }
- [Test] public void IndustrialKeepsDefaultAcceptanceAfterGenericChecks() {
-  IAreaAnchorPolicy industrial=new IndustrialAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true));
-  Assert.That(industrial.AcceptsAnchor(area,office,AreaAnchorRole.Headquarters,default),Is.True);
+ [Test] public void IndustrialRejectsOrdinaryOfficesAtAssignment() {
+  IAreaAnchorPolicy industrial=new IndustrialAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),
+   (e,_)=>new IndustrialFacilityTraits{IsBuilding=true,HasOfficeProperty=true,HasOfficeCompany=true,HasWorkplaces=true});
+  Assert.That(industrial.AcceptsAnchor(area,office,AreaAnchorRole.Headquarters,default),Is.False);
+ }
+ [Test] public void AssignmentAndExistingLinkUseSeparatePredicates() {
+  var invalid=new HashSet<Entity>();
+  var healthy=new HashSet<Entity>{hq};
+  var store=new Store();
+  // Assignment requires current eligibility; an accepted link only needs to stay a valid member building.
+  var service=new AreaAnchorService(store,e=>e!=Entity.Null&&!invalid.Contains(e),(a,e,r)=>healthy.Contains(e),(a,e,r)=>true);
+  Assert.That(service.Assign(area,office,AreaAnchorRole.Headquarters),Is.False,"stricter initial eligibility rejects an office");
+  Assert.That(service.Assign(area,hq,AreaAnchorRole.Headquarters),Is.True);
+  healthy.Remove(hq); // vacancy, poor profitability or disabled production
+  Assert.That(service.HasValidAnchor(area,AreaAnchorRole.Headquarters),Is.True,"existing HQ survives tenant/health changes");
+  Assert.That(service.GetAnchorLinks(area,AreaAnchorRole.Headquarters).Single().Valid,Is.True);
+  invalid.Add(hq); // deletion, destruction or leaving the boundary (Core validity/membership)
+  Assert.That(service.HasValidAnchor(area,AreaAnchorRole.Headquarters),Is.False);
+  Assert.That(service.GetAnchorLinks(area,AreaAnchorRole.Headquarters).Single().Valid,Is.False);
+ }
+ [Test] public void LegacyCallersAndParkUseOnePredicateForAssignmentAndValidation() {
+  var eligible=new HashSet<Entity>{park};
+  var store=new Store();
+  var service=new AreaAnchorService(store,e=>e!=Entity.Null,(a,e,r)=>eligible.Contains(e));
+  Assert.That(service.Assign(area,park,AreaAnchorRole.Entrance),Is.True);
+  eligible.Remove(park);
+  Assert.That(service.HasValidAnchor(area,AreaAnchorRole.Entrance),Is.False,"without an existing predicate the assignment rule still validates links");
+  Assert.That((object)new ParkAreaModule(service) is IAreaExistingAnchorPolicy,Is.False,"Park does not opt in");
  }
  [Test] public void MultipleEntrancesAreEnumeratedAndHeadquartersStaysSingle() {
   var invalid=new HashSet<Entity>();
