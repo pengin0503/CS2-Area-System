@@ -29,7 +29,16 @@ namespace CS2AreaSystem.Core.UI
         private AreaToolSystem areaTool;
         private EndFrameBarrier endFrameBarrier;
         private Game.Audio.AudioManager audio;
-        private EntityQuery soundSettings, managedAreas;
+        private EntityQuery soundSettings, managedAreas, writtenAreas, progressedAreas, relinkedAreas, taggedAreas;
+        // Shared presentation revision and the caches keyed by it (#56 #70 #74).
+        private readonly AreaPresentationRevision presentation = new AreaPresentationRevision();
+        private readonly AreaPresentationCache<ulong, AreaListSnapshot> listEntries = new AreaPresentationCache<ulong, AreaListSnapshot>();
+        private readonly AreaPresentationCache<ulong, System.Collections.Generic.List<AreaUICandidate>> candidates =
+            new AreaPresentationCache<ulong, System.Collections.Generic.List<AreaUICandidate>>();
+        private readonly AreaPresentationCache<AreaCoreViewKey, CoreView> coreViews = new AreaPresentationCache<AreaCoreViewKey, CoreView>();
+        private AreaManagementViewModel composedView;
+        public long ListBuilds => listEntries.Builds;
+        public long CoreViewBuilds => coreViews.Builds;
         private RawValueBinding areaList, pendingBinding;
         private ValueBinding<bool> listAvailable, listOpen;
         private readonly AreaListVisibility listVisibility = new AreaListVisibility();
@@ -56,6 +65,19 @@ namespace CS2AreaSystem.Core.UI
             managedAreas = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() }
+            });
+            // Presentation evidence. One change filter per query; a structural change (a rename adds BatchesUpdated, a
+            // new Area gets components) moves the entity into a chunk whose change versions advance.
+            writtenAreas = PresentationQuery(ComponentType.ReadOnly<ManagedArea>());
+            writtenAreas.SetChangedVersionFilter(ComponentType.ReadOnly<ManagedArea>());
+            progressedAreas = PresentationQuery(ComponentType.ReadOnly<ManagedAreaProgress>());
+            progressedAreas.SetChangedVersionFilter(ComponentType.ReadOnly<ManagedAreaProgress>());
+            relinkedAreas = PresentationQuery(ComponentType.ReadOnly<AreaAnchorLink>());
+            relinkedAreas.SetChangedVersionFilter(ComponentType.ReadOnly<AreaAnchorLink>());
+            taggedAreas = GetEntityQuery(new EntityQueryDesc {
+                All = new[] { ComponentType.ReadOnly<ManagedArea>() },
+                Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<BatchesUpdated>() },
+                None = new[] { ComponentType.ReadOnly<Temp>() }
             });
             AddBinding(areaList = new RawValueBinding("cs2AreaSystem", "areaList", writer => AreaListViewModel.Write(writer, listView)));
             AddBinding(pendingBinding = new RawValueBinding("cs2AreaSystem", "pendingAssignment", writer => PendingAssignmentView.Write(writer, pendingView)));
@@ -90,6 +112,20 @@ namespace CS2AreaSystem.Core.UI
             // The system is disabled outside gameplay, so clear the UI now instead of on the next update.
             SetPending(null);
             listAvailable.Update(false); listOpen.Update(false); SetList(new System.Collections.Generic.List<AreaListEntry>());
+            listEntries.Clear(); candidates.Clear(); coreViews.Clear(); composedView = null; presentation.Invalidate();
+        }
+        private EntityQuery PresentationQuery(ComponentType changed) => GetEntityQuery(new EntityQueryDesc {
+            All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>(), changed },
+            None = new[] { ComponentType.ReadOnly<Temp>() }
+        });
+        // Observed once per frame by whichever consumer comes first (the selected-info section updates before this system).
+        private ulong PresentationRevision()
+        {
+            int frame = UnityEngine.Time.frameCount;
+            if (presentation.NeedsObservation(frame))
+                presentation.Observe(frame, !writtenAreas.IsEmpty || !progressedAreas.IsEmpty || !relinkedAreas.IsEmpty || !taggedAreas.IsEmptyIgnoreFilter,
+                    services.Identity.LoadGeneration, services.Quarantine.Revision, services.Anchors.Revision);
+            return presentation.Value;
         }
         protected override void OnUpdate()
         {
@@ -130,39 +166,57 @@ namespace CS2AreaSystem.Core.UI
         {
             view = null;
             if (!IsReady || !IsArea(entity)) return false;
+            var key = new AreaCoreViewKey(entity, PresentationRevision(), pendingArea == entity, CS2AreaSystem.Core.Settings.AreaSettings.Current.ConfirmAreaDeletion);
+            if (!coreViews.TryGet(key, out var core)) core = coreViews.Set(key, BuildCoreView(entity, key));
+            if (core.Provider == null) { view = core.View; return true; }
+            // Module content has its own cache and cadence; it is asked every frame and composed onto the cached Core view.
+            var context = new Core.Modules.AreaPanelContext(World, EntityManager);
+            var summary = BuildSummary(core.Provider, entity, context);
+            var panel = BuildPanel(core.Provider, entity, context);
+            if (composedView == null || !composedView.IsComposedFrom(core.View, summary, panel)) composedView = core.View.WithModuleContent(summary, panel);
+            view = composedView;
+            return true;
+        }
+        private sealed class CoreView
+        {
+            public AreaManagementViewModel View;
+            // Null when the view needs no module content (quarantined Area, unknown type or a module without a panel).
+            public Core.Modules.IAreaPanelProvider Provider;
+        }
+        // Anchors, links, names and progress: rebuilt only when the presentation revision or the key changes (#70).
+        private CoreView BuildCoreView(Entity entity, in AreaCoreViewKey key)
+        {
             var area = EntityManager.GetComponentData<ManagedArea>(entity);
-            if (services.IsQuarantined(entity)) { view = QuarantinedView(entity, area); return true; }
+            if (services.IsQuarantined(entity)) return new CoreView { View = QuarantinedView(entity, area, key.ConfirmDelete) };
             bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
             var role = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole;
-            var context = new Core.Modules.AreaPanelContext(World, EntityManager);
             var provider = descriptor?.Module?.PanelProvider;
             var anchors = role.HasValue ? services.Anchors.GetValidAnchors(entity, role.Value) : System.Array.Empty<Entity>();
             var links = role.HasValue ? services.Anchors.GetAnchorLinks(entity, role.Value) : System.Array.Empty<AreaAnchorLinkState>();
-            view = new AreaManagementViewModel {
+            var view = new AreaManagementViewModel {
                 StableId = EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value.ToString(CultureInfo.InvariantCulture),
                 TypeKey = known ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
                 State = "CS2AS.State." + area.State,
-                Summary = BuildSummary(provider, entity, context),
-                Panel = BuildPanel(provider, entity, context),
                 AnchorRole = role?.ToString(),
                 AnchorName = anchors.Count > 0 ? names.GetRenderedLabelName(anchors[0]) : null,
                 Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link =>
                     new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })),
-                PendingAnchor = pendingArea == entity,
-                ConfirmDelete = CS2AreaSystem.Core.Settings.AreaSettings.Current.ConfirmAreaDeletion
+                PendingAnchor = key.PendingAnchor,
+                ConfirmDelete = key.ConfirmDelete
             };
             if (EntityManager.HasComponent<ManagedAreaProgress>(entity))
             { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(entity); view.Level = progress.Level; view.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
-            return true;
+            if (provider == null) { view.Summary = BuildSummary(null, entity, default); view.Panel = BuildPanel(null, entity, default); }
+            return new CoreView { View = view, Provider = provider };
         }
         // No module content, anchors or progress: the saved data of a quarantined Area is not interpreted.
-        private AreaManagementViewModel QuarantinedView(Entity entity, ManagedArea area) => new AreaManagementViewModel {
+        private AreaManagementViewModel QuarantinedView(Entity entity, ManagedArea area, bool confirmDelete) => new AreaManagementViewModel {
             StableId = AreaUIKey.Format(entity, 0, true),
             TypeKey = services.Registry.TryGet(area.TypeId, out var descriptor) ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
             State = QuarantinedState,
             Summary = "CS2AS.Summary.Quarantined",
             PendingAnchor = false,
-            ConfirmDelete = CS2AreaSystem.Core.Settings.AreaSettings.Current.ConfirmAreaDeletion
+            ConfirmDelete = confirmDelete
         };
         public const string QuarantinedState = "CS2AS.State.Quarantined";
         // A failing module panel degrades to the Overview fallback; Core rows/actions keep working.
@@ -214,7 +268,7 @@ namespace CS2AreaSystem.Core.UI
             var policies = World.GetExistingSystemManaged<Policies.AreaPolicySystem>();
             if (policies != null && AreaPolicyToggleRequest.TryParse(policyText, enabledText, out var policyId, out var enabled) &&
                 policies.TrySetDesired(area, policyId, enabled, out _))
-                selection.SetDirty();
+            { presentation.Invalidate(); selection.SetDirty(); }
         }
         private void ModuleAction(string expectedId, string action, string value)
         {
@@ -227,7 +281,7 @@ namespace CS2AreaSystem.Core.UI
                 services.Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor);
                 if (Core.Modules.AreaModuleActionDispatcher.Dispatch(guard, descriptor?.Module?.PanelProvider, area, action, value,
                         new Core.Modules.AreaPanelContext(World, EntityManager), error => Mod.Log.Error(error, "Area module action failed: " + action)))
-                    selection.SetDirty();
+                { presentation.Invalidate(); selection.SetDirty(); }
             }
             catch (Exception error) { Mod.Log.Error(error, "Area module action rejected"); }
         }
@@ -237,30 +291,52 @@ namespace CS2AreaSystem.Core.UI
             if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || !policy.RequiredAnchorRole.HasValue) return;
             var role = policy.RequiredAnchorRole.Value;
             var links = EntityManager.HasBuffer<AreaAnchorLink>(area) ? new EntityAreaAnchorStore(EntityManager).Read(area) : System.Array.Empty<AreaAnchorLink>();
-            if (AreaAnchorLinkKey.TryResolve(links, role, key, out var anchor) && services.Anchors.Remove(area, anchor, role)) selection.SetDirty();
+            if (AreaAnchorLinkKey.TryResolve(links, role, key, out var anchor) && services.Anchors.Remove(area, anchor, role)) { presentation.Invalidate(); selection.SetDirty(); }
         }
         private void SetPending(PendingAssignmentView next)
         {
             if (PendingAssignmentView.Equivalent(pendingView, next)) return;
             pendingView = next; pendingBinding.Update();
         }
+        // Rebuilt only when the presentation revision advanced since the last build (#56).
         private void PublishList()
         {
+            ulong revision = PresentationRevision();
+            if (!listEntries.TryGet(revision, out var snapshot)) snapshot = listEntries.Set(revision, BuildList(revision));
+            SetList(snapshot.Entries);
+        }
+        private AreaListSnapshot BuildList(ulong revision)
+        {
             var entries = new System.Collections.Generic.List<AreaListEntry>();
+            var found = new System.Collections.Generic.List<AreaUICandidate>();
             using (var areas = managedAreas.ToEntityArray(Unity.Collections.Allocator.Temp))
                 foreach (var area in areas)
                 {
                     var managed = EntityManager.GetComponentData<ManagedArea>(area);
                     bool quarantined = services.IsQuarantined(area);
+                    ulong id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
+                    found.Add(new AreaUICandidate(area, id, quarantined));
                     entries.Add(new AreaListEntry {
-                        StableId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value,
+                        StableId = id,
                         Key = quarantined ? AreaUIKey.Format(area, 0, true) : null,
                         Name = names.GetRenderedLabelName(area),
                         TypeKey = services.Registry.TryGet(managed.TypeId, out var descriptor) ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
                         State = quarantined ? QuarantinedState : "CS2AS.State." + managed.State
                     });
                 }
-            SetList(AreaListViewModel.Sort(entries));
+            candidates.Set(revision, found);
+            return new AreaListSnapshot { Entries = AreaListViewModel.Sort(entries), Candidates = found };
+        }
+        // Selection lookup of the current revision: from the list build when the list is open, else a names-free pass (#74).
+        private System.Collections.Generic.List<AreaUICandidate> Candidates()
+        {
+            ulong revision = PresentationRevision();
+            if (candidates.TryGet(revision, out var found)) return found;
+            found = new System.Collections.Generic.List<AreaUICandidate>();
+            using (var areas = managedAreas.ToEntityArray(Unity.Collections.Allocator.Temp))
+                foreach (var area in areas)
+                    found.Add(new AreaUICandidate(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value, services.IsQuarantined(area)));
+            return candidates.Set(revision, found);
         }
         private void SetList(System.Collections.Generic.List<AreaListEntry> next)
         {
@@ -272,11 +348,10 @@ namespace CS2AreaSystem.Core.UI
             try
             {
                 if (!IsReady) return;
-                var candidates = new System.Collections.Generic.List<AreaUICandidate>();
-                using (var areas = managedAreas.ToEntityArray(Unity.Collections.Allocator.Temp))
-                    foreach (var area in areas)
-                        candidates.Add(new AreaUICandidate(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value, services.IsQuarantined(area)));
-                if (!AreaListViewModel.TryFind(candidates, expectedId, out var selected) || !IsArea(selected)) return;
+                if (!AreaListViewModel.TryFind(Candidates(), expectedId, out var selected) || !IsArea(selected)) return;
+                // The cached lookup may predate this frame: the live entity must still carry the requested key.
+                var live = new AreaUICandidate(selected, EntityManager.GetComponentData<ManagedAreaStableId>(selected).Value, services.IsQuarantined(selected));
+                if (!AreaListViewModel.TryFind(new[] { live }, expectedId, out var confirmed) || confirmed != selected) return;
                 pendingArea = Entity.Null;
                 selection.SetSelection(selected);
                 if (CS2AreaSystem.Core.Settings.AreaSettings.Current.FocusCameraOnSelect) selection.Focus(selected);
@@ -315,6 +390,7 @@ namespace CS2AreaSystem.Core.UI
                     return;
                 }
                 pendingArea = Entity.Null;
+                presentation.Invalidate();
                 selection.SetSelection(area);
                 selection.SetDirty();
             }
@@ -335,12 +411,14 @@ namespace CS2AreaSystem.Core.UI
                 audio.PlayUISound(soundSettings.GetSingleton<ToolUXSoundSettingsData>().m_DeletetEntitySound);
             endFrameBarrier.CreateCommandBuffer().AddComponent<Deleted>(area);
             selection.SetSelection(Entity.Null); pendingArea = Entity.Null;
+            presentation.Invalidate();
         }
         private void BeginAssignment(Entity area, AreaAnchorRole role)
         {
             var type = EntityManager.GetComponentData<ManagedArea>(area).TypeId;
             if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.RequiredAnchorRole != role) return;
             pendingArea = area; pendingRole = role; pendingId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
+            presentation.Invalidate();
             tools.ActivatePrefabTool(null);
             selection.SetDirty();
         }

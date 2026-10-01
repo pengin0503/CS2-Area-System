@@ -29,6 +29,17 @@ namespace CS2AreaSystem.Core.UI
                 if (left[i]?.Key != right[i]?.Key || left[i]?.Name != right[i]?.Name || left[i]?.Valid != right[i]?.Valid) return false;
             return AreaPanelDocument.Equivalent(a.Panel, b.Panel);
         }
+        // Module summary and panel change on the module's own cadence, so they are composed onto the cached Core view
+        // (#70); the Core view itself is never changed.
+        public AreaManagementViewModel WithModuleContent(string summary, AreaPanelDocument panel)
+        {
+            var view = (AreaManagementViewModel)MemberwiseClone();
+            view.Summary = summary; view.Panel = panel; view.composedFrom = this;
+            return view;
+        }
+        public bool IsComposedFrom(AreaManagementViewModel core, string summary, AreaPanelDocument panel) =>
+            ReferenceEquals(composedFrom, core) && Summary == summary && AreaPanelDocument.Equivalent(Panel, panel);
+        private AreaManagementViewModel composedFrom;
         public void WriteProperties(IJsonWriter writer)
         {
             writer.PropertyName("stableId"); writer.Write(StableId);

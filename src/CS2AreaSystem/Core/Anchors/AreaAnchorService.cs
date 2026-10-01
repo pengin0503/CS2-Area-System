@@ -27,6 +27,8 @@ namespace CS2AreaSystem.Core.Anchors
         private readonly Func<Entity, Entity, AreaAnchorRole, bool> existingEligible;
         private readonly Dictionary<Entity, HashSet<Entity>> byAnchor = new Dictionary<Entity, HashSet<Entity>>();
         private readonly HashSet<Entity> dirty = new HashSet<Entity>();
+        // Advances whenever links change or an Area's anchors may have changed validity, for UI caches (#70).
+        public long Revision { get; private set; }
         public AreaAnchorService(IAreaAnchorStore store, Func<Entity, bool> valid, Func<Entity, Entity, AreaAnchorRole, bool> eligible,
             Func<Entity, Entity, AreaAnchorRole, bool> existingEligible = null)
         { this.store = store; this.valid = valid; this.eligible = eligible; this.existingEligible = existingEligible ?? eligible; }
@@ -36,14 +38,14 @@ namespace CS2AreaSystem.Core.Anchors
             var old = store.Read(area);
             var links = old.Where(link => !(link.Role == role && (role == AreaAnchorRole.Headquarters || link.Anchor == anchor))).ToList();
             links.Add(new AreaAnchorLink { Anchor = anchor, Role = role });
-            store.Write(area, links); Reindex(area, old, links); dirty.Add(area); return true;
+            store.Write(area, links); Reindex(area, old, links); dirty.Add(area); Revision++; return true;
         }
         public bool Remove(Entity area, Entity anchor, AreaAnchorRole role)
         {
             var old = store.Read(area);
             var links = old.Where(link => link.Anchor != anchor || link.Role != role).ToArray();
             if (links.Length == old.Count) return false;
-            store.Write(area, links); Reindex(area, old, links); dirty.Add(area); return true;
+            store.Write(area, links); Reindex(area, old, links); dirty.Add(area); Revision++; return true;
         }
         public bool HasValidAnchor(Entity area, AreaAnchorRole role) => TryGetValidAnchor(area, role, out _);
         // First valid anchor of the role; kept for single-anchor roles and existing callers.
@@ -82,16 +84,17 @@ namespace CS2AreaSystem.Core.Anchors
         }
         public void RebuildReverseIndex(IEnumerable<Entity> areas)
         {
-            byAnchor.Clear(); dirty.Clear();
+            byAnchor.Clear(); dirty.Clear(); Revision++;
             foreach (var area in areas) Reindex(area, Array.Empty<AreaAnchorLink>(), store.Read(area));
         }
         public void InvalidateAnchor(Entity anchor)
-        { if (byAnchor.TryGetValue(anchor, out var areas)) dirty.UnionWith(areas); }
-        public void InvalidateArea(Entity area) => dirty.Add(area);
+        { if (byAnchor.TryGetValue(anchor, out var areas)) { dirty.UnionWith(areas); Revision++; } }
+        public void InvalidateArea(Entity area) { dirty.Add(area); Revision++; }
         public void ForgetArea(Entity area)
         {
             var old = store.Read(area);
             Reindex(area, old, Array.Empty<AreaAnchorLink>());
+            Revision++;
             // Keep one final validation queued so module deletion hooks/state transitions can run.
             dirty.Add(area);
         }
