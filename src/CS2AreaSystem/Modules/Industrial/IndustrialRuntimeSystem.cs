@@ -60,14 +60,25 @@ namespace CS2AreaSystem.Modules.Industrial
         public static int Normalize(int level) => level < MinLevel ? MinLevel : level > MaxLevel ? MaxLevel : level;
     }
     // Host of Industrial runtime-only data. ModificationEnd only: collects Industrial Areas, prunes deleted ones and
-    // attaches missing authoritative state. It performs no economic observation.
+    // attaches missing authoritative state. It performs no economic observation. The Area list is rebuilt only through
+    // an AreaChangeGate (#61): ManagedArea writes (state changes, added Areas) are seen by a change-version filter,
+    // removals by the Created/Updated/Deleted tags, loads and quarantine by their counters, and a fallback reconciles
+    // every AreaChangeGate.DefaultFallbackUpdates updates. Unchanged frames only check that evidence. The runtime is the
+    // last system of ModificationEnd, after activation, so the GameSimulation systems read a list refreshed this frame.
     public partial class IndustrialRuntimeSystem : GameSystemBase
     {
         public IndustrialRuntimeStore Store { get; } = new IndustrialRuntimeStore();
         public IndustrialStructureTracker Structure { get; } = new IndustrialStructureTracker();
-        private EntityQuery managedAreas, timeData, rentersUpdated, damagedMembers;
-        private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
+        private EntityQuery managedAreas, writtenAreas, changedAreas, timeData, rentersUpdated, damagedMembers;
+        private List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>(), building = new List<IndustrialAreaRef>();
+        private readonly List<(Entity Area, ManagedArea Managed, ulong StableId)> rows = new List<(Entity Area, ManagedArea Managed, ulong StableId)>();
+        private readonly AreaChangeGate gate = new AreaChangeGate();
+        private IndustrialMembershipCycleSource cycleSource;
+        // Industrial Areas of the current list may still lack authoritative state (the game clock was not available).
+        private bool statePending;
         private AreaCoreServicesSystem services;
+        public long AreaListRefreshes => gate.Refreshes;
+        public long AreaListSkips => gate.Skips;
         public bool Ready => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
         // Incremented on every load so dependent systems drop cycles, baselines and windows.
         public int LoadGeneration { get; private set; }
@@ -79,6 +90,16 @@ namespace CS2AreaSystem.Modules.Industrial
             managedAreas = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() } });
+            writtenAreas = GetEntityQuery(new EntityQueryDesc {
+                All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
+                None = new[] { ComponentType.ReadOnly<Temp>() } });
+            writtenAreas.SetChangedVersionFilter(ComponentType.ReadOnly<ManagedArea>());
+            // A removed entity can leave no changed chunk behind, so removals are taken from the tags.
+            changedAreas = GetEntityQuery(new EntityQueryDesc {
+                All = new[] { ComponentType.ReadOnly<ManagedArea>() },
+                Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<Deleted>() },
+                None = new[] { ComponentType.ReadOnly<Temp>() } });
+            cycleSource = new IndustrialMembershipCycleSource(Membership, Structure);
             timeData = GetEntityQuery(ComponentType.ReadOnly<TimeData>());
             // Native change evidence for tenant/role structure (design §18.2): vanilla tenant events and member
             // destruction/abandonment. Ordinary economic changes carry no such evidence.
@@ -88,17 +109,27 @@ namespace CS2AreaSystem.Modules.Industrial
                 Any = new[] { ComponentType.ReadOnly<Destroyed>(), ComponentType.ReadOnly<Game.Buildings.Abandoned>() },
                 None = new[] { ComponentType.ReadOnly<Temp>() } });
         }
-        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) { Store.Clear(); Structure.Clear(); LoadGeneration++; }
-        public IIndustrialCycleSource CycleSource => new IndustrialMembershipCycleSource(Membership, Structure);
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
+        {
+            Store.Clear(); Structure.Clear(); cycleSource.Clear(); areas.Clear(); gate.Invalidate(); LoadGeneration++;
+        }
+        public IIndustrialCycleSource CycleSource => cycleSource;
         [Preserve]
         protected override void OnUpdate()
         {
-            if (!Ready) return;
+            // Change versions advance while not Ready; the first Ready update rebuilds.
+            if (!Ready) { gate.Invalidate(); return; }
             try
             {
-                CollectAreas(areas);
-                PruneStore(areas);
-                EnsureIndustrialState(areas);
+                int generation = services.Identity.LoadGeneration, quarantine = services.Quarantine.Revision;
+                if (gate.ShouldRefresh(!writtenAreas.IsEmpty || !changedAreas.IsEmptyIgnoreFilter, generation, quarantine))
+                {
+                    RefreshAreas();
+                    PruneStore(areas);
+                    statePending = true;
+                    gate.Refreshed(generation, quarantine);
+                }
+                if (statePending) statePending = !EnsureIndustrialState(areas);
                 TrackStructureChanges();
                 services.Failures.Recovered(Entity.Null, "Industrial.Runtime");
             }
@@ -107,19 +138,29 @@ namespace CS2AreaSystem.Modules.Industrial
                 services.Failures.Report(Entity.Null, "Industrial.Runtime", error, "Industrial runtime update failed; Area Core continues");
             }
         }
+        // The Industrial Areas as of this frame's ModificationEnd (a copy; the runtime keeps its own list).
         public void CollectAreas(List<IndustrialAreaRef> result)
         {
+            result.Clear();
+            result.AddRange(areas);
+        }
+        // Builds the new list aside and swaps it in, so a failed rebuild leaves the previous list and the gate open.
+        private void RefreshAreas()
+        {
             using var entities = managedAreas.ToEntityArray(Allocator.Temp);
-            var rows = new List<(Entity, ManagedArea, ulong)>(entities.Length);
+            rows.Clear();
             foreach (var entity in entities)
                 if (!services.IsQuarantined(entity)) rows.Add((entity, EntityManager.GetComponentData<ManagedArea>(entity), EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value));
-            IndustrialAreaSelection.Select(rows, result);
+            IndustrialAreaSelection.Select(rows, building);
+            rows.Clear();
+            (areas, building) = (building, areas);
         }
-        // Drops runtime snapshots and structure tokens of deleted Industrial Areas; Suspended Areas stay.
+        // Drops runtime snapshots, structure tokens and member lists of deleted Industrial Areas; Suspended Areas stay.
         public void PruneStore(List<IndustrialAreaRef> alive)
         {
             Store.Prune(alive);
             Structure.RetainOnly(alive);
+            cycleSource.RetainOnly(alive);
         }
         private void TrackStructureChanges()
         {
@@ -135,10 +176,12 @@ namespace CS2AreaSystem.Modules.Industrial
             }
         }
         // Structural change: call from the modification phase only.
-        public void EnsureIndustrialState(List<IndustrialAreaRef> list)
+        // False while the game clock is unavailable; the runtime retries every update until it succeeds.
+        public bool EnsureIndustrialState(List<IndustrialAreaRef> list)
         {
-            if (!TryGetClock(out var clock)) return;
+            if (!TryGetClock(out var clock)) return false;
             IndustrialStateInitializer.Ensure(list, new EntityTarget(EntityManager), clock.Day(SimulationFrame));
+            return true;
         }
         public bool TryGetClock(out IndustrialGameClock clock)
         {

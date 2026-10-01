@@ -23,25 +23,58 @@ namespace CS2AreaSystem.Modules.Industrial
         // Members for which this Area is Core's primary Industrial owner; the rest are counted as overlap only.
         IReadOnlyList<Entity> PrimaryMembers(ulong areaId, out int nonPrimary);
     }
+    // Primary-member lists are cached per Area and reused while the membership index reports the same (Epoch, revision)
+    // for it (#72): the revision advances whenever the Area's members or their primary flags change. A cached list is
+    // never mutated (a running cycle may hold it); a change builds a new one.
     public sealed class IndustrialMembershipCycleSource : IIndustrialCycleSource
     {
         private readonly AreaMembershipIndex index;
         private readonly IndustrialStructureTracker structure;
-        public IndustrialMembershipCycleSource(AreaMembershipIndex index, IndustrialStructureTracker structure) { this.index = index; this.structure = structure; }
+        private readonly Dictionary<ulong, PrimaryList> lists = new Dictionary<ulong, PrimaryList>();
+        private readonly List<Entity> buffer = new List<Entity>();
+        private readonly HashSet<ulong> ids = new HashSet<ulong>();
+        private readonly List<ulong> gone = new List<ulong>();
+        private int epoch;
+        public long Rebuilds { get; private set; }
+        public int CachedAreas => lists.Count;
+        public IndustrialMembershipCycleSource(AreaMembershipIndex index, IndustrialStructureTracker structure) { this.index = index; this.structure = structure; epoch = index.Epoch; }
         public ulong MembershipToken(ulong areaId) => index.GetAreaRevision(areaId);
         public ulong StructureToken(ulong areaId) => structure.Get(areaId);
         public IReadOnlyList<Entity> PrimaryMembers(ulong areaId, out int nonPrimary)
         {
-            var primary = new List<Entity>(); nonPrimary = 0;
+            if (epoch != index.Epoch) { lists.Clear(); epoch = index.Epoch; }
+            ulong revision = index.GetAreaRevision(areaId);
+            if (lists.TryGetValue(areaId, out var cached) && cached.Revision == revision) { nonPrimary = cached.NonPrimary; return cached.Members; }
+            buffer.Clear(); nonPrimary = 0;
             foreach (var member in index.GetMembers(areaId))
             {
                 bool owned = false;
                 foreach (var relation in index.GetAreas(member))
                     if (relation.AreaStableId == areaId) { owned = relation.IsPrimaryForType; break; }
-                if (owned) primary.Add(member); else nonPrimary++;
+                if (owned) buffer.Add(member); else nonPrimary++;
             }
-            primary.Sort((a, b) => a.Index != b.Index ? a.Index.CompareTo(b.Index) : a.Version.CompareTo(b.Version));
-            return primary;
+            buffer.Sort((a, b) => a.Index != b.Index ? a.Index.CompareTo(b.Index) : a.Version.CompareTo(b.Version));
+            var members = System.Array.AsReadOnly(buffer.ToArray());
+            lists[areaId] = new PrimaryList(revision, members, nonPrimary);
+            Rebuilds++;
+            return members;
+        }
+        // Drops the lists of Areas that are gone (called with the runtime's Area list when it changes).
+        public void RetainOnly(IEnumerable<IndustrialAreaRef> alive)
+        {
+            if (lists.Count == 0) return;
+            IndustrialAreaIds.Fill(alive, ids);
+            gone.Clear();
+            foreach (var id in lists.Keys) if (!ids.Contains(id)) gone.Add(id);
+            foreach (var id in gone) lists.Remove(id);
+        }
+        public void Clear() => lists.Clear();
+        private readonly struct PrimaryList
+        {
+            public readonly ulong Revision;
+            public readonly IReadOnlyList<Entity> Members;
+            public readonly int NonPrimary;
+            public PrimaryList(ulong revision, IReadOnlyList<Entity> members, int nonPrimary) { Revision = revision; Members = members; NonPrimary = nonPrimary; }
         }
     }
     // Industrial-local structure generation: advanced from native change evidence only (a member building's
@@ -60,12 +93,13 @@ namespace CS2AreaSystem.Modules.Industrial
         public int Count => tokens.Count;
         public void RetainOnly(IEnumerable<IndustrialAreaRef> alive)
         {
-            var ids = new HashSet<ulong>();
-            foreach (var area in alive) ids.Add(area.StableId);
-            var gone = new List<ulong>();
+            IndustrialAreaIds.Fill(alive, ids);
+            gone.Clear();
             foreach (var id in tokens.Keys) if (!ids.Contains(id)) gone.Add(id);
             foreach (var id in gone) tokens.Remove(id);
         }
+        private readonly HashSet<ulong> ids = new HashSet<ulong>();
+        private readonly List<ulong> gone = new List<ulong>();
         public void Clear() => tokens.Clear();
     }
     public sealed class IndustrialCycle

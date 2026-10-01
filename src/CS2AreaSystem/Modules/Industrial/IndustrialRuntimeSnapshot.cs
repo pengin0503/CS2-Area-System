@@ -203,13 +203,25 @@ namespace CS2AreaSystem.Modules.Industrial
         public void Remove(ulong id) => areas.Remove(id);
         public void Clear() => areas.Clear();
         // Drops snapshots of Industrial Areas that no longer exist; Suspended Areas stay.
+        // Reuses its sets, so an unchanged prune does not allocate (#61).
         public void Prune(IEnumerable<IndustrialAreaRef> alive)
         {
-            var ids = new HashSet<ulong>();
-            foreach (var area in alive) ids.Add(area.StableId);
-            var stale = new List<ulong>();
+            IndustrialAreaIds.Fill(alive, ids);
+            stale.Clear();
             foreach (var id in areas.Keys) if (!ids.Contains(id)) stale.Add(id);
             foreach (var id in stale) areas.Remove(id);
+        }
+        private readonly HashSet<ulong> ids = new HashSet<ulong>();
+        private readonly List<ulong> stale = new List<ulong>();
+    }
+    public static class IndustrialAreaIds
+    {
+        // Without boxing the enumerator for the usual list/array inputs.
+        public static void Fill(IEnumerable<IndustrialAreaRef> areas, HashSet<ulong> into)
+        {
+            into.Clear();
+            if (areas is IReadOnlyList<IndustrialAreaRef> list) { for (int i = 0; i < list.Count; i++) into.Add(list[i].StableId); return; }
+            foreach (var area in areas) into.Add(area.StableId);
         }
     }
 }
