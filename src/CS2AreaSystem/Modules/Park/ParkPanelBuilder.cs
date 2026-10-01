@@ -119,7 +119,8 @@ namespace CS2AreaSystem.Modules.Park
             var l = model.Runtime?.Landscape;
             var items = new List<AreaPanelItem>();
             if (l == null || !l.Available) { items.Add(Row("landscape", P + "Landscape", valueKey: P + "Calculating")); return items; }
-            var r = l.Result;
+            // The breakdown Quality used: the scan with this Park's policy effects (Landscape Protection).
+            var r = model.Runtime.Quality?.EffectiveLandscape ?? l.Result;
             string Part(float value, float weight) => OneDecimal(value) + " / " + weight.ToString("0", Invariant);
             items.Add(Bar("landscape", P + "Landscape", r.Score, tooltip: P + "Landscape.Tip"));
             items.Add(Row("vegetation", P + "Vegetation", Part(r.Vegetation, ParkLandscapeModel.VegetationWeight)));

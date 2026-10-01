@@ -18,10 +18,10 @@ public class ParkFinanceModelTests {
   Assert.That(Math.Max(0, available) - collected, Is.GreaterThanOrEqualTo(0));
  }
  [Test] public void ValueForMoneyIsNeutralWhenFreeAndDegradesFasterForMediocreParks() {
-  Assert.That(ParkFinanceModel.ComputeValueForMoney(0, 10), Is.EqualTo(100));
-  Assert.That(ParkFinanceModel.ComputeValueForMoney(40, 50), Is.LessThan(ParkFinanceModel.ComputeValueForMoney(10, 50)));
-  Assert.That(ParkFinanceModel.ComputeValueForMoney(30, 90), Is.GreaterThan(ParkFinanceModel.ComputeValueForMoney(30, 40)), "high quality tolerates a higher fee");
-  Assert.That(ParkFinanceModel.ComputeValueForMoney(ParkFinanceModel.MaxAdmissionFee, 0), Is.GreaterThanOrEqualTo(0));
+  Assert.That(ParkFinanceModel.ComputeValueForMoney(0, 10, 1.0), Is.EqualTo(100));
+  Assert.That(ParkFinanceModel.ComputeValueForMoney(40, 50, 1.0), Is.LessThan(ParkFinanceModel.ComputeValueForMoney(10, 50, 1.0)));
+  Assert.That(ParkFinanceModel.ComputeValueForMoney(30, 90, 1.0), Is.GreaterThan(ParkFinanceModel.ComputeValueForMoney(30, 40, 1.0)), "high quality tolerates a higher fee");
+  Assert.That(ParkFinanceModel.ComputeValueForMoney(ParkFinanceModel.MaxAdmissionFee, 0, 1.0), Is.GreaterThanOrEqualTo(0));
  }
  [Test] public void BudgetUsesTheServiceStyleRangeAndScalesManagementCost() {
   Assert.That(ParkFinanceModel.MinBudget, Is.EqualTo(0.5f)); Assert.That(ParkFinanceModel.MaxBudget, Is.EqualTo(1.5f));
@@ -30,8 +30,8 @@ public class ParkFinanceModelTests {
   Assert.That(ParkFinanceModel.ClampBudget(float.NaN), Is.EqualTo(1f));
   var need = ParkFinanceModel.ComputeManagementNeedPerDay(new ParkManagementInputs { AreaSquareMeters = 10_000, VisitorsPerDay = 100, LandscapeObjects = 200, ManagedFacilities = 3 });
   Assert.That(need, Is.GreaterThan(0));
-  Assert.That(ParkFinanceModel.ComputeManagementCostPerDay(need, 1.5f), Is.GreaterThan(ParkFinanceModel.ComputeManagementCostPerDay(need, 1f)));
-  Assert.That(ParkFinanceModel.ComputeManagementCostPerDay(need, 1f), Is.EqualTo(need).Within(0.001), "100% funds the estimated need");
+  Assert.That(ParkFinanceModel.ComputeManagementCostPerDay(need, 1.5f, 1.0), Is.GreaterThan(ParkFinanceModel.ComputeManagementCostPerDay(need, 1f, 1.0)));
+  Assert.That(ParkFinanceModel.ComputeManagementCostPerDay(need, 1f, 1.0), Is.EqualTo(need).Within(0.001), "100% funds the estimated need");
   var bigger = ParkFinanceModel.ComputeManagementNeedPerDay(new ParkManagementInputs { AreaSquareMeters = 40_000, VisitorsPerDay = 100, LandscapeObjects = 200, ManagedFacilities = 3 });
   Assert.That(bigger, Is.GreaterThan(need)); Assert.That(bigger, Is.LessThan(need * 4));
  }

@@ -34,7 +34,7 @@ public class ParkAreaFinanceIntegrationTests {
   var finance = new AreaFinanceRuntime(_ => { }); var park = new Park(); finance.AddListener(park); finance.Start(0);
   var money = new PlayerMoney(-50_000);
   double carry = 0;
-  long settled = ParkFinanceModel.Settle(ParkFinanceModel.ComputeManagementCostPerDay(640, 1f), ParkFinanceModel.FramesPerDay / 64, ref carry);
+  long settled = ParkFinanceModel.Settle(ParkFinanceModel.ComputeManagementCostPerDay(640, 1f, 1.0), ParkFinanceModel.FramesPerDay / 64, ref carry);
   Assert.That(settled, Is.EqualTo(10));
   Assert.That(finance.EnqueueExpense(7, AreaFinanceKind.ParkManagement, settled), Is.True);
   Assert.That(park.State.LifetimeManagementExpense, Is.Zero, "nothing is recorded before the city is charged");

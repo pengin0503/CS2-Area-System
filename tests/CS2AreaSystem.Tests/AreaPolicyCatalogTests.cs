@@ -67,9 +67,12 @@ public class AreaPolicyCatalogTests {
     }
     [Test] public void UnprovenEffectsReportUnavailableUntilTheirAdapterTask() {
         IAreaPolicyProvider park = new ParkAreaModule(null), industrial = new IndustrialAreaModule(null);
+        // Park: only the Area-internal effects of Task 7 exist (ParkPolicyEffectTests covers each one).
+        var parkAvailable = new[] { AreaPolicyIds.EnhancedMaintenance, AreaPolicyIds.LandscapeProtection, AreaPolicyIds.PremiumServices };
         foreach (var d in ParkPolicyCatalog.Definitions) {
-            Assert.That(park.IsPolicyEffectAvailable(Entity.Null, d.PolicyId, default, out var reason), Is.False);
-            Assert.That(reason, Is.EqualTo(AreaPolicyReasons.EffectUnavailable));
+            bool available = parkAvailable.Contains(d.PolicyId);
+            Assert.That(park.IsPolicyEffectAvailable(Entity.Null, d.PolicyId, default, out var reason), Is.EqualTo(available), d.PolicyId.ToString());
+            Assert.That(reason, available ? Is.Null : Is.EqualTo(AreaPolicyReasons.EffectUnavailable));
         }
         foreach (var d in IndustrialPolicyCatalog.Definitions) {
             Assert.That(industrial.IsPolicyEffectAvailable(Entity.Null, d.PolicyId, default, out var reason), Is.False);

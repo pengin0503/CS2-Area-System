@@ -116,13 +116,15 @@ namespace CS2AreaSystem.Modules.Park
             Add(P + "Note.Prestige", "Landmark Park needs any two of the three Landmark objectives.", "ランドマーク公園には3つのランドマーク目標のうち2つが必要です。");
             AppendPolicies(Add);
         }
-        // Park policy texts (design §11). Directions only: magnitudes are added with each verified effect.
+        // Park policy texts (design §11). Implemented effects state their ParkPolicyEffects magnitudes; the unavailable
+        // ones keep their direction only.
         private static void AppendPolicies(System.Action<string, string, string> Add)
         {
             void Policy(string id, string en, string jp, string enText, string jpText)
             { Add("Policy.TITLE[CS2AS.Policy." + id + "]", en, jp); Add("Policy.DESCRIPTION[CS2AS.Policy." + id + "]", enText, jpText); }
             Policy("EnhancedMaintenance", "Enhanced Maintenance", "維持管理の強化",
-                "Spends more on Park management to raise effective maintenance coverage.", "公園の管理費を増やして実効的な維持管理の水準を高めます。");
+                "Park management is funded 25% above the budget setting: the management expense and the maintenance coverage both rise by 25%.",
+                "公園の管理費を予算設定より25%多く支出します。管理費と維持管理のカバー率がともに25%上がります。");
             Policy("NightEvents", "Night Events", "ナイトイベント",
                 "Draws more visitors with evening events, with more crowding and noise. Conflicts with Quiet Operations.",
                 "夜間のイベントで来園者を増やしますが、混雑と騒音も増えます。静穏運営と同時には施行できません。");
@@ -130,9 +132,11 @@ namespace CS2AreaSystem.Modules.Park
                 "Lowers visitor pressure in favour of quiet, satisfying visits. Conflicts with Night Events.",
                 "来園者の集中を抑え、静かで満足度の高い利用を優先します。ナイトイベントと同時には施行できません。");
             Policy("LandscapeProtection", "Landscape Protection", "景観保護",
-                "Protects the landscape at the cost of some usable visitor capacity.", "利用できる来園者の収容力を一部犠牲にして景観を守ります。");
+                "Vegetation and decoration count 25% more toward the Landscape score; 15% of the comfortable visitor capacity is closed to visitors.",
+                "植栽と装飾が景観スコアに25%多く寄与します。快適に受け入れられる来園者数は15%減ります。");
             Policy("PremiumServices", "Premium Services", "プレミアムサービス",
-                "Better services soften the value-for-money penalty of higher admission fees.", "サービスを充実させ、高い入園料による割高感を和らげます。");
+                "Visitors consider an admission fee up to 30% higher to be fair, which softens the value-for-money penalty of higher fees.",
+                "来園者が妥当と感じる入園料が30%上がり、高い入園料による割高感を和らげます。");
             Policy("MajorEventAttraction", "Major Event Attraction", "大型イベント誘致",
                 "Attracts many more visitors with major events, with strong crowding and high upkeep.",
                 "大型イベントで来園者を大きく増やしますが、混雑が大きく維持費も高くなります。");

@@ -15,11 +15,22 @@ namespace CS2AreaSystem.Modules.Park
             Define(AreaPolicyIds.MajorEventAttraction, "MajorEventAttraction", "Attractions", 5, 1000, 30, 50, null, AreaPolicyEffectClass.VanillaSimulation),
         };
         public const string ActivityGroup = "park.activity";
-        // No Park policy effect is implemented yet, so every Park policy stays visible but unavailable and non-billable.
+        // Enhanced Maintenance, Landscape Protection and Premium Services change Park model inputs (ParkPolicyEffects).
+        // Night Events, Quiet Operations and Major Event Attraction have no verified safe 1.6.2f1 path
+        // (docs/verification/park-policy-effect-contracts.md): they stay visible but unavailable and non-billable.
         public static bool IsEffectAvailable(int policyId, out string reasonKey)
         {
-            reasonKey = AreaPolicyReasons.EffectUnavailable;
-            return false;
+            switch (policyId)
+            {
+                case AreaPolicyIds.EnhancedMaintenance:
+                case AreaPolicyIds.LandscapeProtection:
+                case AreaPolicyIds.PremiumServices:
+                    reasonKey = null;
+                    return true;
+                default:
+                    reasonKey = AreaPolicyReasons.EffectUnavailable;
+                    return false;
+            }
         }
         // Per-facility upkeep basis: the Park's relevant managed facilities (the same count Park management uses).
         // null until the first facility scan after load, so billing falls back to base and per-hectare upkeep.

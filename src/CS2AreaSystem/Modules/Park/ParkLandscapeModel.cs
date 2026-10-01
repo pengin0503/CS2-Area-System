@@ -51,14 +51,19 @@ namespace CS2AreaSystem.Modules.Park
         private static float CopiesValue(int count) => Math.Min(count, FullValueCopiesPerPrefab) +
             (float)Math.Sqrt(Math.Max(0, count - FullValueCopiesPerPrefab));
         private static float Fill(float effective, float target) => target <= 0 ? 0 : 1f - (float)Math.Exp(-1.6 * effective / target);
-        public static ParkLandscapeResult ComputeLandscape(in ParkLandscapeInputs inputs)
+        // The scanned landscape, as the objects in the Park stand.
+        public static ParkLandscapeResult ComputeLandscape(in ParkLandscapeInputs inputs) => ComputeLandscape(inputs, 1f);
+        // scenicCredit multiplies the effective count of the scenic categories (vegetation, decoration) before the same
+        // diminishing-returns curve and category caps (Landscape Protection). 1, or any invalid value, is the scan itself.
+        public static ParkLandscapeResult ComputeLandscape(in ParkLandscapeInputs inputs, float scenicCredit)
         {
+            float credit = float.IsNaN(scenicCredit) || float.IsInfinity(scenicCredit) || scenicCredit <= 0 ? 1f : scenicCredit;
             float unit = SizeScale(inputs.AreaSquareMeters);
             var result = new ParkLandscapeResult
             {
-                Vegetation = VegetationWeight * Fill(EffectiveCount(inputs.Vegetation), VegetationTarget * unit),
+                Vegetation = VegetationWeight * Fill(EffectiveCount(inputs.Vegetation) * credit, VegetationTarget * unit),
                 Amenities = AmenitiesWeight * Fill(EffectiveCount(inputs.Amenities), AmenitiesTarget * unit),
-                Decoration = DecorationWeight * Fill(EffectiveCount(inputs.Decoration), DecorationTarget * unit),
+                Decoration = DecorationWeight * Fill(EffectiveCount(inputs.Decoration) * credit, DecorationTarget * unit),
                 Lighting = LightingWeight * Fill(EffectiveCount(inputs.Lighting), LightingTarget * unit),
                 Paths = PathWeight * Fill(Math.Max(0f, inputs.PathLength), PathTarget * unit)
             };

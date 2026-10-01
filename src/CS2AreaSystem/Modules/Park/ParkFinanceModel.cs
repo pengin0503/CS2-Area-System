@@ -50,12 +50,13 @@ namespace CS2AreaSystem.Modules.Park
         // Area management is an operating cost of Active Parks only.
         public static bool ShouldSettleManagement(CS2AreaSystem.Core.Areas.AreaLifecycleState state) =>
             state == CS2AreaSystem.Core.Areas.AreaLifecycleState.Active;
-        // Free parks have no price penalty; a high-quality Park tolerates a higher fee (design §9.6).
-        public static float ComputeValueForMoney(int fee, float quality)
+        // Free parks have no price penalty; a high-quality Park tolerates a higher fee (design §9.6). fairFeeMultiplier scales
+        // the fee visitors consider fair (Premium Services); 1.0, or any invalid value, is the unchanged Area behaviour.
+        public static float ComputeValueForMoney(int fee, float quality, double fairFeeMultiplier)
         {
             if (fee <= 0) return 100f;
             double q = Math.Min(100, Math.Max(0, float.IsNaN(quality) ? 0 : quality)) / 100.0;
-            double fair = 4 + 36 * Math.Pow(q, 1.5);
+            double fair = (4 + 36 * Math.Pow(q, 1.5)) * ValidMultiplier(fairFeeMultiplier);
             double value = fee <= fair ? 100 - 25 * fee / fair : 75 - 75 * (fee - fair) / (1.5 * fair);
             return (float)Math.Min(100, Math.Max(0, value));
         }
@@ -73,8 +74,15 @@ namespace CS2AreaSystem.Modules.Park
         public static float ComputeManagementNeedPerDay(in ParkManagementInputs inputs) =>
             (float)(150 + 350 * Math.Pow(Math.Max(0, inputs.AreaSquareMeters) / 10_000.0, 0.75) + 1.5 * Math.Max(0, inputs.VisitorsPerDay) +
                     8 * Math.Sqrt(Math.Max(0, inputs.LandscapeObjects)) + 40 * Math.Max(0, inputs.ManagedFacilities));
-        // 100% budget funds the estimated need; coverage for Maintenance is the clamped budget itself.
-        public static float ComputeManagementCostPerDay(float needPerDay, float budget) => Math.Max(0, needPerDay) * ClampBudget(budget);
+        // Management coverage is funding relative to need: the clamped budget, times the policy funding multiplier
+        // (Enhanced Maintenance). 1.0, or any invalid value, is the unchanged Area behaviour.
+        public static float ComputeManagementCoverage(float budget, double fundingMultiplier) =>
+            (float)(ClampBudget(budget) * ValidMultiplier(fundingMultiplier));
+        // 100% coverage funds the estimated need exactly, so every point of coverage is paid for.
+        public static float ComputeManagementCostPerDay(float needPerDay, float budget, double fundingMultiplier) =>
+            Math.Max(0, needPerDay) * ComputeManagementCoverage(budget, fundingMultiplier);
+        private static double ValidMultiplier(double multiplier) =>
+            double.IsNaN(multiplier) || double.IsInfinity(multiplier) || multiplier <= 0 ? 1.0 : multiplier;
         // Money for an interval of frames, with the shared Area rounding rule (floor, fraction carried).
         public static long Settle(double perDay, uint frames, ref double carry) => AreaFinanceModel.SettleDaily(perDay, frames, ref carry);
         public static ParkAreaState RecordAdmission(ParkAreaState state, long collected)

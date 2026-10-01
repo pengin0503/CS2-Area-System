@@ -61,7 +61,14 @@ namespace CS2AreaSystem.Modules.Park
             else value = MinComfort + (45 - MinComfort) * Math.Exp(-(r - 1.5) * 1.5);
             return (float)value;
         }
-        public static float ComputeComfortableCapacity(in ParkCapacityInputs inputs)
+        // usableShare is the share of the Park open to visitors (Landscape Protection closes part of it). Only (0, 1] is
+        // accepted: a policy can close capacity but never manufacture it.
+        public static float ComputeComfortableCapacity(in ParkCapacityInputs inputs, float usableShare)
+        {
+            float share = float.IsNaN(usableShare) || usableShare <= 0 || usableShare > 1 ? 1f : usableShare;
+            return share * ComputeFullCapacity(inputs);
+        }
+        private static float ComputeFullCapacity(in ParkCapacityInputs inputs)
         {
             double area = Math.Max(8, 30 * Math.Pow(Math.Max(0, inputs.AreaSquareMeters) / 10_000.0, 0.75));
             double paths = 25 * (1 - Math.Exp(-Math.Max(0, inputs.PathLength) / 600.0));
@@ -145,12 +152,16 @@ namespace CS2AreaSystem.Modules.Park
         public ParkFacilitySnapshot Facilities;
         public IReadOnlyList<(float X, float Z)> EntrancePositions;
         public ParkSatisfactionState Satisfaction, TouristSatisfaction;
+        // Park policies in effect for this Area; the default is the neutral baseline.
+        public ParkPolicyEffects Policies;
         // False when some member building's same-kind primary owner is another Park (exclusive stats go there).
         public bool IsPrimaryForAllMembers, Active;
     }
     public sealed class ParkQualitySnapshot
     {
         public ParkMetric Satisfaction, Attractiveness, Accessibility, Variety, Maintenance, Comfort, Landscape;
+        // The landscape breakdown Quality used (the scan with this Area's policy effects); null before the first scan.
+        public ParkLandscapeResult? EffectiveLandscape;
         public ParkQualityResult Result;
         public float Quality => Result.Quality;
         public float ComfortableCapacity, OccupancyRatio, TourismContribution, ValueForMoney, PathProvision;
@@ -170,25 +181,31 @@ namespace CS2AreaSystem.Modules.Park
             var facilities = c.Facilities ?? ParkFacilitySnapshot.Build(System.Array.Empty<ParkFacilityTraits>());
             var landscape = c.Landscape;
             bool hasLandscape = landscape != null && landscape.Available;
-            q.Landscape = hasLandscape ? ParkMetric.Of(landscape.Result.Score) : ParkMetric.Unavailable;
-            q.PathProvision = hasLandscape ? landscape.Result.Paths / ParkLandscapeModel.PathWeight : 0f;
+            var policies = c.Policies;
+            // Without a policy credit the scanned result is used as is.
+            var scene = !hasLandscape ? default : policies.ScenicCredit == 1f ? landscape.Result : ParkLandscapeModel.ComputeLandscape(landscape.Inputs, policies.ScenicCredit);
+            q.EffectiveLandscape = hasLandscape ? scene : (ParkLandscapeResult?)null;
+            q.Landscape = hasLandscape ? ParkMetric.Of(scene.Score) : ParkMetric.Unavailable;
+            q.PathProvision = hasLandscape ? scene.Paths / ParkLandscapeModel.PathWeight : 0f;
             q.Satisfaction = ParkMetric.Of(c.Satisfaction.Display);
             // Landscape-dependent metrics stay neutral (unavailable) until the first landscape scan completes.
-            q.Attractiveness = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAttractiveness(facilities.AttractivenessSum, c.AreaSquareMeters, landscape.Result.Score)) : ParkMetric.Unavailable;
-            q.Variety = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeVariety(facilities.WeightedCategories, landscape.Result.CategoriesPresent)) : ParkMetric.Unavailable;
+            q.Attractiveness = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAttractiveness(facilities.AttractivenessSum, c.AreaSquareMeters, scene.Score)) : ParkMetric.Unavailable;
+            q.Variety = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeVariety(facilities.WeightedCategories, scene.CategoriesPresent)) : ParkMetric.Unavailable;
             q.Accessibility = hasLandscape ? ParkMetric.Of(ParkQualityModel.ComputeAccessibility(c.Entrances, c.EntranceSpread, ParkTransitAccess.Score(landscape.TransitPoints, landscape.TransitTypes), q.PathProvision,
                 ParkPathAccess.EntranceShare(c.EntrancePositions, landscape.PathSamples, ParkPathAccess.EntranceRadius))) : ParkMetric.Unavailable;
-            q.Maintenance = ParkMetric.Of(ParkQualityModel.ComputeMaintenance(facilities.VanillaCondition, ParkFinanceModel.ClampBudget(c.Budget)));
+            q.Maintenance = ParkMetric.Of(ParkQualityModel.ComputeMaintenance(facilities.VanillaCondition,
+                ParkFinanceModel.ComputeManagementCoverage(c.Budget, policies.ManagementFundingMultiplier)));
             q.ComfortableCapacity = ParkQualityModel.ComputeComfortableCapacity(new ParkCapacityInputs {
                 AreaSquareMeters = c.AreaSquareMeters, LeisureEfficiencySum = facilities.LeisureEfficiencySum,
-                PathLength = hasLandscape ? landscape.Inputs.PathLength : 0f, AmenityCount = hasLandscape ? landscape.Inputs.Amenities.Count : 0 });
+                PathLength = hasLandscape ? landscape.Inputs.PathLength : 0f, AmenityCount = hasLandscape ? landscape.Inputs.Amenities.Count : 0 },
+                policies.CapacityShare);
             q.OccupancyRatio = q.ComfortableCapacity > 0 ? c.ActiveVisitors / q.ComfortableCapacity : 0f;
             q.Comfort = ParkMetric.Of(ParkQualityModel.ComputeComfort(c.ActiveVisitors, q.ComfortableCapacity));
             q.Result = ParkQualityModel.ComputeQuality(new ParkQualityInputs {
                 Satisfaction = q.Satisfaction, Attractiveness = q.Attractiveness, Accessibility = q.Accessibility,
                 Variety = q.Variety, Maintenance = q.Maintenance, Comfort = q.Comfort });
             q.EffectiveFee = ParkFinanceModel.EffectiveFee(c.Level, c.AdmissionFee);
-            q.ValueForMoney = ParkFinanceModel.ComputeValueForMoney(q.EffectiveFee, q.Quality);
+            q.ValueForMoney = ParkFinanceModel.ComputeValueForMoney(q.EffectiveFee, q.Quality, policies.FairFeeMultiplier);
             q.TourismContribution = c.Active ? ParkQualityModel.ComputeTourismContribution(c.Level, q.Quality, c.RecentTouristVisits, c.TouristSatisfaction.Display, Value(q.Attractiveness)) : 0f;
             q.Experience = new ParkVisitExperience {
                 Facility = ParkVisitModel.NeutralFacilityExperience, Landscape = Value(q.Landscape), Comfort = q.Comfort.Value,
@@ -207,7 +224,7 @@ namespace CS2AreaSystem.Modules.Park
             if (q.OccupancyRatio > 1f) Warn("Crowded");
             if (q.Maintenance.Value < LowMaintenance) Warn("LowMaintenance");
             if (hasLandscape && landscape.Inputs.PathLength < 1f) Warn("NoPaths");
-            if (hasLandscape && landscape.Result.Cluttered) Warn("Cluttered");
+            if (hasLandscape && q.EffectiveLandscape.Value.Cluttered) Warn("Cluttered");
             if (q.EffectiveFee > 0 && q.ValueForMoney < PoorValue) Warn("PoorValue");
             if (c.Entrances <= 0) { q.NextActionKey = ActionPrefix + "Entrance"; return; }
             // Next recommended action: the weakest available metric.

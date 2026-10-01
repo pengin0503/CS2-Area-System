@@ -14,6 +14,7 @@ namespace CS2AreaSystem.Modules.Park
         public const int UpdateFrames = 256, ParksPerUpdate = 4;
         private ParkRuntimeSystem runtime;
         private AreaCoreServicesSystem services;
+        private ParkPolicyEffectReader policyEffects;
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private readonly List<(float X, float Z)> positions = new List<(float X, float Z)>();
         private readonly List<ParkFacilityTraits> members = new List<ParkFacilityTraits>();
@@ -26,6 +27,9 @@ namespace CS2AreaSystem.Modules.Park
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
             services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            var policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
+            policyEffects = new ParkPolicyEffectReader((area, id) => policies.IsEffective(area, id),
+                error => Mod.Log.Error(error, "Area policy effects unavailable; Park Quality continues without them"));
         }
         [Preserve]
         protected override void OnUpdate()
@@ -72,7 +76,7 @@ namespace CS2AreaSystem.Modules.Park
                     Landscape = snapshot.Landscape, Facilities = snapshot.Facilities, Satisfaction = state.Satisfaction, TouristSatisfaction = state.TouristSatisfaction,
                     ActiveVisitors = snapshot.ActiveVisitors, Budget = budget, Level = level, AdmissionFee = state.AdmissionFee,
                     RecentTouristVisits = snapshot.RecentTouristVisitors.Sum(frame), IsPrimaryForAllMembers = primaryForAll,
-                    Active = park.State == AreaLifecycleState.Active });
+                    Active = park.State == AreaLifecycleState.Active, Policies = policyEffects.Read(park.Area) });
                 snapshot.Experience = snapshot.Quality.Experience;
                 snapshot.QualityFrame = frame;
                 failureLogged = false;

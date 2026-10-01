@@ -26,6 +26,7 @@ namespace CS2AreaSystem.Modules.Park
         private ParkRuntimeSystem runtime;
         private CitySystem city;
         private AreaFinanceSystem areaFinance;
+        private ParkPolicyEffectReader policyEffects;
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private readonly ParkTransactionLedger ledger = new ParkTransactionLedger();
         private ParkTransactionBatch inFlight;
@@ -44,6 +45,9 @@ namespace CS2AreaSystem.Modules.Park
             city = World.GetOrCreateSystemManaged<CitySystem>();
             areaFinance = World.GetOrCreateSystemManaged<AreaFinanceSystem>();
             areaFinance.AddListener(this);
+            var policies = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Policies.AreaPolicySystem>();
+            policyEffects = new ParkPolicyEffectReader((area, id) => policies.IsEffective(area, id),
+                error => Mod.Log.Error(error, "Area policy effects unavailable; Park management continues at the budget setting"));
             World.GetOrCreateSystemManaged<ParkVisitSystem>().AddListener(this);
         }
         [Preserve]
@@ -87,7 +91,9 @@ namespace CS2AreaSystem.Modules.Park
                     AreaSquareMeters = snapshot.AreaSquareMeters, VisitorsPerDay = snapshot.RecentVisitors.Sum(frame),
                     LandscapeObjects = landscape != null && landscape.Available ? landscape.Result.ObjectCount : 0,
                     ManagedFacilities = snapshot.Facilities?.RelevantFacilities ?? 0 });
-                snapshot.ManagementCostPerDay = ParkFinanceModel.ComputeManagementCostPerDay(snapshot.ManagementNeedPerDay, budget);
+                // Enhanced Maintenance raises the real management spend; Quality's coverage reads the same multiplier.
+                snapshot.ManagementCostPerDay = ParkFinanceModel.ComputeManagementCostPerDay(snapshot.ManagementNeedPerDay, budget,
+                    policyEffects.Read(park.Area).ManagementFundingMultiplier);
                 if (!ParkFinanceModel.ShouldSettleManagement(park.State)) return;
                 areaFinance.EnqueueExpense(park.StableId, AreaFinanceKind.ParkManagement, ParkFinanceModel.Settle(snapshot.ManagementCostPerDay, elapsed, ref snapshot.ExpenseCarry));
                 settlementFailureLogged = false;

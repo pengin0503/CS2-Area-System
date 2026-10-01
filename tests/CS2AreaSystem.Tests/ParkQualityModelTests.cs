@@ -39,8 +39,8 @@ public class ParkQualityModelTests {
   Assert.That(typeof(ParkCapacityInputs).GetFields().Select(f => f.Name), Has.None.Contains("Level"), "Level must not manufacture capacity");
   var small = new ParkCapacityInputs { AreaSquareMeters = 10_000, PathLength = 300, LeisureEfficiencySum = 40, AmenityCount = 10 };
   var big = small; big.AreaSquareMeters = 40_000;
-  Assert.That(ParkQualityModel.ComputeComfortableCapacity(big), Is.GreaterThan(ParkQualityModel.ComputeComfortableCapacity(small)));
-  Assert.That(ParkQualityModel.ComputeComfortableCapacity(big), Is.LessThan(4 * ParkQualityModel.ComputeComfortableCapacity(small)));
+  Assert.That(ParkQualityModel.ComputeComfortableCapacity(big, 1f), Is.GreaterThan(ParkQualityModel.ComputeComfortableCapacity(small, 1f)));
+  Assert.That(ParkQualityModel.ComputeComfortableCapacity(big, 1f), Is.LessThan(4 * ParkQualityModel.ComputeComfortableCapacity(small, 1f)));
  }
  [Test] public void AccessibilityRewardsEntrancesWithDiminishingReturnsAndSpread() {
   float A(int n, float spread = 1, float transit = 0, float path = 0, float entrancePaths = -1) => ParkQualityModel.ComputeAccessibility(n, spread, transit, path, entrancePaths < 0 ? path : entrancePaths);
