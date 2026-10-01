@@ -32,6 +32,7 @@ namespace CS2AreaSystem.Core.UI
         private EntityQuery soundSettings, managedAreas;
         private RawValueBinding areaList, pendingBinding;
         private ValueBinding<bool> listAvailable, listOpen;
+        private readonly AreaListVisibility listVisibility = new AreaListVisibility();
         private ValueBinding<string> panelSide;
         private System.Collections.Generic.List<AreaListEntry> listView = new System.Collections.Generic.List<AreaListEntry>();
         private PendingAssignmentView pendingView;
@@ -62,7 +63,10 @@ namespace CS2AreaSystem.Core.UI
             AddBinding(listAvailable = new ValueBinding<bool>("cs2AreaSystem", "areaListAvailable", false));
             AddBinding(listOpen = new ValueBinding<bool>("cs2AreaSystem", "areaListOpen", false));
             AddBinding(panelSide = new ValueBinding<string>("cs2AreaSystem", "panelSide", "right"));
-            AddBinding(new TriggerBinding<bool>("cs2AreaSystem", "setAreaListOpen", open => { listOpen.Update(open); if (!open) SetList(new System.Collections.Generic.List<AreaListEntry>()); }));
+            AddBinding(new TriggerBinding<bool>("cs2AreaSystem", "setAreaListOpen", open => {
+                listVisibility.SetOpen(open); listOpen.Update(listVisibility.Open);
+                if (!listVisibility.Open && listView.Count != 0) SetList(new System.Collections.Generic.List<AreaListEntry>());
+            }));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "selectArea", SelectArea));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete)));
@@ -79,6 +83,7 @@ namespace CS2AreaSystem.Core.UI
         {
             base.OnGamePreload(purpose, mode);
             pendingArea = Entity.Null; failureLogged = false;
+            listVisibility.Update(false, false);
             // The system is disabled outside gameplay, so clear the UI now instead of on the next update.
             SetPending(null);
             listAvailable.Update(false); listOpen.Update(false); SetList(new System.Collections.Generic.List<AreaListEntry>());
@@ -87,11 +92,12 @@ namespace CS2AreaSystem.Core.UI
         {
             try
             {
-                if (!IsReady) { listAvailable.Update(false); SetPending(null); return; }
                 var options = CS2AreaSystem.Core.Settings.AreaSettings.Current;
+                listVisibility.Update(IsReady, options.ShowAreaList);
+                listAvailable.Update(listVisibility.Available); listOpen.Update(listVisibility.Open);
+                if (!listVisibility.Open && listView.Count != 0) SetList(new System.Collections.Generic.List<AreaListEntry>());
+                if (!listVisibility.Available) { SetPending(null); return; }
                 panelSide.Update(options.PanelSide == CS2AreaSystem.Core.Settings.AreaPanelSide.Left ? "left" : "right");
-                listAvailable.Update(options.ShowAreaList);
-                if (!options.ShowAreaList && listOpen.value) { listOpen.Update(false); SetList(new System.Collections.Generic.List<AreaListEntry>()); }
                 if (listOpen.value) PublishList();
                 var selected = selection.selectedEntity;
                 if (pendingArea != Entity.Null)

@@ -23,8 +23,8 @@ namespace CS2AreaSystem.Core.Settings
             entries[Group(AreaSystemSettings.GameplayGroup)] = ja ? "ゲームプレイ" : "Gameplay";
             entries[Group(AreaSystemSettings.ResetGroup)] = ja ? "リセット" : "Reset";
             Option(entries, nameof(AreaSystemSettings.ShowAreaList),
-                ja ? "管理エリア一覧を表示" : "Show managed area list",
-                ja ? "作成済みの管理エリアを選択するための一覧ボタンを画面に表示します。" : "Shows the list button used to select completed management areas.");
+                ja ? "管理エリア一覧を初期展開" : "Expand managed area list by default",
+                ja ? "オンにすると開始時に一覧を展開します。オフでは折りたたみますが、作成済みエリアを選択する一覧ボタンは常に表示します。ボタンでいつでも開閉できます。" : "When on, the list starts expanded. When off, it starts collapsed, but the button for selecting completed areas remains visible. Use the button to open or close it at any time.");
             Option(entries, nameof(AreaSystemSettings.FocusCameraOnSelect),
                 ja ? "一覧から選んだエリアへカメラを移動" : "Move camera to areas picked from the list",
                 ja ? "管理エリア一覧でエリアを選んだときに、カメラをそのエリアへ移動します。" : "When an area is picked in the managed area list, the camera moves to it.");
@@ -38,7 +38,7 @@ namespace CS2AreaSystem.Core.Settings
                 ja ? "管理パネルからエリアを削除する前に確認を表示します。" : "Asks for confirmation before deleting an area from the management panel.");
             Option(entries, nameof(AreaSystemSettings.AllowManagedAreaOverlap),
                 ja ? "管理エリア同士の重なりを許可" : "Allow managed areas to overlap",
-                ja ? "オンにすると管理エリア同士の重なりは警告になり、そのまま完成できます。オフにするとゲーム標準どおりエラーになります。道路・建物・ゲーム標準のエリアとの重なりや不正な形状は常にエラーです。" : "When on, overlaps between management areas are warnings and can be completed. When off they remain native errors. Overlaps with roads, buildings or vanilla areas and invalid shapes always stay errors.");
+                ja ? "オンにすると管理エリア同士の重なりは警告になり、そのまま完成できます。オフにするとゲーム標準どおりエラーになります。ゲーム標準のエリアとの重なり、購入していないタイル、不正な形状は常にエラーです。" : "When on, overlaps between management areas are warnings and can be completed. When off they remain native errors. Overlaps with vanilla areas, unpurchased tiles and invalid shapes remain blocking errors.");
             Option(entries, nameof(AreaSystemSettings.ResetToDefaults),
                 ja ? "設定を初期値に戻す" : "Reset settings to defaults",
                 ja ? "このMODの設定をすべて初期値に戻します。" : "Restores every setting of this mod to its default value.");

@@ -1,0 +1,42 @@
+name: Offline verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: UI/package-lock.json
+      - name: Install UI dependencies
+        working-directory: UI
+        run: npm ci
+      - name: UI tests
+        working-directory: UI
+        run: npm test -- --run
+      - name: UI build
+        working-directory: UI
+        run: npm run build
+      - name: Offline contracts
+        run: node scripts/test-offline-contracts.mjs
+      - name: Source guards
+        shell: pwsh
+        run: ./scripts/verify-source.ps1
+      - name: Source guard regression tests
+        shell: pwsh
+        run: ./scripts/test-source-guards.ps1
+      - name: MSBuild output parser regression tests
+        shell: pwsh
+        run: ./scripts/test-msbuild-json.ps1

@@ -5862,6 +5862,7 @@
     "CS2AS.Summary.Active": "Active",
     "CS2AS.Summary.AnchorRequired": "Assign a required facility to activate this area.",
     "CS2AS.Summary.ModuleUnavailable": "This area's module is unavailable. Saved state is retained.",
+    "CS2AS.Summary.TourismBoundaryOnly": "Boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
     "CS2AS.Tab.Employment": "Employment",
     "CS2AS.Tab.Finances": "Finances",
     "CS2AS.Tab.Landscape": "Landscape",
