@@ -76,7 +76,7 @@ Area Core must not contain switches such as “if Park then modify satisfaction�
 
 Each policy has a stable, non-reused integer `PolicyId`.
 
-Recommended allocation:
+Policy ID allocation:
 
 - 1000–1999: common policies
 - 2000–2999: Park
@@ -152,7 +152,7 @@ Only authoritative user choice is persisted. Derived state is recomputed after l
 - effect magnitude;
 - display state.
 
-Unknown PolicyIds found in a save are retained as disabled/inert records when practical so that re-installing a missing module can restore the user's prior selection. Unknown policies produce no effect and no upkeep.
+Unknown PolicyIds found in a save are retained as disabled/inert records in the serialized policy buffer so that re-installing a missing module restores the user's prior selection. Unknown policies produce no effect and no upkeep.
 
 ## 7. Unlocking and availability
 
@@ -474,7 +474,7 @@ Examples:
 - failed policy UI component: contain failure inside the policy/Area section using the existing boundary pattern;
 - unavailable finance presentation hook: continue real finance accounting and report the display integration failure; never fabricate totals.
 
-Repeated expected failures should be rate-limited/logged once where practical.
+For the same Area stable ID + PolicyId + failure class, log the first occurrence per load generation and suppress repeats until the load generation changes or that failure clears and later recurs.
 
 ## 19. Data flow
 
@@ -530,7 +530,7 @@ Cover:
 - unknown PolicyId round-trip;
 - old saves with no policy component initialize safely;
 - deleted Areas leave no active policy runtime state;
-- module removal/re-add preserves inert known IDs where possible.
+- module removal/re-add preserves inert IDs and restores the configured state when the policy definition returns.
 
 ### 20.3 Finance tests
 
