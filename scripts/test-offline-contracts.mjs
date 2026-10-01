@@ -128,6 +128,28 @@ check(registration.includes('EnsurePrefabRegistered'), 'registration system must
 check(registration.includes('pendingPrefabs'), 'failed prefab registration must retain the candidate for retry');
 check(registration.includes('toolbarTypes'), 'toolbar attachment must track ready area types incrementally');
 
+// 1.6.2f1 native toolbar graph: UIObject.LateInitialize consumes m_Group and adds the
+// child to the parent UIGroupPrefab. Area prefabs therefore must have their category
+// assigned before PrefabSystem.AddPrefab; patching UIObjectData/UIGroupElement later is
+// not an equivalent prefab-initialization path.
+const toolbarFactory = read('src/CS2AreaSystem/Core/Prefabs/AreaToolbarPrefabFactory.cs');
+const toolbarUnlock = read('src/CS2AreaSystem/Core/Prefabs/AreaToolbarUnlockSystem.cs');
+check(toolbarFactory.includes('ui.m_Group = hostGroup;'), 'Areas Menu must belong to the native Tools Toolbar Group before registration');
+check(toolbarFactory.includes('category.m_Menu = menu;'), 'Area Types category must reference the Areas Menu before registration');
+const ensureAreaStart = registration.indexOf('private void EnsurePrefabRegistered');
+const ensureAreaEnd = registration.indexOf('private string ResolveIcon', ensureAreaStart);
+const ensureAreaRegistration = registration.slice(ensureAreaStart, ensureAreaEnd);
+check(/PrepareAreaPrefabForToolbar\(candidate,\s*type\);[\s\S]*prefabs\.AddPrefab\(candidate\)/.test(ensureAreaRegistration),
+  'each Area prefab must receive its Area Types UIObject group before PrefabSystem.AddPrefab');
+check(!/EntityManager\.SetComponentData\(\s*areaPrefabEntity,\s*new UIObjectData/.test(registration),
+  'Area toolbar registration must not patch UIObjectData after prefab initialization');
+check(!/category\.AddElement\(EntityManager,\s*areaPrefabEntity\)/.test(registration),
+  'Area toolbar registration must not duplicate UIObject.LateInitialize with a manual category.AddElement');
+check(/GetBuffer<UIGroupElement>\(category,[^)]*\)\.Length == 0\) return false;/.test(toolbarUnlock),
+  'an empty Area Types category must not be treated as an initialized toolbar graph');
+check(/UpdateBefore<AreaToolbarUnlockSystem,\s*Game\.UI\.InGame\.ToolbarUISystem>\(SystemUpdatePhase\.UIUpdate\)/.test(mod),
+  'AreaToolbarUnlockSystem must remain immediately before ToolbarUISystem in UIUpdate');
+
 const factory = read('src/CS2AreaSystem/Core/Prefabs/ManagedAreaPrefabFactory.cs');
 check(!factory.includes('uri => !string.IsNullOrEmpty(uri)'), 'production icon availability must not equate non-empty URI with resource existence');
 check(factory.includes('ResolveIcon'), 'production icon selection must use the target-version verified icon resolver');
