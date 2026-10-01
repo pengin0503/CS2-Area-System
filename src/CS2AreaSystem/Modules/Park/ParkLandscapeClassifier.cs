@@ -67,17 +67,22 @@ namespace CS2AreaSystem.Modules.Park
     public sealed class ParkLandscapeTally
     {
         private readonly Dictionary<ParkLandscapeCategory, int> counts = new Dictionary<ParkLandscapeCategory, int>();
-        private readonly Dictionary<ParkLandscapeCategory, HashSet<int>> prefabs = new Dictionary<ParkLandscapeCategory, HashSet<int>>();
+        private readonly Dictionary<ParkLandscapeCategory, Dictionary<int, int>> prefabs = new Dictionary<ParkLandscapeCategory, Dictionary<int, int>>();
         public void Add(ParkLandscapeCategory category, int prefabKey)
         {
             if (category == ParkLandscapeCategory.None) return;
             counts[category] = Count(category) + 1;
-            if (!prefabs.TryGetValue(category, out var set)) prefabs[category] = set = new HashSet<int>();
-            set.Add(prefabKey);
+            if (!prefabs.TryGetValue(category, out var set)) prefabs[category] = set = new Dictionary<int, int>();
+            set[prefabKey] = set.TryGetValue(prefabKey, out var copies) ? copies + 1 : 1;
         }
         public int Count(ParkLandscapeCategory category) => counts.TryGetValue(category, out var n) ? n : 0;
-        private ParkLandscapeCategoryInput Input(ParkLandscapeCategory category) =>
-            new ParkLandscapeCategoryInput { Count = Count(category), DistinctPrefabs = prefabs.TryGetValue(category, out var set) ? set.Count : 0 };
+        private ParkLandscapeCategoryInput Input(ParkLandscapeCategory category)
+        {
+            if (!prefabs.TryGetValue(category, out var set)) return default;
+            var frequencies = new int[set.Count];
+            set.Values.CopyTo(frequencies, 0);
+            return new ParkLandscapeCategoryInput { Count = Count(category), DistinctPrefabs = set.Count, PrefabCounts = frequencies };
+        }
         public ParkLandscapeInputs ToInputs(float areaSquareMeters, float pathLength) => new ParkLandscapeInputs
         {
             AreaSquareMeters = areaSquareMeters, PathLength = pathLength,
@@ -92,15 +97,25 @@ namespace CS2AreaSystem.Modules.Park
     {
         private readonly uint refreshFrames;
         private readonly Dictionary<ulong, uint?> lastScan = new Dictionary<ulong, uint?>();
+        private readonly Dictionary<ulong, ulong> revisions = new Dictionary<ulong, ulong>();
+        private ulong nextRevision;
         private readonly List<ulong> dirty = new List<ulong>();
         public ParkLandscapeScheduler(uint refreshFrames) { this.refreshFrames = refreshFrames; }
         public int TrackedCount => lastScan.Count;
         public bool IsTracked(ulong id) => lastScan.ContainsKey(id);
-        public void Track(ulong id) { if (!lastScan.ContainsKey(id)) { lastScan[id] = null; MarkDirty(id); } }
-        public void Forget(ulong id) { lastScan.Remove(id); dirty.Remove(id); }
+        public void Track(ulong id) { if (!lastScan.ContainsKey(id)) { lastScan[id] = null; revisions[id] = ++nextRevision; MarkDirty(id); } }
+        public ulong RevisionOf(ulong id) => revisions.TryGetValue(id, out var revision) ? revision : 0;
+        public bool IsCurrent(ulong id, ulong revision) => revision != 0 && RevisionOf(id) == revision;
+        public void BoundaryChanged(ulong id)
+        {
+            if (!lastScan.ContainsKey(id)) return;
+            revisions[id] = ++nextRevision;
+            MarkDirty(id);
+        }
+        public void Forget(ulong id) { lastScan.Remove(id); revisions.Remove(id); dirty.Remove(id); }
         public void MarkDirty(ulong id) { if (lastScan.ContainsKey(id) && !dirty.Contains(id)) dirty.Add(id); }
         public void MarkAllDirty() { foreach (var id in lastScan.Keys) if (!dirty.Contains(id)) dirty.Add(id); }
-        public void Clear() { lastScan.Clear(); dirty.Clear(); }
+        public void Clear() { lastScan.Clear(); revisions.Clear(); dirty.Clear(); }
         public List<ulong> Take(uint frame, int budget)
         {
             var result = new List<ulong>();

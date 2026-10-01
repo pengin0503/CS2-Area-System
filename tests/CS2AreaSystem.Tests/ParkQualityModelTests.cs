@@ -88,8 +88,8 @@ public class ParkQualityModelTests {
 public class ParkQualityEvaluatorTests {
  private static ParkLandscapeSnapshot Landscape(bool available = true, float path = 400, bool cluttered = false) {
   var inputs = new ParkLandscapeInputs { AreaSquareMeters = 10_000, PathLength = path,
-   Vegetation = new() { Count = 60, DistinctPrefabs = 12 }, Amenities = new() { Count = 8, DistinctPrefabs = 3 },
-   Decoration = new() { Count = 5, DistinctPrefabs = 3 }, Lighting = new() { Count = 8, DistinctPrefabs = 2 }, UnknownCount = cluttered ? 5000 : 0 };
+   Vegetation = Support.LandscapeInputs.Balanced(60, 12), Amenities = Support.LandscapeInputs.Balanced(8, 3),
+   Decoration = Support.LandscapeInputs.Balanced(5, 3), Lighting = Support.LandscapeInputs.Balanced(8, 2), UnknownCount = cluttered ? 5000 : 0 };
   return new ParkLandscapeSnapshot { Available = available, Inputs = inputs, Result = ParkLandscapeModel.ComputeLandscape(inputs), TransitPoints = 2, TransitTypes = 1 };
  }
  private static ParkFacilitySnapshot Facilities() => ParkFacilitySnapshot.Build(new[] {

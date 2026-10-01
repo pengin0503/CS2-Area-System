@@ -81,6 +81,23 @@ public class ParkLandscapeClassificationTests {
  }
 }
 public class ParkLandscapeSchedulerTests {
+ [Test] public void BoundaryEditsRequeueWithoutAdvancingSimulationAndInvalidateSlicedScans() {
+  var scheduler = new ParkLandscapeScheduler(1000);
+  scheduler.Track(7); scheduler.Take(100, 1);
+  ulong revision = scheduler.RevisionOf(7);
+  var scan = new ParkLandscapeScan<int>(Enumerable.Range(0, 10_000).ToList());
+  scan.Process(4096, _ => { });
+  scheduler.MarkDirty(7);
+  Assert.That(scheduler.IsCurrent(7, revision), Is.True, "object updates retain boundary revision");
+  scheduler.BoundaryChanged(7);
+  Assert.That(scheduler.IsCurrent(7, revision), Is.False, "an unchanged AABB must not let old polygon results publish");
+  Assert.That(scheduler.Take(100, 1), Is.EqualTo(new ulong[] { 7 }), "paused edits are eligible immediately");
+  ulong editedRevision = scheduler.RevisionOf(7);
+  scheduler.Forget(7);
+  Assert.That(scheduler.IsCurrent(7, editedRevision), Is.False);
+  scheduler.Track(7);
+  Assert.That(scheduler.IsCurrent(7, editedRevision), Is.False, "a re-created park cannot reuse the old revision");
+ }
  [Test] public void DirtyParksScanFirstWithinTheWorkBudget() {
   var s = new ParkLandscapeScheduler(refreshFrames: 1000);
   s.Track(1); s.Track(2); s.Track(3);

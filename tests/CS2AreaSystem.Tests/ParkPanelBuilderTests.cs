@@ -6,7 +6,7 @@ namespace CS2AreaSystem.Tests;
 public class ParkPanelBuilderTests {
  internal static ParkPanelModel Model(int level = 2, bool landscape = true, bool primary = true, bool quality = true, int entrances = 2) {
   var runtime = new ParkRuntimeSnapshot { StableId = 7, AreaSquareMeters = 10_000, ActiveVisitors = 14, PeakOccupancy = 30, EntranceCount = entrances };
-  var inputs = new ParkLandscapeInputs { AreaSquareMeters = 10_000, PathLength = 300, Vegetation = new() { Count = 50, DistinctPrefabs = 10 }, Amenities = new() { Count = 6, DistinctPrefabs = 2 } };
+  var inputs = new ParkLandscapeInputs { AreaSquareMeters = 10_000, PathLength = 300, Vegetation = Support.LandscapeInputs.Balanced(50, 10), Amenities = Support.LandscapeInputs.Balanced(6, 2) };
   runtime.Landscape = new ParkLandscapeSnapshot { Available = landscape, Inputs = inputs, Result = ParkLandscapeModel.ComputeLandscape(inputs), TransitPoints = 1, TransitTypes = 1 };
   runtime.Facilities = ParkFacilitySnapshot.Build(new[] { new ParkFacilityTraits { IsBuilding = true, HasPark = true, HasLeisureData = true, LeisureType = Game.Agents.LeisureType.CityPark, LeisureEfficiency = 20 } });
   runtime.RecentVisitors.Add(100, 40); runtime.RecentAdmission.Add(100, 800); runtime.RecentUncollected.Add(100, 13); runtime.RecentExpense.Add(100, 300);
