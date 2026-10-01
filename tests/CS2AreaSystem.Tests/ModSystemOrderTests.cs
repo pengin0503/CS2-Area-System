@@ -84,4 +84,14 @@ public class ModSystemOrderTests {
         Assert.That(flush, Is.GreaterThanOrEqualTo(0));
         Assert.That(flush, Is.LessThan(order.IndexOf(typeof(Game.Serialization.SerializerSystem))));
     }
+    [Test] public void ParkFinanceRecordsAdmissionsBeforeAreaFinanceFlushesBeforeTheSerializer() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateBefore", typeof(CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem), typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem), SystemUpdatePhase.Serialize) }));
+        var order = Schedule(SystemUpdatePhase.Serialize);
+        int park = order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem));
+        int area = order.IndexOf(typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem));
+        Assert.That(park, Is.GreaterThanOrEqualTo(0));
+        Assert.That(park, Is.LessThan(area), "admission income is recorded and Park counters exist before Area finance settles");
+        Assert.That(area, Is.LessThan(order.IndexOf(typeof(Game.Serialization.SerializerSystem))));
+    }
 }

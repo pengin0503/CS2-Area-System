@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Finance;
 using Game;
 using Game.City;
 using Game.Citizens;
@@ -11,23 +12,25 @@ using Unity.Jobs;
 using UnityEngine.Scripting;
 namespace CS2AreaSystem.Modules.Park
 {
-    // Park budget and admission (design §14–15). Money only moves between real household resources and the city's
-    // PlayerMoney; there is no Park wallet. Member buildings' vanilla upkeep/revenue are never booked here.
-    // Transfers run in a scheduled job ordered by ECS dependencies, so the main thread never forces the vanilla
-    // economy jobs that use Resources/PlayerMoney to complete; results are recorded on the next update or save.
-    public partial class ParkFinanceSystem : GameSystemBase, IParkVisitListener
+    // Park budget and admission (design §14–15). There is no Park wallet and Park code never touches PlayerMoney itself:
+    // management is queued as an Area Management expense in the shared Area finance and recorded when it was applied;
+    // admission is a household-to-city AreaFinanceHouseholdTransfer, recorded as Area Service Fees. Member buildings'
+    // vanilla upkeep/revenue are never booked here. Admission transfers run in a scheduled job ordered by ECS
+    // dependencies, so the main thread never forces the vanilla economy jobs that use Resources/PlayerMoney to complete;
+    // results are recorded on the next update or save.
+    public partial class ParkFinanceSystem : GameSystemBase, IParkVisitListener, IAreaFinanceListener
     {
         public const uint UpdateFrames = ParkVisitCadence.UpdateInterval;
         // Management is settled every 1/64 in-game day (~22 in-game minutes).
         public const uint SettlementFrames = ParkFinanceModel.FramesPerDay / 64;
         private ParkRuntimeSystem runtime;
         private CitySystem city;
+        private AreaFinanceSystem areaFinance;
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private readonly ParkTransactionLedger ledger = new ParkTransactionLedger();
         private ParkTransactionBatch inFlight;
         private NativeArray<ParkAdmissionRequestData> requests;
         private NativeArray<long> collected;
-        private NativeArray<long> managementPaid;
         private JobHandle pending;
         private uint lastSettlement, inFlightFrame;
         private int loadGeneration = -1;
@@ -39,6 +42,8 @@ namespace CS2AreaSystem.Modules.Park
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
             city = World.GetOrCreateSystemManaged<CitySystem>();
+            areaFinance = World.GetOrCreateSystemManaged<AreaFinanceSystem>();
+            areaFinance.AddListener(this);
             World.GetOrCreateSystemManaged<ParkVisitSystem>().AddListener(this);
         }
         [Preserve]
@@ -84,7 +89,7 @@ namespace CS2AreaSystem.Modules.Park
                     ManagedFacilities = snapshot.Facilities?.RelevantFacilities ?? 0 });
                 snapshot.ManagementCostPerDay = ParkFinanceModel.ComputeManagementCostPerDay(snapshot.ManagementNeedPerDay, budget);
                 if (!ParkFinanceModel.ShouldSettleManagement(park.State)) return;
-                ledger.EnqueueManagement(park.Area, park.StableId, ParkFinanceModel.Settle(snapshot.ManagementCostPerDay, elapsed, ref snapshot.ExpenseCarry));
+                areaFinance.EnqueueExpense(park.StableId, AreaFinanceKind.ParkManagement, ParkFinanceModel.Settle(snapshot.ManagementCostPerDay, elapsed, ref snapshot.ExpenseCarry));
                 settlementFailureLogged = false;
             }
             catch (System.Exception error)
@@ -92,7 +97,7 @@ namespace CS2AreaSystem.Modules.Park
                 if (!settlementFailureLogged) { settlementFailureLogged = true; Mod.Log.Error(error, "Park management settlement failed"); }
             }
         }
-        internal void FlushForSave() => ParkFinanceSaveBoundary.Flush(runtime.Ready, loadGeneration, runtime.LoadGeneration,
+        internal void FlushForSave() => AreaFinanceSaveBoundary.Flush(runtime.Ready, loadGeneration, runtime.LoadGeneration,
             CompleteAndRecord, () => ledger.HasPending, () => EntityManager.CompleteAllTrackedJobs(), () => Schedule(runtime.SimulationFrame));
         private void CompleteAndRecord()
         {
@@ -126,9 +131,8 @@ namespace CS2AreaSystem.Modules.Park
             for (int i = 0; i < inFlight.Admissions.Count; i++)
                 requests[i] = new ParkAdmissionRequestData { Citizen = inFlight.Admissions[i].Citizen, Fee = inFlight.Admissions[i].Fee };
             collected = new NativeArray<long>(requests.Length, Allocator.Persistent);
-            managementPaid = new NativeArray<long>(1, Allocator.Persistent);
             var job = new TransferJob {
-                Requests = requests, Collected = collected, ManagementPaid = managementPaid, City = city.City, CityDelta = inFlight.CityDelta,
+                Requests = requests, Collected = collected, City = city.City,
                 Members = GetComponentLookup<HouseholdMember>(true), Resources = GetBufferLookup<Resources>(false),
                 Money = GetComponentLookup<PlayerMoney>(false) };
             pending = job.Schedule(Dependency);
@@ -140,7 +144,7 @@ namespace CS2AreaSystem.Modules.Park
             var batch = inFlight; inFlight = null;
             var amounts = new long[collected.Length];
             for (int i = 0; i < amounts.Length; i++) amounts[i] = collected[i];
-            var outcomes = ParkTransactionLedger.Resolve(batch, amounts, managementPaid[0]);
+            var outcomes = ParkTransactionLedger.Resolve(batch, amounts);
             DisposeBuffers();
             try
             {
@@ -152,14 +156,11 @@ namespace CS2AreaSystem.Modules.Park
                         if (outcome.Uncollected > 0) snapshot.RecentUncollected.Add(inFlightFrame, outcome.Uncollected);
                         if (outcome.Collected > 0) snapshot.RecentAdmission.Add(inFlightFrame, outcome.Collected);
                     }
-                    if (outcome.Collected > 0 && EntityManager.Exists(area) && EntityManager.HasComponent<ParkAreaState>(area))
+                    if (outcome.Collected <= 0) continue;
+                    // The household transfer already credited the city; this only records it as Area Service Fees.
+                    areaFinance.RecordSettledIncome(outcome.Request.ParkId, AreaFinanceKind.ParkAdmission, outcome.Collected);
+                    if (EntityManager.Exists(area) && EntityManager.HasComponent<ParkAreaState>(area))
                         EntityManager.SetComponentData(area, ParkFinanceModel.RecordAdmission(EntityManager.GetComponentData<ParkAreaState>(area), outcome.Collected));
-                }
-                foreach (var charge in outcomes.Management)
-                {
-                    if (runtime.Store.TryGet(charge.ParkId, out var snapshot)) snapshot.RecentExpense.Add(inFlightFrame, charge.Paid);
-                    if (EntityManager.Exists(charge.Area) && EntityManager.HasComponent<ParkAreaState>(charge.Area))
-                        EntityManager.SetComponentData(charge.Area, ParkFinanceModel.RecordManagementExpense(EntityManager.GetComponentData<ParkAreaState>(charge.Area), charge.Paid));
                 }
             }
             catch (System.Exception error)
@@ -167,20 +168,30 @@ namespace CS2AreaSystem.Modules.Park
                 if (!admissionFailureLogged) { admissionFailureLogged = true; Mod.Log.Error(error, "Park finance records could not be written"); }
             }
         }
+        // Management amounts the shared Area finance actually applied to city money (never more than was queued).
+        public void OnAreaFinanceSettled(AreaFinanceBatch settled, uint frame)
+        {
+            if (!runtime.Ready || loadGeneration != runtime.LoadGeneration) return;
+            foreach (var charge in ParkAreaFinance.AppliedManagement(settled))
+            {
+                if (!runtime.Store.TryGet(charge.AreaStableId, out var snapshot)) continue;
+                snapshot.RecentExpense.Add(frame, charge.Amount);
+                var area = snapshot.Area;
+                if (EntityManager.Exists(area) && EntityManager.HasComponent<ParkAreaState>(area))
+                    EntityManager.SetComponentData(area, ParkFinanceModel.RecordManagementExpense(EntityManager.GetComponentData<ParkAreaState>(area), charge.Amount));
+            }
+        }
         private void DisposeBuffers()
         {
             if (requests.IsCreated) requests.Dispose();
             if (collected.IsCreated) collected.Dispose();
-            if (managementPaid.IsCreated) managementPaid.Dispose();
         }
         public struct ParkAdmissionRequestData { public Entity Citizen; public long Fee; }
         private struct TransferJob : IJob
         {
             [ReadOnly] public NativeArray<ParkAdmissionRequestData> Requests;
             public NativeArray<long> Collected;
-            public NativeArray<long> ManagementPaid;
             public Entity City;
-            public long CityDelta;
             [ReadOnly] public ComponentLookup<HouseholdMember> Members;
             public BufferLookup<Resources> Resources;
             public ComponentLookup<PlayerMoney> Money;
@@ -195,19 +206,9 @@ namespace CS2AreaSystem.Modules.Park
                     if (!hasCity || !Members.HasComponent(request.Citizen)) continue;
                     var household = Members[request.Citizen].m_Household;
                     if (!Resources.HasBuffer(household)) continue;
-                    var buffer = Resources[household];
                     var money = Money[City];
-                    long amount = ParkFinanceModel.CollectAdmission(ref money, request.Fee, EconomyUtils.GetResources(Resource.Money, buffer));
-                    if (amount <= 0) continue;
-                    EconomyUtils.AddResources(Resource.Money, (int)-amount, buffer);
-                    Money[City] = money;
-                    Collected[i] = amount;
-                }
-                ManagementPaid[0] = 0;
-                if (hasCity && CityDelta < 0)
-                {
-                    var money = Money[City];
-                    ManagementPaid[0] = ParkFinanceModel.PayManagement(ref money, -CityDelta);
+                    // City credit first, then a household debit of exactly the credited amount.
+                    Collected[i] = AreaFinanceHouseholdTransfer.Transfer(ref money, Resources[household], request.Fee);
                     Money[City] = money;
                 }
             }

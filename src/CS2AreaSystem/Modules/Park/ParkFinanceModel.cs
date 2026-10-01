@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-using Game.City;
+using CS2AreaSystem.Core.Finance;
 namespace CS2AreaSystem.Modules.Park
 {
     // Management need derives from the Park itself. Vanilla member-building upkeep/revenue are not inputs:
@@ -10,6 +10,8 @@ namespace CS2AreaSystem.Modules.Park
         public float AreaSquareMeters, VisitorsPerDay;
         public int LandscapeObjects, ManagedFacilities;
     }
+    // The household-payable plan. The amount actually collected is what AreaFinanceHouseholdTransfer returns; it can be
+    // lower only when the city balance is at its native upper bound.
     public struct ParkAdmissionPlan
     {
         public long Requested, Collected;
@@ -19,9 +21,7 @@ namespace CS2AreaSystem.Modules.Park
     }
     public static class ParkFinanceModel
     {
-        public const uint FramesPerDay = 262144;
-        // PlayerMoney.Add clamps the stored balance to this range in game 1.6.2f1.
-        public const long CityMoneyLimit = 2_000_000_000L;
+        public const uint FramesPerDay = AreaFinanceModel.FramesPerDay;
         public const int MaxAdmissionFee = 60, AdmissionFeeStep = 1, AdmissionUnlockLevel = 2;
         public const float MinBudget = 0.5f, MaxBudget = 1.5f, DefaultBudget = 1f, BudgetStep = 0.05f;
         public static bool IsAdmissionUnlocked(int level) => level >= AdmissionUnlockLevel;
@@ -38,37 +38,6 @@ namespace CS2AreaSystem.Modules.Park
         // Collect at most what the household can pay; never drive its money below zero (design §15.3).
         public static long ComputeCollectibleAdmission(long requestedFee, long availableHouseholdMoney) =>
             requestedFee <= 0 || availableHouseholdMoney <= 0 ? 0 : Math.Min(requestedFee, availableHouseholdMoney);
-        public static long CollectAdmission(ref PlayerMoney money, long requestedFee, long householdMoney)
-        {
-            // Use the stored balance even in unlimited mode; the display getter always returns the upper limit.
-            long amount = Math.Min(ComputeCollectibleAdmission(requestedFee, householdMoney), Math.Max(0L, CityMoneyLimit - StoredCityMoney(money)));
-            ApplyMoneyDelta(ref money, amount);
-            return amount;
-        }
-        public static long PayManagement(ref PlayerMoney money, long requested)
-        {
-            long paid = Math.Min(Math.Max(0L, requested), Math.Max(0L, StoredCityMoney(money) + CityMoneyLimit));
-            ApplyMoneyDelta(ref money, -paid);
-            return paid;
-        }
-        public static long StoredCityMoney(PlayerMoney money)
-        {
-            // The stored field is private. Disable the public unlimited flag on a local copy to read it through
-            // the supported getter; the city's component and its unlimited setting remain untouched.
-            money.m_Unlimited = false;
-            return money.money;
-        }
-        private static void ApplyMoneyDelta(ref PlayerMoney money, long delta)
-        {
-            // A bounded balance can move by up to four billion. Safe int chunks preserve PlayerMoney.Add semantics
-            // without overflowing its intermediate addition; accepted deltas never cross either city-money bound.
-            while (delta != 0)
-            {
-                int step = (int)Math.Max(-int.MaxValue, Math.Min(int.MaxValue, delta));
-                money.Add(step);
-                delta -= step;
-            }
-        }
         // One admission per session: Level-gated fee, collected from real household money into city money.
         public static ParkAdmissionPlan PlanAdmission(int level, int storedFee, long householdMoney)
         {
@@ -106,14 +75,8 @@ namespace CS2AreaSystem.Modules.Park
                     8 * Math.Sqrt(Math.Max(0, inputs.LandscapeObjects)) + 40 * Math.Max(0, inputs.ManagedFacilities));
         // 100% budget funds the estimated need; coverage for Maintenance is the clamped budget itself.
         public static float ComputeManagementCostPerDay(float needPerDay, float budget) => Math.Max(0, needPerDay) * ClampBudget(budget);
-        // Money for an interval of frames; fractional remainders carry into the next settlement.
-        public static long Settle(double perDay, uint frames, ref double carry)
-        {
-            double exact = Math.Max(0, perDay) * frames / FramesPerDay + carry;
-            long amount = (long)Math.Floor(exact + 1e-9);
-            carry = Math.Max(0, exact - amount);
-            return amount;
-        }
+        // Money for an interval of frames, with the shared Area rounding rule (floor, fraction carried).
+        public static long Settle(double perDay, uint frames, ref double carry) => AreaFinanceModel.SettleDaily(perDay, frames, ref carry);
         public static ParkAreaState RecordAdmission(ParkAreaState state, long collected)
         { if (collected > 0) state.LifetimeAdmissionRevenue += collected; return state; }
         public static ParkAreaState RecordManagementExpense(ParkAreaState state, long paid)

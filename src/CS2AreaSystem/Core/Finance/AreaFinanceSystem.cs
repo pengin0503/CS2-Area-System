@@ -18,32 +18,35 @@ namespace CS2AreaSystem.Core.Finance
     public partial class AreaFinanceSystem : GameSystemBase
     {
         public const uint UpdateFrames = AreaFinanceModel.FramesPerDay / 1024;
-        private readonly AreaFinanceLedger ledger = new AreaFinanceLedger();
-        private readonly AreaFinanceAccounts accounts = new AreaFinanceAccounts();
+        private AreaFinanceRuntime runtime;
         private CitySystem city;
         private SimulationSystem simulation;
         private CityStatisticsSystem statistics;
         private AreaLoadCoordinatorSystem load;
-        private AreaFinanceBatch inFlight;
-        private uint inFlightFrame;
         private NativeArray<long> applied;
         private JobHandle pending;
         private int loadGeneration, startedGeneration = -1;
-        private bool failureLogged;
+        private bool failureLogged, listenerFailureLogged;
         public bool Ready => !GameManager.instance.isGameLoading && load.Ready;
         public int LoadGeneration => loadGeneration;
         public uint SimulationFrame => simulation.frameIndex;
-        public bool HasPending => ledger.HasPending || inFlight != null;
+        public bool HasPending => runtime.HasQueued || runtime.HasInFlight;
         // Settled over the trailing in-game day; partial until a day has passed since load (SettledCoveredFrames).
-        public long AreaManagementSettled => accounts.AreaManagement(SimulationFrame);
-        public long AreaServiceFeesSettled => accounts.AreaServiceFees(SimulationFrame);
-        public uint SettledCoveredFrames => accounts.CoveredFrames(SimulationFrame);
-        public long Settled(AreaFinanceKind kind) => accounts.Settled(kind, SimulationFrame);
+        public long AreaManagementSettled => runtime.AreaManagement(SimulationFrame);
+        public long AreaServiceFeesSettled => runtime.AreaServiceFees(SimulationFrame);
+        public uint SettledCoveredFrames => runtime.CoveredFrames(SimulationFrame);
+        public long Settled(AreaFinanceKind kind) => runtime.Settled(kind, SimulationFrame);
         public override int GetUpdateInterval(SystemUpdatePhase phase) => (int)UpdateFrames;
         [Preserve]
         protected override void OnCreate()
         {
             base.OnCreate();
+            runtime = new AreaFinanceRuntime(error =>
+            {
+                if (listenerFailureLogged) return;
+                listenerFailureLogged = true;
+                Mod.Log.Error(error, "An Area finance listener failed; city money and other listeners are unaffected");
+            });
             city = World.GetOrCreateSystemManaged<CitySystem>();
             simulation = World.GetOrCreateSystemManaged<SimulationSystem>();
             statistics = World.GetOrCreateSystemManaged<CityStatisticsSystem>();
@@ -61,31 +64,27 @@ namespace CS2AreaSystem.Core.Finance
         {
             pending.Complete();
             DisposeBuffers();
-            inFlight = null;
-            ledger.Clear();
-            accounts.Clear();
+            runtime.Reset();
             loadGeneration++;
+            listenerFailureLogged = false;
         }
         [Preserve]
         protected override void OnUpdate()
         {
             if (!Ready) return;
             pending.Complete();
-            if (startedGeneration != loadGeneration) { startedGeneration = loadGeneration; accounts.Start(SimulationFrame); }
+            if (startedGeneration != loadGeneration) { startedGeneration = loadGeneration; runtime.Start(SimulationFrame); }
             RecordResults();
-            if (ledger.HasPending) Schedule();
+            if (runtime.HasQueued) Schedule();
         }
-        public bool EnqueueExpense(ulong areaStableId, AreaFinanceKind kind, long amount) => ledger.EnqueueExpense(areaStableId, kind, amount);
-        public bool EnqueueIncome(ulong areaStableId, AreaFinanceKind kind, long amount) => ledger.EnqueueIncome(areaStableId, kind, amount);
+        public void AddListener(IAreaFinanceListener listener) => runtime.AddListener(listener);
+        public bool EnqueueExpense(ulong areaStableId, AreaFinanceKind kind, long amount) => runtime.EnqueueExpense(areaStableId, kind, amount);
+        public bool EnqueueIncome(ulong areaStableId, AreaFinanceKind kind, long amount) => runtime.EnqueueIncome(areaStableId, kind, amount);
         // For income already moved by AreaFinanceHouseholdTransfer: recorded for the accounts only, never credited again.
-        public bool RecordSettledIncome(ulong areaStableId, AreaFinanceKind kind, long amount)
-        {
-            if (!AreaFinanceKinds.IsIncome(kind) || amount <= 0) return false;
-            accounts.Record(SimulationFrame, kind, amount);
-            return true;
-        }
+        public bool RecordSettledIncome(ulong areaStableId, AreaFinanceKind kind, long amount) =>
+            runtime.RecordSettledIncome(SimulationFrame, areaStableId, kind, amount);
         internal void FlushForSave() => AreaFinanceSaveBoundary.Flush(Ready, startedGeneration, loadGeneration, CompleteAndRecord,
-            () => ledger.HasPending, () => EntityManager.CompleteAllTrackedJobs(), Schedule);
+            () => runtime.HasQueued, () => EntityManager.CompleteAllTrackedJobs(), Schedule);
         private void CompleteAndRecord()
         {
             pending.Complete();
@@ -94,7 +93,8 @@ namespace CS2AreaSystem.Core.Finance
         private void Schedule()
         {
             DisposeBuffers();
-            var batch = ledger.TakeBatch();
+            var batch = runtime.BeginApply(SimulationFrame);
+            if (batch == null) return;
             try
             {
                 applied = new NativeArray<long>(2, Allocator.Persistent);
@@ -105,26 +105,21 @@ namespace CS2AreaSystem.Core.Finance
                 pending = job.Schedule(JobHandle.CombineDependencies(Dependency, statisticsWriters));
                 Dependency = pending;
                 statistics.AddWriter(pending);
-                inFlight = batch;
-                inFlightFrame = SimulationFrame;
             }
             catch (Exception error)
             {
                 // Nothing was applied, so nothing is recorded; the producers' own records follow the applied result.
                 DisposeBuffers();
-                inFlight = null;
+                runtime.AbortApply();
                 LogOnce(error, "Area finance could not be applied to city money; this batch was not charged");
             }
         }
         private void RecordResults()
         {
-            if (inFlight == null) return;
-            var batch = inFlight; inFlight = null;
+            if (!runtime.HasInFlight) return;
             long expense = applied.IsCreated ? applied[0] : 0, income = applied.IsCreated ? applied[1] : 0;
             DisposeBuffers();
-            var settled = batch.Resolve(expense, income);
-            foreach (var entry in settled.Expenses) accounts.Record(inFlightFrame, entry.Kind, entry.Amount);
-            foreach (var entry in settled.Incomes) accounts.Record(inFlightFrame, entry.Kind, entry.Amount);
+            runtime.CompleteApply(expense, income);
             failureLogged = false;
         }
         private void LogOnce(Exception error, string message)

@@ -1,4 +1,5 @@
 using CS2AreaSystem.Core.Finance;
+using Game.City;
 using NUnit.Framework;
 namespace CS2AreaSystem.Tests;
 public class AreaFinanceLedgerTests {
@@ -144,5 +145,78 @@ public class AreaFinanceAccountsTests {
   accounts.Clear();
   Assert.That(accounts.AreaManagement(20), Is.Zero);
   Assert.That(accounts.CoveredFrames(20), Is.Zero);
+ }
+}
+public class AreaFinanceRuntimeTests {
+ private sealed class Listener : IAreaFinanceListener {
+  public readonly List<(AreaFinanceBatch Settled, uint Frame)> Calls = new();
+  public bool Throw;
+  public void OnAreaFinanceSettled(AreaFinanceBatch settled, uint frame) { if (Throw) throw new InvalidOperationException("listener"); Calls.Add((settled, frame)); }
+ }
+ private static AreaFinanceBatch ApplyOnce(AreaFinanceRuntime runtime, ref PlayerMoney money, uint frame) {
+  var batch = runtime.BeginApply(frame);
+  var applied = AreaFinanceVanillaAdapter.Apply(ref money, batch.TotalExpense, batch.TotalIncome);
+  return runtime.CompleteApply(applied.Expense, applied.Income);
+ }
+ [Test] public void AppliedAmountsAreRecordedAndReportedOnce() {
+  var runtime = new AreaFinanceRuntime(_ => { }); var listener = new Listener(); runtime.AddListener(listener);
+  runtime.Start(0);
+  runtime.EnqueueExpense(5, AreaFinanceKind.ParkManagement, 40);
+  var money = new PlayerMoney(-1_000);
+  var settled = ApplyOnce(runtime, ref money, 256);
+  Assert.That(AreaFinanceVanillaAdapter.StoredCityMoney(money), Is.EqualTo(-1_040));
+  Assert.That(settled.Expenses, Is.EqualTo(new[] { new AreaFinanceEntry(5, AreaFinanceKind.ParkManagement, 40) }));
+  Assert.That(listener.Calls, Has.Count.EqualTo(1)); Assert.That(listener.Calls[0].Frame, Is.EqualTo(256u));
+  Assert.That(runtime.AreaManagement(300), Is.EqualTo(40));
+  Assert.That(runtime.HasInFlight, Is.False);
+  Assert.That(runtime.CompleteApply(40, 0), Is.Null, "nothing in flight: nothing recorded twice");
+  Assert.That(listener.Calls, Has.Count.EqualTo(1));
+ }
+ [Test] public void SettledHouseholdIncomeIsRecordedWithoutQueueingAnotherCredit() {
+  var runtime = new AreaFinanceRuntime(_ => { });
+  Assert.That(runtime.RecordSettledIncome(10, 5, AreaFinanceKind.ParkAdmission, 25), Is.True);
+  Assert.That(runtime.HasQueued, Is.False, "the household transfer already credited the city");
+  Assert.That(runtime.BeginApply(10), Is.Null);
+  Assert.That(runtime.AreaServiceFees(20), Is.EqualTo(25));
+  Assert.That(runtime.RecordSettledIncome(10, 5, AreaFinanceKind.ParkManagement, 25), Is.False);
+  Assert.That(runtime.RecordSettledIncome(10, 5, AreaFinanceKind.ParkAdmission, 0), Is.False);
+ }
+ [Test] public void AFailingListenerIsIsolatedAndReported() {
+  var errors = new List<Exception>();
+  var runtime = new AreaFinanceRuntime(errors.Add); var bad = new Listener { Throw = true }; var good = new Listener();
+  runtime.AddListener(bad); runtime.AddListener(good);
+  runtime.EnqueueExpense(1, AreaFinanceKind.PolicyUpkeep, 3);
+  var money = new PlayerMoney(0);
+  ApplyOnce(runtime, ref money, 1);
+  Assert.That(errors, Has.Count.EqualTo(1));
+  Assert.That(good.Calls, Has.Count.EqualTo(1));
+  Assert.That(runtime.AreaManagement(2), Is.EqualTo(3), "accounts are written before listeners run");
+ }
+ [Test] public void AbortDropsTheBatchWithoutRecordingIt() {
+  var runtime = new AreaFinanceRuntime(_ => { });
+  runtime.EnqueueExpense(1, AreaFinanceKind.PolicyUpkeep, 3);
+  Assert.That(runtime.BeginApply(1), Is.Not.Null);
+  runtime.AbortApply();
+  Assert.That(runtime.HasInFlight, Is.False); Assert.That(runtime.HasQueued, Is.False);
+  Assert.That(runtime.AreaManagement(2), Is.Zero, "nothing was applied, so nothing is recorded");
+ }
+ [Test] public void BeginApplyWhileABatchIsInFlightTakesNothing() {
+  var runtime = new AreaFinanceRuntime(_ => { });
+  runtime.EnqueueExpense(1, AreaFinanceKind.PolicyUpkeep, 3);
+  runtime.BeginApply(1);
+  runtime.EnqueueExpense(1, AreaFinanceKind.PolicyUpkeep, 4);
+  Assert.That(runtime.BeginApply(2), Is.Null, "results of the first batch must be recorded first");
+  Assert.That(runtime.HasQueued, Is.True);
+ }
+ [Test] public void ResetClearsQueuedInFlightAndSettledState() {
+  var runtime = new AreaFinanceRuntime(_ => { }); var listener = new Listener(); runtime.AddListener(listener);
+  runtime.Start(0);
+  runtime.EnqueueExpense(1, AreaFinanceKind.PolicyUpkeep, 3); runtime.BeginApply(1);
+  runtime.EnqueueExpense(1, AreaFinanceKind.PolicyUpkeep, 4); runtime.RecordSettledIncome(1, 1, AreaFinanceKind.ParkAdmission, 9);
+  runtime.Reset();
+  Assert.That(runtime.HasQueued || runtime.HasInFlight, Is.False);
+  Assert.That(runtime.AreaManagement(2) + runtime.AreaServiceFees(2), Is.Zero);
+  Assert.That(runtime.CoveredFrames(2), Is.Zero);
+  Assert.That(runtime.CompleteApply(3, 0), Is.Null); Assert.That(listener.Calls, Is.Empty);
  }
 }

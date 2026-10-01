@@ -11,24 +11,24 @@ public class ParkTransactionLedgerTests {
   ledger.EnqueueAdmission(new ParkAdmissionRequest { Citizen = other, Area = area, ParkId = 7, Fee = 20 });
   var batch = ledger.TakeBatch();
   Assert.That(batch.Admissions.Count, Is.EqualTo(2)); Assert.That(ledger.PendingAdmissions, Is.Zero);
-  var outcomes = ParkTransactionLedger.Resolve(batch, new long[] { 20, 7 }, managementPaid: 150);
+  var outcomes = ParkTransactionLedger.Resolve(batch, new long[] { 20, 7 });
   Assert.That(outcomes.Admissions.Select(o => o.Collected), Is.EqualTo(new long[] { 20, 7 }));
   Assert.That(outcomes.Admissions.Select(o => o.Uncollected), Is.EqualTo(new long[] { 0, 13 }));
  }
  [Test] public void CollectedAmountsAreClampedToTheRequestedFee() {
   var ledger = new ParkTransactionLedger();
   ledger.EnqueueAdmission(new ParkAdmissionRequest { Citizen = citizen, Area = area, ParkId = 7, Fee = 20 });
-  var outcomes = ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[] { 999 }, 0);
+  var outcomes = ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[] { 999 });
   Assert.That(outcomes.Admissions.Single().Collected, Is.EqualTo(20));
-  Assert.That(ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[0], 0).Admissions, Is.Empty);
+  Assert.That(ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[0]).Admissions, Is.Empty);
  }
- [Test] public void ManagementExpenseIsRecordedOnlyWhenTheCityPaid() {
-  var ledger = new ParkTransactionLedger();
-  ledger.EnqueueManagement(area, 7, 120); ledger.EnqueueManagement(area, 8, 30); ledger.EnqueueManagement(area, 9, 0);
-  var batch = ledger.TakeBatch();
-  Assert.That(batch.CityDelta, Is.EqualTo(-150), "one aggregated city-money change per batch");
-  Assert.That(ParkTransactionLedger.Resolve(batch, new long[0], managementPaid: 150).Management.Select(m => m.Paid), Is.EqualTo(new long[] { 120, 30 }));
-  Assert.That(ParkTransactionLedger.Resolve(batch, new long[0], managementPaid: 0).Management, Is.Empty, "no city entity: nothing booked");
+ [Test] public void ParkTransactionsCarryAdmissionsOnlyAndNeverACityMoneyChange() {
+  // Management is an Area Management expense queued in the shared Area finance (design §15.4); Park code no longer
+  // holds, aggregates or pays a city-money delta of its own.
+  Assert.That(typeof(ParkTransactionLedger).GetMethod("EnqueueManagement"), Is.Null);
+  Assert.That(typeof(ParkTransactionBatch).GetField("CityDelta"), Is.Null);
+  Assert.That(typeof(ParkTransactionBatch).GetField("Management"), Is.Null);
+  Assert.That(typeof(ParkTransactionOutcomes).GetField("Management"), Is.Null);
  }
 }
 public class ParkVisitTargetTests {

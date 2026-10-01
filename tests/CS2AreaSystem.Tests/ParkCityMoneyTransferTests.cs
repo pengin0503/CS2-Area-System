@@ -1,48 +1,41 @@
+using System.Reflection;
+using CS2AreaSystem.Core.Finance;
 using CS2AreaSystem.Modules.Park;
 using Game.City;
 using NUnit.Framework;
 namespace CS2AreaSystem.Tests;
+// Park money reaches the city only through the shared Area finance (design §15.4). These tests pin that Park keeps no
+// city-money primitive of its own and that the old "paid only down to the lower bound" management semantics are gone.
 public class ParkCityMoneyTransferTests {
- [TestCase(false)] [TestCase(true)]
- public void AdmissionDebitsOnlyWhatTheStoredCityBalanceCanReceive(bool unlimited) {
-  var money = new PlayerMoney(1_999_999_990) { m_Unlimited = unlimited };
-  long household = 1000, initial = ParkFinanceModel.StoredCityMoney(money);
-  long collected = ParkFinanceModel.CollectAdmission(ref money, 60, household); household -= collected;
-  Assert.That(collected, Is.EqualTo(10)); Assert.That(household, Is.EqualTo(990));
-  Assert.That((long)ParkFinanceModel.StoredCityMoney(money) - initial, Is.EqualTo(collected));
-  Assert.That(money.m_Unlimited, Is.EqualTo(unlimited));
-  Assert.That(ParkFinanceModel.CollectAdmission(ref money, 60, household), Is.Zero, "sequential admissions share capacity");
+ [Test] public void ParkFinanceHasNoDirectCityMoneyPrimitives() {
+  foreach (var name in new[] { "CollectAdmission", "PayManagement", "StoredCityMoney", "ApplyMoneyDelta" })
+   Assert.That(typeof(ParkFinanceModel).GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static), Is.Null, name);
+  Assert.That(typeof(ParkFinanceModel).GetField("CityMoneyLimit"), Is.Null);
+  var parkMethods = typeof(ParkFinanceModel).Assembly.GetTypes().Where(t => t.Namespace == typeof(ParkFinanceModel).Namespace)
+   .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+   .Where(m => m.GetParameters().Any(p => p.ParameterType == typeof(PlayerMoney) || p.ParameterType == typeof(PlayerMoney).MakeByRefType()))
+   .Select(m => m.DeclaringType!.Name + "." + m.Name);
+  Assert.That(parkMethods, Is.Empty, "no Park method takes the city balance");
+ }
+ [Test] public void ManagementSettlementUsesTheSharedRoundingRule() {
+  foreach (var perDay in new[] { 0.6, 1000.0, 777.7, double.NaN, -5.0 })
+   foreach (var frames in new uint[] { 0, 1, 4096, ParkFinanceModel.FramesPerDay }) {
+    double parkCarry = 0.25, coreCarry = 0.25;
+    Assert.That(ParkFinanceModel.Settle(perDay, frames, ref parkCarry), Is.EqualTo(AreaFinanceModel.SettleDaily(perDay, frames, ref coreCarry)), $"{perDay}/{frames}");
+    Assert.That(parkCarry, Is.EqualTo(coreCarry));
+   }
+  Assert.That(ParkFinanceModel.FramesPerDay, Is.EqualTo(AreaFinanceModel.FramesPerDay));
  }
  [TestCase(false)] [TestCase(true)]
- public void ManagementRecordsOnlyTheExpenseAppliedAboveTheLowerBound(bool unlimited) {
-  var money = new PlayerMoney(-1_999_999_990) { m_Unlimited = unlimited };
-  long initial = ParkFinanceModel.StoredCityMoney(money);
-  long paid = ParkFinanceModel.PayManagement(ref money, 60);
-  Assert.That(paid, Is.EqualTo(10)); Assert.That(initial - ParkFinanceModel.StoredCityMoney(money), Is.EqualTo(paid));
+ public void ANegativeCityBalanceStillIncursTheFullManagementExpense(bool unlimited) {
+  var runtime = new AreaFinanceRuntime(_ => { });
+  var money = new PlayerMoney(-1_000_000) { m_Unlimited = unlimited };
+  runtime.EnqueueExpense(7, AreaFinanceKind.ParkManagement, 60);
+  var batch = runtime.BeginApply(1);
+  var applied = AreaFinanceVanillaAdapter.Apply(ref money, batch.TotalExpense, batch.TotalIncome);
+  var settled = runtime.CompleteApply(applied.Expense, applied.Income);
+  Assert.That(ParkAreaFinance.AppliedManagement(settled).Single().Amount, Is.EqualTo(60));
+  Assert.That(AreaFinanceVanillaAdapter.StoredCityMoney(money), Is.EqualTo(-1_000_060));
   Assert.That(money.m_Unlimited, Is.EqualTo(unlimited));
-  Assert.That(ParkFinanceModel.PayManagement(ref money, 60), Is.Zero);
- }
- [Test] public void ManagementCanSpanTheWholeBalanceRangeWithoutIntOverflow() {
-  var money = new PlayerMoney(2_000_000_000);
-  Assert.That(ParkFinanceModel.PayManagement(ref money, long.MaxValue), Is.EqualTo(4_000_000_000L));
-  Assert.That(ParkFinanceModel.StoredCityMoney(money), Is.EqualTo(-2_000_000_000));
- }
- [Test] public void EmptyHouseholdAndNonpositiveRequestsTransferNothing() {
-  var money = new PlayerMoney(100);
-  Assert.That(ParkFinanceModel.CollectAdmission(ref money, 60, 0), Is.Zero);
-  Assert.That(ParkFinanceModel.CollectAdmission(ref money, -1, 100), Is.Zero);
-  Assert.That(ParkFinanceModel.PayManagement(ref money, -1), Is.Zero);
-  Assert.That(ParkFinanceModel.StoredCityMoney(money), Is.EqualTo(100));
- }
- [Test] public void PartialManagementPaymentIsAllocatedExactlyOnceInRequestOrder() {
-  var ledger = new ParkTransactionLedger();
-  ledger.EnqueueManagement(default, 7, 60); ledger.EnqueueManagement(default, 8, 60);
-  var batch = ledger.TakeBatch();
-  var money = new PlayerMoney(-1_999_999_930);
-  var outcomes = ParkTransactionLedger.Resolve(batch, Array.Empty<long>(), managementPaid: ParkFinanceModel.PayManagement(ref money, -batch.CityDelta));
-  Assert.That(outcomes.Management.Select(c => c.Paid), Is.EqualTo(new long[] { 60, 10 }));
-  Assert.That(outcomes.Management.Select(c => c.ParkId), Is.EqualTo(new ulong[] { 7, 8 }));
-  Assert.That(outcomes.Management.Sum(c => c.Paid), Is.EqualTo(70));
-  Assert.That(ledger.HasPending, Is.False);
  }
 }
