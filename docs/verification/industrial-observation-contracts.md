@@ -40,6 +40,15 @@ Offices (`OfficeProperty`/`OfficeCompany`), residential, commercial, parks and c
 
 `IndustrialGameClock` uses `TimeData.m_FirstFrame`, `TimeData.TimeOffset` and `TimeSystem.kTicksPerDay`: `gameHours = ((frame − firstFrame)/kTicksPerDay + timeOffset)·24`, `day = floor(gameHours/24)` — the same formula as `TimeSystem.GetDay` (test compares both). Hour buckets are `floor(gameHours)`.
 
+## Scheduling, attribution and generations
+
+- `IndustrialObservationSystem` (GameSimulation, every 16 frames) starts one cycle per Active Industrial Area per game-hour bucket over the members for which Core marks that Area as the **primary** Industrial owner; overlapping non-primary members are only counted as overlap. At most 128 building reads per update in total, handed out round-robin across Areas.
+- Reads run in a scheduled `IJob` over read-only `ComponentLookup`/`BufferLookup` handles registered as this system's dependencies (no main-thread completion of vanilla producer jobs); the results are consumed on the next update. `ResourceSystem.AddPrefabsReader` registers the job as a `ResourcePrefabs` reader. The per-entity read is wrapped so one failing entity is skipped and logged with bounded repetition.
+- The efficiency product is read with `BuildingUtils.GetEfficiency(Entity, ref BufferLookup<Efficiency>)`, which applies the same product as the `DynamicBuffer` overload; the single-argument overload group also contains a `Span<float>` overload that the net8 API-check compiler cannot bind against the game's mscorlib.
+- Each cycle captures Core's `AreaMembershipIndex.GetAreaRevision(area)` (module-neutral, advances only on that Area's effective relation/primary-flag changes) and the Industrial-local structure token. The structure token advances only from native change evidence: vanilla `Game.Buildings.RentersUpdated` event entities (emitted by `PropertyProcessingSystem`, `PropertyRenterSystem`, `CompanyMoveAwaySystem`, `RemovedSystem` … whenever a property's tenants change; consumed by vanilla `SubObjectSystem` every frame) and member buildings that receive `Updated` together with `Destroyed`/`Abandoned`. Both are collected every frame in ModificationEnd. A changed token restarts only that Area's cycle; a cycle is published only if both tokens still equal the captured values.
+- A cycle whose end is more than one game hour after its start is published as **Delayed**: it supplies no flow coverage, no XP and no daily-activity coverage, and the delay is counted for tuning.
+- Flow coverage: the endpoint of each published, Active, non-delayed cycle (timestamp = cycle start) closes an interval with the previous endpoint when both belong to the same generation and are at most 1 h + 1 game minute apart (the minute absorbs update jitter of the hour-boundary start); the interval carries the **earlier** sample's channel weights. The first sample after load, suspension or a generation change is an endpoint only.
+
 ## Not used (and why)
 
 - Raw inventory deltas: transfers, buying and consumption change `Resources` without production.

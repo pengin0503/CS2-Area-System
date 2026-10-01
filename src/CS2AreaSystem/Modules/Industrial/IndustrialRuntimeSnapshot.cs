@@ -62,7 +62,10 @@ namespace CS2AreaSystem.Modules.Industrial
         public double StartHours, EndHours;
         public ulong MembershipToken, StructureToken;
         public bool Active, Delayed;
-        public int Members, Extractors, Processors, StorageFacilities, CargoFacilities, CargoOperational;
+        // Members: primary-owned buildings read this cycle; Ignored: of those, without an Industrial role; NonPrimary:
+        // overlapping members credited to another Industrial Area (shown, never counted here).
+        public int Members, IgnoredMembers, NonPrimaryMembers, FailedReads;
+        public int Extractors, Processors, StorageFacilities, CargoFacilities, CargoOperational;
         public int ProducerFacilities, OperatingProducers;
         public int Jobs, Employees, ProducerJobs, ProducerEmployees, SupportJobs, SupportEmployees, InvalidJobFacilities, JobFacilities;
         public int[] VacanciesByLevel = new int[5];
@@ -134,6 +137,8 @@ namespace CS2AreaSystem.Modules.Industrial
         // Last completed coherent generation; null after load until observation rebuilds it.
         public IndustrialObservationResult Current { get; private set; }
         public bool HasPublished => Current != null;
+        // The Area is not Active: the last result is shown only as paused/stale and earns nothing.
+        public bool Paused;
         public readonly IndustrialFlowWindow InputWindow = new IndustrialFlowWindow(), OutputWindow = new IndustrialFlowWindow();
         // Previous flow endpoint (time, generation and channel weights) used to close the next covered interval.
         public double FlowBaselineHours;

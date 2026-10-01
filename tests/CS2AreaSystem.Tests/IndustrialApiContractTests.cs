@@ -53,6 +53,8 @@ public class IndustrialApiContractTests {
   // Product of max(0, factor) over the buffer, rounded to 0.01 (decompiled 1.6.2f1); EfficiencySection and the production
   // systems read this overload. The Span overload binds to the game's mscorlib and cannot be executed under net8.
   Assert.That(typeof(BuildingUtils).GetMethod(nameof(BuildingUtils.GetEfficiency), new[] { typeof(DynamicBuffer<Efficiency>) })?.ReturnType, Is.EqualTo(typeof(float)));
+  Assert.That(typeof(BuildingUtils).GetMethod(nameof(BuildingUtils.GetEfficiency), new[] { typeof(Entity), typeof(BufferLookup<Efficiency>).MakeByRefType() })?.ReturnType, Is.EqualTo(typeof(float)),
+   "the overload the job reader calls (same product)");
   Assert.That(typeof(BuildingUtils).GetMethod(nameof(BuildingUtils.GetEfficiencyExcludingFactor), new[] { typeof(DynamicBuffer<Efficiency>), typeof(EfficiencyFactor) }), Is.Not.Null);
   Assert.That(typeof(BuildingUtils).GetMethod(nameof(BuildingUtils.GetEfficiencyFactor), new[] { typeof(DynamicBuffer<Efficiency>), typeof(EfficiencyFactor) }), Is.Not.Null);
   Assert.That(IndustrialSourceNormalization.EfficiencyPercent(1f), Is.EqualTo(100).Within(1e-9));
@@ -90,6 +92,22 @@ public class IndustrialApiContractTests {
   Field<Game.Buildings.CargoTransportStation>("m_WorkAmount", typeof(float));
   Field<CargoTransportStationData>("m_WorkMultiplier", typeof(float));
   Assert.That(Enum.IsDefined(typeof(BuildingOption), BuildingOption.Inactive), Is.True);
+  Assert.That(typeof(BuildingUtils).GetMethod(nameof(BuildingUtils.CheckOption), new[] { typeof(Building), typeof(BuildingOption) }), Is.Not.Null);
+  Assert.That(typeof(UpgradeUtils).GetMethods().Any(m => m.Name == nameof(UpgradeUtils.TryGetCombinedComponent) && m.GetParameters().Length == 5), Is.True,
+   "lookup overload used for station storage and extractor upgrade limits");
+ }
+ [Test] public void StructureChangeEvidenceUsesVanillaTenantEvents() {
+  Field<RentersUpdated>("m_Property", typeof(Entity));
+  Assert.That(typeof(IComponentData).IsAssignableFrom(typeof(Game.Common.Event)), Is.True, "RentersUpdated is emitted on Event entities");
+  Assert.That(typeof(Game.Common.Destroyed).IsValueType && typeof(Abandoned).IsValueType, Is.True);
+ }
+ [Test] public void JobReaderUsesPublicPrefabAndEconomyAccessors() {
+  Assert.That(typeof(ResourceSystem).GetMethod(nameof(ResourceSystem.GetPrefabs))?.ReturnType, Is.EqualTo(typeof(ResourcePrefabs)));
+  Assert.That(typeof(ResourceSystem).GetMethod(nameof(ResourceSystem.AddPrefabsReader)), Is.Not.Null);
+  Field<EconomyParameterData>("m_IndustrialEfficiency", typeof(float));
+  Field<EconomyParameterData>("m_ExtractorProductionEfficiency", typeof(float));
+  Assert.That(typeof(EconomyUtils).GetMethod(nameof(EconomyUtils.GetTotalStorageUsed)), Is.Not.Null);
+  Assert.That(typeof(EconomyUtils).GetMethod(nameof(EconomyUtils.GetWeight), new[] { typeof(Resource), typeof(ResourcePrefabs), typeof(ComponentLookup<ResourceData>).MakeByRefType() }), Is.Not.Null);
  }
  [Test] public void ProductiveActivityUsesVanillaProductionAndCapacityFunctions() {
   Field<CompanyStatisticData>("m_LastUpdateProduce", typeof(int));

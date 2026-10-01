@@ -64,7 +64,8 @@ namespace CS2AreaSystem.Modules.Industrial
     public partial class IndustrialRuntimeSystem : GameSystemBase
     {
         public IndustrialRuntimeStore Store { get; } = new IndustrialRuntimeStore();
-        private EntityQuery managedAreas, timeData;
+        public IndustrialStructureTracker Structure { get; } = new IndustrialStructureTracker();
+        private EntityQuery managedAreas, timeData, rentersUpdated, damagedMembers;
         private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
         private bool failureLogged;
         public bool Ready => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
@@ -78,8 +79,16 @@ namespace CS2AreaSystem.Modules.Industrial
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() } });
             timeData = GetEntityQuery(ComponentType.ReadOnly<TimeData>());
+            // Native change evidence for tenant/role structure (design §18.2): vanilla tenant events and member
+            // destruction/abandonment. Ordinary economic changes carry no such evidence.
+            rentersUpdated = GetEntityQuery(ComponentType.ReadOnly<Game.Common.Event>(), ComponentType.ReadOnly<Game.Buildings.RentersUpdated>());
+            damagedMembers = GetEntityQuery(new EntityQueryDesc {
+                All = new[] { ComponentType.ReadOnly<Game.Buildings.Building>(), ComponentType.ReadOnly<Updated>() },
+                Any = new[] { ComponentType.ReadOnly<Destroyed>(), ComponentType.ReadOnly<Game.Buildings.Abandoned>() },
+                None = new[] { ComponentType.ReadOnly<Temp>() } });
         }
-        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) { Store.Clear(); LoadGeneration++; }
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) { Store.Clear(); Structure.Clear(); LoadGeneration++; }
+        public IIndustrialCycleSource CycleSource => new IndustrialMembershipCycleSource(Membership, Structure);
         [Preserve]
         protected override void OnUpdate()
         {
@@ -89,6 +98,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 CollectAreas(areas);
                 PruneStore(areas);
                 EnsureIndustrialState(areas);
+                TrackStructureChanges();
                 failureLogged = false;
             }
             catch (System.Exception error)
@@ -104,7 +114,26 @@ namespace CS2AreaSystem.Modules.Industrial
                 rows.Add((entity, EntityManager.GetComponentData<ManagedArea>(entity), EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value));
             IndustrialAreaSelection.Select(rows, result);
         }
-        public void PruneStore(List<IndustrialAreaRef> alive) => Store.Prune(alive);
+        public void PruneStore(List<IndustrialAreaRef> alive)
+        {
+            Store.Prune(alive);
+            var ids = new HashSet<ulong>();
+            foreach (var area in alive) ids.Add(area.StableId);
+            foreach (var snapshot in new List<IndustrialRuntimeSnapshot>(Store.All)) if (!ids.Contains(snapshot.StableId)) Structure.Remove(snapshot.StableId);
+        }
+        private void TrackStructureChanges()
+        {
+            if (!rentersUpdated.IsEmptyIgnoreFilter)
+            {
+                using var events = rentersUpdated.ToComponentDataArray<Game.Buildings.RentersUpdated>(Allocator.Temp);
+                foreach (var e in events) Structure.MemberChanged(e.m_Property, Membership);
+            }
+            if (!damagedMembers.IsEmptyIgnoreFilter)
+            {
+                using var buildings = damagedMembers.ToEntityArray(Allocator.Temp);
+                foreach (var building in buildings) Structure.MemberChanged(building, Membership);
+            }
+        }
         // Structural change: call from the modification phase only.
         public void EnsureIndustrialState(List<IndustrialAreaRef> list)
         {

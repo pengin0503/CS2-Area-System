@@ -38,6 +38,8 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialFacilityRole Roles;
         // Producer capability (extractor or processor) and confirmed current production (> 0 actual output).
         public bool IsProducer, IsOperatingProducer;
+        // Attributable extractor/processor companies (0 for a vacant producer building).
+        public int ProducerTenants;
         // Facility is physically usable (not abandoned/destroyed/inactive); known for every read building.
         public bool Available;
         // Actual / attainable production in percent (raw, may exceed 100); null when unproven for this facility.
