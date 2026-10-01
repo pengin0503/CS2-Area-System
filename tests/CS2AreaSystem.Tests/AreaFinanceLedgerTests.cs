@@ -138,6 +138,26 @@ public class AreaFinanceAccountsTests {
   accounts.Record(10, (AreaFinanceKind)77, 5);
   Assert.That(accounts.AreaManagement(20) + accounts.AreaServiceFees(20), Is.Zero);
  }
+ [Test] public void AmountsOfOneFrameShareARecordSoTheAccountStaysBoundedByFramesNotVisits() {
+  var accounts = new AreaFinanceAccounts();
+  for (int visit = 0; visit < 10_000; visit++) {
+   accounts.Record(500, AreaFinanceKind.ParkAdmission, 3);
+   accounts.Record(500, visit % 2 == 0 ? AreaFinanceKind.PolicyUpkeep : AreaFinanceKind.ParkManagement, 1);
+  }
+  accounts.Record(756, AreaFinanceKind.ParkAdmission, 7);
+  Assert.That(accounts.RecordCount, Is.EqualTo(4), "one record per frame and kind");
+  Assert.That(accounts.AreaServiceFees(800), Is.EqualTo(30_007));
+  Assert.That(accounts.AreaManagement(800), Is.EqualTo(10_000));
+  Assert.That(accounts.Settled(AreaFinanceKind.PolicyUpkeep, 800), Is.EqualTo(5_000));
+  Assert.That(accounts.AreaServiceFees(500 + Day), Is.EqualTo(7), "the merged frame leaves the window as a whole");
+  Assert.That(accounts.RecordCount, Is.EqualTo(1));
+ }
+ [Test] public void MergedAmountsSaturateInsteadOfWrapping() {
+  var accounts = new AreaFinanceAccounts();
+  accounts.Record(1, AreaFinanceKind.ParkAdmission, long.MaxValue - 1);
+  accounts.Record(1, AreaFinanceKind.ParkAdmission, 5);
+  Assert.That(accounts.AreaServiceFees(2), Is.EqualTo(long.MaxValue));
+ }
  [Test] public void ClearForgetsEverything() {
   var accounts = new AreaFinanceAccounts();
   accounts.Start(0);

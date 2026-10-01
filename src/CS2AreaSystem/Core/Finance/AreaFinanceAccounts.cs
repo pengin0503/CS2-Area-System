@@ -7,22 +7,33 @@ namespace CS2AreaSystem.Core.Finance
     {
         private readonly struct Settlement { public readonly uint Frame; public readonly AreaFinanceKind Kind; public readonly long Amount;
             public Settlement(uint frame, AreaFinanceKind kind, long amount) { Frame = frame; Kind = kind; Amount = amount; } }
-        private readonly Queue<Settlement> records = new Queue<Settlement>();
+        // Oldest first from head. Amounts of one frame and kind share a record (Park admission is recorded per visit),
+        // so the list is bounded by the frames of the trailing day, not by visits.
+        private readonly List<Settlement> records = new List<Settlement>();
+        private int head;
         private bool started;
         private uint startFrame;
+        // Stored settlement records (diagnostic; bounded by distinct frames and kinds within the trailing day).
+        public int RecordCount => records.Count - head;
         public void Start(uint frame) { started = true; startFrame = frame; }
-        public void Clear() { records.Clear(); started = false; startFrame = 0; }
+        public void Clear() { records.Clear(); head = 0; started = false; startFrame = 0; }
         public void Record(uint frame, AreaFinanceKind kind, long amount)
         {
             if (amount <= 0 || !(AreaFinanceKinds.IsExpense(kind) || AreaFinanceKinds.IsIncome(kind))) return;
-            records.Enqueue(new Settlement(frame, kind, amount));
+            for (int i = records.Count - 1; i >= head && records[i].Frame == frame; i--)
+            {
+                if (records[i].Kind != kind) continue;
+                records[i] = new Settlement(frame, kind, AreaFinanceModel.SaturatingAdd(records[i].Amount, amount));
+                return;
+            }
+            records.Add(new Settlement(frame, kind, amount));
         }
         public uint CoveredFrames(uint frame) => !started ? 0u : System.Math.Min(AreaFinanceModel.FramesPerDay, unchecked(frame - startFrame));
         public long Settled(AreaFinanceKind kind, uint frame)
         {
             Prune(frame);
             long total = 0;
-            foreach (var record in records) if (record.Kind == kind) total = AreaFinanceModel.SaturatingAdd(total, record.Amount);
+            for (int i = head; i < records.Count; i++) if (records[i].Kind == kind) total = AreaFinanceModel.SaturatingAdd(total, records[i].Amount);
             return total;
         }
         public long AreaManagement(uint frame) =>
@@ -31,7 +42,9 @@ namespace CS2AreaSystem.Core.Finance
         // Records arrive in frame order; unsigned distance keeps the window correct across frame-counter wrap.
         private void Prune(uint frame)
         {
-            while (records.Count > 0 && unchecked(frame - records.Peek().Frame) >= AreaFinanceModel.FramesPerDay) records.Dequeue();
+            while (head < records.Count && unchecked(frame - records[head].Frame) >= AreaFinanceModel.FramesPerDay) head++;
+            if (head == records.Count) { records.Clear(); head = 0; }
+            else if (head > 1024 && head * 2 > records.Count) { records.RemoveRange(0, head); head = 0; }
         }
     }
 }

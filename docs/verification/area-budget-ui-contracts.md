@@ -13,7 +13,7 @@ Both values come from the binding `cs2AreaSystem.areaBudget` = `{areaManagement,
 
 - `areaManagement` is the policy upkeep (`AreaFinanceKind.PolicyUpkeep`) plus the Park management expense (`ParkManagement`) that `AreaFinanceSystem` actually applied to `PlayerMoney`.
 - `areaServiceFees` is the Park admission (`ParkAdmission`) that households actually paid to the city (`AreaFinanceHouseholdTransfer`, recorded once through `RecordSettledIncome`).
-- Both cover the trailing in-game day (`AreaFinanceAccounts`). The window is runtime-only, so after a load it starts empty and fills during the first day. Nothing is extrapolated.
+- Both cover the trailing in-game day (`AreaFinanceAccounts`). That is the unit of the vanilla budget values: `BudgetApplySystem` applies each value over 262144 frames (`kUpdatesPerDay = 1024` updates, 256 frames apart), and the page labels that "monthly". Amounts of one frame and kind share one record, so the account is bounded by frames, not by visits. The window is runtime-only, so after a load it starts empty and fills during the first day. Nothing is extrapolated.
 - Queued or in-flight requests are never shown. A credit cut by the native money cap shows only the credited part.
 
 The binding system only reads. It never moves money and never invents an amount.
