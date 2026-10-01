@@ -57,6 +57,57 @@ check(facadeActions==='SetBudget,SetFee', `Park UI actions must be limited to bu
 const parkPanelTest = read('UI/src/ParkPanel.test.tsx');
 check(parkPanelTest.includes("./__fixtures__/park-panel.json"), 'Park UI tests must use the fixture generated from the C# payload');
 
+// Industrial Area v1: approved spec/plan are immutable; Industrial observes the vanilla economy and never mutates it.
+const industrialSpecPath='docs/superpowers/specs/2026-10-01-industrial-area-v1-design.md';
+const industrialPlanPath='docs/superpowers/plans/2026-10-01-industrial-area-v1-implementation.md';
+check(gitBlobSha(industrialSpecPath)==='0e912259279d904c27f7a03ba928c4f06c7a02e3', 'approved Industrial v1 design spec must remain byte-identical');
+check(gitBlobSha(industrialPlanPath)==='aa703b244d011aaeea4e4d68fb250ffc072ddd3a', 'approved Industrial v1 implementation plan must remain byte-identical');
+for (const doc of ['docs/verification/industrial-observation-contracts.md','docs/verification/industrial-score-examples.json','docs/verification/industrial-score-examples.md','docs/verification/industrial-area-v1-execution-record.md'])
+  check(fs.existsSync(filePath(doc)), `${doc} must exist`);
+check(JSON.parse(read('docs/verification/industrial-score-examples.json')).synthetic===true, 'calculation examples must stay labeled synthetic');
+const industrialDir='src/CS2AreaSystem/Modules/Industrial';
+const industrialSources=walk(industrialDir).filter(p=>p.endsWith('.cs'));
+// Forbidden: replacing/patching vanilla production, transfer, tax/demand, cargo or pathfinding systems, and direct
+// writes to Resources, efficiency or profitability. Industrial reads public state only.
+const forbiddenIndustrial=[
+  [/\b(ProcessingCompanySystem|ExtractorCompanySystem|StorageCompanySystem|StorageTransferSystem|ResourceBuyerSystem|BuyingCompanySystem|ResourceExporterSystem|CompanyProfitabilitySystem|IndustrialAISystem|ExtractorAISystem)\b/, 'vanilla production/transfer systems'],
+  [/\b(TaxSystem|IndustrialDemandSystem|ResidentialDemandSystem|CommercialDemandSystem|SetTaxRate)\b/, 'taxes/demand'],
+  [/\b(Game\.Pathfind|PathfindSetupSystem|SetupQueue|StorageTransferRequest|ResourceExporter\b|TransportCompany|CargoTransportVehicle)/, 'pathfinding/cargo routing or transfer requests'],
+  [/\b(AddResources|SetResources|SetEfficiencyFactors?|AddComponent<\s*Resources|SetBuffer<\s*Resources)/, 'direct Resources/efficiency mutation'],
+  [/SetComponentData\s*(<\s*(Game\.Companies\.)?Profitability|\([^)]*new\s+(Game\.Companies\.)?Profitability)/, 'Profitability writes'],
+  [/SetComponentData\s*<\s*(Game\.Buildings\.)?(BuildingEfficiency|Building)\b/, 'building/efficiency writes'],
+  [/BindingFlags\.NonPublic|Harmony/, 'private reflection or patching'],
+  [/\.Enabled\s*=\s*false/, 'disabling vanilla systems']];
+for (const source of industrialSources) {
+  // Code only: comments may cite the vanilla systems whose behavior is mirrored.
+  const text = read(source).replace(/\/\/.*$/gm, '');
+  for (const [pattern, what] of forbiddenIndustrial) if (pattern.test(text)) failures.push(`${source}: Industrial v1 must not touch ${what}`);
+}
+const mod = read('src/CS2AreaSystem/Mod.cs');
+const industrialRegistration = mod.slice(mod.indexOf('void RegisterIndustrialSystems'));
+check(mod.includes('RegisterIndustrialSystems(updateSystem);'), 'Mod.OnLoad must register Industrial systems');
+check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialRuntimeSystem>\(SystemUpdatePhase\.ModificationEnd\)/.test(industrialRegistration), 'IndustrialRuntimeSystem must run in ModificationEnd');
+check(/UpdateAt<CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialObservationSystem must run in GameSimulation');
+check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialProgressionSystem,\s*CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialProgressionSystem must run after observation');
+check(/catch\s*\(System\.Exception error\)\s*\{\s*Log\.Error\(error,\s*"Industrial/.test(industrialRegistration), 'Industrial registration failure must be isolated and logged');
+const industrialFacade = read(`${industrialDir}/IndustrialGameplayFacade.cs`);
+check(!/SetComponentData|AddComponent|RemoveComponent|public static bool HandleAction/.test(industrialFacade), 'Industrial facade must stay read-only (no setters/actions)');
+const industrialModule = read(`${industrialDir}/IndustrialAreaModule.cs`);
+check(/HandleAction\([^)]*\)\s*=>\s*false;/.test(industrialModule), 'Industrial module must not handle Industrial-specific UI actions');
+const panelBuilder = read(`${industrialDir}/IndustrialPanelBuilder.cs`);
+check(!/Action\s*=|AreaPanelItemKind\.(Slider|Button)/.test(panelBuilder), 'Industrial panel must not emit actions, sliders or buttons');
+const classifier = read(`${industrialDir}/IndustrialFacilityClassifier.cs`);
+const classify = classifier.slice(classifier.indexOf('public static IndustrialFacilityRole Classify'), classifier.indexOf('public static bool IsHeadquartersEligible'));
+check(classify.length > 0 && !/HasOffice/.test(classify), 'ordinary office properties/companies must never create an Industrial role');
+const logisticsModel = read(`${industrialDir}/IndustrialLogisticsModel.cs`);
+check(!/\b(CargoFacilities|StorageFacilities|CargoOperational|StorageCapacity|StoredAmount)\b/.test(logisticsModel), 'Logistics scoring must have no warehouse/cargo presence path');
+check(/DailyXpCap\s*=\s*240/.test(read(`${industrialDir}/IndustrialProgressionModel.cs`)), 'Industrial daily XP cap must be 240');
+check(read('UI/src/IndustrialPanel.test.tsx').includes('./__fixtures__/industrial-panel.json'), 'Industrial UI tests must use the fixture generated from the C# payload');
+check(fs.existsSync(filePath('UI/src/__fixtures__/industrial-panel.json')), 'Industrial UI fixture must be committed');
+check(read('tests/CS2AreaSystem.Tests/IndustrialPanelFixtureTests.cs').includes('UPDATE_UI_FIXTURES'), 'Industrial UI fixture must be generated from C#');
+const membershipSystem = read('src/CS2AreaSystem/Core/Membership/AreaMembershipSystem.cs');
+check(!/IndustrialCompany|CompanyData|Citizens/.test(membershipSystem), 'Core membership must not index companies, workers or resources');
+
 const uiSystem = read('src/CS2AreaSystem/Core/UI/AreaManagementUISystem.cs');
 check(uiSystem.includes('State = "CS2AS.State." + area.State'), 'management view must publish lifecycle localization keys');
 

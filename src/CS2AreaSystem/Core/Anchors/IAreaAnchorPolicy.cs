@@ -9,6 +9,13 @@ namespace CS2AreaSystem.Core.Anchors
         AreaAnchorRole? RequiredAnchorRole { get; }
         bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities);
     }
+    // Optional: a module whose assignment rule must not be re-applied to an already accepted link (for example,
+    // Industrial keeps an HQ through tenant vacancy). Core still checks validity, role and membership first.
+    // Modules that do not implement it validate existing links with AcceptsAnchor.
+    public interface IAreaExistingAnchorPolicy
+    {
+        bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities);
+    }
     public static class AreaAnchorEligibility
     {
         // Order: valid area -> building anchor -> module/role -> current membership -> module predicate.
