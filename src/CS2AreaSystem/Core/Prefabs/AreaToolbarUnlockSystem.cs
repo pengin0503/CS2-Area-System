@@ -11,7 +11,11 @@ namespace CS2AreaSystem.Core.Prefabs
     // Groups attached after those points therefore stayed locked and the opened menu was empty. This system
     // applies the vanilla RequireAny rule (a group unlocks when any element is unlocked) the same way
     // UnlockSystem.UnlockPrefab does and posts an Unlock event so the toolbar bindings refresh.
-    // Registered at MainLoop like UnlockSystem, so ToolbarUISystem sees the event in the same frame.
+    // The event must exist when ToolbarUISystem runs: 1.6.2f1 registers it at UIUpdate (driven by UIUpdateSystem inside
+    // MainLoop), and PrepareCleanUpSystem (UpdateAfter, MainLoop) hands every Event to CleanUpSystem, which destroys it
+    // in the Cleanup phase of the same frame. A mod UpdateAt(MainLoop) sorts after UIUpdateSystem, so an event posted
+    // there was destroyed unseen and the bindings kept their pre-attachment state. Mod.OnLoad therefore registers this
+    // system with UpdateBefore<ToolbarUISystem> in UIUpdate; ModSystemOrderTests pins that against the game's own order.
     public partial class AreaToolbarUnlockSystem : GameSystemBase
     {
         private AreaPrefabRegistrationSystem registration;

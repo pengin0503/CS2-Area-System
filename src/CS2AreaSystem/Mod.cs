@@ -20,7 +20,8 @@ namespace CS2AreaSystem
         {
             CS2AreaSystem.Core.Persistence.ComponentSchema.ReportUnsupported = message => Log.Error(message);
             updateSystem.UpdateBefore<AreaPrefabRegistrationSystem, PrefabInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
-            updateSystem.UpdateAt<AreaToolbarUnlockSystem>(SystemUpdatePhase.MainLoop);
+            // ToolbarUISystem rebuilds its bindings only in a frame that holds an Unlock event (see AreaToolbarUnlockSystem).
+            updateSystem.UpdateBefore<AreaToolbarUnlockSystem, Game.UI.InGame.ToolbarUISystem>(SystemUpdatePhase.UIUpdate);
             updateSystem.UpdateBefore<ManagedAreaOverlapSystem, Game.Notifications.IconCommandSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.PreTool);
             updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.ModificationEnd);
