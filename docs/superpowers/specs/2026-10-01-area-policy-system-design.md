@@ -381,21 +381,26 @@ Area Service Fees includes:
 
 For Park admissions, only the amount actually collected from households is city income.
 
+In 1.6.2f1, **Service Fees is a budget UI group, not a generic `IncomeSource.ServiceFee` enum value**. The fixed `IncomeSource` values are specific fee sources such as healthcare, electricity, education, parking, public transport, garbage and water. `PlayerResource` likewise has no Park/admission resource.
+
+Therefore Park admission income must **not** be mislabeled as `FeeParking`, `FeePublicTransport`, or any other unrelated vanilla source merely to enter the group. The real household-to-city money transfer remains authoritative. A narrow budget-presentation adapter adds the real settled Area fee amount as the distinct **Area Service Fees** row inside the vanilla Service Fees group and reconciles that group's displayed subtotal/total with the same settled transfer.
+
 ### 15.3 1.6.2f1 integration constraint
 
-`ExpenseSource` and `IncomeSource` are fixed enums. Area System therefore must not invent new top-level enum values.
+`ExpenseSource`, `IncomeSource`, `CityService`, and `PlayerResource` are fixed enums. Area System must not invent enum values or repurpose an unrelated existing value.
 
-The preferred integration is a dedicated Area System service-accounting prefab/data path using the vanilla service accounting structures, including where applicable:
+Expenses have a real generic `ExpenseSource.ServiceUpkeep` source, so Area expenses should enter the vanilla service-upkeep accounting path wherever the verified public prefab/ECS contracts permit it.
 
-- `ServicePrefab`;
-- `CollectedCityServiceUpkeepData`;
-- `CollectedCityServiceFeeData`;
-- `CityServiceBudgetSystem`;
-- vanilla service-fee/upkeep accounting.
+For income, the standard `CollectedCityServiceFeeData` / `PlayerResource` path may be used only for a future Area charge that genuinely maps to an existing vanilla `PlayerResource`. It is **not** the Park-admission path in 1.6.2f1.
 
-The implementation must prove in-game that Area Management and Area Service Fees appear under the intended Service Upkeep / Service Fees presentation and affect real totals.
+The implementation must prove in-game that:
 
-If the public 1.6.2f1 service-prefab path cannot create the required distinct detail line because of fixed `CityService` or UI assumptions, use a narrowly scoped, version-pinned finance presentation adapter at the budget-detail boundary while keeping the underlying monetary transaction in the real vanilla finance system. A UI-only fake amount is forbidden.
+- Area Management contributes to the real Service Upkeep amount;
+- household admission debit and city credit are equal;
+- Area Service Fees appears inside the Service Fees group;
+- every displayed Area finance amount is derived from the same settled real transaction.
+
+Where fixed vanilla enums prevent a distinct detail source, use a narrowly scoped, version-pinned budget-presentation adapter. The adapter may present and subtotal the real settled Area amount, but must never invent a number or silently classify it as another vanilla fee.
 
 ### 15.4 Park finance migration
 
