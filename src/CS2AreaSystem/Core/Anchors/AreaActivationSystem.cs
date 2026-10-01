@@ -45,7 +45,8 @@ namespace CS2AreaSystem.Core.Anchors
         }
         public void ValidateArea(Entity entity)
         {
-            if (!EntityManager.Exists(entity) || !EntityManager.HasComponent<ManagedArea>(entity)) return;
+            // A quarantined Area keeps its saved lifecycle state and gets no module callbacks.
+            if (!EntityManager.Exists(entity) || !EntityManager.HasComponent<ManagedArea>(entity) || services.IsQuarantined(entity)) return;
             var area = EntityManager.GetComponentData<ManagedArea>(entity);
             var previous = area.State;
             bool known = services.Registry.TryGet(area.TypeId, out var descriptor) && descriptor.Module != null;

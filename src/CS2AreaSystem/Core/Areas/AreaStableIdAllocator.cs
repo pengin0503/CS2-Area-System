@@ -17,6 +17,8 @@ namespace CS2AreaSystem.Core.Areas
             if (value == ulong.MaxValue) exhausted = true; else next++;
             return value;
         }
+        // A new load generation: IDs are unique within one save, never across cities.
+        public void Reset() { next = 1; exhausted = false; }
         public void ObserveExisting(ulong value)
         {
             if (value == ulong.MaxValue) exhausted = true;

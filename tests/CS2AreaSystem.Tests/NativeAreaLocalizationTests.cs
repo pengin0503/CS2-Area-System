@@ -23,7 +23,8 @@ public class NativeAreaLocalizationTests {
  [TestCase("en-US")] [TestCase("ja-JP")]
  public void EveryKeyPublishedByTheCoreOrUsedByThePanelIsRegistered(string locale) {
   var entries=NativeAreaLocalization.Entries(locale);
-  var keys=new List<string>{"CS2AS.Type.Unavailable","CS2AS.Summary.ModuleUnavailable","CS2AS.Summary.Active","CS2AS.Summary.AnchorRequired","CS2AS.Tab.Overview"};
+  var keys=new List<string>{"CS2AS.Type.Unavailable","CS2AS.Summary.ModuleUnavailable","CS2AS.Summary.Active","CS2AS.Summary.AnchorRequired","CS2AS.Tab.Overview",
+   CS2AreaSystem.Core.UI.AreaManagementUISystem.QuarantinedState,"CS2AS.Summary.Quarantined"};
   keys.AddRange(Enum.GetNames(typeof(AreaLifecycleState)).Select(state=>"CS2AS.State."+state));
   foreach(var kind in new[]{AreaTypeId.Park,AreaTypeId.Industrial,AreaTypeId.Tourism}) {
    var d=CS2AreaSystem.Core.Prefabs.ManagedAreaPrefabFactory.Describe(kind);

@@ -79,7 +79,11 @@ namespace CS2AreaSystem.Core.Membership
             {
                 using var areas = changedAreas.ToEntityArray(Allocator.Temp);
                 foreach (var area in areas)
+                {
+                    // A quarantined Area never entered the index; its (zero or shared) ID must not touch another Area's entry.
+                    if (services.IsQuarantined(area)) continue;
                     updater.UpdateArea(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value, EntityManager.HasComponent<Deleted>(area));
+                }
                 using var members = changedMembers.ToEntityArray(Allocator.Temp);
                 foreach (var member in members) updater.UpdateMember(member);
             }
@@ -124,7 +128,7 @@ namespace CS2AreaSystem.Core.Membership
             var containing = new List<ContainingArea>();
             foreach (var area in iterator.Candidates)
             {
-                if (!EntityManager.Exists(area) || EntityManager.HasComponent<Deleted>(area) || EntityManager.HasComponent<Temp>(area) ||
+                if (!EntityManager.Exists(area) || services.IsQuarantined(area) || EntityManager.HasComponent<Deleted>(area) || EntityManager.HasComponent<Temp>(area) ||
                     !EntityManager.HasComponent<ManagedArea>(area) || !EntityManager.HasComponent<ManagedAreaStableId>(area) ||
                     !EntityManager.HasBuffer<Node>(area) || !EntityManager.HasBuffer<Triangle>(area)) continue;
                 var nodes = EntityManager.GetBuffer<Node>(area, true);

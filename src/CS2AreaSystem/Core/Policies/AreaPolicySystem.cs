@@ -25,7 +25,8 @@ namespace CS2AreaSystem.Core.Policies
             foreach (var descriptor in World.GetOrCreateSystemManaged<AreaCoreServicesSystem>().Registry.All)
                 if (descriptor.Module is IAreaPolicyProvider provider) modules[descriptor.TypeId] = provider;
             runtime = AreaPolicyRuntime.Build(CommonAreaPolicies.Provider, modules, message => Mod.Log.Error(message));
-            store = new EntityAreaPolicyStore(EntityManager);
+            var services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            store = new EntityAreaPolicyStore(EntityManager, services.IsQuarantined);
             upkeep = new AreaPolicyUpkeepSettlement(runtime);
         }
         // A new city starts a new failure-log generation and no upkeep carry from the previous one.
@@ -54,11 +55,13 @@ namespace CS2AreaSystem.Core.Policies
         private sealed class EntityAreaPolicyStore : IAreaPolicyStore
         {
             private readonly EntityManager entities;
-            public EntityAreaPolicyStore(EntityManager entities) { this.entities = entities; }
+            private readonly System.Func<Entity, bool> quarantined;
+            public EntityAreaPolicyStore(EntityManager entities, System.Func<Entity, bool> quarantined) { this.entities = entities; this.quarantined = quarantined; }
             public bool TryGetArea(Entity area, out AreaPolicyAreaInfo info)
             {
                 info = default;
-                if (area == Entity.Null || !entities.Exists(area) || !entities.HasComponent<ManagedArea>(area) || !entities.HasComponent<ManagedAreaStableId>(area)) return false;
+                // A quarantined Area has no policy state: nothing is effective, settable or billed for it.
+                if (area == Entity.Null || !entities.Exists(area) || quarantined(area) || !entities.HasComponent<ManagedArea>(area) || !entities.HasComponent<ManagedAreaStableId>(area)) return false;
                 var managed = entities.GetComponentData<ManagedArea>(area);
                 int level = entities.HasComponent<ManagedAreaProgress>(area) ? entities.GetComponentData<ManagedAreaProgress>(area).Level : AreaPolicyDefinition.MinAreaLevel;
                 info = new AreaPolicyAreaInfo(entities.GetComponentData<ManagedAreaStableId>(area).Value, managed.TypeId, managed.State, level,

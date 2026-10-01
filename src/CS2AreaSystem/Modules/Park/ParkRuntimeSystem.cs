@@ -27,12 +27,14 @@ namespace CS2AreaSystem.Modules.Park
         public const uint FramesPerDay = ParkFinanceModel.FramesPerDay;
         public ParkRuntimeStore Store { get; } = new ParkRuntimeStore();
         private EntityQuery managedAreas;
+        private AreaCoreServicesSystem services;
         public bool Ready => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
         // Incremented on every load so dependent systems can re-seed their runtime state.
         public int LoadGeneration { get; private set; }
         protected override void OnCreate()
         {
             base.OnCreate();
+            services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
             managedAreas = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() }
@@ -47,7 +49,7 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var entity in entities)
             {
                 var managed = EntityManager.GetComponentData<ManagedArea>(entity);
-                if (managed.TypeId != (int)AreaTypeId.Park) continue;
+                if (managed.TypeId != (int)AreaTypeId.Park || services.IsQuarantined(entity)) continue;
                 parks.Add(new ParkAreaRef(entity, EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value, managed.State));
             }
         }

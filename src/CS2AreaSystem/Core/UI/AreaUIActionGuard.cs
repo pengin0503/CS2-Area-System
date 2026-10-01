@@ -11,6 +11,10 @@ namespace CS2AreaSystem.Core.UI
         public static bool Matches(Entity published, Entity cachedSelection, Entity liveSelection, ulong actualId, string expectedId, bool valid) =>
             valid && published != Entity.Null && published == cachedSelection && published == liveSelection &&
             IdMatches(actualId, expectedId);
+        // A quarantined Area has no usable stable ID; its UI key is its entity, valid for the same live selection only.
+        public static bool MatchesQuarantined(Entity published, Entity cachedSelection, Entity liveSelection, string expectedKey) =>
+            published != Entity.Null && published == cachedSelection && published == liveSelection &&
+            expectedKey == AreaUIKey.Format(published, 0, true);
         // Cancelling an anchor assignment reselects the pending area only when it still exists (Entity.Exists checks
         // the version) and still carries the same stable ID; otherwise the stale assignment is simply dropped.
         public static bool CanRestorePending(bool pendingValid, ulong currentId, ulong pendingId, string expectedId) =>

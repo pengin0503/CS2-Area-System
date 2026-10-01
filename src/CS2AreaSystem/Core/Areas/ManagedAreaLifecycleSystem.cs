@@ -17,9 +17,7 @@ namespace CS2AreaSystem.Core.Areas
         private AreaCoreServicesSystem services;
         private PrefabSystem prefabs;
         private EntityQuery changedAreas;
-        private EntityQuery savedIds;
         private EntityQuery missingAnchorLinks;
-        private bool observedSavedIds;
         private readonly ManagedAreaTypeResolver resolver = new ManagedAreaTypeResolver();
         [Preserve]
         protected override void OnCreate()
@@ -33,7 +31,6 @@ namespace CS2AreaSystem.Core.Areas
                 Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>() },
                 None = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() }
             });
-            savedIds = GetEntityQuery(ComponentType.ReadOnly<ManagedAreaStableId>());
             // The management UI edits anchor links during UIUpdate; creating the buffer here keeps that a
             // buffer-content write instead of a structural change outside the modification phase.
             missingAnchorLinks = GetEntityQuery(new EntityQueryDesc {
@@ -41,18 +38,12 @@ namespace CS2AreaSystem.Core.Areas
                 None = new[] { ComponentType.ReadOnly<Anchors.AreaAnchorLink>(), ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() }
             });
         }
-        protected override void OnGameLoaded(Context context) { observedSavedIds = false; }
         [Preserve]
         protected override void OnUpdate()
         {
+            // New IDs are allocated only after AreaLoadCoordinatorSystem observed this load's saved IDs.
             if (GameManager.instance.isGameLoading ||
-                !World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>().Ready) return;
-            if (!observedSavedIds)
-            {
-                using var loaded = savedIds.ToComponentDataArray<ManagedAreaStableId>(Allocator.Temp);
-                foreach (var id in loaded) services.StableIds.ObserveExisting(id.Value);
-                observedSavedIds = true;
-            }
+                !World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>().Ready || !services.Identity.Observed) return;
             using var areas = changedAreas.ToEntityArray(Allocator.Temp);
             foreach (var entity in areas)
             {

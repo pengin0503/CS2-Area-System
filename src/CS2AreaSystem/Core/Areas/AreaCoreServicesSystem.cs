@@ -11,7 +11,11 @@ namespace CS2AreaSystem.Core.Areas
     public partial class AreaCoreServicesSystem : GameSystemBase
     {
         public AreaTypeRegistry Registry { get; } = new AreaTypeRegistry();
-        public AreaStableIdAllocator StableIds { get; } = new AreaStableIdAllocator();
+        // Stable IDs and the quarantine of the current load generation (AreaLoadCoordinatorSystem drives the lifecycle).
+        public AreaIdentityLifecycle Identity { get; } = new AreaIdentityLifecycle();
+        public AreaStableIdAllocator StableIds => Identity.StableIds;
+        public AreaQuarantine Quarantine => Identity.Quarantine;
+        public bool IsQuarantined(Entity area) => Identity.Quarantine.Contains(area);
         public AreaAnchorService Anchors { get; private set; }
         protected override void OnCreate()
         {
@@ -31,7 +35,7 @@ namespace CS2AreaSystem.Core.Areas
         {
             IAreaAnchorPolicy policy = null;
             return AreaAnchorEligibility.Evaluate(
-                () => IsValidEntity(area) && EntityManager.HasComponent<ManagedArea>(area) && EntityManager.HasComponent<ManagedAreaStableId>(area),
+                () => IsValidEntity(area) && !IsQuarantined(area) && EntityManager.HasComponent<ManagedArea>(area) && EntityManager.HasComponent<ManagedAreaStableId>(area),
                 () => IsValidEntity(anchor) && EntityManager.HasComponent<Game.Buildings.Building>(anchor),
                 () => Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor) &&
                       (policy = descriptor.Module as IAreaAnchorPolicy) != null && policy.RequiredAnchorRole == role,

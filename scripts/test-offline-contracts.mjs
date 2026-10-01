@@ -113,6 +113,26 @@ check(uiSystem.includes('State = "CS2AS.State." + area.State'), 'management view
 
 const lifecycle = read('src/CS2AreaSystem/Core/Areas/ManagedAreaLifecycleSystem.cs');
 check(!lifecycle.includes('registration.IsReady'), 'lifecycle must not be globally blocked by unrelated prefab readiness');
+// Identity lifecycle (#62–#65): one observation point per load generation, live IDs only, quarantine instead of renumbering.
+const coordinatorSource = read('src/CS2AreaSystem/Core/Persistence/AreaLoadCoordinatorSystem.cs');
+check(/services\.Identity\.BeginLoad\(\)/.test(coordinatorSource.slice(coordinatorSource.indexOf('OnGamePreload'))), 'every load generation must reset the stable-ID allocator and quarantine');
+check(/ids = GetEntityQuery\(new EntityQueryDesc \{\s*All = new\[\] \{ComponentType\.ReadOnly<ManagedAreaStableId>\(\)\},\s*None = new\[\] \{ComponentType\.ReadOnly<Deleted>\(\),ComponentType\.ReadOnly<Temp>\(\)\}/.test(coordinatorSource),
+  'saved stable IDs must be observed from live (non-Deleted, non-Temp) entities only');
+for (const source of walk('src').filter(p=>p.endsWith('.cs'))) {
+  const code = read(source).replace(/\/\/.*$/gm, '');
+  if (/ObserveExisting\(/.test(code) && !/AreaIdentityLifecycle\.cs$|AreaStableIdAllocator\.cs$/.test(source))
+    failures.push(`${source}: saved stable IDs must be observed only through AreaIdentityLifecycle.Observe`);
+}
+check(!lifecycle.includes('ObserveExisting') && !lifecycle.includes('savedIds'), 'ManagedAreaLifecycleSystem must not observe saved IDs a second time');
+for (const [file, what] of [
+  ['src/CS2AreaSystem/Core/Membership/AreaMembershipSystem.cs', 'membership'],
+  ['src/CS2AreaSystem/Core/Anchors/AreaActivationSystem.cs', 'activation'],
+  ['src/CS2AreaSystem/Core/Areas/AreaCoreServicesSystem.cs', 'anchor eligibility'],
+  ['src/CS2AreaSystem/Core/Policies/AreaPolicySystem.cs', 'policy state and upkeep'],
+  ['src/CS2AreaSystem/Modules/Park/ParkRuntimeSystem.cs', 'Park runtime'],
+  ['src/CS2AreaSystem/Modules/Industrial/IndustrialRuntimeSystem.cs', 'Industrial runtime'],
+  ['src/CS2AreaSystem/Core/UI/AreaManagementUISystem.cs', 'management UI']])
+  check(/IsQuarantined/.test(read(file)), `${what} must skip quarantined areas`);
 const toolGuard = read('src/CS2AreaSystem/Core/Areas/ManagedAreaToolGuardSystem.cs');
 check(toolGuard.includes('registration.IsTypeReady((int)kind)'), 'creation must use per-type prefab readiness');
 check(!toolGuard.includes('registration.IsReady'), 'tool guard must not be globally blocked by unrelated prefab readiness');

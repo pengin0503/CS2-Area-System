@@ -68,6 +68,7 @@ namespace CS2AreaSystem.Modules.Industrial
         private EntityQuery managedAreas, timeData, rentersUpdated, damagedMembers;
         private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
         private bool failureLogged;
+        private AreaCoreServicesSystem services;
         public bool Ready => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
         // Incremented on every load so dependent systems drop cycles, baselines and windows.
         public int LoadGeneration { get; private set; }
@@ -75,6 +76,7 @@ namespace CS2AreaSystem.Modules.Industrial
         protected override void OnCreate()
         {
             base.OnCreate();
+            services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
             managedAreas = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() } });
@@ -111,7 +113,7 @@ namespace CS2AreaSystem.Modules.Industrial
             using var entities = managedAreas.ToEntityArray(Allocator.Temp);
             var rows = new List<(Entity, ManagedArea, ulong)>(entities.Length);
             foreach (var entity in entities)
-                rows.Add((entity, EntityManager.GetComponentData<ManagedArea>(entity), EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value));
+                if (!services.IsQuarantined(entity)) rows.Add((entity, EntityManager.GetComponentData<ManagedArea>(entity), EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value));
             IndustrialAreaSelection.Select(rows, result);
         }
         // Drops runtime snapshots and structure tokens of deleted Industrial Areas; Suspended Areas stay.

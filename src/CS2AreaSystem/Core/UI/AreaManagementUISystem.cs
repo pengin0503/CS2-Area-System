@@ -68,8 +68,9 @@ namespace CS2AreaSystem.Core.UI
                 if (!listVisibility.Open && listView.Count != 0) SetList(new System.Collections.Generic.List<AreaListEntry>());
             }));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "selectArea", SelectArea));
-            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit)));
-            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete)));
+            // Edit and Delete are the only actions on a quarantined Area: they let the player fix or remove it.
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "editArea", id => Act(id, Edit, true)));
+            AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete, true)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignHeadquarters", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Headquarters))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignEntrance", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Entrance))));
             AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "removeAnchor", (id, key) => Act(id, area => RemoveAnchor(area, key))));
@@ -131,6 +132,7 @@ namespace CS2AreaSystem.Core.UI
             view = null;
             if (!IsReady || !IsArea(entity)) return false;
             var area = EntityManager.GetComponentData<ManagedArea>(entity);
+            if (services.IsQuarantined(entity)) { view = QuarantinedView(entity, area); return true; }
             bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
             var role = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole;
             var context = new Core.Modules.AreaPanelContext(World, EntityManager);
@@ -154,6 +156,16 @@ namespace CS2AreaSystem.Core.UI
             { var progress = EntityManager.GetComponentData<ManagedAreaProgress>(entity); view.Level = progress.Level; view.Experience = progress.Experience.ToString(CultureInfo.InvariantCulture); }
             return true;
         }
+        // No module content, anchors or progress: the saved data of a quarantined Area is not interpreted.
+        private AreaManagementViewModel QuarantinedView(Entity entity, ManagedArea area) => new AreaManagementViewModel {
+            StableId = AreaUIKey.Format(entity, 0, true),
+            TypeKey = services.Registry.TryGet(area.TypeId, out var descriptor) ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
+            State = QuarantinedState,
+            Summary = "CS2AS.Summary.Quarantined",
+            PendingAnchor = false,
+            ConfirmDelete = CS2AreaSystem.Core.Settings.AreaSettings.Current.ConfirmAreaDeletion
+        };
+        public const string QuarantinedState = "CS2AS.State.Quarantined";
         // A failing module panel degrades to the Overview fallback; Core rows/actions keep working.
         private Core.Modules.AreaPanelDocument BuildPanel(Core.Modules.IAreaPanelProvider provider, Entity entity, in Core.Modules.AreaPanelContext context)
         {
@@ -179,7 +191,7 @@ namespace CS2AreaSystem.Core.UI
         public bool TryBuildPolicySection(Entity entity, out AreaPolicySectionView view)
         {
             view = null;
-            if (!IsReady || !IsArea(entity)) return false;
+            if (!IsReady || !IsArea(entity) || services.IsQuarantined(entity)) return false;
             var policies = World.GetExistingSystemManaged<Policies.AreaPolicySystem>();
             if (policies == null) return false;
             try
@@ -210,7 +222,7 @@ namespace CS2AreaSystem.Core.UI
             try
             {
                 var area = selection.selectedEntity;
-                if (!IsReady || !IsArea(area)) return;
+                if (!IsReady || !IsArea(area) || services.IsQuarantined(area)) return;
                 var id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
                 bool guard = AreaUIActionGuard.Matches(area, selection.selectedEntity, tools.selected, id, expectedId, true);
                 services.Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor);
@@ -240,11 +252,13 @@ namespace CS2AreaSystem.Core.UI
                 foreach (var area in areas)
                 {
                     var managed = EntityManager.GetComponentData<ManagedArea>(area);
+                    bool quarantined = services.IsQuarantined(area);
                     entries.Add(new AreaListEntry {
                         StableId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value,
+                        Key = quarantined ? AreaUIKey.Format(area, 0, true) : null,
                         Name = names.GetRenderedLabelName(area),
                         TypeKey = services.Registry.TryGet(managed.TypeId, out var descriptor) ? descriptor.DisplayNameKey : "CS2AS.Type.Unavailable",
-                        State = "CS2AS.State." + managed.State
+                        State = quarantined ? QuarantinedState : "CS2AS.State." + managed.State
                     });
                 }
             SetList(AreaListViewModel.Sort(entries));
@@ -259,10 +273,10 @@ namespace CS2AreaSystem.Core.UI
             try
             {
                 if (!IsReady) return;
-                var candidates = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<Entity, ulong>>();
+                var candidates = new System.Collections.Generic.List<AreaUICandidate>();
                 using (var areas = managedAreas.ToEntityArray(Unity.Collections.Allocator.Temp))
                     foreach (var area in areas)
-                        candidates.Add(new System.Collections.Generic.KeyValuePair<Entity, ulong>(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value));
+                        candidates.Add(new AreaUICandidate(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value, services.IsQuarantined(area)));
                 if (!AreaListViewModel.TryFind(candidates, expectedId, out var selected) || !IsArea(selected)) return;
                 pendingArea = Entity.Null;
                 selection.SetSelection(selected);
@@ -271,12 +285,17 @@ namespace CS2AreaSystem.Core.UI
             catch (Exception error) { Mod.Log.Error(error, "Area selection from the list rejected"); }
         }
         // Actions come from the section of the currently selected area.
-        private void Act(string expectedId, Action<Entity> action)
+        private void Act(string expectedId, Action<Entity> action, bool allowQuarantined = false)
         {
             try
             {
                 var area = selection.selectedEntity;
                 if (!IsReady || !IsArea(area)) return;
+                if (services.IsQuarantined(area))
+                {
+                    if (allowQuarantined && AreaUIActionGuard.MatchesQuarantined(area, selection.selectedEntity, tools.selected, expectedId)) action(area);
+                    return;
+                }
                 var id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
                 if (AreaUIActionGuard.Matches(area, selection.selectedEntity, tools.selected, id, expectedId, true)) action(area);
             }
