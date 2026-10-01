@@ -20,7 +20,6 @@ namespace CS2AreaSystem.Core.Prefabs
         private readonly Dictionary<int, AreaPrefab> pendingPrefabs = new Dictionary<int, AreaPrefab>();
         private readonly HashSet<int> registrationFailureLogged = new HashSet<int>();
         private readonly HashSet<int> toolbarTypes = new HashSet<int>();
-        private readonly HashSet<int> toolbarItemFailureLogged = new HashSet<int>();
         private readonly GameUIResourceAvailability uiResources = new GameUIResourceAvailability();
         private readonly Dictionary<int, string> resolvedIcons = new Dictionary<int, string>();
         private bool missingHostLogged;
@@ -56,12 +55,12 @@ namespace CS2AreaSystem.Core.Prefabs
         [Preserve]
         protected override void OnUpdate()
         {
+            bool toolbarGraphReady = TryEnsureToolbarGroups();
             foreach (var type in services.Registry.All)
             {
-                EnsurePrefabRegistered(type);
+                if (toolbarGraphReady) EnsurePrefabRegistered(type);
                 readiness.Set(type.TypeId, IsPrefabReady(type));
             }
-            TryAttachToolbar();
         }
         private void EnsurePrefabRegistered(AreaTypeDescriptor type)
         {
@@ -94,13 +93,20 @@ namespace CS2AreaSystem.Core.Prefabs
                     type.Prefab = candidate;
                     pendingPrefabs.Remove(type.TypeId);
                     registrationFailureLogged.Remove(type.TypeId);
+                    MarkToolbarTypeRegistered(type.TypeId);
                     return;
                 }
+
+                // 1.6.2f1 UIObject.LateInitialize consumes m_Group and performs the native
+                // UIGroupPrefab.AddElement registration. Configure the relationship before
+                // AddPrefab so PrefabInitializeSystem builds UIObjectData/UIGroupElement itself.
+                PrepareAreaPrefabForToolbar(candidate, type);
                 if (prefabs.AddPrefab(candidate))
                 {
                     type.Prefab = candidate;
                     pendingPrefabs.Remove(type.TypeId);
                     registrationFailureLogged.Remove(type.TypeId);
+                    MarkToolbarTypeRegistered(type.TypeId);
                     return;
                 }
                 if (registrationFailureLogged.Add(type.TypeId))
@@ -110,6 +116,15 @@ namespace CS2AreaSystem.Core.Prefabs
             {
                 if (registrationFailureLogged.Add(type.TypeId)) Mod.Log.Error(error, "Area prefab registration failed: " + type.PrefabName);
             }
+        }
+        private void PrepareAreaPrefabForToolbar(AreaPrefab candidate, AreaTypeDescriptor type)
+        {
+            int priority = Math.Max(0, type.TypeId - 1);
+            new AreaToolbarPrefabFactory().AttachAreaPrefab(candidate, category, priority, ResolveIcon(type));
+        }
+        private void MarkToolbarTypeRegistered(int typeId)
+        {
+            if (toolbarTypes.Add(typeId)) ToolbarVersion++;
         }
         // Resolved once per type so the prefab and its toolbar entry always use the same icon.
         private string ResolveIcon(AreaTypeDescriptor type)
@@ -135,73 +150,57 @@ namespace CS2AreaSystem.Core.Prefabs
                 geometry.m_Type == ManagedAreaPrefabFactory.NativeGeometryType && geometry.m_Flags == 0 &&
                 NativeAreaCreationPolicy.CanCreate(false, geometry.m_Type, geometry.m_Flags, EntityManager.HasComponent<RenderedAreaData>(entity)));
         }
-        private bool NeedsToolbarWork()
+        private bool TryEnsureToolbarGroups()
         {
-            foreach (var type in services.Registry.All)
-                if (IsTypeReady(type.TypeId) && !toolbarTypes.Contains(type.TypeId)) return true;
-            return false;
-        }
-        private void TryAttachToolbar()
-        {
-            if (!NeedsToolbarWork()) return;
-            UIToolbarGroupPrefab host = null;
-            using var candidates = toolbarGroups.ToEntityArray(Allocator.Temp);
-            foreach (var entity in candidates)
-                if (prefabs.TryGetPrefab<UIToolbarGroupPrefab>(entity, out var group) && group.name == "Tools Toolbar Group") { host = group; break; }
-            if (host == null)
-            {
-                if (!missingHostLogged) { missingHostLogged = true; Mod.Log.Warn("Tools Toolbar Group unavailable; areas remain loadable. Toolbar attachment will retry."); }
-                return;
-            }
-            missingHostLogged = false;
             try
             {
+                if (menu != null && category != null &&
+                    prefabs.TryGetEntity(menu, out var currentMenu) && EntityManager.Exists(currentMenu) &&
+                    prefabs.TryGetEntity(category, out var currentCategory) && EntityManager.Exists(currentCategory))
+                {
+                    toolbarRegistrationFailureLogged = false;
+                    return true;
+                }
+
+                UIToolbarGroupPrefab host = null;
+                using var candidates = toolbarGroups.ToEntityArray(Allocator.Temp);
+                foreach (var entity in candidates)
+                    if (prefabs.TryGetPrefab<UIToolbarGroupPrefab>(entity, out var group) && group.name == "Tools Toolbar Group") { host = group; break; }
+                if (host == null)
+                {
+                    if (!missingHostLogged) { missingHostLogged = true; Mod.Log.Warn("Tools Toolbar Group unavailable; native Area toolbar registration will retry."); }
+                    return false;
+                }
+                missingHostLogged = false;
+
                 var factory = new AreaToolbarPrefabFactory();
                 if (menu == null) menu = factory.CreateAreasMenu(host);
                 if (!prefabs.TryGetEntity(menu, out var menuEntity) || !EntityManager.Exists(menuEntity))
                 {
                     if (!prefabs.AddPrefab(menu))
                     {
-                        if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error("Area toolbar menu registration failed; simulation remains available and registration will retry."); }
-                        return;
+                        if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error("Area toolbar menu registration failed; registration will retry."); }
+                        return false;
                     }
                 }
+
                 if (category == null) category = factory.CreateAreaTypesCategory(menu);
                 if (!prefabs.TryGetEntity(category, out var categoryEntity) || !EntityManager.Exists(categoryEntity))
                 {
                     if (!prefabs.AddPrefab(category))
                     {
-                        if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error("Area toolbar category registration failed; simulation remains available and registration will retry."); }
-                        return;
+                        if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error("Area toolbar category registration failed; registration will retry."); }
+                        return false;
                     }
-                    categoryEntity = prefabs.GetEntity(category);
                 }
+
                 toolbarRegistrationFailureLogged = false;
-                foreach (var type in services.Registry.All)
-                {
-                    if (!IsTypeReady(type.TypeId) || toolbarTypes.Contains(type.TypeId)) continue;
-                    try
-                    {
-                        int priority = Math.Max(0, type.TypeId - 1);
-                        string icon = ResolveIcon(type);
-                        factory.AttachAreaPrefab(type.Prefab, category, priority, icon);
-                        var areaPrefabEntity = prefabs.GetEntity(type.Prefab);
-                        EntityManager.SetComponentData(areaPrefabEntity, new UIObjectData { m_Group = categoryEntity, m_Priority = priority });
-                        category.AddElement(EntityManager, areaPrefabEntity);
-                        toolbarTypes.Add(type.TypeId);
-                        ToolbarVersion++;
-                        toolbarItemFailureLogged.Remove(type.TypeId);
-                    }
-                    catch (Exception error)
-                    {
-                        if (toolbarItemFailureLogged.Add(type.TypeId))
-                            Mod.Log.Error(error, "Area toolbar item failed: " + type.PrefabName + "; other area types remain available and this item will retry.");
-                    }
-                }
+                return true;
             }
             catch (Exception error)
             {
-                if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error(error, "Area toolbar failed; simulation remains available and registration will retry."); }
+                if (!toolbarRegistrationFailureLogged) { toolbarRegistrationFailureLogged = true; Mod.Log.Error(error, "Area toolbar failed; registration will retry."); }
+                return false;
             }
         }
     }
