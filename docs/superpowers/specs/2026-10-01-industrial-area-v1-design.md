@@ -4,7 +4,9 @@
 **Target game version:** Cities: Skylines II 1.6.2f1  
 **Repository:** `pengin0503/CS2-Area-System`  
 **Core baseline:** `main` at `4636dae74e62a078134aa0d74562e3d26da2d532`  
-**Status:** User-approved gameplay design; implementation plan and code require the normal Superpowers planning gate
+**Status:** Revised from the user's eight approved decisions on 2026-10-01; implementation is delegated to Opus 5.5 Native. This document and the matching implementation plan are the source of truth.
+
+**Revision scope:** daily XP cap 240; one-missing-input XP; flow-based logistics; explicit calculations and examples; observed daily-average streak; industrial-role employment only; per-Area restart; HQ presence independent of operating health.
 
 ## 1. Purpose
 
@@ -121,17 +123,16 @@ A completed Industrial Area without a valid headquarters is Suspended.
 
 ### 5.1 Headquarters rules
 
-- exactly one Headquarters role is authoritative for an Industrial Area;
-- assigning a new headquarters replaces the previous link through the existing Core anchor flow;
-- the headquarters must be a valid building inside the Industrial Area;
-- it must be an industrial facility recognizable through supported public state: an extractor/cargo/storage building, or a building whose company/tenant is identified as `IndustrialCompany`, `ProcessingCompany` or `StorageCompany`;
-- generic offices, ordinary residential buildings, parks, attractions and unrelated civic buildings are rejected in v1 even if they contain workplaces;
-- modded buildings are eligible when they expose the same supported industrial components; names or asset titles are not used as the eligibility rule;
-- v1 does not require a custom 3D headquarters asset.
+- Exactly one Headquarters link is authoritative. Reassignment replaces the previous link through Core.
+- Assignment requires an existing, valid building inside the Area with supported industrial, extractor, storage or cargo capability. Industrial building/prefab capability may establish eligibility even during temporary vacancy.
+- Generic offices, residential buildings, parks, attractions and unrelated civic buildings cannot be assigned. Name heuristics are not eligibility evidence.
+- Modded buildings exposing equivalent supported capabilities are eligible; no custom HQ asset is required.
+- After assignment, an existing valid HQ building inside the boundary permits the Area to remain Active. Bankruptcy, tenant replacement, vacancy, disabled production, poor efficiency, low profitability or lack of employees must not invalidate an existing HQ link or suspend the Area.
+- Actual HQ deletion/destruction, movement outside the boundary, removal of the link, or replacement by a non-building invalidates the link and suspends the Area. Reassignment preserves Level/XP/lifetime state.
+- Assignment eligibility and continued-link validity are separate policies. Do not continuously reapply the assignment classifier to an already accepted HQ.
+- HQ health may be observed independently, but v1 applies no HQ-health debuff. Future debuffs require a separate approved design.
 
-If the headquarters is deleted, leaves the Area, or ceases to satisfy eligibility, the Area becomes Suspended and retains all progression and lifetime state. Reassignment returns it to Active without resetting Level or XP.
-
-Suspended Industrial Areas do not earn XP and do not publish fresh performance as if they were operating. Their last evaluated metrics may be shown as stale/paused until activation returns.
+Active means management is enabled, not that companies are healthy. Inactive production can yield poor metrics and zero XP while the Area remains Active. Suspended Areas retain progression, earn no XP and show any previous snapshot only as paused/stale.
 
 ## 6. Industrial facility classification
 
@@ -179,11 +180,13 @@ Evidence includes:
 - `CargoTransportStationData`;
 - transport-company or transfer state that is publicly attributable to the member facility.
 
-Cargo facilities improve logistics access only when they are functional. Merely placing a non-operating cargo building must not grant full score.
+Cargo capability classifies the facility even when disabled; operating status is observed separately. Cargo placement/function/mode is diagnostic context and never grants direct Logistics points.
 
 ### 6.5 Supporting workplaces
 
-Industrial or office workplaces that support the district but do not qualify as extractor, processor, storage or cargo remain visible as supporting workplaces. They may contribute to Employment but do not fabricate production throughput.
+Employment counts workplaces directly attributable to eligible extractor, processor/manufacturer, storage or cargo facilities and their supported industrial companies. A SupportingWorkplace flag is descriptive within one of those eligible facilities; it cannot make an otherwise unrelated building eligible.
+
+Ordinary office-only buildings are excluded, even when inside the boundary. There is no v1 heuristic for whether an office "supports" industry. Producers and industrial logistics/support jobs are displayed separately; a multi-role facility's jobs/employees are counted once.
 
 ### 6.6 Unrelated members
 
@@ -269,10 +272,10 @@ A building that exists but is idle, abandoned, disabled or otherwise not produci
 Production is a 0–100 metric. Initial weighting:
 
 - 65% observed productive activity / throughput;
-- 25% active-producer ratio and utilization;
+- 25% confirmed active-producer share;
 - 10% meaningful resource/output diversity.
 
-Absolute scale must be normalized enough that a compact but healthy district can score well. Very large Areas still gain progression faster through greater total activity, but Quality/Performance should not simply equal size.
+Absolute scale must be normalized enough that a compact but healthy district can score well. The same normalized operating quality earns the same hourly XP regardless of Area size in v1. Scale is represented by existing facility/employee promotion gates, not an additional XP multiplier. Quality/Performance must not simply equal size.
 
 Resource diversity has diminishing returns. Spamming low-value varieties must not outweigh a district with strong sustained production.
 
@@ -291,48 +294,32 @@ If a resource-specific figure cannot be obtained reliably from public 1.6.2f1 st
 
 ## 10. Logistics
 
-Logistics measures whether industrial resource flow has enough storage and transport support.
+Logistics rates observed resource-flow health rather than the placement of dedicated infrastructure.
 
-Initial Logistics score, 0–100:
+- Input continuity: 50%.
+- Output/dispatch continuity: 50%.
 
-- 35% storage health;
-- 25% cargo access;
-- 25% flow continuity;
-- 15% logistics breadth/resilience.
+A healthy district can score 100 with neither a dedicated warehouse nor a cargo terminal inside its boundary. Drawing a larger boundary to include an unused warehouse/terminal must not increase Logistics. Actual attributable flow problems may change the score.
 
-### 10.1 Storage health
+### 10.1 Flow symptoms and window
 
-Storage is healthy when capacity exists without being chronically saturated.
+Use a rolling six-game-hour window. At least four game-hours of valid observation are required per channel; earlier data is WarmingUp. Input continuity observes validated input-starvation symptoms at productive facilities. Output continuity observes validated dispatch/output blockage or sustained output saturation. Idle production alone does not prove either cause.
 
-Conceptual behavior:
+For each applicable producer, compute the fraction of valid observed time affected by the channel's confirmed symptom. Aggregate using the producer weights in §12.1, then:
+`continuity = 100 * (1 - affectedWeightedTime / validWeightedTime)`.
+A healthy, observable applicable channel yields 100; 50% affected time yields 50; continuously affected yields 0.
 
-- moderate utilization is healthy;
-- persistent near-full output storage indicates a downstream bottleneck;
-- persistent lack of needed input stock indicates an upstream bottleneck;
-- completely empty unused storage does not earn a large bonus merely for existing.
+No observation is not evidence of health. Unsupported channels are Unavailable. A source that establishes a process needs no imported input makes its input channel NotApplicable, not Unavailable. Exclude NotApplicable channels and renormalize applicable weights. One unavailable channel can be excluded with a visible partial-data label if the other channel is available. Missing channel coverage caused by warm-up is excluded the same way, with its WarmingUp reason preserved; a channel still requires its own four valid observed hours before it is scored. With no available applicable channel, Logistics is unavailable.
 
-### 10.2 Cargo access
+### 10.2 Storage and cargo context
 
-Functional cargo infrastructure inside the Area is rewarded with diminishing returns.
+Show reliable storage amount/capacity/utilization, storage roles, cargo roles, known operating status and modes as diagnostic context. Counts or infrastructure breadth grant no direct points. Empty unused storage is not healthy-flow evidence; full stock alone is not dispatch failure without validated demand/process context and persistence in the observation window.
 
-One working cargo connection is meaningful; many identical stations do not linearly multiply the score.
+An external cargo terminal may serve the district. v1 need not discover all routes or prove terminal usage: evaluate attributable flow inside the Area and label external-route information unknown when unsupported. Never claim a connection based only on distance or terminal placement.
 
-Where reliable mode data is exposed, rail/ship/air/road breadth may contribute modestly. v1 does not require every mode for a high-performing district.
+### 10.3 Bottleneck evidence
 
-### 10.3 Flow continuity
-
-Industrial observes symptoms visible in public state, such as:
-
-- input starvation;
-- output storage pressure;
-- inactive producers despite otherwise valid facilities;
-- repeated transfer/resource imbalance where a stable public signal exists.
-
-The module diagnoses these conditions but does not reroute vehicles or inject transfers.
-
-### 10.4 Logistics breadth
-
-A district with extraction/processing, storage and cargo support receives a resilience benefit, but no single building type is mandatory for every industrial play style.
+Bottlenecks report observed symptoms, their affected facility count, valid observation period, and a short relevant improvement suggestion. Do not assert an unproven root cause. "Insufficient cargo" is permitted only with attributable supporting evidence; absence of an in-boundary terminal alone is insufficient.
 
 ## 11. Employment
 
@@ -352,7 +339,7 @@ Employment score is 0–100 and is primarily a fill/operational measure, not a r
 Initial weighting:
 
 - 75% filled-workplace ratio across relevant workplaces;
-- 25% staffing balance, including severe under-staffing and education mismatch where reliably observable.
+- 25% staffing balance: the arithmetic mean of per-facility job-fill percentages across eligible facilities with positive job capacity. Education mismatch is a separate diagnostic where reliably observable; it does not introduce an undefined additional score.
 
 A district with 5,000 theoretical jobs and 1,000 workers should not score higher than a smaller district simply because its empty capacity is large.
 
@@ -373,7 +360,36 @@ Initial Efficiency score:
 - 70% weighted building efficiency;
 - 30% profitability/viability.
 
-Weight individual entities by a bounded proxy such as workplace or productive relevance so one tiny company does not dominate the Area.
+### 12.1 Units, normalization and availability
+
+The adapter must document each metric's exact public source, units, entity attribution, denominator, conversion and availability reason in `docs/verification/industrial-observation-contracts.md`. Inspect the supplied DLL consumer/system and relevant vanilla UI calculation; public member existence or a compiling test alone does not prove meaning.
+
+- Productive activity: 100 times validated actual productive activity divided by a validated attainable capacity/reference over the same period, clamped to 0–100. If the source or denominator is unproven, it is unavailable. Inventory delta is never a substitute.
+- Active-producer share: 100 times confirmed operating producer facilities / known producer facilities; zero known producers makes Production NotApplicable. Building placement is not proof of operating state.
+- Production retains 65% validated activity, 25% active share, 10% meaningful output diversity. Validated productive activity is required to publish a Production score; optional active-share/diversity weights are renormalized if unavailable. Diversity is 50/75/100 for 1/2/3+ meaningful outputs; zero verified activity has diversity 0, unknown outputs are unavailable. Meaningful output has observed activity at least 20% of the dominant output.
+- Job fill: 100 times total actual employees / total valid jobs. Staffing balance is defined in §11. Zero valid jobs makes Employment NotApplicable. Negative capacities are invalid/unavailable; zero jobs are excluded, not silently credited as fully staffed.
+- Building efficiency: normalize the proven vanilla efficiency multiplier with multiplier 1.0 = 100. Keep raw values (including values above 100%) visible; only scoring is clamped.
+- Profitability: map the proven vanilla profitability percentage/index to its documented 0–100 viability scale. If its units or endpoints cannot be established, mark this subsource unavailable instead of guessing.
+- Per-company efficiency/profitability weighting: `w = clamp(validJobs, 1, 100)`; missing/invalid jobs use weight 1 and a partial-coverage label. Per-facility flow weighting uses the same rule with facility jobs counted once.
+- Scores are clamped to 0–100 after source normalization. NaN/infinity and invalid denominators become unavailable, never zero.
+
+Every DTO/panel metric carries a reason: Available, Partial, Unavailable, NotApplicable, WarmingUp or Stale, plus observed/eligible coverage. Score computation accepts Available/Partial only. Exclude other reasons from weighted averages; all excluded inputs yields unavailable. Efficiency renormalizes either of its two available sources; Performance requires at least three of four components. XP has its own three-of-four rule (§14.1). Never fill an unsupported field with zero or 100.
+
+### 12.2 Executable calculation examples
+
+Create a small committed `docs/verification/industrial-score-examples.json` fixture and a readable table in `docs/verification/industrial-score-examples.md`. Tests execute the production models on the JSON inputs and assert the documented expected outputs; the implementation must not merely copy expected numbers into UI. These are synthetic semantic-input examples, not evidence that live ECS fields have been validated.
+
+| Example | Normalized inputs | Expected |
+|---|---|---|
+| Healthy specialized small district | Activity 100; active share 100; one meaningful output (diversity 50); input/output continuity 100; fill/balance 100; efficiency/profitability 100 | Production 95; Logistics 100; Employment 100; Efficiency 100; Performance 98.25; hourly XP 10 |
+| Equally healthy large district | Same proportions and one output, more real jobs/facilities | Same component scores, Performance 98.25 and hourly XP 10; scale gates differ |
+| No dedicated warehouse/cargo terminal | Same validated flow inputs as healthy small district | Logistics 100; no infrastructure-count deduction |
+| Partial flow problem | Input affected-time share 0.5; output affected-time share 0.25 | Logistics 62.5 |
+| Stopped district with confirmed symptoms | Activity 0; active share 0; verified diversity 0; both channels affected 100%; fill/balance 0; efficiency/profitability 0; active producer count 0 | All scores 0; XP 0 |
+| One unavailable component | Production unavailable; Logistics 80; Employment 60; Efficiency 100 | Performance 80; XP operating score 72.307692…; hourly XP 7 |
+| Two unavailable components | Production and Logistics unavailable | Performance unavailable; fewer than three XP inputs, XP 0 with explanation |
+
+Keep additional tests for no applicable input channel, one missing Efficiency source, zero jobs, partial observation coverage, invalid values and multi-tenant deduplication.
 
 If one of Efficiency's two source signals is unavailable, reweight the available signal to 100% for that subscore and mark the missing signal unavailable in UI. If both are unavailable, Efficiency itself is unavailable rather than zero.
 
@@ -418,18 +434,31 @@ Level never decreases after promotion.
 
 ### 14.1 XP
 
-XP is earned from sustained real operation:
+XP is earned only while Active, from a fresh completed hourly observation with at least one confirmed operating productive facility. It uses Production 35%, Employment 25%, Logistics 20%, Performance 20%.
 
-- observed productive activity;
-- staffed relevant workplaces;
-- successful logistics/flow health;
-- maintaining good Industrial Performance.
+Require at least three of these four XP inputs. If exactly one is unavailable, exclude it and renormalize the other original weights. If two or more are unavailable, grant zero and show the reason. A missing Production score does not prohibit XP when operating producers are independently confirmed and the other three XP inputs exist; never fabricate throughput to achieve this.
 
-XP must be rate-limited so rapid sampling cannot multiply rewards.
+`operatingScore = sum(available score * original weight) / sum(available original weights)`
+`hourlyXp = clamp(roundAwayFromZero(operatingScore / 10), 0, 10)`
+`award = min(hourlyXp, 240 - XpGrantedToday)`
 
-No XP is earned while Suspended.
+The daily cap is **240 XP per game calendar day**, never a wall-clock day. There is no unconditional minimum XP and no Area-size XP multiplier. All zero scores yield zero XP.
 
-Building placement alone grants little or no XP; the placed facility must participate in the real simulation.
+A given simulation-hour bucket is settled at most once per Area. Persist the last settled hour and daily grant counter so pause, observation retries, HQ reassignment and save/reload in the same hour cannot duplicate awards. Missing hours are not backfilled with the latest score; no XP accrues while Suspended or while observations are stale. Persisted XP addition saturates at long.MaxValue.
+
+At the maximum rate, cumulative thresholds 1,000 / 5,000 / 15,000 / 35,000 require approximately 5 / 21 / 63 / 146 full-day-equivalent earning periods, subject to other gates. The first partial calendar day may hit less than the cap.
+
+### 14.1a Daily productive-activity streak
+
+The prestige objective is **seven consecutive completed game days with time-weighted mean validated productive activity >=80 and at least 18 valid observed game-hours per day**.
+
+- Accumulate intervals bounded by fresh, valid activity observations while Active, no more than one game-hour apart. Longer gaps, unavailable data, Suspended intervals and observations from an invalidated generation add no coverage.
+- Integrate `activity * elapsedGameHours`; split intervals at calendar-day boundaries. Coverage is elapsed simulation time, not sample count. Never extrapolate a snapshot over an unobserved gap.
+- For covered intervals use the earlier validated normalized sample; publish the average as sampled/derived. The first sample establishes an endpoint but adds no prior coverage.
+- Complete each day once on transition to the next game day. A completed day qualifies only if observed hours >=18 and weightedSum/observedHours >=80.
+- Insufficient coverage, a low average or a skipped day breaks the streak; UI explains which. A brief spike cannot qualify a day. Repeated evaluations of one day never increment twice.
+- Persist the current-day weighted sum, valid observed hours, day identity and last credited interval/hour, plus the completed-day streak and last evaluated day. Runtime raw samples/rolling windows are not serialized.
+- After load or a relevant Area change, discard the interpolation baseline. Resume with new endpoints without bridging the gap; previously accumulated covered time remains authoritative. Never reset an earned Level.
 
 ### 14.2 Initial promotion gates
 
@@ -470,7 +499,7 @@ These are implementation tuning constants and may be adjusted after runtime test
   - Employment >= 85;
   - Efficiency >= 80;
   - at least 3 distinct output resource classes, each with rolling activity at least 20% of the dominant output resource;
-  - the normalized productive-activity/throughput component remains >= 80 for 7 consecutive in-game days.
+  - seven consecutive completed game days each have >=18 valid observed hours and time-weighted average productive activity >=80 (§14.1a).
 
 The alternative prestige objectives allow specialized, manufacturing-heavy, logistics-heavy and employment-heavy districts to remain viable instead of enforcing one layout.
 
@@ -478,7 +507,7 @@ The alternative prestige objectives allow specialized, manufacturing-heavy, logi
 
 Level is informational/progression state in v1.
 
-It may unlock richer statistics, titles or future policy slots, but it does **not** multiply:
+v1 displays the level title and milestone checklist; all diagnostic statistics remain accessible at every Level. Future policy slots are deferred. Level does **not** multiply:
 
 - production;
 - resource output;
@@ -573,42 +602,22 @@ Shows:
 - XP and next threshold;
 - every promotion gate with current/required value;
 - prestige objectives at Level 4;
-- a note that Level does not directly buff production.
+- a note that Level does not directly buff production;
+- hourly XP, current-day XP / 240 and any blocked-XP reason;
+- completed-day activity average, valid observed hours / required 18, and streak failure reason.
 
 Industrial v1 has no interactive module action beyond existing generic Area/HQ actions. This keeps the first release observational and avoids shipping unvalidated simulation modifiers.
 
 ## 17. Persistence
 
-Persist authoritative Industrial state only.
+Shared `ManagedAreaProgress` remains authoritative for Level and Experience; do not duplicate them in Industrial state.
 
-Conceptually:
+Persist `IndustrialAreaState` schema v1 in this exact conceptual order:
+SchemaVersion; LifetimePeakEmployees; XpDay; XpGrantedToday; LastSettledXpHour; ActivityDay; ActivityWeightedSum; ActivityObservedHours; LastCreditedActivityHour; HighThroughputStreakDays; HighThroughputLastDay.
 
-```text
-IndustrialAreaState
-  SchemaVersion
-  Level
-  Experience
-  LifetimeProgressCounters that cannot be reconstructed
-  PromotionMilestones
-  LifetimePeakEmployees
-```
+Initial last-hour fields are -1; the last completed streak day is uint.MaxValue so game day zero is valid. Initialize current day identities from game simulation time when creating the component. Daily accumulators are the minimal authoritative history for §14.1a, not serialized current score snapshots. Unsupported future schemas are rejected safely.
 
-If the chosen production observation source yields a reliable exact cumulative value, its lifetime counter may be persisted. If production is sampled/derived, persist only the minimum accumulator required to make the displayed lifetime/progression statistic semantically correct.
-
-Do not serialize:
-
-- facility classification caches;
-- Area membership;
-- current performance scores;
-- current building efficiency/profitability;
-- current jobs/employees;
-- rolling bottleneck lists;
-- storage snapshots;
-- prefab metadata caches.
-
-Those are rebuilt after load from Core and vanilla state.
-
-Unsupported future Industrial component schema versions must be rejected using the existing versioned persistence safety model rather than interpreted optimistically.
+Do not serialize facility/classification caches, membership, current scores/efficiency/profitability/jobs/employees, rolling flow windows, raw samples, stale flags or prefab metadata. Clear runtime snapshots and interpolation baselines after load; observe again before publishing current values. Saving partial observation work grants no XP or coverage.
 
 ## 18. Performance architecture
 
@@ -622,7 +631,11 @@ Facility classification responds to Core membership and relevant entity/prefab c
 
 Economic metrics run at a low cadence suitable for management UI, approximately hourly in simulation time as the starting target. Exact cadence may be tuned.
 
-Large Areas are processed incrementally or round-robin across updates. Heavy work is split rather than forcing all member facilities through one frame.
+Large Areas are processed incrementally/round-robin. Initial total dynamic-read budget is 128 member buildings per simulation update across all Industrial Areas, with fair scheduling. Cache prefab traits, cap per-update tenant work, and measure wall time/allocations in runtime tests rather than claiming this count guarantees a frame-time budget. A cycle spanning more than one game-hour cannot supply a current score/XP/coverage; show delayed/stale state and record it for tuning.
+
+Each Area cycle captures its own membership/ownership revision and module-local structure generation. Restart only that Area when its boundary, relevant membership, primary Industrial ownership, member destruction or relevant tenant/role structure changes. Ordinary economic values do not restart structural work; they are sampled. Park/Tourism/other-Area-only changes do not invalidate this Area. Primary ownership changes invalidate both old and new affected Industrial Areas.
+
+Use a module-neutral per-Area Core membership token plus an Industrial-local structure token; no global membership revision as the restart predicate. Token comparisons use equality, not ordering. Load clears all cycles; deletion removes the token/cache. Publish only a completed coherent generation; never mix partial generations.
 
 ### 18.3 Job/dependency rules
 
@@ -633,15 +646,15 @@ Large Areas are processed incrementally or round-robin across updates. Heavy wor
 - cache prefab/static classification separately from dynamic company values;
 - UI binding reads a prepared snapshot and does not trigger expensive scans.
 
-Saving may synchronize when required for authoritative persistence, but normal gameplay sampling must remain asynchronous/low-overhead.
+Saving may synchronize when required for authoritative persistence, but normal gameplay sampling must remain asynchronous/low-overhead. Game-day boundaries use the validated game calendar, not a hard-coded frames-per-day constant.
 
 ## 19. Failure behavior
 
 Industrial must fail locally and visibly.
 
-- Missing/invalid HQ -> Area Suspended, state retained.
+- HQ physically absent/invalid or outside the boundary -> Suspended, state retained. Poor HQ/company operating health alone does not suspend the Area.
 - Unknown facility type -> ignored for specialized scoring, not fatal.
-- Missing optional metric -> display unavailable and renormalize or use the documented neutral handling; do not invent a zero.
+- Missing optional metric -> display its reason/coverage and apply the explicit renormalization rules; no invented neutral score.
 - Observation exception for one entity -> skip/log with bounded repetition; do not terminate Core.
 - Industrial system registration failure -> log and leave Area Core/Park operational.
 - Deleted Area -> stop observation and remove runtime caches.
@@ -697,7 +710,10 @@ Cover:
 - missing optional metrics;
 - bottleneck selection;
 - progression gates and non-demotion;
-- XP rate limiting;
+- XP daily cap 240, one-input renormalization and same-hour save/load deduplication;
+- executable score examples and healthy small/large/infrastructure-free districts;
+- time-weighted daily streak coverage, missing days and brief spikes;
+- per-Area restart isolation and primary ownership transfers;
 - suspended behavior;
 - serialization round trips and schema rejection.
 
@@ -726,7 +742,7 @@ At minimum verify in-game:
 1. draw Industrial Area;
 2. remains Suspended without HQ;
 3. eligible HQ activates it;
-4. ineligible HQ is rejected;
+4. ineligible HQ assignment is rejected; an accepted HQ remains valid through tenant vacancy/poor operating health;
 5. HQ deletion suspends and reassignment restores;
 6. extractor classification;
 7. processor/manufacturer classification;
@@ -742,7 +758,14 @@ At minimum verify in-game:
 17. derived caches rebuild after load;
 18. UI tabs update without stale entity references;
 19. a large Industrial Area does not cause visible recurring stalls;
-20. Park and Tourism/Core remain operational if Industrial observation is unavailable.
+20. Park and Tourism/Core remain operational if Industrial observation is unavailable;
+21. healthy industry using external cargo/no dedicated warehouse receives no infrastructure-presence penalty;
+22. ordinary office-only employment does not inflate Industrial totals;
+23. one missing XP input permits reweighted XP, two missing inputs explain zero XP;
+24. day cap 240 and same-hour save/reload do not duplicate XP;
+25. <18 observed hours and a brief daily spike do not satisfy the seven-day streak;
+26. other-Area/Park edits do not restart this Area, while ownership transfer invalidates both affected Areas;
+27. synthetic calculation examples match models; actual company/flow field semantics and coverage are validated separately.
 
 Runtime verification is intentionally separate from source/API verification because the current environment cannot prove actual Unity scheduling, live company behavior, cargo state or deployed UI behavior.
 
