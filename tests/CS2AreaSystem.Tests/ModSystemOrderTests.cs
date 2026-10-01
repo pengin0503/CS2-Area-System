@@ -119,4 +119,30 @@ public class ModSystemOrderTests {
             Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Core.Finance.AreaBudgetBindingSystem), null, SystemUpdatePhase.UIUpdate) }));
         Assert.That(Schedule(SystemUpdatePhase.UIUpdate), Does.Contain(typeof(Game.UI.InGame.BudgetUISystem)));
     }
+    // Regression snapshot of the relative order of every mod system per phase (captured before the lifecycle split; the
+    // only intended change is that PreTool now runs ManagedAreaToolGuardSystem instead of ManagedAreaLifecycleSystem).
+    [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
+    [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
+    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaActivationSystem,AreaPolicySystem,ParkLandscapeSystem,IndustrialRuntimeSystem")]
+    [TestCase(SystemUpdatePhase.GameSimulation, "AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,AreaFinanceSystem")]
+    [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem")]
+    [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]
+    public void ModSystemOrderPerPhaseIsUnchanged(SystemUpdatePhase phase, string expected) {
+        var ours = Schedule(phase).Where(t => t.Assembly == typeof(Mod).Assembly).Select(t => t.Name);
+        Assert.That(string.Join(",", ours), Is.EqualTo(expected));
+    }
+    [Test] public void EveryModSystemIsRegisteredInExactlyOnePhase() {
+        var phases = new HashSet<SystemUpdatePhase> { SystemUpdatePhase.PrefabUpdate, SystemUpdatePhase.PreTool, SystemUpdatePhase.ModificationEnd,
+            SystemUpdatePhase.GameSimulation, SystemUpdatePhase.Serialize, SystemUpdatePhase.UIUpdate };
+        foreach (var group in ModCalls.GroupBy(c => c.System))
+            Assert.That(group.Select(c => c.Phase).Distinct().Count(), Is.EqualTo(1), group.Key!.Name);
+        Assert.That(ModCalls.Select(c => c.Phase).Distinct(), Is.SubsetOf(phases));
+    }
+    // #52: PreTool runs before the tool writes its definitions; structural Area identity work belongs to ModificationEnd.
+    [Test] public void ToolGuardIsTheOnlyPreToolSystemAndLifecycleRunsInModificationEndOnly() {
+        Assert.That(ModCalls.Where(c => c.Phase == SystemUpdatePhase.PreTool).Select(c => c.System),
+            Is.EqualTo(new[] { typeof(CS2AreaSystem.Core.Areas.ManagedAreaToolGuardSystem) }));
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Areas.ManagedAreaLifecycleSystem)).Select(c => c.Phase),
+            Is.EqualTo(new[] { SystemUpdatePhase.ModificationEnd }));
+    }
 }

@@ -23,7 +23,7 @@ namespace CS2AreaSystem
             // ToolbarUISystem rebuilds its bindings only in a frame that holds an Unlock event (see AreaToolbarUnlockSystem).
             updateSystem.UpdateBefore<AreaToolbarUnlockSystem, Game.UI.InGame.ToolbarUISystem>(SystemUpdatePhase.UIUpdate);
             updateSystem.UpdateBefore<ManagedAreaOverlapSystem, Game.Notifications.IconCommandSystem>(SystemUpdatePhase.ModificationEnd);
-            updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.PreTool);
+            updateSystem.UpdateAt<ManagedAreaToolGuardSystem>(SystemUpdatePhase.PreTool);
             updateSystem.UpdateAt<ManagedAreaLifecycleSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicyBootstrapSystem, CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
@@ -31,8 +31,8 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
             try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicySystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Area policy runtime unavailable; Area Core and modules remain registered."); }
-            RegisterAreaFinance(updateSystem);
-            RegisterParkSystems(updateSystem);
+            var finance = RegisterAreaFinance(updateSystem);
+            RegisterParkSystems(updateSystem, finance);
             RegisterIndustrialSystems(updateSystem);
             RegisterLocalization();
             RegisterSettings();
@@ -61,49 +61,76 @@ namespace CS2AreaSystem
             registered.Unregister(localization.RemoveSource, (locale, error) => Log.Error(error, "Area localization removal failed: " + locale));
         }
         // Shared Area finance applies queued Area amounts after every GameSimulation producer (UpdateAt) and flushes them
-        // before a save serializes city money. A registration failure leaves Area Core and the modules running.
-        private static void RegisterAreaFinance(UpdateSystem updateSystem)
+        // before a save serializes city money. The two systems are one module: finance never runs without its save flush.
+        // A registration failure leaves Area Core running; the finance producers (policy upkeep, Park) are then not registered.
+        private static ModuleRegistration RegisterAreaFinance(UpdateSystem updateSystem)
         {
+            var finance = new ModuleRegistration("Area finance",
+                typeof(CS2AreaSystem.Core.Finance.AreaFinanceSystem), typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem));
             try
             {
-                updateSystem.UpdateAfter<CS2AreaSystem.Core.Finance.AreaFinanceSystem>(SystemUpdatePhase.GameSimulation);
-                updateSystem.UpdateBefore<CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize);
+                updateSystem.UpdateAfter<CS2AreaSystem.Core.Finance.AreaFinanceSystem>(SystemUpdatePhase.GameSimulation); finance.Step();
+                updateSystem.UpdateBefore<CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize); finance.Step();
+                finance.Complete();
             }
-            catch (System.Exception error) { Log.Error(error, "Area finance unavailable; Area Core and modules remain registered."); }
+            catch (System.Exception error) { finance.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
             // Policy upkeep is a GameSimulation producer (UpdateAt), so AreaFinanceSystem (UpdateAfter) applies it in the same frame.
-            try { updateSystem.UpdateAt<CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem>(SystemUpdatePhase.GameSimulation); }
-            catch (System.Exception error) { Log.Error(error, "Area policy upkeep unavailable; Area Core and modules remain registered."); }
+            if (ModuleRegistration.Requires(finance, "Area policy upkeep", message => Log.Error(message)))
+            {
+                var upkeep = new ModuleRegistration("Area policy upkeep", typeof(CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem));
+                try { updateSystem.UpdateAt<CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem>(SystemUpdatePhase.GameSimulation); upkeep.Step(); upkeep.Complete(); }
+                catch (System.Exception error) { upkeep.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
+            }
+            return finance;
         }
-        // Park gameplay observes the city after Core. A Park registration failure leaves Core geometry, lifecycle,
-        // persistence and the other area types running.
-        private static void RegisterParkSystems(UpdateSystem updateSystem)
+        // Park gameplay observes the city after Core and books its money through Area finance, so it is registered only with
+        // a complete Area finance module and only as a whole. A Park failure leaves Core geometry, lifecycle, persistence and
+        // the other area types running.
+        private static void RegisterParkSystems(UpdateSystem updateSystem, ModuleRegistration finance)
         {
+            if (!ModuleRegistration.Requires(finance, "Park gameplay", message => Log.Error(message))) return;
+            var park = new ModuleRegistration("Park gameplay",
+                typeof(CS2AreaSystem.Modules.Park.ParkLandscapeSystem), typeof(CS2AreaSystem.Modules.Park.ParkVisitSystem),
+                typeof(CS2AreaSystem.Modules.Park.ParkQualitySystem), typeof(CS2AreaSystem.Modules.Park.ParkFinanceSystem),
+                typeof(CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem), typeof(CS2AreaSystem.Modules.Park.ParkProgressionSystem));
             try
             {
-                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkLandscapeSystem>(SystemUpdatePhase.ModificationEnd);
-                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkVisitSystem>(SystemUpdatePhase.GameSimulation);
-                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkQualitySystem>(SystemUpdatePhase.GameSimulation);
-                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkFinanceSystem>(SystemUpdatePhase.GameSimulation);
-                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem, CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem>(SystemUpdatePhase.Serialize);
-                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkProgressionSystem>(SystemUpdatePhase.GameSimulation);
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkLandscapeSystem>(SystemUpdatePhase.ModificationEnd); park.Step();
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkVisitSystem>(SystemUpdatePhase.GameSimulation); park.Step();
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkQualitySystem>(SystemUpdatePhase.GameSimulation); park.Step();
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkFinanceSystem>(SystemUpdatePhase.GameSimulation); park.Step();
+                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem, CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem>(SystemUpdatePhase.Serialize); park.Step();
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkProgressionSystem>(SystemUpdatePhase.GameSimulation); park.Step();
+                park.Complete();
             }
-            catch (System.Exception error) { Log.Error(error, "Park gameplay systems unavailable; Area Core remains registered."); }
+            catch (System.Exception error) { park.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
         // Industrial gameplay observes the city after Core (runtime state in ModificationEnd after membership/activation,
-        // hourly observation and progression in GameSimulation). A registration failure leaves Area Core, Park and
-        // Tourism running.
+        // hourly observation and progression in GameSimulation), as a whole. A registration failure leaves Area Core, Park
+        // and Tourism running.
         private static void RegisterIndustrialSystems(UpdateSystem updateSystem)
         {
+            var industrial = new ModuleRegistration("Industrial gameplay",
+                typeof(CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem),
+                typeof(CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialProgressionSystem));
             try
             {
-                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem>(SystemUpdatePhase.ModificationEnd);
-                updateSystem.UpdateAt<CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem>(SystemUpdatePhase.ModificationEnd); industrial.Step();
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation); industrial.Step();
                 // Policy effects reach vanilla state before an observation cycle in the same frame reads it.
-                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
-                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialProgressionSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
+                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation); industrial.Step();
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialProgressionSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation); industrial.Step();
+                industrial.Complete();
             }
-            catch (System.Exception error) { Log.Error(error, "Industrial gameplay systems unavailable; Area Core, Park and Tourism remain registered."); }
+            catch (System.Exception error) { industrial.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
+        // Registered systems cannot be removed from UpdateSystem; a disabled system is skipped by ComponentSystemBase.Update.
+        private static void Disable(UpdateSystem updateSystem, System.Type type)
+        {
+            var system = updateSystem.World.GetExistingSystemManaged(type);
+            if (system != null) system.Enabled = false;
+        }
+        private static void ReportRegistrationFailure(System.Exception error, string message) => Log.Error(error, message);
         private void RegisterSettings()
         {
             try

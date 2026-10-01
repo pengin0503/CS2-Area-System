@@ -22,6 +22,7 @@ namespace CS2AreaSystem.Core.Prefabs
         private readonly HashSet<int> toolbarTypes = new HashSet<int>();
         private readonly GameUIResourceAvailability uiResources = new GameUIResourceAvailability();
         private readonly Dictionary<int, string> resolvedIcons = new Dictionary<int, string>();
+        private readonly AreaToolbarExposureState toolbar = new AreaToolbarExposureState();
         private bool missingHostLogged;
         private bool toolbarRegistrationFailureLogged;
         public bool IsReady
@@ -44,6 +45,7 @@ namespace CS2AreaSystem.Core.Prefabs
         public UIAssetMenuPrefab Menu => menu;
         public UIAssetCategoryPrefab Category => category;
         public int ToolbarVersion { get; private set; }
+        public AreaToolbarExposure ToolbarExposure => toolbar.Exposure;
         [Preserve]
         protected override void OnCreate()
         {
@@ -55,14 +57,19 @@ namespace CS2AreaSystem.Core.Prefabs
         [Preserve]
         protected override void OnUpdate()
         {
-            bool toolbarGraphReady = TryEnsureToolbarGroups();
+            // Area prefabs are registered with the native toolbar graph when it can be built, and without it when it cannot:
+            // a toolbar failure must not keep saved managed areas from resolving their prefab (UI failure isolation).
+            var decision = toolbar.Update(TryEnsureToolbarGroups);
+            if (decision.BecameUnavailable)
+                Mod.Log.Error("Area toolbar could not be built after " + toolbar.FailedAttempts + " attempts; Area prefabs are registered without toolbar " +
+                    "entries so saved managed areas keep loading. New areas cannot be drawn until the toolbar is available in a later session.");
             foreach (var type in services.Registry.All)
             {
-                if (toolbarGraphReady) EnsurePrefabRegistered(type);
+                if (decision.RegisterPrefabs) EnsurePrefabRegistered(type, decision.AttachToolbar);
                 readiness.Set(type.TypeId, IsPrefabReady(type));
             }
         }
-        private void EnsurePrefabRegistered(AreaTypeDescriptor type)
+        private void EnsurePrefabRegistered(AreaTypeDescriptor type, bool attachToolbar)
         {
             bool registeredWithPrefabSystem = type.Prefab != null && prefabs.TryGetEntity(type.Prefab, out var registeredEntity) && EntityManager.Exists(registeredEntity);
             if (!AreaPrefabRegistrationPolicy.ShouldAttempt(type.Prefab != null, registeredWithPrefabSystem)) return;
@@ -93,20 +100,21 @@ namespace CS2AreaSystem.Core.Prefabs
                     type.Prefab = candidate;
                     pendingPrefabs.Remove(type.TypeId);
                     registrationFailureLogged.Remove(type.TypeId);
-                    MarkToolbarTypeRegistered(type.TypeId);
+                    if (attachToolbar) MarkToolbarTypeRegistered(type.TypeId);
                     return;
                 }
 
                 // 1.6.2f1 UIObject.LateInitialize consumes m_Group and performs the native
                 // UIGroupPrefab.AddElement registration. Configure the relationship before
                 // AddPrefab so PrefabInitializeSystem builds UIObjectData/UIGroupElement itself.
-                PrepareAreaPrefabForToolbar(candidate, type);
+                // Without a toolbar graph m_Group stays null and the prefab is registered for saved areas only.
+                if (attachToolbar) PrepareAreaPrefabForToolbar(candidate, type);
                 if (prefabs.AddPrefab(candidate))
                 {
                     type.Prefab = candidate;
                     pendingPrefabs.Remove(type.TypeId);
                     registrationFailureLogged.Remove(type.TypeId);
-                    MarkToolbarTypeRegistered(type.TypeId);
+                    if (attachToolbar) MarkToolbarTypeRegistered(type.TypeId);
                     return;
                 }
                 if (registrationFailureLogged.Add(type.TypeId))

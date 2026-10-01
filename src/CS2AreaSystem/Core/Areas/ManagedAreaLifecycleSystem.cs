@@ -16,23 +16,17 @@ namespace CS2AreaSystem.Core.Areas
     {
         private AreaCoreServicesSystem services;
         private PrefabSystem prefabs;
-        private AreaPrefabRegistrationSystem registration;
-        private ToolSystem tools;
         private EntityQuery changedAreas;
         private EntityQuery savedIds;
         private EntityQuery missingAnchorLinks;
         private bool observedSavedIds;
-        private readonly HashSet<int> blockedTypes = new HashSet<int>();
         private readonly ManagedAreaTypeResolver resolver = new ManagedAreaTypeResolver();
-        public bool CanCreate(int typeId) => registration.IsTypeReady(typeId) && !blockedTypes.Contains(typeId);
         [Preserve]
         protected override void OnCreate()
         {
             base.OnCreate();
             services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
             prefabs = World.GetOrCreateSystemManaged<PrefabSystem>();
-            registration = World.GetOrCreateSystemManaged<AreaPrefabRegistrationSystem>();
-            tools = World.GetOrCreateSystemManaged<ToolSystem>();
             changedAreas = GetEntityQuery(new EntityQueryDesc {
                 // Managed areas are SpacePrefab instances; skip districts, lots and other vanilla areas.
                 All = new[] { ComponentType.ReadOnly<Area>(), ComponentType.ReadOnly<Space>(), ComponentType.ReadOnly<PrefabRef>() },
@@ -51,7 +45,6 @@ namespace CS2AreaSystem.Core.Areas
         [Preserve]
         protected override void OnUpdate()
         {
-            ValidateTool();
             if (GameManager.instance.isGameLoading ||
                 !World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>().Ready) return;
             if (!observedSavedIds)
@@ -75,16 +68,6 @@ namespace CS2AreaSystem.Core.Areas
                 if (!hasId) EntityManager.AddComponentData(entity, identity.StableId);
             }
             if (!missingAnchorLinks.IsEmptyIgnoreFilter) EntityManager.AddComponent<Anchors.AreaAnchorLink>(missingAnchorLinks);
-        }
-        private void ValidateTool()
-        {
-            var prefab = tools.activePrefab;
-            if (prefab == null || !resolver.TryResolve(prefab.name, out var kind)) return;
-            bool native = tools.activeTool is AreaToolSystem;
-            bool ready = CanCreate((int)kind);
-            if (!native && blockedTypes.Add((int)kind))
-                Mod.Log.Error("Managed area prefab selected an unexpected tool; creation disabled for " + prefab.name);
-            if (!AreaToolActivationPolicy.CanCreate(ready, native)) tools.ActivatePrefabTool(null);
         }
     }
 }

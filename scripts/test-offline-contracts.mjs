@@ -89,7 +89,7 @@ check(mod.includes('RegisterIndustrialSystems(updateSystem);'), 'Mod.OnLoad must
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialRuntimeSystem>\(SystemUpdatePhase\.ModificationEnd\)/.test(industrialRegistration), 'IndustrialRuntimeSystem must run in ModificationEnd');
 check(/UpdateAt<CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialObservationSystem must run in GameSimulation');
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialProgressionSystem,\s*CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialProgressionSystem must run after observation');
-check(/catch\s*\(System\.Exception error\)\s*\{\s*Log\.Error\(error,\s*"Industrial/.test(industrialRegistration), 'Industrial registration failure must be isolated and logged');
+check(/catch\s*\(System\.Exception error\)\s*\{\s*industrial\.Fail\(error,\s*type => Disable\(updateSystem,\s*type\),\s*ReportRegistrationFailure\);/.test(industrialRegistration), 'Industrial registration failure must be isolated, disable the whole module and be logged');
 const industrialFacade = read(`${industrialDir}/IndustrialGameplayFacade.cs`);
 check(!/SetComponentData|AddComponent|RemoveComponent|public static bool HandleAction/.test(industrialFacade), 'Industrial facade must stay read-only (no setters/actions)');
 const industrialModule = read(`${industrialDir}/IndustrialAreaModule.cs`);
@@ -113,7 +113,9 @@ check(uiSystem.includes('State = "CS2AS.State." + area.State'), 'management view
 
 const lifecycle = read('src/CS2AreaSystem/Core/Areas/ManagedAreaLifecycleSystem.cs');
 check(!lifecycle.includes('registration.IsReady'), 'lifecycle must not be globally blocked by unrelated prefab readiness');
-check(lifecycle.includes('registration.IsTypeReady(typeId)'), 'creation must use per-type prefab readiness');
+const toolGuard = read('src/CS2AreaSystem/Core/Areas/ManagedAreaToolGuardSystem.cs');
+check(toolGuard.includes('registration.IsTypeReady((int)kind)'), 'creation must use per-type prefab readiness');
+check(!toolGuard.includes('registration.IsReady'), 'tool guard must not be globally blocked by unrelated prefab readiness');
 
 const load = read('src/CS2AreaSystem/Core/Persistence/AreaLoadCoordinatorSystem.cs');
 check(!load.includes('registration.IsReady'), 'existing-save recovery must not wait for every area prefab to be ready');
@@ -140,12 +142,14 @@ check(toolbarFactory.includes('category.m_Menu = menu;'), 'Area Types category m
 check(toolbarFactory.includes('ui.m_Group = category;'), 'Area prefab UIObject must target the Area Types category');
 for (const areaName of ['CS2AS.ParkArea','CS2AS.IndustrialArea','CS2AS.TourismArea'])
   check(areaPrefabFactory.includes(areaName), `native toolbar graph must retain the independent ${areaName} prefab`);
-check(/foreach\s*\(var type in services\.Registry\.All\)[\s\S]*if \(toolbarGraphReady\) EnsurePrefabRegistered\(type\)/.test(registration),
+check(/foreach\s*\(var type in services\.Registry\.All\)[\s\S]*if \(decision\.RegisterPrefabs\) EnsurePrefabRegistered\(type,\s*decision\.AttachToolbar\)/.test(registration),
   'all registered Area types must pass through the same pre-initialization toolbar path');
+check(/toolbar\.Update\(TryEnsureToolbarGroups\)/.test(registration),
+  'a toolbar graph failure must be bounded by AreaToolbarExposureState instead of blocking Area prefab registration');
 const ensureAreaStart = registration.indexOf('private void EnsurePrefabRegistered');
 const ensureAreaEnd = registration.indexOf('private string ResolveIcon', ensureAreaStart);
 const ensureAreaRegistration = registration.slice(ensureAreaStart, ensureAreaEnd);
-check(/PrepareAreaPrefabForToolbar\(candidate,\s*type\);[\s\S]*prefabs\.AddPrefab\(candidate\)/.test(ensureAreaRegistration),
+check(/if \(attachToolbar\) PrepareAreaPrefabForToolbar\(candidate,\s*type\);[\s\S]*prefabs\.AddPrefab\(candidate\)/.test(ensureAreaRegistration),
   'each Area prefab must receive its Area Types UIObject group before PrefabSystem.AddPrefab');
 check(!/EntityManager\.SetComponentData\(\s*areaPrefabEntity,\s*new UIObjectData/.test(registration),
   'Area toolbar registration must not patch UIObjectData after prefab initialization');
