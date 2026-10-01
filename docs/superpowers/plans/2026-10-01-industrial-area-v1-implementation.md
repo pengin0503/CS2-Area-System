@@ -1,6 +1,6 @@
 # Industrial Area v1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** Use superpowers:executing-plans in Native mode. The user selected Opus 5.5 as the implementer; implement tasks inline without Task implementation subagents. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement Industrial Area v1 as a low-overhead management and diagnosis layer over Cities: Skylines II's real industrial simulation, with transparent Production, Logistics, Employment, Efficiency, bottleneck diagnosis and permanent progression.
 
@@ -9,6 +9,8 @@
 **Tech Stack:** C# / .NET 8 API-check tests, Cities: Skylines II 1.6.2f1 managed APIs, Unity ECS, NUnit 4, React/TypeScript UI, Vitest, existing PowerShell verification pipeline.
 
 **Spec:** `docs/superpowers/specs/2026-10-01-industrial-area-v1-design.md`
+
+**Revision:** User-approved eight-point refinement, 2026-10-01. This revision supersedes the original XP, logistics, streak, SupportingWorkplace, global-revision and continued-HQ-policy decisions. Product code is not changed by this documentation revision.
 
 ## Global Constraints
 
@@ -19,24 +21,30 @@
 - Core membership remains building-only. Do not add company, worker, prop, path or resource entities to `AreaMembershipSystem`.
 - Same-kind Industrial overlap credits each exclusive economic observation only to Core's deterministic primary Industrial membership.
 - Cross-kind overlap remains independent.
-- A valid Headquarters is required for Active Industrial Areas; loss of the HQ suspends the Area without resetting Level, XP or lifetime state.
+- Initial HQ assignment requires a supported industrial building. An accepted, existing valid HQ inside the boundary keeps the Area Active regardless of vacancy/operating health; physical loss/out-of-boundary suspends without resetting state. No HQ-health debuff in v1.
 - Level never demotes and does not directly buff production, logistics capacity, employee efficiency, profitability, taxes or demand.
 - Industrial v1 has no budget, fees, subsidies, policies or ordinances.
 - Missing optional data must be shown as unavailable, never silently converted to a misleading zero.
 - If one top-level performance component is unavailable, renormalize the other three weights; if two or more are unavailable, Industrial Performance is unavailable.
 - UI tabs are exactly: `Overview | Production | Logistics | Employment | Progress`.
 - UI has no Industrial-specific write action in v1; only existing Core Area/HQ actions remain interactive.
-- Heavy observation must be low-frequency and incremental/round-robin; do not scan all city companies every frame.
+- Heavy observation is hourly and bounded/round-robin, initially 128 building reads per simulation update in total; never scan all city companies every frame.
+- Restart partial work only for that Area's relevant structural generation, never the global membership revision.
+- Daily XP cap is 240 game-day XP, hourly maximum 10, one missing XP input is reweighted and two missing inputs grant zero.
+- No Area-size XP multiplier. Existing facility/employee gates represent scale.
+- Streak qualification uses completed-day time-weighted activity >=80 with >=18 valid observed game-hours; no sample-count shortcut.
+- Ordinary office-only jobs are excluded. Warehouse/cargo presence yields no direct Logistics points.
+- Persist only the minimal day/XP accumulators needed for deduplication and streak history; keep current/rolling score caches runtime-only.
 - Public 1.6.2f1 ECS components/prefab data are the supported integration surface. Uncertain field semantics must be pinned by the API-contract task before they are used.
 - A raw inventory delta by itself must never be labeled or scored as production throughput.
 
 ## Review Focus
 
-1. **Building/company ownership ambiguity:** one building may host a company and expose several roles; classification must preserve multiple capabilities while selecting one display role, and HQ eligibility must reject generic offices/residential/civic buildings.
-2. **Overlap changes after area edits:** a facility moving between primary/non-primary Industrial ownership must stop contributing to the old Area and contribute once to the new primary Area without duplicate XP/statistics.
-3. **Unavailable production signal:** if 1.6.2f1 cannot provide a semantically valid throughput/activity source, Production's throughput component and dependent statistics must be unavailable rather than fabricated from inventory delta.
-4. **Suspend/load stale data:** suspended Areas and freshly loaded saves must not earn XP or present stale snapshots as current; derived caches must rebuild before publishing fresh metrics.
-5. **Bad numeric input:** NaN, infinity, negative capacities, zero job capacity, counter overflow and out-of-range vanilla values must clamp/degrade safely without producing NaN Industrial Performance.
+1. **HQ tenant/health changes:** accepted HQ vacancy/low health keeps Area Active; assignment filtering, physical removal and Park entrance behavior retain their own rules (Task 1).
+2. **Partial data:** one missing Performance/XP input reweights; two missing XP inputs give a visible zero-XP reason; no source invents throughput or healthy flow from inventory/cargo counts (Tasks 3–5).
+3. **Temporal history:** 17.99-hour coverage and a brief spike fail; midnight intervals split; pause/retry/same-hour reload cannot duplicate XP or covered time; a skipped day breaks the streak (Tasks 2, 5).
+4. **Unrelated structural change:** another Area/Park edit does not restart this Area; local ownership transfer invalidates both affected Industrial Areas; generation mixing never publishes (Task 4).
+5. **Scale and attribution:** healthy small/large/infrastructure-free districts retain matching normalized scores; generic offices and multi-role/multi-tenant duplicates do not inflate jobs, flow or XP (Tasks 1, 3, 4).
 
 ---
 
@@ -48,6 +56,11 @@
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialAreaModule.cs`
 - Create: `tests/CS2AreaSystem.Tests/IndustrialFacilityClassifierTests.cs`
 - Create: `tests/CS2AreaSystem.Tests/IndustrialApiContractTests.cs`
+- Modify: `src/CS2AreaSystem/Core/Anchors/AreaAnchorService.cs`
+- Modify: `src/CS2AreaSystem/Core/Anchors/IAreaAnchorPolicy.cs`
+- Modify: `src/CS2AreaSystem/Core/Areas/AreaCoreServicesSystem.cs`
+- Modify: `tests/CS2AreaSystem.Tests/AreaAnchorServiceTests.cs`
+- Create: `docs/verification/industrial-observation-contracts.md`
 
 **Interfaces:**
 - Produces:
@@ -57,6 +70,8 @@
   - `public static IndustrialFacilityRole IndustrialFacilityClassifier.Classify(in IndustrialFacilityTraits traits)`
   - `public static bool IndustrialFacilityClassifier.IsHeadquartersEligible(in IndustrialFacilityTraits traits)`
   - `public static IndustrialFacilityTraits IndustrialFacilityReader.ReadAnchor(Entity entity, EntityManager entities)`
+  - Optional Core `IAreaExistingAnchorPolicy.AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities)`; only Industrial opts in.
+  - `AreaAnchorService(IAreaAnchorStore store, Func<Entity,bool> valid, Func<Entity,Entity,AreaAnchorRole,bool> eligible, Func<Entity,Entity,AreaAnchorRole,bool> existingEligible = null)`; existing predicate defaults to assignment predicate for backward compatibility.
 - Consumes: existing Core `AnchorAreaModule`, `AreaAnchorRole.Headquarters`, building membership and 1.6.2f1 public game references.
 
 - [ ] **Step 1: Write classifier/HQ tests that define the approved roles**
@@ -65,13 +80,16 @@ Test cases must assert:
 - extractor only -> `Extractor`;
 - processing/industrial company -> `Processor`;
 - storage -> `Storage`;
-- functional cargo station -> `Cargo`;
-- relevant workplace with none of the specialized roles -> `SupportingWorkplace`;
+- recognizable cargo-capable facility, working or disabled -> `Cargo`; operational status is a separate observation;
+- supporting employment inside an eligible industrial/cargo/storage facility -> descriptive `SupportingWorkplace`; an ordinary office-only workplace -> `None`;
+- temporary tenant vacancy/disabled operating health does not reject an industrial building with proven eligible static capability;
 - one facility may expose multiple role flags;
 - generic office-only, residential, park/attraction and unrelated civic building -> no Industrial specialized role and not HQ-eligible;
 - extractor/processor/storage/cargo -> HQ-eligible;
 - a modded building exposing the same supported industrial traits is treated identically to vanilla;
 - unknown traits -> safe `None`.
+
+Add assignment-versus-existing-link tests to AreaAnchorServiceTests: stricter initial eligibility rejects ordinary offices; after successful assignment, vacancy/poor profitability retains the valid HQ, while deletion/out-of-boundary invalidates it. Legacy callers and Park continue using their original predicate for both assignment and validation.
 
 Run:
 `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter IndustrialFacilityClassifierTests`
@@ -103,7 +121,9 @@ The test must also pin the exact public members actually selected for:
 - cargo functionality/mode when available;
 - productive activity/throughput when available.
 
-If no public member has defensible production/throughput semantics, the contract test must instead pin that throughput source as unavailable; later code must not substitute raw inventory delta.
+If no public member has defensible productive-activity/throughput semantics, pin that source as unavailable; never substitute inventory delta.
+
+Write `industrial-observation-contracts.md` with source type/member, consumer/system evidence, unit/normalizer, entity attribution, clock conversion and availability decision for each metric. Compare the supplied vanilla UI calculation where relevant. A compile-time type test proves API shape only; it cannot prove production, efficiency or profitability semantics. Keep uncertain sources unavailable pending runtime validation.
 
 Run:
 `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter IndustrialApiContractTests`
@@ -133,7 +153,9 @@ Use nullable/availability fields for optional observations rather than sentinel 
 Update `IndustrialAreaModule` constructor to accept an injectable trait reader like Park:
 `IndustrialAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits = null)`.
 
-Override `AcceptsAnchor` so only `AreaAnchorRole.Headquarters` with `IsHeadquartersEligible` passes; catch observation exceptions and reject rather than breaking Core.
+Override `AcceptsAnchor` for initial HQ assignment only; catch trait-reading failures and reject safely.
+
+Implement `IAreaExistingAnchorPolicy` on Industrial. After Core checks current area, building validity, role and membership, `AcceptsExistingAnchor` returns true for an accepted HQ link without consulting current tenant/health traits. Wire separate assignment/existing predicates through AreaCoreServicesSystem and AreaAnchorService. Assign uses `eligible`; GetValidAnchors/GetAnchorLinks use `existingEligible`. Modules not opting in, especially Park, retain the original strict behavior. HQ health is an observation, with no v1 debuff.
 
 - [ ] **Step 5: Run focused tests**
 
@@ -145,7 +167,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/CS2AreaSystem/Modules/Industrial tests/CS2AreaSystem.Tests/IndustrialFacilityClassifierTests.cs tests/CS2AreaSystem.Tests/IndustrialApiContractTests.cs
+git add src/CS2AreaSystem/Modules/Industrial src/CS2AreaSystem/Core/Anchors src/CS2AreaSystem/Core/Areas/AreaCoreServicesSystem.cs tests/CS2AreaSystem.Tests/IndustrialFacilityClassifierTests.cs tests/CS2AreaSystem.Tests/IndustrialApiContractTests.cs tests/CS2AreaSystem.Tests/AreaAnchorServiceTests.cs docs/verification/industrial-observation-contracts.md
 git commit -m "feat(industrial): classify facilities and headquarters"
 ```
 
@@ -179,14 +201,19 @@ git commit -m "feat(industrial): classify facilities and headquarters"
 - `LifetimePeakEmployees`;
 - `XpDay`;
 - `XpGrantedToday`;
+- `LastSettledXpHour` (long, -1 initially);
+- `ActivityDay`;
+- `ActivityWeightedSum` (double);
+- `ActivityObservedHours` (double);
+- `LastCreditedActivityHour` (long, -1 initially);
 - `HighThroughputStreakDays`;
 - `HighThroughputLastDay`.
 
-`CreateDefault()` must initialize `HighThroughputLastDay = uint.MaxValue` so in-game day 0 is distinguishable from "never evaluated".
+`CreateDefault(uint currentDay)` initializes XpDay/ActivityDay to current game day, last-hour fields to -1 and HighThroughputLastDay to uint.MaxValue. Zero observed hours means no coverage. Use the exact field order above. Repeated reads/saves never reset a day accumulator.
 
 Do **not** duplicate Level/Experience; they remain in shared `ManagedAreaProgress`.
 
-Tests must assert exact write/read order, round-trip equality, unsupported schema rejection, and no derived metric fields in persisted state.
+Tests assert exact field order/round trip, schema rejection, preservation of partial-day weighted sums/coverage/hour deduplication, and absence of current scores/raw-window caches in saved state. Day accumulators are authoritative history, not derived current metrics.
 
 Run:
 `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter IndustrialSerializationTests`
@@ -215,8 +242,10 @@ Assert:
 - resource activity collection;
 - storage/cargo/flow observations;
 - component scores and final Performance;
-- ordered bottleneck keys;
-- availability/currentness flags.
+- ordered bottleneck records (key/severity/evidence/affected count/observed-hours/suggestion);
+- per-metric availability reason and observed/eligible coverage;
+- observation cycle ID, game-hour bucket, start/end simulation times and Area generation tokens;
+- runtime interpolation baseline and rolling six-hour flow intervals (never serialized).
 
 - [ ] **Step 4: Run focused tests**
 
@@ -242,28 +271,32 @@ git commit -m "feat(industrial): add persistent state and runtime snapshots"
 - Create: `src/CS2AreaSystem/Modules/Industrial/IndustrialEmploymentModel.cs`
 - Create: `src/CS2AreaSystem/Modules/Industrial/IndustrialPerformanceModel.cs`
 - Create: `tests/CS2AreaSystem.Tests/IndustrialPerformanceModelTests.cs`
+- Create: `tests/CS2AreaSystem.Tests/IndustrialScoreExampleTests.cs`
+- Create: `docs/verification/industrial-score-examples.json`
+- Create: `docs/verification/industrial-score-examples.md`
 
 **Interfaces:**
 - Produces:
-  - `public struct IndustrialMetric { public bool Available; public float Value; }`
+  - `IndustrialMetric` exposes `Available`, normalized `Value`, `IndustrialMetricStatus` (Available/Partial/Unavailable/NotApplicable/WarmingUp/Stale), and observed/eligible coverage; only Available/Partial enter scoring.
+  - `IndustrialDailyActivityObservation` exposes hour bucket, start/end game time, validated normalized activity, Active/currentness and Area generation.
   - `IndustrialProductionModel.Compute(in IndustrialProductionInputs) -> IndustrialMetric`
   - `IndustrialLogisticsModel.Compute(in IndustrialLogisticsInputs) -> IndustrialMetric`
   - `IndustrialEmploymentModel.Compute(in IndustrialEmploymentInputs) -> IndustrialMetric`
   - `IndustrialPerformanceModel.ComputeEfficiency(IndustrialMetric buildingEfficiency, IndustrialMetric profitability) -> IndustrialMetric`
   - `IndustrialPerformanceModel.ComputePerformance(IndustrialMetric production, IndustrialMetric logistics, IndustrialMetric employment, IndustrialMetric efficiency) -> IndustrialMetric`
-  - `IndustrialPerformanceModel.FindBottlenecks(...) -> IReadOnlyList<string>`
+  - `IndustrialPerformanceModel.FindBottlenecks(in IndustrialBottleneckInputs inputs) -> IReadOnlyList<IndustrialBottleneck>`; each item has key, normalized severity, affected-facility count, observed-hours and evidence/suggestion keys.
 - Consumes: normalized semantic inputs from Task 1/4; no ECS types.
 
 - [ ] **Step 1: Write score tests with exact weights**
 
 Pin:
-- Production = productive activity **65%** + active-producer/utilization **25%** + diversity **10%**.
-- Logistics = storage health **35%** + cargo access **25%** + flow continuity **25%** + breadth/resilience **15%**.
-- Employment = workplace fill **75%** + staffing balance **25%**.
+- Production = productive activity **65%** + active share **25%** + diversity **10%**. Validated activity is required; renormalize missing optional active-share/diversity inputs.
+- Logistics = observed input continuity **50%** + observed output/dispatch continuity **50%**; no points for storage/cargo counts or breadth.
+- Employment = aggregate workplace fill **75%** + arithmetic mean of eligible per-facility fill percentages **25%**.
 - Efficiency = building efficiency **70%** + profitability **30%** when both exist.
 - Industrial Performance = Production **35%** + Logistics **25%** + Employment **20%** + Efficiency **20%**.
 
-All inputs are clamped to 0–100. NaN/infinity become unavailable, not zero.
+Use spec §12.1 source normalization before score clamping. Preserve raw >100% vanilla efficiency in UI. NaN/infinity/invalid denominators become unavailable. Per-company efficiency/profitability and per-producer flow use weight clamp(validJobs,1,100), with partial coverage flagged when jobs are unknown.
 
 - [ ] **Step 2: Write availability and Review Focus numeric tests**
 
@@ -272,8 +305,11 @@ Assert:
 - two missing Performance components -> Performance unavailable;
 - one missing Efficiency source -> the available source is 100% of Efficiency;
 - both missing Efficiency sources -> Efficiency unavailable;
-- zero job capacity produces Employment unavailable rather than divide-by-zero;
-- negative capacities/utilizations clamp safely;
+- zero valid job capacity produces Employment NotApplicable with Available=false, rather than divide-by-zero;
+- negative capacities are invalid/unavailable, not silently converted to healthy zero-capacity inputs;
+- one unavailable or NotApplicable Logistics channel reweights the available one; no available applicable channel -> unavailable;
+- Logistics requires >=4 observed game-hours per channel in its rolling six-hour window; no symptoms with no coverage is WarmingUp/Unavailable, never 100;
+- ordinary offices are excluded; multi-role jobs count once;
 - no result is NaN or infinite.
 
 - [ ] **Step 3: Write diversity and bottleneck tests**
@@ -289,21 +325,31 @@ For Lv5 prestige, a resource is "meaningful" when its rolling activity is at lea
 Bottleneck keys are ordered by severity and limited to the top three from:
 `WorkforceShortage`, `LowEfficiency`, `LowProfitability`, `InputStarvation`, `StorageSaturation`, `InsufficientCargo`, `LowActiveProducerShare`.
 
-- [ ] **Step 4: Implement the pure models**
+Each warning contains evidence, affected-facility count, observation period and a concise suggestion. No in-boundary cargo terminal is not sufficient evidence for InsufficientCargo.
+
+- [ ] **Step 4: Add executable calculation examples before implementing models**
+
+Create the JSON/Markdown examples from spec §12.2. `IndustrialScoreExampleTests` reads the committed JSON and calls the real pure models, asserting scores with tolerance 1e-5 and exact rounded XP. Assert healthy small/large equivalence, Logistics 100 without dedicated storage/cargo, Logistics 62.5 for 50%/25% blocked shares, a confirmed stopped district, and one/two missing inputs. These are semantic-input fixtures; explicitly label them synthetic.
+
+Expected initially: FAIL because models are absent. The XP assertions are completed in Task 5 rather than introducing a second XP implementation.
+
+- [ ] **Step 5: Implement the pure models**
 
 Do not read ECS state here. The models receive already-normalized semantic inputs and return availability-aware scores.
 
-- [ ] **Step 5: Run focused tests**
+- [ ] **Step 6: Run focused tests**
 
 Run:
-`dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter IndustrialPerformanceModelTests`
+`dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter "IndustrialPerformanceModelTests|IndustrialScoreExampleTests"`
+
+At Task 3 validate score assertions; Task 5 adds/validates XP assertions against IndustrialProgressionModel.
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/CS2AreaSystem/Modules/Industrial/Industrial*Model.cs tests/CS2AreaSystem.Tests/IndustrialPerformanceModelTests.cs
+git add src/CS2AreaSystem/Modules/Industrial/Industrial*Model.cs tests/CS2AreaSystem.Tests/IndustrialPerformanceModelTests.cs tests/CS2AreaSystem.Tests/IndustrialScoreExampleTests.cs docs/verification/industrial-score-examples.json docs/verification/industrial-score-examples.md
 git commit -m "feat(industrial): add transparent performance scoring"
 ```
 
@@ -325,27 +371,31 @@ git commit -m "feat(industrial): add transparent performance scoring"
   - `IndustrialObservationAggregator.Apply(IndustrialRuntimeSnapshot snapshot, in IndustrialEntityObservation observation)`
   - `IndustrialObservationAggregator.Finalize(IndustrialRuntimeSnapshot snapshot)`
   - `IndustrialObservationSystem` updating approximately once per in-game hour, round-robin/bounded per update.
-  - `AreaMembershipIndex.Revision : ulong`, incremented after every effective membership mutation/clear and used only as a generic cache-coherency token.
+  - `AreaMembershipIndex.GetAreaRevision(ulong areaStableId) -> ulong` as a module-neutral per-Area membership/ownership token.
+  - Industrial-local structure generation for relevant tenant/role changes, separate from ordinary economic values.
 - Consumes:
   - Task 1 contracts/classifier;
   - Task 2 runtime store;
   - Task 3 scoring models;
   - Core `AreaMembershipIndex`.
 
-- [ ] **Step 1: Add and test the generic membership revision contract**
+- [ ] **Step 1: Add and test per-Area membership/ownership revision**
 
-In `AreaMembershipPolicyTests`, assert `AreaMembershipIndex.Revision`:
-- starts at 0;
-- increments after an effective `ReplaceMembership`, `RemoveMember`, `RemoveArea`, or `Clear`;
-- does not increment when `RemoveMember`/`RemoveArea` has nothing to remove;
-- remains module-neutral and exposes no Industrial-specific state.
+In AreaMembershipPolicyTests, pin GetAreaRevision(areaStableId):
+- unknown/untouched Area returns 0;
+- effective member/relation/primary-owner changes advance only affected Area tokens;
+- unchanged normalized memberships and no-op removals do not advance;
+- owner transfer advances both old/new affected Areas, including primary flags changing while member lists stay equal;
+- other Areas' membership edits leave this Area token unchanged;
+- unrelated Park membership changes leave Industrial ownership tokens unchanged;
+- Clear/load invalidates cycles and clears tokens; removed-Area tokens are removed after deletion cleanup.
 
-Implement the smallest Core change: a read-only `ulong Revision` and one private increment helper with saturating/wrapping-safe monotonic semantics (use unchecked increment and skip zero after overflow so zero remains the initial sentinel).
+Compare normalized old/new relations before mutation. Advance a token once per effective relation set change, unchecked increment skipping zero; use equality, never numeric ordering. Retain a token for a temporarily empty but existing Area, preventing accidental reuse. Keep Core unaware of Industrial semantics.
 
 Run:
 `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter AreaMembershipPolicyTests`
 
-Expected: PASS after the Core revision change.
+Expected: PASS after the minimal Core token change.
 
 - [ ] **Step 2: Write pure aggregation tests**
 
@@ -355,7 +405,12 @@ Assert:
 - cross-kind memberships do not affect Industrial ownership;
 - multi-role facilities contribute to each relevant diagnostic dimension without duplicating jobs/employees;
 - inactive/disabled producers do not count as active productive facilities;
-- cargo placement without functional state does not receive full cargo credit.
+- cargo placement/count changes alone do not change Logistics;
+- healthy industrial flow using external cargo/no dedicated warehouse can score 100;
+- generic office-only jobs never contribute;
+- another Area/Park change does not restart this Area's cycle;
+- local boundary/ownership/tenant-structure change invalidates its cycle; ordinary stock/employee changes do not;
+- over-one-game-hour cycle duration becomes delayed/stale and supplies no XP/coverage.
 
 - [ ] **Step 3: Write throughput/data-fidelity tests**
 
@@ -377,13 +432,13 @@ Map public state into Task 1 DTOs:
 - active producer/utilization;
 - validated productive activity/throughput;
 - resource activity;
-- storage utilization/input/output pressure;
-- cargo function/mode;
-- jobs/employees;
+- diagnostic storage utilization and validated input/output flow-symptom durations;
+- diagnostic cargo function/mode (not a direct score);
+- eligible industrial jobs/employees with facility/company deduplication;
 - efficiency;
 - profitability.
 
-Document unit conversion/normalization next to each adapter method and pin it with focused tests. Do not expose raw game structs beyond this reader.
+Document and test adapter conversions against spec §12.1 and Task 1's observation-contract ledger. A raw member's existence is not semantic evidence. Implement rolling six-hour flow windows with >=4-hour coverage. Unknown demand/context cannot turn empty/full stock into a confirmed symptom. Treat unsupported inputs as unavailable. Do not expose raw game structs beyond this reader.
 
 - [ ] **Step 6: Implement low-frequency observation scheduling**
 
@@ -392,8 +447,11 @@ Initial cadence: one complete Industrial observation cycle per in-game hour.
 Requirements:
 - no city-wide company query every frame;
 - use Industrial Area membership to enumerate relevant building members;
-- process Areas or members in bounded batches/round-robin across updates;
-- capture `AreaMembershipIndex.Revision` at the start of each Area observation cycle and discard/restart the partial cycle if the revision differs before publish;
+- process fairly across Areas with an initial total cap of 128 dynamic building reads per simulation update; bound tenant traversal and avoid per-frame full GetMembers/ToArray allocations;
+- capture GetAreaRevision(areaId) and Industrial-local relevant structure generation; discard/restart only the affected Area if either changes before publish;
+- use existing membership/native change evidence to invalidate relevant tenant/role structure; do not city-scan or restart on ordinary employee/inventory/efficiency fluctuation;
+- unrelated Area/Park changes cannot invalidate the cycle; transfer of primary Industrial ownership invalidates both affected Areas;
+- include start/end simulation time; a cycle taking >one game-hour is stale/delayed and supplies no XP or daily coverage;
 - suspended Areas do not publish a fresh operating snapshot;
 - after load, no stale pre-load snapshot survives;
 - UI reads only the last completed snapshot.
@@ -437,8 +495,10 @@ git commit -m "feat(industrial): observe real industrial activity"
   - `IndustrialPromotionCheck`
   - `IndustrialPromotionResult`
   - `IndustrialProgressionModel.EvaluatePromotion(int level, long experience, in IndustrialProgressInputs inputs)`
-  - `IndustrialProgressionModel.ComputeHourlyXp(in IndustrialProgressInputs inputs, bool active, int grantedToday)`
-  - `IndustrialProgressionModel.UpdateHighThroughputStreak(...)`
+  - `IndustrialProgressionModel.ComputeHourlyXp(in IndustrialProgressInputs inputs, bool active, int grantedToday)` (three-of-four renormalization)
+  - `IndustrialProgressionModel.AccumulateDailyActivity(in IndustrialDailyActivityObservation observation, ref IndustrialAreaState state)`
+  - `IndustrialProgressionModel.FinalizeActivityDay(uint completedDay, ref IndustrialAreaState state)`
+  - `IndustrialProgressionModel.UpdateHighThroughputStreak(uint completedDay, bool qualifies, ref IndustrialAreaState state)`
   - `IndustrialProgressionSystem`
 - Consumes: completed Task 4 runtime snapshots and shared `ManagedAreaProgress`.
 
@@ -477,32 +537,44 @@ Level 4 -> 5:
   - Employment >= 85;
   - Efficiency >= 80;
   - >=3 meaningful output classes;
-  - productive-activity component >=80 for 7 consecutive in-game days.
+  - seven consecutive completed game days, each with >=18 valid observed hours and time-weighted productive activity average >=80.
+
+A missing required promotion metric remains visibly unmet; the one-input XP fallback does not fabricate a missing Production or waive promotion gates.
 
 - [ ] **Step 2: Write no-demotion, suspend and XP tests**
 
-Use an hourly XP rule:
-- no XP unless Active, at least one active productive facility exists, and Production/Employment/Logistics/Performance needed for the calculation are available;
-- hourly award = rounded weighted operating score `(Production*0.35 + Employment*0.25 + Logistics*0.20 + Performance*0.20) / 20`, clamped **1..6**;
-- daily XP cap = **120**;
-- a new in-game day resets only the daily grant counter;
-- suspended Areas gain zero XP;
-- level never decreases;
-- long XP addition saturates at `long.MaxValue`.
+Use spec §14.1:
+- Active + fresh coherent completed hourly observation + at least one independently confirmed operating producer;
+- Production/Employment/Logistics/Performance original weights 0.35/0.25/0.20/0.20;
+- at least three of four inputs; one missing renormalizes, two missing -> zero with reason;
+- roundAwayFromZero(reweightedScore/10), clamp 0..10; no minimum award;
+- daily cap 240, reset grant count on game-day change only;
+- no scale multiplier, stale/Suspended awards or missing-hour catch-up;
+- persist LastSettledXpHour; retries/reassignment/same-hour save/load cannot award twice;
+- saturating long XP; no level demotion.
 
-These are initial balancing values and can be tuned only after runtime evidence, not silently during implementation.
+Named test assertions:
+- AllAvailable100 -> hourly 10; 24 eligible distinct full-day hourly slots -> 240; 25th/cap-exhausted -> 0.
+- MissingProduction(E=60,L=80,F=80) -> weighted score 72.307692..., award 7; independent active-producer confirmation still required.
+- EachSingleMissingInput -> three remaining original weights renormalized.
+- TwoMissingInputs, NoConfirmedActiveProducer, StaleSnapshot, Suspended -> 0.
+- SameHourAfterReload/Retry -> no additional award; next distinct hour can earn remaining cap.
+- AllZero -> 0; score 45 -> 5 (round away from zero).
+- HealthySmall/HealthyLarge -> identical XP for identical quality.
 
-- [ ] **Step 3: Write 7-day throughput streak tests**
+Complete the XP assertions in IndustrialScoreExampleTests using the real progression model.
 
-A day qualifies only when the completed normalized productive-activity component is >=80.
+- [ ] **Step 3: Write coverage-aware daily-average streak tests**
 
-Rules:
-- first qualifying day -> streak 1;
-- consecutive day -> increment;
-- skipped/nonqualifying day -> reset;
-- multiple hourly observations on one day cannot increment more than once;
-- load/save preserves the streak fields;
-- 7+ satisfies the prestige objective.
+Use double accumulators and the game calendar pinned by Task 1.
+- <=one-hour gaps bracketed by valid observations contribute the previous activity value * elapsedGameHours; first observation adds no earlier coverage.
+- >one-hour gaps, unavailable/stale/Suspended intervals add no coverage; interval spanning midnight splits between the two days.
+- completed day with exactly 18 covered hours and mean exactly 80 qualifies; 17.99 hours does not; mean 79.99 does not.
+- a brief 100 spike with low remainder does not qualify; changing sample density at identical covered values/time does not change mean.
+- finalize each day once; seven consecutive qualifying days satisfy prestige; missing/unqualified day resets.
+- same-hour reload cannot duplicate interval coverage; persist partial-day sum/hours/last-credit hour and streak; after load use new endpoints, never bridge the load gap.
+- relevant structural-generation change resets only interpolation/window baseline, preserving authoritative covered time already earned.
+- day zero and multiday jumps are handled without sentinel collisions.
 
 - [ ] **Step 4: Implement pure progression model**
 
@@ -510,12 +582,13 @@ Keep all thresholds/constants in `IndustrialProgressionModel`. Return a checklis
 
 - [ ] **Step 5: Implement progression system**
 
-At most once per completed hourly Industrial observation:
-- update peak employees;
-- update throughput streak on day transition;
-- award capped XP;
-- evaluate and apply at most one level promotion;
-- do nothing for Suspended Areas except preserve state/progress.
+Consume each coherent completed observation once:
+- independently settle the game-hour XP bucket and eligible daily-coverage interval;
+- update peak employees from current Active observations;
+- finalize each completed calendar day once, including days crossed while Suspended, with insufficient/missing coverage breaking the streak;
+- award XP only if eligible and below cap, then apply at most one promotion;
+- preserve Level/XP while Suspended; do not accumulate activity there;
+- load/generation change clears interpolation baseline and stale snapshots, while authoritative accumulators remain.
 
 - [ ] **Step 6: Run focused tests**
 
@@ -527,7 +600,7 @@ Expected: PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/CS2AreaSystem/Modules/Industrial/IndustrialProgression*.cs tests/CS2AreaSystem.Tests/IndustrialProgressionModelTests.cs
+git add src/CS2AreaSystem/Modules/Industrial/IndustrialProgression*.cs tests/CS2AreaSystem.Tests/IndustrialProgressionModelTests.cs tests/CS2AreaSystem.Tests/IndustrialScoreExampleTests.cs
 git commit -m "feat(industrial): add permanent industrial progression"
 ```
 
@@ -580,7 +653,9 @@ Employment must show jobs/employees/vacancies/fill and mismatch when available.
 
 Progress must show every current promotion gate and the Level-5 prestige objectives.
 
-Unavailable data renders `CS2AS.Industrial.Unavailable`; no unavailable metric is rendered as `0`.
+Unavailable data is never rendered as 0. Show distinct Unavailable/NotApplicable/WarmingUp/Stale states, partial coverage and reason. Show hourly XP/day cap 240, blocked-XP reason, streak day average/covered hours (required 18), and no bonus from warehouse/cargo placement. All diagnostic statistics are available at every Level. Existing HQ health may be displayed without applying a debuff.
+
+Bottleneck payload shows evidence/affected count/window/suggestion. Explain unobserved external cargo information without claiming no route exists.
 
 - [ ] **Step 3: Implement the read-only facade and panel cache**
 
@@ -598,7 +673,9 @@ Add all emitted keys and tooltips, including:
 - bottleneck messages;
 - Active/HQ-required/HQ-invalid summaries;
 - sampled/derived throughput note;
-- unavailable/currentness wording;
+- unavailable/not-applicable/warming-up/stale/coverage wording;
+- daily XP cap, insufficient XP-input reason, daily-average/18-hour coverage wording;
+- accepted-HQ operating health does not suspend Area and has no v1 debuff;
 - "Level does not directly increase production" note.
 
 Call `IndustrialLocalization.Append` from `NativeAreaLocalization.Entries`.
@@ -642,6 +719,7 @@ git commit -m "feat(industrial): add management panel and localization"
 - Modify: `scripts/runtime-smoke-checklist.md`
 - Modify: `README.md`
 - Create: `docs/verification/industrial-area-v1-execution-record.md`
+- Verify/update: `docs/verification/industrial-observation-contracts.md`, `industrial-score-examples.json`, `industrial-score-examples.md`
 - Modify as required by source/build contract coverage: `scripts/test-source-guards.ps1`
 
 **Interfaces:**
@@ -656,7 +734,8 @@ Offline/source guards must fail until:
 - no Industrial UI action setters exist;
 - Core membership remains building-only;
 - Industrial panel fixture exists and is generated from C#;
-- the approved spec and plan paths are present.
+- approved spec/plan and executable calculation-example/observation-contract documents exist;
+- no ordinary-office-only eligibility or cargo-presence score path is introduced.
 
 Explicit forbidden Industrial source patterns include production/logistics system replacement or direct mutation paths for resources, taxes/demand, pathfinding/cargo routing, `BuildingEfficiency` and `Profitability`.
 
@@ -682,14 +761,15 @@ Add an Industrial Area v1 section describing:
 - no direct buffs/policies in v1;
 - runtime validation remains outstanding until tested in game.
 
-- [ ] **Step 4: Add the 20 runtime smoke scenarios from spec §22.4**
+- [ ] **Step 4: Add all 27 runtime smoke scenarios from spec §22.4**
 
 Copy the approved scenarios into `scripts/runtime-smoke-checklist.md`, keeping each as an unchecked runtime-only item.
 
 Create `docs/verification/industrial-area-v1-execution-record.md` with:
 - source/API verification section;
 - runtime section explicitly marked **NOT RUN**;
-- space for measured large-Area overhead and balance notes.
+- space for measured small/large-Area wall time/allocations, observation completion delay/coverage, ownership churn and balance notes;
+- explicit live-field semantic validation evidence separate from compile/model example evidence.
 
 - [ ] **Step 5: Run targeted source/offline guards**
 
