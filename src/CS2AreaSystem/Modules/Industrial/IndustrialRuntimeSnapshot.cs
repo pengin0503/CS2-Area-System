@@ -4,7 +4,8 @@ using Unity.Entities;
 namespace CS2AreaSystem.Modules.Industrial
 {
     // Why a metric has (or lacks) a value. Only Available/Partial enter any weighted score (design §12.1).
-    public enum IndustrialMetricStatus : byte { Available, Partial, Unavailable, NotApplicable, WarmingUp, Stale }
+    // Unavailable is the default, so an unset metric can never read as a real zero.
+    public enum IndustrialMetricStatus : byte { Unavailable, Available, Partial, NotApplicable, WarmingUp, Stale }
     // Availability-aware 0..100 (or raw) value with observed/eligible coverage. Value is meaningful only when HasValue.
     public readonly struct IndustrialMetric
     {

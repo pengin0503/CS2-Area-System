@@ -1,0 +1,91 @@
+{
+  "synthetic": true,
+  "note": "Synthetic semantic-input examples from design spec section 12.2. They exercise the real Industrial scoring/progression models; they are not evidence that live 1.6.2f1 ECS fields have been validated in game.",
+  "examples": [
+    {
+      "id": "healthy-small",
+      "name": "Healthy specialized small district",
+      "activity": [ { "value": 100, "jobs": 40 }, { "value": 100, "jobs": 25 }, { "value": 100, "jobs": 30 } ],
+      "knownProducers": 3, "operatingProducers": 3,
+      "outputs": [ 100 ],
+      "inputAffectedShare": 0, "outputAffectedShare": 0, "coveredHours": 6,
+      "jobs": [ { "jobs": 40, "employees": 40 }, { "jobs": 25, "employees": 25 }, { "jobs": 30, "employees": 30 } ],
+      "efficiency": [ { "efficiency": 100, "profitIndex": 255, "jobs": 40 }, { "efficiency": 100, "profitIndex": 255, "jobs": 25 }, { "efficiency": 100, "profitIndex": 255, "jobs": 30 } ],
+      "storageFacilities": 0, "cargoFacilities": 0,
+      "expected": { "production": 95, "logistics": 100, "employment": 100, "efficiency": 100, "performance": 98.25, "xpOperatingScore": 97.9, "hourlyXp": 10 }
+    },
+    {
+      "id": "healthy-large",
+      "name": "Equally healthy large district",
+      "repeat": 40,
+      "activity": [ { "value": 100, "jobs": 120 } ],
+      "knownProducers": 40, "operatingProducers": 40,
+      "outputs": [ 100 ],
+      "inputAffectedShare": 0, "outputAffectedShare": 0, "coveredHours": 6,
+      "jobs": [ { "jobs": 120, "employees": 120 } ],
+      "efficiency": [ { "efficiency": 100, "profitIndex": 255, "jobs": 120 } ],
+      "storageFacilities": 6, "cargoFacilities": 2,
+      "expected": { "production": 95, "logistics": 100, "employment": 100, "efficiency": 100, "performance": 98.25, "xpOperatingScore": 97.9, "hourlyXp": 10 }
+    },
+    {
+      "id": "no-dedicated-infrastructure",
+      "name": "No dedicated warehouse/cargo terminal",
+      "activity": [ { "value": 100, "jobs": 40 }, { "value": 100, "jobs": 25 }, { "value": 100, "jobs": 30 } ],
+      "knownProducers": 3, "operatingProducers": 3,
+      "outputs": [ 100 ],
+      "inputAffectedShare": 0, "outputAffectedShare": 0, "coveredHours": 6,
+      "jobs": [ { "jobs": 40, "employees": 40 }, { "jobs": 25, "employees": 25 }, { "jobs": 30, "employees": 30 } ],
+      "efficiency": [ { "efficiency": 100, "profitIndex": 255, "jobs": 40 } ],
+      "storageFacilities": 0, "cargoFacilities": 0,
+      "expected": { "logistics": 100 }
+    },
+    {
+      "id": "partial-flow",
+      "name": "Partial flow problem",
+      "activity": [ { "value": 100, "jobs": 40 } ],
+      "knownProducers": 1, "operatingProducers": 1,
+      "outputs": [ 100 ],
+      "inputAffectedShare": 0.5, "outputAffectedShare": 0.25, "coveredHours": 6,
+      "jobs": [ { "jobs": 40, "employees": 40 } ],
+      "efficiency": [ { "efficiency": 100, "profitIndex": 255, "jobs": 40 } ],
+      "storageFacilities": 1, "cargoFacilities": 0,
+      "expected": { "logistics": 62.5 }
+    },
+    {
+      "id": "stopped",
+      "name": "Stopped district with confirmed symptoms",
+      "activity": [ { "value": 0, "jobs": 40 }, { "value": 0, "jobs": 25 }, { "value": 0, "jobs": 30 } ],
+      "knownProducers": 3, "operatingProducers": 0,
+      "outputs": [ 0 ],
+      "inputAffectedShare": 1, "outputAffectedShare": 1, "coveredHours": 6,
+      "jobs": [ { "jobs": 40, "employees": 0 }, { "jobs": 25, "employees": 0 }, { "jobs": 30, "employees": 0 } ],
+      "efficiency": [ { "efficiency": 0, "profitIndex": -255, "jobs": 40 }, { "efficiency": 0, "profitIndex": -255, "jobs": 25 }, { "efficiency": 0, "profitIndex": -255, "jobs": 30 } ],
+      "storageFacilities": 1, "cargoFacilities": 1,
+      "expected": { "production": 0, "logistics": 0, "employment": 0, "efficiency": 0, "performance": 0, "xpOperatingScore": 0, "hourlyXp": 0 }
+    },
+    {
+      "id": "one-unavailable",
+      "name": "One unavailable component",
+      "activity": [ { "value": null, "jobs": 100 } ],
+      "knownProducers": 1, "operatingProducers": 1,
+      "outputs": null,
+      "inputAffectedShare": 0.2, "outputAffectedShare": 0.2, "coveredHours": 6,
+      "jobs": [ { "jobs": 100, "employees": 60 } ],
+      "efficiency": [ { "efficiency": 100, "profitIndex": 255, "jobs": 100 } ],
+      "storageFacilities": 0, "cargoFacilities": 0,
+      "expected": { "production": null, "logistics": 80, "employment": 60, "efficiency": 100, "performance": 80, "xpOperatingScore": 72.30769230769231, "hourlyXp": 7 }
+    },
+    {
+      "id": "two-unavailable",
+      "name": "Two unavailable components",
+      "activity": [ { "value": null, "jobs": 100 } ],
+      "knownProducers": 1, "operatingProducers": 1,
+      "outputs": null,
+      "inputAffectedShare": null, "outputAffectedShare": null, "coveredHours": 0,
+      "jobs": [ { "jobs": 100, "employees": 60 } ],
+      "efficiency": [ { "efficiency": 100, "profitIndex": 255, "jobs": 100 } ],
+      "storageFacilities": 0, "cargoFacilities": 0,
+      "expected": { "production": null, "logistics": null, "employment": 60, "efficiency": 100, "performance": null, "xpOperatingScore": null, "hourlyXp": 0, "xpBlockedReason": "InsufficientInputs" }
+    }
+  ]
+}
