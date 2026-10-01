@@ -169,6 +169,7 @@ git commit -m "feat(industrial): classify facilities and headquarters"
   - `IndustrialRuntimeSystem.CollectAreas(List<IndustrialAreaRef>)`
   - `IndustrialRuntimeSystem.EnsureIndustrialState(List<IndustrialAreaRef>)`
   - `IndustrialRuntimeSystem.PruneStore(List<IndustrialAreaRef>)`
+  - `IndustrialRuntimeSystem.OnUpdate()` performs collect/prune/state initialization in ModificationEnd only; it does not perform economic observation.
 - Consumes: `ManagedArea`, `ManagedAreaStableId`, shared `ManagedAreaProgress`, `AreaLoadCoordinatorSystem`, Core membership index.
 
 - [ ] **Step 1: Write serialization tests**
@@ -180,6 +181,8 @@ git commit -m "feat(industrial): classify facilities and headquarters"
 - `XpGrantedToday`;
 - `HighThroughputStreakDays`;
 - `HighThroughputLastDay`.
+
+`CreateDefault()` must initialize `HighThroughputLastDay = uint.MaxValue` so in-game day 0 is distinguishable from "never evaluated".
 
 Do **not** duplicate Level/Experience; they remain in shared `ManagedAreaProgress`.
 
@@ -313,7 +316,8 @@ git commit -m "feat(industrial): add transparent performance scoring"
 - Create: `src/CS2AreaSystem/Modules/Industrial/IndustrialObservationAggregator.cs`
 - Create: `src/CS2AreaSystem/Modules/Industrial/IndustrialObservationSystem.cs`
 - Create: `tests/CS2AreaSystem.Tests/IndustrialObservationTests.cs`
-- Modify only if needed for reusable read-only access: `src/CS2AreaSystem/Core/Membership/AreaMembershipIndex.cs`
+- Modify: `src/CS2AreaSystem/Core/Membership/AreaMembershipIndex.cs`
+- Modify: `tests/CS2AreaSystem.Tests/AreaMembershipPolicyTests.cs`
 
 **Interfaces:**
 - Produces:
@@ -321,13 +325,29 @@ git commit -m "feat(industrial): add transparent performance scoring"
   - `IndustrialObservationAggregator.Apply(IndustrialRuntimeSnapshot snapshot, in IndustrialEntityObservation observation)`
   - `IndustrialObservationAggregator.Finalize(IndustrialRuntimeSnapshot snapshot)`
   - `IndustrialObservationSystem` updating approximately once per in-game hour, round-robin/bounded per update.
+  - `AreaMembershipIndex.Revision : ulong`, incremented after every effective membership mutation/clear and used only as a generic cache-coherency token.
 - Consumes:
   - Task 1 contracts/classifier;
   - Task 2 runtime store;
   - Task 3 scoring models;
   - Core `AreaMembershipIndex`.
 
-- [ ] **Step 1: Write pure aggregation tests**
+- [ ] **Step 1: Add and test the generic membership revision contract**
+
+In `AreaMembershipPolicyTests`, assert `AreaMembershipIndex.Revision`:
+- starts at 0;
+- increments after an effective `ReplaceMembership`, `RemoveMember`, `RemoveArea`, or `Clear`;
+- does not increment when `RemoveMember`/`RemoveArea` has nothing to remove;
+- remains module-neutral and exposes no Industrial-specific state.
+
+Implement the smallest Core change: a read-only `ulong Revision` and one private increment helper with saturating/wrapping-safe monotonic semantics (use unchecked increment and skip zero after overflow so zero remains the initial sentinel).
+
+Run:
+`dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter AreaMembershipPolicyTests`
+
+Expected: PASS after the Core revision change.
+
+- [ ] **Step 2: Write pure aggregation tests**
 
 Assert:
 - a building contributes only to its primary Industrial Area;
@@ -337,7 +357,7 @@ Assert:
 - inactive/disabled producers do not count as active productive facilities;
 - cargo placement without functional state does not receive full cargo credit.
 
-- [ ] **Step 2: Write throughput/data-fidelity tests**
+- [ ] **Step 3: Write throughput/data-fidelity tests**
 
 Using the exact API source selected in Task 1:
 - productive activity must follow the validated public signal;
@@ -345,13 +365,13 @@ Using the exact API source selected in Task 1:
 - transfers/consumption that change inventory without validated production must not be reported as production;
 - if the selected production signal is unavailable for an entity/asset, throughput remains unavailable while other metrics continue.
 
-- [ ] **Step 3: Implement company/tenant resolution in `IndustrialObservationReader`**
+- [ ] **Step 4: Implement company/tenant resolution in `IndustrialObservationReader`**
 
 Start from Core's building member. Resolve only companies/tenants attributable to that building using the 1.6.2f1 public building/company relationship selected by the API-contract test. Never broaden Core membership itself to company entities.
 
 Aggregate a building with multiple relevant tenants once for building-level values and per-company only for company-specific observations.
 
-- [ ] **Step 4: Implement normalized observation mapping**
+- [ ] **Step 5: Implement normalized observation mapping**
 
 Map public state into Task 1 DTOs:
 - active producer/utilization;
@@ -365,7 +385,7 @@ Map public state into Task 1 DTOs:
 
 Document unit conversion/normalization next to each adapter method and pin it with focused tests. Do not expose raw game structs beyond this reader.
 
-- [ ] **Step 5: Implement low-frequency observation scheduling**
+- [ ] **Step 6: Implement low-frequency observation scheduling**
 
 Initial cadence: one complete Industrial observation cycle per in-game hour.
 
@@ -373,18 +393,18 @@ Requirements:
 - no city-wide company query every frame;
 - use Industrial Area membership to enumerate relevant building members;
 - process Areas or members in bounded batches/round-robin across updates;
-- discard/restart an Area's partial cycle if its membership/boundary revision changes before publish;
+- capture `AreaMembershipIndex.Revision` at the start of each Area observation cycle and discard/restart the partial cycle if the revision differs before publish;
 - suspended Areas do not publish a fresh operating snapshot;
 - after load, no stale pre-load snapshot survives;
 - UI reads only the last completed snapshot.
 
-- [ ] **Step 6: Finalize snapshots through Task 3 models**
+- [ ] **Step 7: Finalize snapshots through Task 3 models**
 
 Finalize counts, normalized component inputs, scores and top-three bottlenecks only after a complete coherent observation cycle.
 
 Update `LifetimePeakEmployees` only from completed Active-Area observations.
 
-- [ ] **Step 7: Run focused + API-check tests**
+- [ ] **Step 8: Run focused + API-check tests**
 
 Run:
 `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -c Debug --filter "IndustrialObservationTests|IndustrialApiContractTests|IndustrialPerformanceModelTests"`
@@ -394,10 +414,10 @@ Then:
 
 Expected: PASS, with direct compile proof against supplied 1.6.2f1 managed references.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add src/CS2AreaSystem/Modules/Industrial/IndustrialObservation*.cs tests/CS2AreaSystem.Tests/IndustrialObservationTests.cs
+git add src/CS2AreaSystem/Modules/Industrial/IndustrialObservation*.cs src/CS2AreaSystem/Core/Membership/AreaMembershipIndex.cs tests/CS2AreaSystem.Tests/AreaMembershipPolicyTests.cs tests/CS2AreaSystem.Tests/IndustrialObservationTests.cs
 git commit -m "feat(industrial): observe real industrial activity"
 ```
 
@@ -645,7 +665,7 @@ Explicit forbidden Industrial source patterns include production/logistics syste
 Add `RegisterIndustrialSystems(UpdateSystem updateSystem)` in `Mod.cs`, mirroring Park's isolation.
 
 Register:
-- the modification-phase Industrial state/observation preparation needed to react to membership changes;
+- `IndustrialRuntimeSystem` in ModificationEnd, after Core membership/lifecycle updates, to collect/prune Areas and attach missing authoritative Industrial state/progress;
 - `IndustrialObservationSystem` in GameSimulation;
 - `IndustrialProgressionSystem` in GameSimulation after observation publication.
 
