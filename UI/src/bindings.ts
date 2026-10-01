@@ -32,3 +32,13 @@ export function getBindings(){return bindings??=( {
  panelSide:bindValue<'left'|'right'>('cs2AreaSystem','panelSide','right'),
  pendingAssignment:bindValue<PendingAssignment|null>('cs2AreaSystem','pendingAssignment',null)
 } );}
+// Settled Area amounts for the Budget page, written by CS2AreaSystem.Core.Finance.AreaBudgetViewModel.
+export interface AreaBudgetData {areaManagement:number;areaServiceFees:number;}
+// Game.UI.InGame.BudgetItem as written by the vanilla BudgetUISystem (group "budget").
+export interface VanillaBudgetItem {id:string;color:unknown;icon:string;active:boolean;sources:{id:string;index:number}[];}
+let budgetBindings:{areaBudget:Binding<AreaBudgetData|null>;incomeItems:Binding<VanillaBudgetItem[]>;expenseItems:Binding<VanillaBudgetItem[]>}|undefined;
+export function getBudgetBindings(){return budgetBindings??=( {
+ areaBudget:bindValue<AreaBudgetData|null>('cs2AreaSystem','areaBudget',null),
+ incomeItems:bindValue<VanillaBudgetItem[]>('budget','incomeItems',[]),
+ expenseItems:bindValue<VanillaBudgetItem[]>('budget','expenseItems',[])
+} );}

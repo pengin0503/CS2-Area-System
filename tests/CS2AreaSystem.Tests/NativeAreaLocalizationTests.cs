@@ -34,7 +34,12 @@ public class NativeAreaLocalizationTests {
   keys.AddRange(new[]{"Assets.NAME["+menu+"]","Services.NAME["+menu+"]","Services.DESCRIPTION["+menu+"]","Assets.NAME["+category+"]","SubServices.NAME["+category+"]","Assets.SUB_SERVICE_DESCRIPTION["+category+"]"});
   var uiSource=Path.Combine(TestContext.CurrentContext.TestDirectory,"../../../../../UI/src");
   var panel=string.Join("\n",Directory.GetFiles(uiSource,"*.tsx").Where(f=>!f.EndsWith(".test.tsx")).Select(File.ReadAllText));
-  keys.AddRange(System.Text.RegularExpressions.Regex.Matches(panel,@"'(CS2AS\.[A-Za-z.]+)'").Select(m=>m.Groups[1].Value));
+  // Budget source ids are hashes of the vanilla sub-item key, not keys themselves (AreaBudgetDetails.tsx).
+  var budgetSources=new[]{CS2AreaSystem.Core.Finance.AreaBudgetViewModel.AreaManagementSource,CS2AreaSystem.Core.Finance.AreaBudgetViewModel.AreaServiceFeesSource};
+  keys.AddRange(System.Text.RegularExpressions.Regex.Matches(panel,@"'(CS2AS\.[A-Za-z.]+)'").Select(m=>m.Groups[1].Value)
+   .Select(k=>budgetSources.Contains(k)?"EconomyPanel.BUDGET_SUB_ITEM["+k+"]":k));
+  Assert.That(keys,Does.Contain("EconomyPanel.BUDGET_SUB_ITEM[CS2AS.AreaManagement]").And.Contain("EconomyPanel.BUDGET_SUB_ITEM[CS2AS.AreaServiceFees]"),
+   "budget detail sources must be scanned");
   Assert.That(keys.Count(k=>k.StartsWith("CS2AS.UI.")),Is.GreaterThanOrEqualTo(10),"panel key extraction must find the UI keys");
   Assert.That(keys,Does.Contain("CS2AS.UI.AreaList").And.Contain("CS2AS.UI.NoAreas"),"area list component keys must be scanned");
   foreach(var key in keys.Distinct()) Assert.That(entries.ContainsKey(key),Is.True,locale+" is missing "+key);
@@ -60,5 +65,12 @@ public class NativeAreaLocalizationTests {
    "EnhancedSafetyAudits","EnvironmentalRegulation","ProductionPriority","LogisticsPriority","TwentyFourHourOperations","RestrictedOperatingHours","AdvancedAutomation"}.Select(Name),
    Is.EqualTo(new[]{"Focused Management","Enhanced Maintenance","Night Events","Quiet Operations","Landscape Protection","Premium Services","Major Event Attraction",
    "Enhanced Safety Audits","Stronger Environmental Regulation","Production Priority","Logistics Priority","24-Hour Operations","Restricted Operating Hours","Advanced Automation"}));
+ }
+ [Test] public void BudgetDetailRowsUseTheExactLabels() {
+  var en=NativeAreaLocalization.Entries("en-US"); var ja=NativeAreaLocalization.Entries("ja-JP");
+  Assert.That(en["EconomyPanel.BUDGET_SUB_ITEM[CS2AS.AreaManagement]"],Is.EqualTo("Area Management"));
+  Assert.That(en["EconomyPanel.BUDGET_SUB_ITEM[CS2AS.AreaServiceFees]"],Is.EqualTo("Area Service Fees"));
+  Assert.That(ja["EconomyPanel.BUDGET_SUB_ITEM[CS2AS.AreaManagement]"],Is.EqualTo("エリア管理"));
+  Assert.That(ja["EconomyPanel.BUDGET_SUB_ITEM[CS2AS.AreaServiceFees]"],Is.EqualTo("エリアサービス料金"));
  }
 }

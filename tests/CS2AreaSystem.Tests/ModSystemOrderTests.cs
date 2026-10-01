@@ -114,4 +114,9 @@ public class ModSystemOrderTests {
         Assert.That(effects, Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem))),
             "an observation cycle started in the same frame sees the applied vanilla state");
     }
+    [Test] public void AreaBudgetIsPublishedInTheUIUpdatePhaseOnly() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Finance.AreaBudgetBindingSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Core.Finance.AreaBudgetBindingSystem), null, SystemUpdatePhase.UIUpdate) }));
+        Assert.That(Schedule(SystemUpdatePhase.UIUpdate), Does.Contain(typeof(Game.UI.InGame.BudgetUISystem)));
+    }
 }

@@ -71,6 +71,9 @@ namespace CS2AreaSystem.Core.UI
             entries["CS2AS.UI.NotMet"] = ja ? "未達成" : "Not met";
             CS2AreaSystem.Core.Settings.AreaSettingsLocalization.Append(entries, ja);
             CS2AreaSystem.Core.Policies.AreaPolicyLocalization.Append(entries, ja);
+            // Budget page sub-items (vanilla EconomyPanel.BUDGET_SUB_ITEM keys, see UI/src/AreaBudgetDetails.tsx).
+            entries["EconomyPanel.BUDGET_SUB_ITEM[" + CS2AreaSystem.Core.Finance.AreaBudgetViewModel.AreaManagementSource + "]"] = ja ? "エリア管理" : "Area Management";
+            entries["EconomyPanel.BUDGET_SUB_ITEM[" + CS2AreaSystem.Core.Finance.AreaBudgetViewModel.AreaServiceFeesSource + "]"] = ja ? "エリアサービス料金" : "Area Service Fees";
             CS2AreaSystem.Modules.Park.ParkLocalization.Append(entries, ja);
             CS2AreaSystem.Modules.Industrial.IndustrialLocalization.Append(entries, ja);
             return entries;

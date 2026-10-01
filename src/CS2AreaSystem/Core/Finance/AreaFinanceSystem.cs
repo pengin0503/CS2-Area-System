@@ -34,6 +34,7 @@ namespace CS2AreaSystem.Core.Finance
         // Settled over the trailing in-game day; partial until a day has passed since load (SettledCoveredFrames).
         public long AreaManagementSettled => runtime.AreaManagement(SimulationFrame);
         public long AreaServiceFeesSettled => runtime.AreaServiceFees(SimulationFrame);
+        public AreaBudgetViewModel Budget => AreaBudgetViewModel.From(runtime, SimulationFrame);
         public uint SettledCoveredFrames => runtime.CoveredFrames(SimulationFrame);
         public long Settled(AreaFinanceKind kind) => runtime.Settled(kind, SimulationFrame);
         public override int GetUpdateInterval(SystemUpdatePhase phase) => (int)UpdateFrames;

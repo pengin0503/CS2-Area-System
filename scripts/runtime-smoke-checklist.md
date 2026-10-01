@@ -48,7 +48,7 @@ Diagnostic access: `ParkRuntimeSystem.Store` (per-Park landscape/facility/qualit
 
 21. Load a save made before Park v1 whose Park entrance is an arbitrary building (house/office): the Park is Suspended, the summary says no assigned entrance qualifies, the old entrance is listed as "Not eligible" with Remove, and removing it then assigning a park/leisure/attraction building reactivates the Park. Demolish an entrance building: it is listed as "Building removed" and can be removed.
 
-Additional UI checks: all five Park tabs render in ja-JP and en-US without raw `CS2AS.*` keys; the vanilla slider (or the +/− fallback) sends budget/fee changes only for the selected Park; a failing Park tab hides only that tab content while Type/Status/Edit/Delete keep working. Park Policies/ordinances and Events/Festivals are intentionally absent in v1.
+Additional UI checks: all five Park tabs render in ja-JP and en-US without raw `CS2AS.*` keys; the vanilla slider (or the +/− fallback) sends budget/fee changes only for the selected Park; a failing Park tab hides only that tab content while Type/Status/Edit/Delete keep working. Park Events/Festivals are intentionally absent. Park policies are covered by the Area Policy System section below.
 
 # Industrial Area v1 — Cities: Skylines II 1.6.2f1 runtime verification
 
@@ -84,4 +84,26 @@ Diagnostic access: `IndustrialRuntimeSystem.Store` (per-Area published `Industri
 - [ ] 26. Other-Area and Park edits do not restart this Area's cycle, while a primary-ownership transfer invalidates both affected Industrial Areas (`Scheduler.RestartCount`, `Cycle(id).CycleId`).
 - [ ] 27. Synthetic calculation examples match the models (automated); actual company/flow field semantics and coverage are validated separately here — record whether `CompanyStatisticData.m_LastUpdateProduce`, `GetCompanyProductionPerDay`, the LackResources/storage-limit symptoms and `RentersUpdated` behave as documented.
 
-Additional UI checks: all five Industrial tabs render in ja-JP and en-US without raw `CS2AS.*` keys (resource names come from the game's `Resources.TITLE[...]`); a failing Industrial tab hides only that tab's content while Type/Status/HQ/Edit/Delete keep working. Industrial policies, budgets, subsidies and direct buffs are intentionally absent in v1.
+Additional UI checks: all five Industrial tabs render in ja-JP and en-US without raw `CS2AS.*` keys (resource names come from the game's `Resources.TITLE[...]`); a failing Industrial tab hides only that tab's content while Type/Status/HQ/Edit/Delete keep working. Industrial budgets, subsidies and direct buffs are intentionally absent. Industrial policies are listed but unavailable (Area Policy System section below).
+
+# Area Policy System — Cities: Skylines II 1.6.2f1 runtime verification
+
+Status: **NOT RUN.** The record is in `docs/verification/area-policy-system-runtime.md`; fill in PASS/FAIL there with the game version/build, save and observations. The automated evidence (NUnit, Vitest, offline contracts, API-check build) does not establish any item.
+
+1. The policy section looks and behaves like the vanilla District policies section. It is not a floating window.
+2. Two Areas of the same type keep independent policy states.
+3. Conflict swaps are atomic: never both on, never both billed.
+4. A policy above the Area's Level is locked. After a level-up it is available and OFF.
+5. A Suspended Area keeps its desired states, while effects and upkeep stop. They resume on re-activation.
+6. Budget page: Expenses → Service Upkeep includes **Area Management** once, with its own detail line.
+7. Budget page: Income → Service Fees includes **Area Service Fees** once, backed by real admission, with its own detail line. The fixed fee lines are unchanged.
+8. The displayed totals and balance reconcile with the city-money change. The budget chart excludes Area amounts (known limitation).
+9. Area expense is charged in full while the city balance is negative.
+10. No Park member building upkeep is charged twice.
+11. Park admission: household debit = city credit = the Area Service Fees amount.
+12. 1001/2001/2004/2005 change their documented targets.
+13. Industrial scores move only through observation.
+14. Save/load restores policy state and finance without a back-charge.
+15. Policies 2002, 2003, 2006 and 3001–3007 are visibly unavailable and non-billable.
+
+If a Budget Area row is missing, check `Player.log`/the UI console for "Area budget". The vanilla budget item ids are asset data; see `docs/verification/area-budget-ui-contracts.md`.

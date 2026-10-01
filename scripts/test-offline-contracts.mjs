@@ -159,6 +159,66 @@ const localization = read('src/CS2AreaSystem/Core/UI/NativeAreaLocalization.cs')
 check(localization.includes('CS2AS.UI.EditArea'), 'C# localization source must include management panel actions');
 check(localization.includes('CS2AS.State.Suspended'), 'C# localization source must include lifecycle states');
 
+// Area Policy System (docs/superpowers/specs/2026-10-01-area-policy-system-design.md): finance, policy and budget guards.
+const code = source => read(source).replace(/\/\/.*$/gm, '');
+const parkSources = walk('src/CS2AreaSystem/Modules/Park').filter(p=>p.endsWith('.cs'));
+for (const source of parkSources) {
+  const text = code(source);
+  // Park management is an Area expense applied in full even when city money is negative (design §13–15).
+  if (/\bPayManagement\b|\bStoredCityMoney\b|\bCityMoneyLimit\b|\bkMaxMoney\b|\bApply(Expense|Income)\s*\(/.test(text))
+    failures.push(`${source}: Park must not clamp or apply city money itself (no available-balance management clamp)`);
+}
+const parkFinance = code('src/CS2AreaSystem/Modules/Park/ParkFinanceSystem.cs');
+check(/EnqueueExpense\(\s*park\.StableId,\s*AreaFinanceKind\.ParkManagement,/.test(parkFinance), 'Park management must be queued as an Area Management expense');
+check(/AreaFinanceHouseholdTransfer\.Transfer\(/.test(parkFinance) && /RecordSettledIncome\(/.test(code('src/CS2AreaSystem/Modules/Park/ParkTransactions.cs') + parkFinance),
+  'Park admission must be a household-to-city transfer recorded once as Area Service Fees');
+// Admission is its own Area row: never booked under a fixed vanilla income/expense source or player resource.
+for (const source of [...parkSources, ...walk('src/CS2AreaSystem/Core/Finance').filter(p=>p.endsWith('.cs'))]) {
+  const text = code(source);
+  if (/\bIncomeSource\b|\bPlayerResource\b|\bStatisticType\.Income\b|\bFee(Parking|PublicTransport)\b/.test(text))
+    failures.push(`${source}: Area income must not be mapped to a vanilla IncomeSource, PlayerResource or income statistic`);
+}
+const budgetUi = read('UI/src/AreaBudgetDetails.tsx').replace(/\/\/.*$/gm, '');
+check(!/Fee(Parking|PublicTransport|Healthcare|Electricity|Education|Garbage|Water)|IncomeSource/.test(budgetUi), 'budget rows must not name or reuse a fixed vanilla fee source');
+check(!/\btrigger\s*\(|from 'cs2\/api';[\s\S]*\btrigger\b/.test(budgetUi), 'budget rows must not send any game action');
+check(budgetUi.includes("AREA_MANAGEMENT_SOURCE='CS2AS.AreaManagement'") && budgetUi.includes("AREA_SERVICE_FEES_SOURCE='CS2AS.AreaServiceFees'"), 'budget rows must use the localized Area sub-item ids');
+check(uiIndex.includes('registerAreaBudget(registry)'), 'UI must register the budget rows through the module registry');
+const budgetBinding = code('src/CS2AreaSystem/Core/Finance/AreaBudgetBindingSystem.cs');
+check(!/PlayerMoney|Enqueue(Expense|Income)|RecordSettledIncome|ComponentLookup/.test(budgetBinding), 'the budget binding must only read settled amounts');
+// Industrial policy effects reach scores only through vanilla state that observation reads (design §12).
+for (const source of [...walk(`${industrialDir}/Policies`).filter(p=>p.endsWith('.cs')), `${industrialDir}/IndustrialPolicyEffectSystem.cs`, `${industrialDir}/IndustrialPolicyCatalog.cs`]) {
+  const text = code(source);
+  if (/\b(IndustrialAreaState|IndustrialRuntimeSnapshot|IndustrialPerformance\w*|IndustrialProduction\w*|IndustrialLogistics\w*|IndustrialEmployment\w*|IndustrialProgression\w*|IndustrialObservationAggregator)\b|\.\s*(Score|Performance|Production|Logistics|Employment|Efficiency)\s*=(?!=)/.test(text))
+    failures.push(`${source}: Industrial policy code must not read or write Industrial scores`);
+}
+// Every policy has positive base upkeep (design §13); the constructor enforces it at runtime as well.
+const upkeep = code('src/CS2AreaSystem/Core/Policies/AreaPolicyUpkeep.cs');
+check(/!\(BaseDailyUpkeep > 0\)/.test(upkeep), 'AreaPolicyUpkeep must reject non-positive base upkeep');
+const commonPolicies = code('src/CS2AreaSystem/Core/Policies/CommonAreaPolicies.cs');
+const commonUpkeep = [...commonPolicies.matchAll(/new AreaPolicyUpkeep\(\s*([-\d.]+)/g)].map(m=>Number(m[1]));
+check(commonUpkeep.length===1 && commonUpkeep.every(v=>v>0), `common policies must have positive base upkeep (found ${commonUpkeep})`);
+for (const [catalog, count] of [['src/CS2AreaSystem/Modules/Park/ParkPolicyCatalog.cs', 6], [`${industrialDir}/IndustrialPolicyCatalog.cs`, 7]]) {
+  const rows = [...code(catalog).matchAll(/Define\(AreaPolicyIds\.\w+,\s*"\w+",\s*"\w+",\s*\d+,\s*([-\d.]+)/g)].map(m=>Number(m[1]));
+  check(rows.length===count && rows.every(v=>v>0), `${catalog}: all ${count} policies must have positive base upkeep (found ${rows})`);
+}
+// Tourism stays policy-free in this release.
+for (const source of walk('src/CS2AreaSystem/Modules/Tourism').filter(p=>p.endsWith('.cs')))
+  if (/AreaPolicy|IAreaPolicyProvider|PolicyDefinitions/.test(code(source))) failures.push(`${source}: Tourism must not register policies`);
+for (const source of walk('src').filter(p=>p.endsWith('.cs') && !/[\\/](bin|obj)[\\/]/.test(p)))
+  if (/new AreaPolicyDefinition\([^;]*AreaTypeId\.Tourism/s.test(code(source))) failures.push(`${source}: no policy may support the Tourism Area type`);
+// Required policy/finance registrations and order (each isolated in try/catch).
+for (const [pattern, what] of [
+  [/UpdateAfter<CS2AreaSystem\.Core\.Policies\.AreaPolicySystem,\s*CS2AreaSystem\.Core\.Anchors\.AreaActivationSystem>\(SystemUpdatePhase\.ModificationEnd\)/, 'AreaPolicySystem after AreaActivationSystem (ModificationEnd)'],
+  [/UpdateAfter<CS2AreaSystem\.Core\.Finance\.AreaFinanceSystem>\(SystemUpdatePhase\.GameSimulation\)/, 'AreaFinanceSystem after GameSimulation producers'],
+  [/UpdateBefore<CS2AreaSystem\.Core\.Finance\.AreaFinanceSaveSystem,\s*Game\.Serialization\.SerializerSystem>\(SystemUpdatePhase\.Serialize\)/, 'Area finance flush before the serializer'],
+  [/UpdateAt<CS2AreaSystem\.Core\.Policies\.AreaPolicyUpkeepSystem>\(SystemUpdatePhase\.GameSimulation\)/, 'policy upkeep as a GameSimulation producer'],
+  [/UpdateBefore<CS2AreaSystem\.Modules\.Park\.ParkFinanceSaveSystem,\s*CS2AreaSystem\.Core\.Finance\.AreaFinanceSaveSystem>\(SystemUpdatePhase\.Serialize\)/, 'Park finance save before Area finance flush'],
+  [/UpdateBefore<IndustrialPolicyEffectSystem,\s*IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)|UpdateBefore<CS2AreaSystem\.Modules\.Industrial\.IndustrialPolicyEffectSystem,\s*CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/, 'Industrial policy effects before observation'],
+  [/try\s*\{\s*updateSystem\.UpdateAfter<CS2AreaSystem\.Core\.Finance\.AreaBudgetBindingSystem>\(SystemUpdatePhase\.UIUpdate\);\s*\}\s*catch/, 'isolated Area budget binding (UIUpdate)']])
+  check(pattern.test(mod), `Mod.cs must register ${what}`);
+const tryBlocks = mod.match(/try\s*\{[^}]*?(AreaPolicySystem|AreaFinanceSystem|AreaPolicyUpkeepSystem)[^}]*\}\s*catch/g) ?? [];
+check(tryBlocks.length >= 3, 'policy and finance registrations must each be isolated in try/catch');
+
 const requirements = read('docs/verification/area-core-requirements.md');
 check(!requirements.includes('Main is unchanged; all implementation commits are on feat/area-core'), 'verification docs must describe the current merged repository state');
 

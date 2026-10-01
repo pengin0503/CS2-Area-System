@@ -8,6 +8,7 @@ const {AreaSystemHost}=await import('./AreaSystemHost');
 const {AreaPoliciesSection,AREA_POLICY_SECTION_TYPE}=await import('./AreaPoliciesSection');
 describe('mod registration',()=>{
  it('appends the floating host and adds the section without replacing vanilla sections',()=>{
+  const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
   const append=vi.fn();let extension:((current:Record<string,unknown>)=>Record<string,unknown>)|undefined;
   const extend=vi.fn((_path:string,_name:string,fn:(current:Record<string,unknown>)=>Record<string,unknown>)=>{extension=fn;});
   register({append,extend} as unknown as Parameters<typeof register>[0]);
@@ -19,5 +20,14 @@ describe('mod registration',()=>{
   expect(result['Game.UI.InGame.ActionsSection']).toBe(vanillaSection);
   expect(result[AREA_INFO_SECTION_TYPE]).toBe(AreaInfoSection);
   expect(result[AREA_POLICY_SECTION_TYPE]).toBe(AreaPoliciesSection);
+  warn.mockRestore();
+ });
+ it('asks the budget presentation to register, which fails closed without the verified vanilla budget modules',()=>{
+  const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+  const extend=vi.fn();
+  register({append:vi.fn(),extend} as unknown as Parameters<typeof register>[0]);
+  expect(extend.mock.calls.map(c=>c[0])).toEqual([SELECTED_INFO_SECTIONS]);
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('Area budget'),expect.anything());
+  warn.mockRestore();
  });
 });

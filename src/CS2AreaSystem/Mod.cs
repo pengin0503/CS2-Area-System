@@ -38,6 +38,8 @@ namespace CS2AreaSystem
             RegisterSettings();
             try { updateSystem.UpdateAfter<AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
             catch (System.Exception error) { Log.Error(error, "Area management UI registration failed; simulation remains registered."); }
+            try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Finance.AreaBudgetBindingSystem>(SystemUpdatePhase.UIUpdate); }
+            catch (System.Exception error) { Log.Error(error, "Area budget rows unavailable; the vanilla budget and Area finance are unaffected."); }
         }
         public void OnDispose()
         {
