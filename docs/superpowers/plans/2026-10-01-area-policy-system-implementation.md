@@ -43,7 +43,7 @@
 ## Review Focus
 
 1. **Unknown saved PolicyId after a module is removed:** the raw ID and desired state must survive save/load, produce no effect/upkeep, and reactivate if the definition returns. Task 1 adds the round-trip test.
-2. **Atomic conflict swap near a finance settlement boundary:** old and new policies must never overlap for effect or billing and must not create a zero-length double charge. Tasks 2 and 4 add transition/settlement tests.
+2. **Atomic conflict swap near a finance settlement boundary:** old and new policies must never overlap for effect or billing and must not create a zero-length double charge. Tasks 2, 4, and 6 add transition/settlement tests.
 3. **City balance already negative:** Area expenses must still settle and appear in real Service Upkeep totals; no “paid amount” clamp may survive from Park finance. Tasks 4–5 add model/API/runtime checks.
 4. **Vanilla effect adapter unavailable after a game/API change:** desired state is preserved, the policy becomes effect-unavailable and non-billable, other policies/Areas continue, and repeated logs are suppressed per Area+Policy+failure class per load generation. Tasks 2, 7, and 8 add tests.
 5. **Park admission at save/accounting boundaries:** household debit and city credit must not diverge after reload, and the amount must remain Area Service Fees rather than being classified as Parking/Public Transport/etc. Tasks 5 and 9 own the transaction and presentation regressions.
@@ -85,7 +85,7 @@
   - `RestrictedOperatingHours = 3006`
   - `AdvancedAutomation = 3007`
 - Produces `enum AreaPolicyEffectClass : byte { AreaInternal, VanillaSimulation }`.
-- Produces `sealed class AreaPolicyDefinition` with immutable properties: `PolicyId`, `NameKey`, `DescriptionKey`, `IconUri`, `IReadOnlyCollection<int> AreaTypeIds`, `MinLevel`, `AreaPolicyUpkeep Upkeep`, `string ConflictGroup`, `AreaPolicyEffectClass EffectClass`.
+- Produces `sealed class AreaPolicyDefinition` with immutable properties: `PolicyId`, `NameKey`, `DescriptionKey`, `IconUri`, `IReadOnlyCollection<int> AreaTypeIds`, `MinLevel`, `AreaPolicyUpkeep Upkeep`, `string ConflictGroup`, `AreaPolicyEffectClass EffectClass`, `string EffectHandlerKey`.
 - Produces `readonly struct AreaPolicyUpkeep` with `double BaseDailyUpkeep, PerHectare, PerEligibleFacility, PerActivityUnit` and `string ActivityBasis`.
 - Produces `struct ManagedAreaPolicyEntry : IBufferElementData, ISerializable` with `int PolicyId`, `byte DesiredEnabled`, schema version, and `bool IsDesiredEnabled`.
 - Produces `AreaPolicyRegistry.Register(AreaPolicyDefinition)`, `TryGet(int, out AreaPolicyDefinition)`, and `ForAreaType(int)`.
@@ -123,7 +123,7 @@ Expected: all Task 1 tests PASS.
 
 ---
 
-### Task 2: Policy Runtime, Module Providers, Conflict/Efffective-State Resolution
+### Task 2: Policy Runtime, Module Providers, Conflict/Effective-State Resolution
 
 **Files:**
 - Create: `src/CS2AreaSystem/Core/Policies/AreaPolicyContext.cs`
@@ -251,6 +251,7 @@ Expected: tests PASS, `npm run build` PASS.
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceModel.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceLedger.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceVanillaAdapter.cs`
+- Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceHouseholdTransfer.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceSystem.cs`
 - Create: `src/CS2AreaSystem/Core/Finance/AreaFinanceSaveSystem.cs`
 - Modify: `src/CS2AreaSystem/Mod.cs`
@@ -269,8 +270,10 @@ Expected: tests PASS, `npm run build` PASS.
 - `AreaFinanceLedger.EnqueueIncome(ulong areaStableId, AreaFinanceKind kind, long amount)`.
 - `AreaFinanceLedger.TakeBatch() -> AreaFinanceBatch` aggregates without losing per-kind/per-Area audit detail.
 - `AreaFinanceVanillaAdapter.ApplyExpense(long amount) -> long` returns the amount actually applied to real city money/accounting.
-- `AreaFinanceVanillaAdapter.ApplyIncome(long amount) -> long` returns the amount actually credited to real city money. For Park admission it must **not** write `CollectedCityServiceFeeData` and must not select any unrelated fixed `IncomeSource`.
-- `AreaFinanceSystem.EnqueueExpense(...)`, `EnqueueIncome(...)`, and `FlushForSave()` are the only city-side finance entry points for policy/Park code after Task 5.
+- `AreaFinanceVanillaAdapter.ApplyIncome(long amount) -> long` returns the amount actually credited to real city money for Area-originated income that has no external payer. It must **not** write Park admission into `CollectedCityServiceFeeData` or select any unrelated fixed `IncomeSource`.
+- `AreaFinanceHouseholdTransfer.Transfer(ref PlayerMoney cityMoney, DynamicBuffer<Resources> householdResources, long requested) -> long` performs the Park-style payer-to-city transfer atomically: compute the household-payable amount, apply the city credit with native `PlayerMoney` saturation semantics, debit the household by exactly the city-applied amount, and return that exact amount. A failed/zero city credit means zero household debit.
+- `AreaFinanceSystem.RecordSettledIncome(ulong areaStableId, AreaFinanceKind kind, long amount)` records an already-applied atomic transfer for budget presentation/lifetime accounting without crediting city money a second time.
+- `AreaFinanceSystem.EnqueueExpense(...)`, `EnqueueIncome(...)`, `RecordSettledIncome(...)`, `AreaFinanceHouseholdTransfer.Transfer(...)`, and `FlushForSave()` are the only Core finance entry points available to Park/policy code after Task 5; Park code must not call `PlayerMoney.Add` directly.
 - `AreaFinanceSystem.AreaManagementSettled` and `AreaFinanceSystem.AreaServiceFeesSettled` expose authoritative settled totals for Task 9 budget presentation. They are derived from the same batches applied to city money, never independent UI counters.
 - Expense target: prefer the verified public `ExpenseSource.ServiceUpkeep`/service-upkeep accounting route. If 1.6.2f1 fixed `CityService` semantics prevent a synthetic service from joining safely, `AreaFinanceVanillaAdapter` uses the narrow version-pinned budget-accounting boundary documented in `area-finance-contracts.md`; it must still debit real city money and never repurpose an unrelated expense source.
 - Income target: 1.6.2f1 has no generic `IncomeSource.ServiceFee`. The fixed fee sources are resource-specific. Park admission therefore credits real city money through the Area adapter and is presented/reconciled under the Service Fees UI group in Task 9 using `AreaServiceFeesSettled`.
@@ -293,7 +296,7 @@ Expected: reflection assertions for vanilla members PASS; Area adapter tests FAI
 
 - [ ] **Step 4: Implement ledger, real city-money adapter, runtime settlement, and save flush**
 
-Do not clamp Area expenses to available city funds. Do not cap Park-admission city credit at the old `PlayerMoney` upper-bound acceptance logic in `ParkFinanceModel`; the adapter owns the real transfer semantics. Do not write Park admission into any unrelated `IncomeSource`.
+Do not suppress Area expenses merely because the current city balance is negative; allow native `PlayerMoney` saturation semantics at the engine's representable bounds. Move Park admission saturation/accepted-delta logic into `AreaFinanceHouseholdTransfer` so household debit always equals the actual city credit. Do not write Park admission into any unrelated `IncomeSource`.
 
 - [ ] **Step 5: Add system-order tests**
 
@@ -327,15 +330,16 @@ Expected: Task 4 tests and `scripts/verify.ps1 -ApiCheck` PASS.
 - Remove `ParkFinanceModel.PayManagement(ref PlayerMoney,...)` as the runtime management-payment path.
 - Park management calculates requested settled expense exactly as before, then calls `AreaFinanceSystem.EnqueueExpense(stableId, ParkManagement, amount)`.
 - Household admission debit remains real household `Resource.Money` debit.
-- Successful household collection calls `AreaFinanceSystem.EnqueueIncome(stableId, ParkAdmission, collected)`; city-side income is no longer bounded by `CityMoneyLimit - StoredCityMoney`.
-- `ParkAdmissionPlan.Collected` remains bounded only by requested fee and available household money.
-- Lifetime Park revenue/expense counters record the amount actually accepted by the shared Area finance batch.
+- Replace Park's local admission money primitive with `AreaFinanceHouseholdTransfer.Transfer(...)` inside the existing scheduled transaction job. The returned amount is the single source of truth for both household debit and city credit.
+- After the job returns the exact applied amount, call `AreaFinanceSystem.RecordSettledIncome(stableId, ParkAdmission, collected)`; this records finance/UI accounting only and must not credit the city again.
+- `ParkAdmissionPlan.Collected` remains the pre-transfer household-payable plan amount; the actual collected outcome is the transfer helper's returned applied amount and may be lower only because the native city balance has reached its representable saturation bound.
+- Lifetime Park revenue/expense counters record the amount actually applied by the shared Area finance path.
 - Save flush ordering must guarantee: pending household debit result is recorded → resulting Area income request is queued → Area finance flush applies city-side accounting → Park counters serialize.
 - Delete obsolete city-balance-lower-bound management tests and replace them with “negative city balance still incurs full expense” tests.
 
 - [ ] **Step 1: Rewrite failing Park finance expectations**
 
-Add regression for city balance below zero, household insufficient funds, admission near old upper city-money limit, and save during pending transfer.
+Add regression for city balance below zero, household insufficient funds, admission near the native upper city-money saturation bound, exact household-debit/city-credit equality, no double credit from `RecordSettledIncome`, and save during pending transfer.
 
 - [ ] **Step 2: Verify RED**
 
@@ -343,7 +347,7 @@ Expected: old PlayerMoney-clamped behavior fails the new tests.
 
 - [ ] **Step 3: Route Park city-side money through `AreaFinanceSystem`**
 
-Do not double-credit city money in both Park transfer job and AreaFinanceSystem.
+Use the Core transfer helper in the Park job, then record the already-settled income. Do not double-credit city money in `AreaFinanceSystem`.
 
 - [ ] **Step 4: Update save boundary and lifetime-counter recording**
 
@@ -364,6 +368,8 @@ Expected: PASS; no old “paid only down to -2,000,000,000” management semanti
 **Files:**
 - Create: `src/CS2AreaSystem/Core/Policies/AreaPolicyUpkeepSystem.cs`
 - Create: `src/CS2AreaSystem/Core/Policies/AreaPolicyExperience.cs`
+- Create: `src/CS2AreaSystem/Core/Policies/AreaPolicyUpkeepInputs.cs`
+- Create: `src/CS2AreaSystem/Core/Modules/IAreaPolicyUpkeepProvider.cs`
 - Modify: `src/CS2AreaSystem/Mod.cs`
 - Modify: `src/CS2AreaSystem/Modules/Park/ParkProgressionModel.cs`
 - Modify: `src/CS2AreaSystem/Modules/Park/ParkProgressionSystem.cs`
@@ -385,8 +391,29 @@ Expected: PASS; no old “paid only down to -2,000,000,000” management semanti
   - `IndustrialProgressionModel.ComputeHourlyXp(..., double xpMultiplier)`.
   - multiplier applies to an otherwise-qualified base award before enforcing the existing 240/day cap.
   - zero/ineligible XP remains zero.
-- `AreaPolicyUpkeepSystem` iterates Active managed Areas with policy buffers, asks `AreaPolicySystem` for effective policies, computes the spec formula, prorates by simulation frames through `AreaFinanceModel.SettleDaily`, and enqueues `PolicyUpkeep` expense.
-- Use stable inputs only. For initial catalogs, any scaling coefficient requiring an unguaranteed metric remains zero.
+- `AreaPolicyUpkeepInputs` fields: `double AreaSquareMeters`, `int EligibleFacilityCount`, `double ActivityUnits`.
+- `IAreaPolicyUpkeepProvider.TryGetPolicyUpkeepInputs(Entity area, int policyId, in AreaPolicyContext context, out AreaPolicyUpkeepInputs inputs)` supplies only stable module-owned billing inputs. Core never knows Park/Industrial facility semantics.
+- `AreaPolicyUpkeepSystem` iterates Active managed Areas with policy buffers, asks `AreaPolicySystem` for effective policies, obtains stable inputs from the owning module when a non-zero coefficient needs them, computes the spec formula, prorates by simulation frames through `AreaFinanceModel.SettleDaily`, and enqueues `PolicyUpkeep` expense.
+- Initial daily-upkeep coefficients are fixed for v1 tuning and tested exactly:
+
+| Policy | Base/day | Per hectare | Per eligible facility | Per activity unit |
+|---|---:|---:|---:|---:|
+| Focused Management | 250 | 0 | 0 | 0 |
+| Enhanced Maintenance | 300 | 20 | 25 | 0 |
+| Night Events | 400 | 15 | 20 | 0 |
+| Quiet Operations | 200 | 10 | 10 | 0 |
+| Landscape Protection | 250 | 30 | 0 | 0 |
+| Premium Services | 350 | 0 | 20 | 0 |
+| Major Event Attraction | 1000 | 30 | 50 | 0 |
+| Enhanced Safety Audits | 400 | 0 | 20 | 0 |
+| Environmental Regulation | 500 | 0 | 30 | 0 |
+| Production Priority | 600 | 0 | 30 | 0 |
+| Logistics Priority | 600 | 0 | 40 | 0 |
+| 24-Hour Operations | 800 | 0 | 50 | 0 |
+| Restricted Operating Hours | 250 | 0 | 10 | 0 |
+| Advanced Automation | 1200 | 0 | 75 | 0 |
+
+- Park `EligibleFacilityCount` uses the existing relevant managed-facility count; Industrial uses the Area's classified eligible facilities for that policy, not observed throughput or jobs. Geometry `m_SurfaceArea` is the hectare source. All `PerActivityUnit` coefficients are zero in the first release, so no occasionally unavailable observation metric is required for mandatory billing.
 - Keep per-Area/per-policy fractional carry runtime-only and clear interpolation baseline on load; never back-charge unobserved time.
 
 - [ ] **Step 1: Write failing XP/upkeep tests**
