@@ -144,4 +144,30 @@ public class IndustrialApiContractTests {
   Assert.That(clock.HourBucket(1000), Is.EqualTo(7));
   Assert.That(clock.Day(1000 + (uint)(17.5 * TimeSystem.kTicksPerDay / 24)), Is.EqualTo(1u));
  }
+ // Policy effect candidates (docs/verification/industrial-policy-effect-contracts.md). These pin why no Industrial
+ // adapter is verified in 1.6.2f1; a changed member list means the contract must be re-examined.
+ [Test] public void EfficiencyFactorsHaveNoSlotAModCanOwn() {
+  Assert.That(Enum.GetNames(typeof(EfficiencyFactor)), Is.EqualTo(new[] { "Destroyed", "Abandoned", "Disabled", "Fire", "ServiceBudget",
+   "NotEnoughEmployees", "SickEmployees", "EmployeeHappiness", "ElectricitySupply", "ElectricityFee", "WaterSupply", "DirtyWater", "SewageHandling",
+   "WaterFee", "Garbage", "Telecom", "Mail", "MaterialSupply", "WindSpeed", "WaterDepth", "SunIntensity", "NaturalResources", "CityModifierSoftware",
+   "CityModifierElectronics", "CityModifierIndustrialEfficiency", "CityModifierOfficeEfficiency", "CityModifierHospitalEfficiency", "SpecializationBonus",
+   "CityModifierFishInput", "CityModifierFishHub", "LackResources", "GateBypass", "Count" }));
+  Assert.That(Enum.GetUnderlyingType(typeof(EfficiencyFactor)), Is.EqualTo(typeof(byte)));
+ }
+ [Test] public void BuildingAndDistrictModifiersHaveNoIndustrialProductionOrPollutionChannel() {
+  Assert.That(Enum.GetNames(typeof(BuildingModifierType)), Is.EqualTo(new[] { "ParkingFee" }));
+  Assert.That(Enum.GetNames(typeof(Game.Areas.DistrictModifierType)), Is.EqualTo(new[] { "GarbageProduction", "ProductConsumption", "ParkingFee",
+   "BuildingFireHazard", "BuildingFireResponseTime", "BuildingUpkeep", "LowCommercialTax", "Wellbeing", "CrimeAccumulation", "StreetSpeedLimit",
+   "StreetTrafficSafety", "EnergyConsumptionAwareness", "CarReserveProbability", "BikeProbability" }));
+  Assert.That(Enum.GetNames(typeof(LocalModifierType)), Is.EqualTo(new[] { "CrimeAccumulation", "ForestFireResponseTime", "ForestFireHazard", "Wellbeing", "Health" }));
+ }
+ [Test] public void PollutionEmitModifierScalesEachPollutionKindByItsOwnFraction() {
+  Field<PollutionEmitModifier>("m_GroundPollutionModifier", typeof(float));
+  Field<PollutionEmitModifier>("m_AirPollutionModifier", typeof(float));
+  Field<PollutionEmitModifier>("m_NoisePollutionModifier", typeof(float));
+  var data = new PollutionData { m_GroundPollution = 100, m_AirPollution = 200, m_NoisePollution = 300 };
+  new PollutionEmitModifier { m_GroundPollutionModifier = -0.5f, m_AirPollutionModifier = 0f, m_NoisePollutionModifier = 0.25f }.UpdatePollutionData(ref data);
+  Assert.That(data.m_GroundPollution, Is.EqualTo(50f)); Assert.That(data.m_AirPollution, Is.EqualTo(200f)); Assert.That(data.m_NoisePollution, Is.EqualTo(375f));
+  Assert.That(typeof(Colossal.Serialization.Entities.ISerializable).IsAssignableFrom(typeof(PollutionEmitModifier)), Is.True, "saved with the building");
+ }
 }

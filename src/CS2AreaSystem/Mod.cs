@@ -96,6 +96,8 @@ namespace CS2AreaSystem
             {
                 updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem>(SystemUpdatePhase.ModificationEnd);
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
+                // Policy effects reach vanilla state before an observation cycle in the same frame reads it.
+                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
                 updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialProgressionSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
             }
             catch (System.Exception error) { Log.Error(error, "Industrial gameplay systems unavailable; Area Core, Park and Tourism remain registered."); }

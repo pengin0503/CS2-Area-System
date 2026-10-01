@@ -104,4 +104,14 @@ public class ModSystemOrderTests {
         // Policy state is resolved on demand from the saved buffer; AreaPolicySystem itself runs earlier, in ModificationEnd.
         Assert.That(Schedule(SystemUpdatePhase.ModificationEnd), Does.Contain(typeof(CS2AreaSystem.Core.Policies.AreaPolicySystem)));
     }
+    [Test] public void IndustrialPolicyEffectsAreSyncedBeforeIndustrialObservation() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateBefore", typeof(CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem),
+                typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem), SystemUpdatePhase.GameSimulation) }));
+        var order = Schedule(SystemUpdatePhase.GameSimulation);
+        int effects = order.IndexOf(typeof(CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem));
+        Assert.That(effects, Is.GreaterThanOrEqualTo(0));
+        Assert.That(effects, Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem))),
+            "an observation cycle started in the same frame sees the applied vanilla state");
+    }
 }

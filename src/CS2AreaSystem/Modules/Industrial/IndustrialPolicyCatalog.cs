@@ -18,9 +18,17 @@ namespace CS2AreaSystem.Modules.Industrial
             Define(AreaPolicyIds.RestrictedOperatingHours, "RestrictedOperatingHours", "Soundbarrier", 4, 250, 10, HoursGroup),
             Define(AreaPolicyIds.AdvancedAutomation, "AdvancedAutomation", "Research", 5, 1200, 75, null),
         };
-        // No Industrial vanilla adapter is verified yet: all policies stay visible but unavailable and non-billable.
+        public static bool IsIndustrialPolicy(int policyId)
+        {
+            foreach (var definition in Definitions) if (definition.PolicyId == policyId) return true;
+            return false;
+        }
+        // A policy is available only with a verified adapter (Policies.IndustrialPolicyAdapters); the effect system then
+        // decides per Area. No 1.6.2f1 adapter is verified, so every policy stays visible but unavailable and non-billable
+        // (docs/verification/industrial-policy-effect-contracts.md).
         public static bool IsEffectAvailable(int policyId, out string reasonKey)
         {
+            if (IsIndustrialPolicy(policyId) && Policies.IndustrialPolicyAdapters.IsImplemented(policyId)) { reasonKey = null; return true; }
             reasonKey = AreaPolicyReasons.EffectUnavailable;
             return false;
         }

@@ -47,8 +47,14 @@ namespace CS2AreaSystem.Modules.Industrial
         // Industrial v1 has no module actions; Core's HQ/Edit/Delete actions are handled by Core.
         public override bool HandleAction(Entity area, string action, string value, in AreaPanelContext context) => false;
         public System.Collections.Generic.IReadOnlyList<AreaPolicyDefinition> PolicyDefinitions => IndustrialPolicyCatalog.Definitions;
-        public bool IsPolicyEffectAvailable(Entity area, int policyId, in AreaPolicyContext context, out string reasonKey) =>
-            IndustrialPolicyCatalog.IsEffectAvailable(policyId, out reasonKey);
+        public bool IsPolicyEffectAvailable(Entity area, int policyId, in AreaPolicyContext context, out string reasonKey)
+        {
+            if (!IndustrialPolicyCatalog.IsEffectAvailable(policyId, out reasonKey)) return false;
+            // A verified adapter still needs the effect system to apply it and to know this Area's failures.
+            var effects = context.World?.GetExistingSystemManaged<IndustrialPolicyEffectSystem>();
+            if (effects == null || !context.Entities.HasComponent<ManagedAreaStableId>(area)) { reasonKey = AreaPolicyReasons.EffectUnavailable; return false; }
+            return effects.Controller.IsAvailable(area, context.Entities.GetComponentData<ManagedAreaStableId>(area).Value, policyId, context, out reasonKey);
+        }
         public bool TryGetPolicyUpkeepInputs(Entity area, int policyId, in AreaPolicyContext context, out AreaPolicyUpkeepInputs inputs)
         {
             inputs = default;
