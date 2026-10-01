@@ -161,6 +161,32 @@ namespace CS2AreaSystem.Modules.Industrial
             Add(P + "Note.Prestige", "Industrial Powerhouse needs any two prestige objectives.", "産業大拠点には名声目標のうち任意の2つが必要です。");
             Add(P + "Note.HqHealth", "The headquarters' vacancy or poor operating health never suspends the area and has no penalty in this version.", "本部の空きや経営不振でエリアが停止することはなく、このバージョンでは不利な効果もありません。");
             Add(P + "Note.Overlap", "These buildings belong to an overlapping Industrial Area with a smaller ID, which counts them.", "これらの建物はIDの小さい重複した産業エリアに属し、そちらで集計されます。");
+            AppendPolicies(Add);
+        }
+        // Industrial policy texts (design §12). Effects act on the real simulation only through verified adapters;
+        // Industrial scores change only through observation.
+        private static void AppendPolicies(System.Action<string, string, string> Add)
+        {
+            void Policy(string id, string en, string jp, string enText, string jpText)
+            { Add("Policy.TITLE[CS2AS.Policy." + id + "]", en, jp); Add("Policy.DESCRIPTION[CS2AS.Policy." + id + "]", enText, jpText); }
+            Policy("EnhancedSafetyAudits", "Enhanced Safety Audits", "安全監査の強化",
+                "Favours stable, safe operation over extreme utilisation.", "極端な稼働よりも安定した安全な操業を優先します。");
+            Policy("EnvironmentalRegulation", "Stronger Environmental Regulation", "環境規制の強化",
+                "Reduces environmental burden with a modest production trade-off. Conflicts with Production Priority.",
+                "生産をやや犠牲にして環境負荷を減らします。生産優先と同時には施行できません。");
+            Policy("ProductionPriority", "Production Priority", "生産優先",
+                "Raises production with a higher environmental burden. Conflicts with Stronger Environmental Regulation.",
+                "環境負荷の増加と引き換えに生産を高めます。環境規制の強化と同時には施行できません。");
+            Policy("LogisticsPriority", "Logistics Priority", "物流優先",
+                "Favours real input and output flow and reduces logistics blockage.", "原材料と製品の流れを優先し、物流の停滞を減らします。");
+            Policy("TwentyFourHourOperations", "24-Hour Operations", "24時間操業",
+                "Raises operating activity with more noise and operating cost. Conflicts with Restricted Operating Hours.",
+                "騒音と操業コストの増加と引き換えに稼働を高めます。操業時間の制限と同時には施行できません。");
+            Policy("RestrictedOperatingHours", "Restricted Operating Hours", "操業時間の制限",
+                "Reduces night-time noise with lower total production. Conflicts with 24-Hour Operations.",
+                "総生産の低下と引き換えに夜間の騒音を減らします。24時間操業と同時には施行できません。");
+            Policy("AdvancedAutomation", "Advanced Automation", "高度自動化",
+                "Raises facility productivity while reducing labour demand.", "施設の生産性を高め、必要な労働力を減らします。");
         }
     }
 }

@@ -70,6 +70,7 @@ namespace CS2AreaSystem.Core.UI
             entries["CS2AS.UI.Met"] = ja ? "達成" : "Met";
             entries["CS2AS.UI.NotMet"] = ja ? "未達成" : "Not met";
             CS2AreaSystem.Core.Settings.AreaSettingsLocalization.Append(entries, ja);
+            CS2AreaSystem.Core.Policies.AreaPolicyLocalization.Append(entries, ja);
             CS2AreaSystem.Modules.Park.ParkLocalization.Append(entries, ja);
             CS2AreaSystem.Modules.Industrial.IndustrialLocalization.Append(entries, ja);
             return entries;

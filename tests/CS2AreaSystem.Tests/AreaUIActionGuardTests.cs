@@ -27,4 +27,10 @@ public class AreaUIActionGuardTests {
   Assert.That(AreaUIActionGuard.CanRestorePending(true,11,10,"10"),Is.False,"entity reused by another area");
   Assert.That(AreaUIActionGuard.CanRestorePending(true,10,10,"11"),Is.False,"stale cancel for another area");
  }
+ [Test] public void PolicyToggleArgumentsAreStrictlyParsed() {
+  Assert.That(AreaPolicyToggleRequest.TryParse("2002","1",out var id,out var on),Is.True); Assert.That(id,Is.EqualTo(2002)); Assert.That(on,Is.True);
+  Assert.That(AreaPolicyToggleRequest.TryParse("3005","0",out id,out on),Is.True); Assert.That(id,Is.EqualTo(3005)); Assert.That(on,Is.False);
+  foreach(var (policy,enabled) in new[]{("2002","true"),("2002",""),("2002",null),("-1","1"),("0","1"),("20 02","1"),("+2002","1"),("2002.0","1"),(null,"1"),("99999999999","1")})
+   Assert.That(AreaPolicyToggleRequest.TryParse(policy!,enabled!,out _,out _),Is.False,policy+"/"+enabled);
+ }
 }

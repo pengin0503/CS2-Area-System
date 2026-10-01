@@ -39,4 +39,26 @@ public class NativeAreaLocalizationTests {
   Assert.That(keys,Does.Contain("CS2AS.UI.AreaList").And.Contain("CS2AS.UI.NoAreas"),"area list component keys must be scanned");
   foreach(var key in keys.Distinct()) Assert.That(entries.ContainsKey(key),Is.True,locale+" is missing "+key);
  }
+ [TestCase("en-US")] [TestCase("ja-JP")]
+ public void EveryPolicyKeyIsLocalized(string locale) {
+  var entries=NativeAreaLocalization.Entries(locale);
+  var definitions=CS2AreaSystem.Core.Policies.CommonAreaPolicies.Definitions.Concat(CS2AreaSystem.Modules.Park.ParkPolicyCatalog.Definitions)
+   .Concat(CS2AreaSystem.Modules.Industrial.IndustrialPolicyCatalog.Definitions);
+  var keys=definitions.SelectMany(d=>new[]{d.NameKey,d.DescriptionKey}).ToList();
+  keys.AddRange(typeof(CS2AreaSystem.Core.Policies.AreaPolicyReasons).GetFields().Select(f=>(string)f.GetValue(null)!));
+  keys.AddRange(Enumerable.Range(1,5).Select(level=>"CS2AS.Policy.Requirement.Level"+level));
+  keys.AddRange(new[]{"CS2AS.Policy.Status.Active","CS2AS.Policy.Status.On","CS2AS.Policy.Status.Off","CS2AS.Policy.PerDay","CS2AS.Policy.On","CS2AS.Policy.Off"});
+  foreach(var key in keys) {
+   Assert.That(entries.ContainsKey(key),Is.True,locale+" is missing "+key);
+   Assert.That(entries[key],Is.Not.Empty);
+  }
+ }
+ [Test] public void PolicyNamesUseTheSpecTitles() {
+  var en=NativeAreaLocalization.Entries("en-US");
+  string Name(string key)=>en["Policy.TITLE[CS2AS.Policy."+key+"]"];
+  Assert.That(new[]{"FocusedManagement","EnhancedMaintenance","NightEvents","QuietOperations","LandscapeProtection","PremiumServices","MajorEventAttraction",
+   "EnhancedSafetyAudits","EnvironmentalRegulation","ProductionPriority","LogisticsPriority","TwentyFourHourOperations","RestrictedOperatingHours","AdvancedAutomation"}.Select(Name),
+   Is.EqualTo(new[]{"Focused Management","Enhanced Maintenance","Night Events","Quiet Operations","Landscape Protection","Premium Services","Major Event Attraction",
+   "Enhanced Safety Audits","Stronger Environmental Regulation","Production Priority","Logistics Priority","24-Hour Operations","Restricted Operating Hours","Advanced Automation"}));
+ }
 }

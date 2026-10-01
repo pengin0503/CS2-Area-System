@@ -114,6 +114,28 @@ namespace CS2AreaSystem.Modules.Park
             Add(P + "Check.PrestigeTourists", "Landmark: tourist visits", "ランドマーク：観光客の来園数");
             Add(P + "Check.Hold", "Requirements held (about 1 day)", "条件の維持（約1日）");
             Add(P + "Note.Prestige", "Landmark Park needs any two of the three Landmark objectives.", "ランドマーク公園には3つのランドマーク目標のうち2つが必要です。");
+            AppendPolicies(Add);
+        }
+        // Park policy texts (design §11). Directions only: magnitudes are added with each verified effect.
+        private static void AppendPolicies(System.Action<string, string, string> Add)
+        {
+            void Policy(string id, string en, string jp, string enText, string jpText)
+            { Add("Policy.TITLE[CS2AS.Policy." + id + "]", en, jp); Add("Policy.DESCRIPTION[CS2AS.Policy." + id + "]", enText, jpText); }
+            Policy("EnhancedMaintenance", "Enhanced Maintenance", "維持管理の強化",
+                "Spends more on Park management to raise effective maintenance coverage.", "公園の管理費を増やして実効的な維持管理の水準を高めます。");
+            Policy("NightEvents", "Night Events", "ナイトイベント",
+                "Draws more visitors with evening events, with more crowding and noise. Conflicts with Quiet Operations.",
+                "夜間のイベントで来園者を増やしますが、混雑と騒音も増えます。静穏運営と同時には施行できません。");
+            Policy("QuietOperations", "Quiet Operations", "静穏運営",
+                "Lowers visitor pressure in favour of quiet, satisfying visits. Conflicts with Night Events.",
+                "来園者の集中を抑え、静かで満足度の高い利用を優先します。ナイトイベントと同時には施行できません。");
+            Policy("LandscapeProtection", "Landscape Protection", "景観保護",
+                "Protects the landscape at the cost of some usable visitor capacity.", "利用できる来園者の収容力を一部犠牲にして景観を守ります。");
+            Policy("PremiumServices", "Premium Services", "プレミアムサービス",
+                "Better services soften the value-for-money penalty of higher admission fees.", "サービスを充実させ、高い入園料による割高感を和らげます。");
+            Policy("MajorEventAttraction", "Major Event Attraction", "大型イベント誘致",
+                "Attracts many more visitors with major events, with strong crowding and high upkeep.",
+                "大型イベントで来園者を大きく増やしますが、混雑が大きく維持費も高くなります。");
         }
     }
 }

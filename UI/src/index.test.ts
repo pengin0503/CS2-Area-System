@@ -5,6 +5,7 @@ vi.mock('cs2/modding',()=>({getModule:()=>undefined}));
 const {default:register,SELECTED_INFO_SECTIONS}=await import('./index');
 const {AreaInfoSection,AREA_INFO_SECTION_TYPE}=await import('./AreaInfoSection');
 const {AreaSystemHost}=await import('./AreaSystemHost');
+const {AreaPoliciesSection,AREA_POLICY_SECTION_TYPE}=await import('./AreaPoliciesSection');
 describe('mod registration',()=>{
  it('appends the floating host and adds the section without replacing vanilla sections',()=>{
   const append=vi.fn();let extension:((current:Record<string,unknown>)=>Record<string,unknown>)|undefined;
@@ -17,5 +18,6 @@ describe('mod registration',()=>{
   const result=extension!({'Game.UI.InGame.ActionsSection':vanillaSection});
   expect(result['Game.UI.InGame.ActionsSection']).toBe(vanillaSection);
   expect(result[AREA_INFO_SECTION_TYPE]).toBe(AreaInfoSection);
+  expect(result[AREA_POLICY_SECTION_TYPE]).toBe(AreaPoliciesSection);
  });
 });

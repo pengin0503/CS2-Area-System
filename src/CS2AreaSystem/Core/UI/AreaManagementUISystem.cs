@@ -76,8 +76,11 @@ namespace CS2AreaSystem.Core.UI
             // Generic module action: (expected stable ID, action, value). Guarded like every other mutating action.
             AddBinding(new TriggerBinding<string, string, string>("cs2AreaSystem", "moduleAction", ModuleAction));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", CancelAssignment));
-            // Registers itself as a middle section of the vanilla selected-info panel.
+            // Policy toggle: (expected stable ID, policy ID, "1"/"0"). Guarded like every other mutating action.
+            AddBinding(new TriggerBinding<string, string, string>("cs2AreaSystem", "setPolicyEnabled", (id, policy, enabled) => Act(id, area => SetPolicy(area, policy, enabled))));
+            // Register themselves as middle sections of the vanilla selected-info panel, area first, policies below it.
             World.GetOrCreateSystemManaged<AreaInfoSection>();
+            World.GetOrCreateSystemManaged<AreaPolicyInfoSection>();
         }
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
         {
@@ -172,7 +175,36 @@ namespace CS2AreaSystem.Core.UI
                 return "CS2AS.Summary.ModuleUnavailable";
             }
         }
-        private bool panelFailureLogged;
+        private bool panelFailureLogged, policyFailureLogged;
+        public bool TryBuildPolicySection(Entity entity, out AreaPolicySectionView view)
+        {
+            view = null;
+            if (!IsReady || !IsArea(entity)) return false;
+            var policies = World.GetExistingSystemManaged<Policies.AreaPolicySystem>();
+            if (policies == null) return false;
+            try
+            {
+                int type = EntityManager.GetComponentData<ManagedArea>(entity).TypeId;
+                view = new AreaPolicySectionView {
+                    StableId = EntityManager.GetComponentData<ManagedAreaStableId>(entity).Value.ToString(CultureInfo.InvariantCulture),
+                    Policies = AreaPolicyViews.Build(policies.Registry.ForAreaType(type), id => policies.GetState(entity, id), d => d.Upkeep.EstimateDaily(0, 0, 0))
+                };
+                return true;
+            }
+            catch (Exception error)
+            {
+                if (!policyFailureLogged) { policyFailureLogged = true; Mod.Log.Error(error, "Area policy section unavailable"); }
+                return false;
+            }
+        }
+        // AreaPolicySystem re-validates the policy ID, Area type, current Level, lifecycle and effect availability.
+        private void SetPolicy(Entity area, string policyText, string enabledText)
+        {
+            var policies = World.GetExistingSystemManaged<Policies.AreaPolicySystem>();
+            if (policies != null && AreaPolicyToggleRequest.TryParse(policyText, enabledText, out var policyId, out var enabled) &&
+                policies.TrySetDesired(area, policyId, enabled, out _))
+                selection.SetDirty();
+        }
         private void ModuleAction(string expectedId, string action, string value)
         {
             try

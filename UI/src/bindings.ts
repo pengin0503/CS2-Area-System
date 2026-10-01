@@ -14,6 +14,13 @@ export interface AreaPanelItem {
 }
 export interface AreaPanelTab {id:string;labelKey:string;items?:AreaPanelItem[];}
 export interface AreaAnchor {key:string;name:string|null;valid?:boolean;}
+// One policy of the selected Area, written by CS2AreaSystem.Core.UI.AreaPolicyView. Every flag is decided in C#.
+export interface AreaPolicyData {
+ policyId:number;nameKey:string;descriptionKey:string;icon:string|null;minLevel:number;desiredEnabled:boolean;effective:boolean;
+ locked:boolean;suspended:boolean;effectAvailable:boolean;reasonKey:string|null;estimatedDailyUpkeep:number;
+}
+// Props of the policy selected-info section (CS2AreaSystem.Core.UI.AreaPolicyInfoSection).
+export interface AreaPolicySectionData {stableId:string;policies:AreaPolicyData[];}
 export interface AreaListItem {stableId:string;name:string;typeKey:string;state:string;}
 export interface PendingAssignment {stableId:string;name:string;role:'Entrance'|'Headquarters';}
 type Binding<T>=ReturnType<typeof bindValue<T>>;
