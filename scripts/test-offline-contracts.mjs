@@ -134,11 +134,12 @@ check(registration.includes('toolbarTypes'), 'toolbar attachment must track read
 // not an equivalent prefab-initialization path.
 const toolbarFactory = read('src/CS2AreaSystem/Core/Prefabs/AreaToolbarPrefabFactory.cs');
 const toolbarUnlock = read('src/CS2AreaSystem/Core/Prefabs/AreaToolbarUnlockSystem.cs');
+const areaPrefabFactory = read('src/CS2AreaSystem/Core/Prefabs/ManagedAreaPrefabFactory.cs');
 check(toolbarFactory.includes('ui.m_Group = hostGroup;'), 'Areas Menu must belong to the native Tools Toolbar Group before registration');
 check(toolbarFactory.includes('category.m_Menu = menu;'), 'Area Types category must reference the Areas Menu before registration');
 check(toolbarFactory.includes('ui.m_Group = category;'), 'Area prefab UIObject must target the Area Types category');
 for (const areaName of ['CS2AS.ParkArea','CS2AS.IndustrialArea','CS2AS.TourismArea'])
-  check(factory.includes(areaName), `native toolbar graph must retain the independent ${areaName} prefab`);
+  check(areaPrefabFactory.includes(areaName), `native toolbar graph must retain the independent ${areaName} prefab`);
 check(/foreach\s*\(var type in services\.Registry\.All\)[\s\S]*if \(toolbarGraphReady\) EnsurePrefabRegistered\(type\)/.test(registration),
   'all registered Area types must pass through the same pre-initialization toolbar path');
 const ensureAreaStart = registration.indexOf('private void EnsurePrefabRegistered');
