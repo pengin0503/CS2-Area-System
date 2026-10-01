@@ -55,6 +55,8 @@ namespace CS2AreaSystem.Modules.Park
         {
             pending.Complete();
             DisposeBuffers();
+            World.GetExistingSystemManaged<AreaFinanceSystem>()?.RemoveListener(this);
+            World.GetExistingSystemManaged<ParkVisitSystem>()?.RemoveListener(this);
             base.OnDestroy();
         }
         [Preserve]
@@ -65,7 +67,7 @@ namespace CS2AreaSystem.Modules.Park
             pending.Complete();
             if (loadGeneration != runtime.LoadGeneration)
             {
-                loadGeneration = runtime.LoadGeneration; lastSettlement = frame;
+                loadGeneration = runtime.LoadGeneration; lastSettlement = frame; recordFailuresLogged = 0;
                 inFlight = null; DisposeBuffers(); ledger.Clear();
                 return;
             }
@@ -152,26 +154,32 @@ namespace CS2AreaSystem.Modules.Park
             for (int i = 0; i < amounts.Length; i++) amounts[i] = collected[i];
             var outcomes = ParkTransactionLedger.Resolve(batch, amounts);
             DisposeBuffers();
-            try
+            // The household transfers already credited the city; these are records only, one failure never skips the rest.
+            ParkAdmissionRecording.RecordAll(outcomes.Admissions, recordSink ??= new RecordSink(this), (error, outcome, what) => {
+                if (recordFailuresLogged++ < 3)
+                    Mod.Log.Error(error, "Park admission " + what + " could not be recorded for Park " + outcome.Request.ParkId + " (collected " + outcome.Collected + "); other admissions are recorded");
+            });
+        }
+        private RecordSink recordSink;
+        private int recordFailuresLogged;
+        private sealed class RecordSink : IParkAdmissionRecordSink
+        {
+            private readonly ParkFinanceSystem system;
+            public RecordSink(ParkFinanceSystem system) => this.system = system;
+            public void RecordRecent(in ParkAdmissionOutcome outcome)
             {
-                foreach (var outcome in outcomes.Admissions)
-                {
-                    var area = outcome.Request.Area;
-                    if (runtime.Store.TryGet(outcome.Request.ParkId, out var snapshot))
-                    {
-                        if (outcome.Uncollected > 0) snapshot.RecentUncollected.Add(inFlightFrame, outcome.Uncollected);
-                        if (outcome.Collected > 0) snapshot.RecentAdmission.Add(inFlightFrame, outcome.Collected);
-                    }
-                    if (outcome.Collected <= 0) continue;
-                    // The household transfer already credited the city; this only records it as Area Service Fees.
-                    areaFinance.RecordSettledIncome(outcome.Request.ParkId, AreaFinanceKind.ParkAdmission, outcome.Collected);
-                    if (EntityManager.Exists(area) && EntityManager.HasComponent<ParkAreaState>(area))
-                        EntityManager.SetComponentData(area, ParkFinanceModel.RecordAdmission(EntityManager.GetComponentData<ParkAreaState>(area), outcome.Collected));
-                }
+                if (!system.runtime.Store.TryGet(outcome.Request.ParkId, out var snapshot)) return;
+                if (outcome.Uncollected > 0) snapshot.RecentUncollected.Add(system.inFlightFrame, outcome.Uncollected);
+                if (outcome.Collected > 0) snapshot.RecentAdmission.Add(system.inFlightFrame, outcome.Collected);
             }
-            catch (System.Exception error)
+            public void RecordServiceFee(in ParkAdmissionOutcome outcome) =>
+                system.areaFinance.RecordSettledIncome(outcome.Request.ParkId, AreaFinanceKind.ParkAdmission, outcome.Collected);
+            public void RecordLifetimeRevenue(in ParkAdmissionOutcome outcome)
             {
-                if (!admissionFailureLogged) { admissionFailureLogged = true; Mod.Log.Error(error, "Park finance records could not be written"); }
+                var area = outcome.Request.Area;
+                var entities = system.EntityManager;
+                if (entities.Exists(area) && entities.HasComponent<ParkAreaState>(area))
+                    entities.SetComponentData(area, ParkFinanceModel.RecordAdmission(entities.GetComponentData<ParkAreaState>(area), outcome.Collected));
             }
         }
         // Management amounts the shared Area finance actually applied to city money (never more than was queued).

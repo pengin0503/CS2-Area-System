@@ -36,6 +36,12 @@ namespace CS2AreaSystem.Modules.Park
             World.GetOrCreateSystemManaged<ParkVisitSystem>().AddListener(this);
         }
         [Preserve]
+        protected override void OnDestroy()
+        {
+            World.GetExistingSystemManaged<ParkVisitSystem>()?.RemoveListener(this);
+            base.OnDestroy();
+        }
+        [Preserve]
         protected override void OnUpdate()
         {
             if (!runtime.Ready) return;

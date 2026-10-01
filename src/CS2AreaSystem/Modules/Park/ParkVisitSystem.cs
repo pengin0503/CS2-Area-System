@@ -28,7 +28,7 @@ namespace CS2AreaSystem.Modules.Park
         private readonly List<ParkVisitEvent> events = new List<ParkVisitEvent>();
         private readonly List<ParkAreaRef> parks = new List<ParkAreaRef>();
         private readonly Dictionary<ulong, ParkAreaRef> activeParks = new Dictionary<ulong, ParkAreaRef>();
-        private readonly List<IParkVisitListener> listeners = new List<IParkVisitListener>();
+        private readonly CS2AreaSystem.Core.ListenerSet<IParkVisitListener> listeners = new CS2AreaSystem.Core.ListenerSet<IParkVisitListener>();
         private NativeParallelHashMap<Entity, ParkVisitTarget> targets;
         private NativeList<ParkVisitMatch> matches;
         private JobHandle pending;
@@ -39,7 +39,9 @@ namespace CS2AreaSystem.Modules.Park
         private bool failureLogged;
         public ParkVisitTracker Tracker => tracker;
         public int ObservedLastUpdate { get; private set; }
-        public void AddListener(IParkVisitListener listener) { if (!listeners.Contains(listener)) listeners.Add(listener); }
+        public bool AddListener(IParkVisitListener listener) => listeners.Add(listener);
+        // Owners remove themselves in OnDestroy; a destroyed system is never called back.
+        public bool RemoveListener(IParkVisitListener listener) => listeners.Remove(listener);
         public override int GetUpdateInterval(SystemUpdatePhase phase) => (int)ParkVisitCadence.UpdateInterval;
         [Preserve]
         protected override void OnCreate()
@@ -163,7 +165,7 @@ namespace CS2AreaSystem.Modules.Park
             {
                 if (EntityManager.Exists(park.Area) && EntityManager.HasComponent<ParkAreaState>(park.Area))
                     EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction, e.HasSatisfaction));
-            }, listeners, error => Mod.Log.Error(error, "Park visit listener failed"));
+            }, listeners.Items, error => Mod.Log.Error(error, "Park visit listener failed"));
             events.Clear();
             foreach (var park in parks)
                 if (runtime.Store.TryGet(park.StableId, out var snapshot)) snapshot.ActiveVisitors = tracker.ActiveCount(park.StableId);

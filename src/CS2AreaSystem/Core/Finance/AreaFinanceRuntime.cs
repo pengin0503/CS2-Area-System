@@ -14,7 +14,7 @@ namespace CS2AreaSystem.Core.Finance
     {
         private readonly AreaFinanceLedger ledger = new AreaFinanceLedger();
         private readonly AreaFinanceAccounts accounts = new AreaFinanceAccounts();
-        private readonly List<IAreaFinanceListener> listeners = new List<IAreaFinanceListener>();
+        private readonly ListenerSet<IAreaFinanceListener> listeners = new ListenerSet<IAreaFinanceListener>();
         private readonly Action<Exception> reportListenerError;
         private uint inFlightFrame;
         public AreaFinanceRuntime(Action<Exception> reportListenerError) =>
@@ -22,10 +22,8 @@ namespace CS2AreaSystem.Core.Finance
         public bool HasQueued => ledger.HasPending;
         public bool HasInFlight => InFlight != null;
         public AreaFinanceBatch InFlight { get; private set; }
-        public void AddListener(IAreaFinanceListener listener)
-        {
-            if (listener != null && !listeners.Contains(listener)) listeners.Add(listener);
-        }
+        public bool AddListener(IAreaFinanceListener listener) => listeners.Add(listener);
+        public bool RemoveListener(IAreaFinanceListener listener) => listeners.Remove(listener);
         public void Start(uint frame) => accounts.Start(frame);
         public void Reset()
         {
@@ -59,7 +57,7 @@ namespace CS2AreaSystem.Core.Finance
             InFlight = null;
             foreach (var entry in settled.Expenses) accounts.Record(inFlightFrame, entry.Kind, entry.Amount);
             foreach (var entry in settled.Incomes) accounts.Record(inFlightFrame, entry.Kind, entry.Amount);
-            foreach (var listener in listeners)
+            foreach (var listener in listeners.Items)
             {
                 try { listener.OnAreaFinanceSettled(settled, inFlightFrame); }
                 catch (Exception error) { reportListenerError(error); }

@@ -300,10 +300,15 @@ namespace CS2AreaSystem.Modules.Industrial
             pendingRequests = new NativeArray<IndustrialReadRequest>(requests.Count, Allocator.Persistent);
             for (int i = 0; i < requests.Count; i++) pendingRequests[i] = requests[i];
             var job = new ReadJob { Requests = pendingRequests, Buildings = buildingReads, Companies = companyReads, Reader = CreateReader() };
-            pending = job.Schedule(Dependency);
-            Dependency = pending;
-            resourceSystem.AddPrefabsReader(pending);
+            var dependency = Dependency;
+            var outcome = Core.Jobs.ScheduledJob.Run(() => job.Schedule(dependency), handle => { Dependency = handle; resourceSystem.AddPrefabsReader(handle); },
+                handle => handle.Complete(), out pending, out var error);
+            // Not scheduled: the caller's catch drops the reads (they are read again later). Scheduled, or completed after a
+            // failed registration: the reads exist and are consumed next update, so no cycle stays outstanding.
+            if (outcome == Core.Jobs.ScheduledJobOutcome.NotScheduled) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw();
             hasPending = true;
+            if (outcome == Core.Jobs.ScheduledJobOutcome.CompletedAfterRegistrationFailure && failuresLogged++ < 3)
+                Mod.Log.Error(error, "Industrial observation could not register its resource-prefab read; this batch was completed immediately");
         }
         private IndustrialObservationReader CreateReader() => new IndustrialObservationReader {
             Buildings = GetComponentLookup<Building>(true), Prefabs = GetComponentLookup<PrefabRef>(true),

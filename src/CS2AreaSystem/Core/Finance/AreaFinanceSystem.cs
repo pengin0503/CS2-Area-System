@@ -1,4 +1,5 @@
 using System;
+using CS2AreaSystem.Core.Jobs;
 using CS2AreaSystem.Core.Persistence;
 using Game;
 using Game.City;
@@ -78,7 +79,9 @@ namespace CS2AreaSystem.Core.Finance
             RecordResults();
             if (runtime.HasQueued) Schedule();
         }
-        public void AddListener(IAreaFinanceListener listener) => runtime.AddListener(listener);
+        public bool AddListener(IAreaFinanceListener listener) => runtime.AddListener(listener);
+        // Owners remove themselves in OnDestroy; a destroyed system is never called back.
+        public bool RemoveListener(IAreaFinanceListener listener) => runtime.RemoveListener(listener);
         public bool EnqueueExpense(ulong areaStableId, AreaFinanceKind kind, long amount) => runtime.EnqueueExpense(areaStableId, kind, amount);
         public bool EnqueueIncome(ulong areaStableId, AreaFinanceKind kind, long amount) => runtime.EnqueueIncome(areaStableId, kind, amount);
         // For income already moved by AreaFinanceHouseholdTransfer: recorded for the accounts only, never credited again.
@@ -96,6 +99,8 @@ namespace CS2AreaSystem.Core.Finance
             DisposeBuffers();
             var batch = runtime.BeginApply(SimulationFrame);
             if (batch == null) return;
+            var outcome = ScheduledJobOutcome.NotScheduled;
+            Exception error = null;
             try
             {
                 applied = new NativeArray<long>(2, Allocator.Persistent);
@@ -103,17 +108,23 @@ namespace CS2AreaSystem.Core.Finance
                 var job = new ApplyJob {
                     City = city.City, Expense = batch.TotalExpense, Income = batch.TotalIncome,
                     Money = GetComponentLookup<PlayerMoney>(false), Statistics = queue, Applied = applied };
-                pending = job.Schedule(JobHandle.CombineDependencies(Dependency, statisticsWriters));
-                Dependency = pending;
-                statistics.AddWriter(pending);
+                var dependency = JobHandle.CombineDependencies(Dependency, statisticsWriters);
+                outcome = ScheduledJob.Run(() => job.Schedule(dependency), handle => { Dependency = handle; statistics.AddWriter(handle); },
+                    handle => handle.Complete(), out pending, out error);
             }
-            catch (Exception error)
+            catch (Exception setupError) { error = setupError; }
+            if (outcome == ScheduledJobOutcome.Scheduled) return;
+            if (outcome == ScheduledJobOutcome.CompletedAfterRegistrationFailure)
             {
-                // Nothing was applied, so nothing is recorded; the producers' own records follow the applied result.
-                DisposeBuffers();
-                runtime.AbortApply();
-                LogOnce(error, "Area finance could not be applied to city money; this batch was not charged");
+                // The job already ran and changed city money: record exactly what it applied (never re-queued, never charged twice).
+                RecordResults();
+                LogOnce(error, "Area finance statistics registration failed; the applied amounts were recorded");
+                return;
             }
+            // Not scheduled: nothing was applied, so nothing is recorded; the producers' own records follow the applied result.
+            DisposeBuffers();
+            runtime.AbortApply();
+            LogOnce(error, "Area finance could not be applied to city money; this batch was not charged");
         }
         private void RecordResults()
         {
