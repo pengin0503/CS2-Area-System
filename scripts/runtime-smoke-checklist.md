@@ -9,7 +9,7 @@ Status: **NOT RUN**. Start a fresh 1.6.2f1 session with an official-toolchain bu
    - Issue #13: Edit from the area section must use normal vertex manipulation, not start a polygon redraw seeded with two original vertices. Cancel must preserve the original geometry, stable ID and anchor/progress; it must not switch to an unrelated Object Tool placement mode. For nearby/overlapping areas, verify the native pointer targets the intended boundary.
 4. Build a Park inside a Tourism Area and verify both memberships exist. Confirm native overlap notifications are warnings and completion succeeds. Check warning/icon/ECB ordering using keyboard/mouse and gamepad controls.
 5. Create overlapping Park Areas and verify exclusive membership primary owner is the smallest persisted stable ID, including after load. Alongside permitted overlap, try an invalid/self-intersecting boundary and an unpurchased city tile: their native errors must still prevent completion. Check that vanilla Space/other Area conflicts and vanilla asset tools retain their original behavior.
-6. Create Industrial Area: no HQ => Suspended; assign vanilla building inside it => Active; delete HQ => only its Industrial Area Suspended (progress unchanged); reassign => Active.
+6. Create Industrial Area: no HQ => Suspended; assign vanilla building inside it => Active; delete HQ => only its Industrial Area Suspended (progress unchanged); reassign => Active. (Since Industrial v1 the HQ must be an extractor/factory/warehouse/cargo building; see the Industrial section.)
 7. Save and reload; stable IDs/type/lifecycle/settings/progress/anchor remapping remain and membership rebuild count increments exactly once for load. Include a schema-v1 TypeId=9999 fixture: identity preserved and ModuleUnavailable.
 8. Create/move/delete one candidate building and verify incremental counters change without FullRebuildCount increasing. Resize/shrink an Area and verify old memberships disappear and new candidates are found.
 9. Temporarily break/disable the UI bundle and verify the save still loads and area simulation/state remains intact.
@@ -49,3 +49,39 @@ Diagnostic access: `ParkRuntimeSystem.Store` (per-Park landscape/facility/qualit
 21. Load a save made before Park v1 whose Park entrance is an arbitrary building (house/office): the Park is Suspended, the summary says no assigned entrance qualifies, the old entrance is listed as "Not eligible" with Remove, and removing it then assigning a park/leisure/attraction building reactivates the Park. Demolish an entrance building: it is listed as "Building removed" and can be removed.
 
 Additional UI checks: all five Park tabs render in ja-JP and en-US without raw `CS2AS.*` keys; the vanilla slider (or the +/− fallback) sends budget/fee changes only for the selected Park; a failing Park tab hides only that tab content while Type/Status/Edit/Delete keep working. Park Policies/ordinances and Events/Festivals are intentionally absent in v1.
+
+# Industrial Area v1 — Cities: Skylines II 1.6.2f1 runtime verification
+
+Status: **NOT RUN — pending runtime verification.** None of the items below has been executed in the game. The automated evidence (NUnit models/state/contracts/calculation examples, Vitest panel tests, net8 API-check build against the supplied 1.6.2f1 DLLs) does not establish any of them, in particular not the live meaning of the company/flow fields listed in `docs/verification/industrial-observation-contracts.md`. Record game version, save, city size and observations for each item; do not commit saves.
+
+Diagnostic access: `IndustrialRuntimeSystem.Store` (per-Area published `IndustrialObservationResult`, flow windows, `DelayedCycles`), `IndustrialRuntimeSystem.Structure`, `IndustrialObservationSystem.Scheduler` (`ActiveCycles`, `RestartCount`, `Cycle(id)`), `AreaMembershipSystem.Index.GetAreaRevision(id)`, plus the Industrial tabs.
+
+- [ ] 1. Draw an Industrial Area.
+- [ ] 2. It remains **Suspended** without an HQ (Overview warning, summary asks for an extractor/factory/warehouse/cargo building).
+- [ ] 3. Assigning an eligible HQ (extractor, factory, warehouse or cargo building inside the area) activates it.
+- [ ] 4. An ineligible HQ assignment (office, house, park, civic building, building outside the area) is rejected and the assignment stays pending; an accepted HQ remains valid through tenant vacancy, bankruptcy and poor operating health (the Area stays Active).
+- [ ] 5. HQ deletion suspends the Area (Level/XP/history unchanged, Overview shows paused values); reassignment restores Active without duplicating XP.
+- [ ] 6. Extractor classification (specialized industry extractor building with its company; extractor upgrades) — Production tab Extractors count.
+- [ ] 7. Processor/manufacturer classification (zoned industrial factories) — Processors count; office buildings are not counted.
+- [ ] 8. Storage classification (zoned warehouses) — Storage facilities count and stored/capacity plausible versus the vanilla storage section.
+- [ ] 9. Cargo facility classification (cargo train station/harbor/airport inside the area, operating and disabled) — Cargo facilities operating/all.
+- [ ] 10. Real jobs/employees match visible game behavior (compare the vanilla Employees section of the member buildings).
+- [ ] 11. Efficiency/profitability move plausibly with vanilla problems (cut electricity/water, raise industrial taxes) and match the vanilla Efficiency/Profitability sections' direction.
+- [ ] 12. Production/throughput responds to actual operation rather than placement: an unstaffed or input-starved factory lowers Productive activity; per-resource rates are comparable with the vanilla company production values.
+- [ ] 13. Input shortage (remove suppliers/cut freight access) produces the Input starvation diagnostic after enough observed hours.
+- [ ] 14. Storage/output pressure (full extractor/factory storage) produces the Output/storage saturation diagnostic.
+- [ ] 15. Same-kind overlap does not double-count: two overlapping Industrial Areas share a factory → jobs/production/XP only in the smaller-ID Area; the other shows overlapping buildings.
+- [ ] 16. Save/load preserves Level/XP/milestones, the day's XP count, last settled hour and streak.
+- [ ] 17. Derived caches rebuild after load (Overview waits for the first observation; no pre-load values reappear as current).
+- [ ] 18. UI tabs update without stale entity references (select different Areas, delete members, reload).
+- [ ] 19. A large Industrial Area (hundreds of buildings, 100k+ population city) does not cause visible recurring stalls; record observation cycle durations and any Delayed cycles.
+- [ ] 20. Park and Tourism/Core remain operational if Industrial observation is unavailable (force an exception or remove the Industrial systems).
+- [ ] 21. A healthy industry using external cargo and no dedicated warehouse receives no infrastructure-presence penalty (Logistics 100 when flows are healthy).
+- [ ] 22. Ordinary office-only employment inside the boundary does not inflate Industrial job/employee totals.
+- [ ] 23. One missing XP input permits reweighted XP (e.g. Production unavailable, others present); two missing inputs show the zero-XP reason.
+- [ ] 24. Daily cap 240 is reached and holds until the next game day; same-hour save/reload does not duplicate XP.
+- [ ] 25. Fewer than 18 observed hours and a brief daily spike do not satisfy the seven-day streak (Progress tab shows the reason).
+- [ ] 26. Other-Area and Park edits do not restart this Area's cycle, while a primary-ownership transfer invalidates both affected Industrial Areas (`Scheduler.RestartCount`, `Cycle(id).CycleId`).
+- [ ] 27. Synthetic calculation examples match the models (automated); actual company/flow field semantics and coverage are validated separately here — record whether `CompanyStatisticData.m_LastUpdateProduce`, `GetCompanyProductionPerDay`, the LackResources/storage-limit symptoms and `RentersUpdated` behave as documented.
+
+Additional UI checks: all five Industrial tabs render in ja-JP and en-US without raw `CS2AS.*` keys (resource names come from the game's `Resources.TITLE[...]`); a failing Industrial tab hides only that tab's content while Type/Status/HQ/Edit/Delete keep working. Industrial policies, budgets, subsidies and direct buffs are intentionally absent in v1.

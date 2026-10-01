@@ -28,6 +28,7 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
             RegisterParkSystems(updateSystem);
+            RegisterIndustrialSystems(updateSystem);
             RegisterLocalization();
             RegisterSettings();
             try { updateSystem.UpdateAfter<AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
@@ -66,6 +67,19 @@ namespace CS2AreaSystem
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkProgressionSystem>(SystemUpdatePhase.GameSimulation);
             }
             catch (System.Exception error) { Log.Error(error, "Park gameplay systems unavailable; Area Core remains registered."); }
+        }
+        // Industrial gameplay observes the city after Core (runtime state in ModificationEnd after membership/activation,
+        // hourly observation and progression in GameSimulation). A registration failure leaves Area Core, Park and
+        // Tourism running.
+        private static void RegisterIndustrialSystems(UpdateSystem updateSystem)
+        {
+            try
+            {
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem>(SystemUpdatePhase.ModificationEnd);
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialProgressionSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation);
+            }
+            catch (System.Exception error) { Log.Error(error, "Industrial gameplay systems unavailable; Area Core, Park and Tourism remain registered."); }
         }
         private void RegisterSettings()
         {

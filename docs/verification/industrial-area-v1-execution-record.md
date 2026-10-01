@@ -1,0 +1,58 @@
+# Industrial Area v1 execution record — 2026-10-01
+
+Native / executing-plans in one session; no per-task implementer subagents. Base: `main` at `92e7b50` (approved spec and plan). Spec `docs/superpowers/specs/2026-10-01-industrial-area-v1-design.md` and plan `docs/superpowers/plans/2026-10-01-industrial-area-v1-implementation.md` were read in full and not modified (their blob hashes are pinned by `scripts/test-offline-contracts.mjs`).
+
+## Environment
+
+- API references: the supplied `CS2-All-Managed-1.6.2f1-fix` DLLs (`CSII_MANAGEDPATH`), toolchain `Mod.props`/`Mod.targets` from `CS2-toolchain-1.6.2f1`, UI reference `index.js` from `CS2-UI-reference-1.6.2f1`.
+- Field semantics were traced in a decompilation of the supplied `Game.dll` (ILSpy 9.1): writers and consumers per metric are listed in [industrial-observation-contracts.md](industrial-observation-contracts.md).
+- .NET 8 SDK 8.0.131 (Ubuntu package), PowerShell 7.4.6 (dotnet tool), Node 22.22.0.
+- Not available: Windows game install, Unity Mod Project, ModPostProcessor run. Official postprocessing/deployment and every in-game check are **NOT RUN**.
+
+## Task ledger
+
+| Task | Commit | Evidence |
+| --- | --- | --- |
+| 1 Contracts, classifier, HQ policy | `418ea33` | classifier/HQ/API-contract tests RED (missing types) → GREEN; old "Industrial accepts any building" test replaced by the approved strict rule; suite 294/294 |
+| 2 State and runtime store | `5d622f9` | serialization/runtime tests RED → GREEN (13) |
+| 3 Pure scoring + examples | `329b129` | 26 model/example tests; mutation checks (swapped weights, warm-up threshold) caught; suite 333/333 |
+| 4 Observation and aggregation | `ffab28e` | membership revision tests (16) and 22 observation tests; mutation checks (gap bridging, building de-duplication) caught |
+| 5 Progression and XP | `cdecff7` | 27 progression tests + example XP; mutation checks (cap 250, banker's rounding, no midnight split, 17.5 h streak) caught; suite 393/393 |
+| 6 Panel, localization, fixture | `6073c3e` | panel builder 17 tests; fixture RED (missing) → generated → GREEN; Vitest 66/66; Park fixture regenerated for the shared en-US dictionary |
+| 7 Registration, guards, docs | (this commit) | offline guards RED (missing registration/record) → GREEN; see below |
+
+Corrections made while implementing (the code, not the approved rules, changed): `default(IndustrialMetric)` was "Available 0" and is now Unavailable; a vacant producer's flow channels are NotApplicable (not Unavailable, which would have added a partial-data label); the panel clock rounds to the minute (floating truncation showed 14:11 for 14:12); the Logistics tab lists every current flow diagnostic, not only those in the overall top three; the net8 API-check compiler cannot bind the game's `Span<float>` overload of `BuildingUtils.GetEfficiency`, so the job uses the `(Entity, ref BufferLookup<Efficiency>)` overload of the same product.
+
+## Decisions recorded for review
+
+- **Productive activity source.** No per-company accumulated production counter exists for processors in 1.6.2f1 (production is only aggregated city-wide). The activity numerator is the game's own displayed production rate (`CompanySection`: `GetCompanyProductionPerDay` with current efficiency, which is 0 while the `LackResources` factor is 0; extractors: `CompanyStatisticData.m_LastUpdateProduce`), the denominator vanilla's maximum-production term (efficiency 1, full staff). It is labeled as a sampled rate, never a lifetime counter. Raw inventory deltas are not used anywhere.
+- **Flow symptoms.** Input starvation reconstructs the `ProcessingCompanySystem` condition (positive potential output, an input stock below one unit's requirement); output blockage uses the extractor free-storage cap and the processor weighted-storage limit. `CompanyNotifications` counters are unused because 1.6.2f1 never writes them.
+- **Structure generation.** Tenant/role changes are taken from vanilla `RentersUpdated` events and member destruction/abandonment, collected every frame in ModificationEnd; ordinary `Updated` tags are not used because they fire for unrelated building changes and would restart cycles too often.
+- **Profitability scale.** The vanilla byte is converted with the vanilla UI formula and mapped piecewise onto five 20-point bands whose edges are the vanilla tier thresholds; every byte value is tested against `CompanyUIUtils.GetProfitabilityKey`.
+- **Rolling outputs.** The Level-5 "three meaningful outputs" objective averages per-output activity over the six-hour window; the Production diversity term uses the current observation.
+- **Sample timing tolerance.** Consecutive hourly endpoints up to 1 h + 1 game minute apart are bracketed (absorbs the 16-frame update jitter of the hour-boundary start); larger gaps are never bridged.
+
+## Automated verification
+
+Run on the Task 7 working tree (parent `6073c3e`; the tree committed as "feat(industrial): integrate Industrial Area v1"), and re-run on the committed branch head before reporting:
+
+- `pwsh scripts/verify.ps1 -ApiCheck`: **exit 0** — source/provenance guards, source-guard self-tests, MSBuild JSON tests, official/API build-contract evaluation, offline contracts (including the new Industrial guards: pinned spec/plan, registration, read-only facade/panel, no office eligibility, no cargo/storage presence term in Logistics, forbidden production/transfer/tax/demand/pathfinding systems and Resources/efficiency/profitability writes), NUnit **411/411**, net8 API-check build of the mod against the supplied 1.6.2f1 DLLs **0 warnings / 0 errors** (exit 0), Vitest **66/66** (7 files), webpack production UI build.
+- Offline Industrial guard negative check: injecting an `EconomyUtils.AddResources` call into an Industrial source makes `test-offline-contracts.mjs` fail with "must not touch direct Resources/efficiency mutation" (file restored afterwards).
+- Separate net48 compile of every `src/CS2AreaSystem` source file against the supplied DLLs with the Microsoft .NET Framework 4.8 reference assemblies (scratch project, LangVersion 9): **0 warnings / 0 errors**.
+- C# tests added by Industrial v1: classifier/HQ (11), anchor service policy (2 new + 1 replacing the former permissive Industrial test), API contracts (11, including executed vanilla `GetProfitabilityKey`, `GetWorkplacesData`, `TimeSystem.GetDay`, `GetCompanyProductionPerDay`, `GetAdjustedLimitForWarehouse`), serialization (7), runtime store (6), scoring models (23), calculation examples (4, JSON fixture executed against the real models including XP), membership revision tokens (7), observation/aggregation/scheduling/data fidelity (23), progression/XP/streak (27), panel builder/localization/cache (17), generated UI fixture (1) — 139 net new C# tests over the 272-test baseline. React: Industrial panel (14 new; 52 → 66).
+
+None of these compiles or tests runs Unity, the game simulation or the deployed UI. **In-game Industrial runtime tests are still unrun.**
+
+## Runtime verification
+
+**NOT RUN.** All 27 Industrial items in [the smoke checklist](../../scripts/runtime-smoke-checklist.md) are unchecked. Placeholders for measurements:
+
+| Measurement | Small Area | Large Area |
+| --- | --- | --- |
+| Observation cycle wall time per update (ms) / allocations | not measured | not measured |
+| Cycle completion delay (game h), Delayed cycles | not measured | not measured |
+| Flow coverage hours reached | not measured | not measured |
+| Ownership churn / restarts per hour | not measured | not measured |
+| Balance notes (XP pace, gate reachability) | not measured | not measured |
+
+Live-field semantic validation (separate from the compile and model-example evidence above): not performed — `m_LastUpdateProduce`, `GetCompanyProductionPerDay`, the `LackResources` factor, storage limits, `Profitability` and `RentersUpdated` behavior must be compared with the vanilla info sections in game.
