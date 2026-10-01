@@ -7,6 +7,10 @@ namespace CS2AreaSystem.Core.Policies
         public const string Unknown = "CS2AS.Policy.Reason.Unknown";
         public const string UnsupportedAreaType = "CS2AS.Policy.Reason.UnsupportedAreaType";
         public const string Locked = "CS2AS.Policy.Reason.Locked";
+        public const string EffectUnavailable = "CS2AS.Policy.Reason.EffectUnavailable";
+        public const string Suspended = "CS2AS.Policy.Reason.Suspended";
+        public const string Conflict = "CS2AS.Policy.Reason.Conflict";
+        public const string AreaUnavailable = "CS2AS.Policy.Reason.AreaUnavailable";
     }
     // One atomic desired-state change: the conflicting policies listed here are switched OFF in the same write that
     // switches PolicyId to DesiredEnabled, so no update ever sees both.

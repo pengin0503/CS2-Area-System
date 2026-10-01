@@ -55,4 +55,13 @@ public class ModSystemOrderTests {
         Assert.That(bootstrap, Is.GreaterThan(coordinator), "load readiness is known before buffers are created");
         Assert.That(bootstrap, Is.GreaterThan(lifecycle), "ManagedArea exists before its policy buffer is added");
     }
+    [Test] public void PolicyRuntimeRunsAfterBootstrapAndLifecycleActivationInModificationEnd() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Policies.AreaPolicySystem)).Select(c => c.Phase),
+            Is.EqualTo(new[] { SystemUpdatePhase.ModificationEnd }));
+        var order = Schedule(SystemUpdatePhase.ModificationEnd);
+        int runtime = order.IndexOf(typeof(CS2AreaSystem.Core.Policies.AreaPolicySystem));
+        Assert.That(runtime, Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Core.Policies.AreaPolicyBootstrapSystem))));
+        Assert.That(runtime, Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem))), "current lifecycle state is resolved first");
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem)), Is.GreaterThanOrEqualTo(0));
+    }
 }

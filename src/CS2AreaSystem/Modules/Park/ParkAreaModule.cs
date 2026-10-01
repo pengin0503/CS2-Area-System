@@ -2,10 +2,11 @@ using System;
 using CS2AreaSystem.Core.Anchors;
 using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Modules;
+using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Park
 {
-    public sealed class ParkAreaModule : AnchorAreaModule
+    public sealed class ParkAreaModule : AnchorAreaModule, IAreaPolicyProvider
     {
         private readonly Func<Entity, EntityManager, ParkFacilityTraits> readTraits;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
@@ -37,5 +38,8 @@ namespace CS2AreaSystem.Modules.Park
             try { return ParkFacilityClassifier.IsPlausibleEntrance(readTraits(anchor, entities)); }
             catch (Exception) { return false; }
         }
+        public System.Collections.Generic.IReadOnlyList<AreaPolicyDefinition> PolicyDefinitions => ParkPolicyCatalog.Definitions;
+        public bool IsPolicyEffectAvailable(Entity area, int policyId, in AreaPolicyContext context, out string reasonKey) =>
+            ParkPolicyCatalog.IsEffectAvailable(policyId, out reasonKey);
     }
 }
