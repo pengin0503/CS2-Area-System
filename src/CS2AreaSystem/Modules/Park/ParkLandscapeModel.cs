@@ -1,7 +1,11 @@
 using System;
 namespace CS2AreaSystem.Modules.Park
 {
-    public struct ParkLandscapeCategoryInput { public int Count; public int DistinctPrefabs; }
+    public struct ParkLandscapeCategoryInput
+    {
+        public int Count, DistinctPrefabs;
+        public int[] PrefabCounts;
+    }
     public struct ParkLandscapeInputs
     {
         public float AreaSquareMeters;
@@ -37,9 +41,15 @@ namespace CS2AreaSystem.Modules.Park
         {
             int count = Math.Max(0, input.Count);
             if (count == 0) return 0f;
-            int full = Math.Max(1, input.DistinctPrefabs) * FullValueCopiesPerPrefab;
-            return Math.Min(count, full) + (float)Math.Sqrt(Math.Max(0, count - full));
+            // Aggregate counts cannot describe the distribution. Give them conservative single-prefab credit;
+            // live scans always supply the exact frequencies, so unrelated variations never reset a prefab's cap.
+            if (input.PrefabCounts == null) return CopiesValue(count);
+            float effective = 0;
+            foreach (int copies in input.PrefabCounts) effective += CopiesValue(Math.Max(0, copies));
+            return effective;
         }
+        private static float CopiesValue(int count) => Math.Min(count, FullValueCopiesPerPrefab) +
+            (float)Math.Sqrt(Math.Max(0, count - FullValueCopiesPerPrefab));
         private static float Fill(float effective, float target) => target <= 0 ? 0 : 1f - (float)Math.Exp(-1.6 * effective / target);
         public static ParkLandscapeResult ComputeLandscape(in ParkLandscapeInputs inputs)
         {

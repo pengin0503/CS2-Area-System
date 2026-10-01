@@ -2,7 +2,11 @@ using System.Collections.Generic;
 using CS2AreaSystem.Core.Areas;
 using Game;
 using Game.Citizens;
+using Game.Buildings;
+using Game.Companies;
 using Game.Common;
+using Game.Economy;
+using Game.Prefabs;
 using Game.Simulation;
 using Game.Tools;
 using Unity.Burst.Intrinsics;
@@ -123,7 +127,12 @@ namespace CS2AreaSystem.Modules.Park
             var job = new ObserveJob {
                 EntityType = GetEntityTypeHandle(),
                 CurrentBuildingType = GetComponentTypeHandle<CurrentBuilding>(true),
+                LeisureType = GetComponentTypeHandle<Leisure>(true),
                 HouseholdMemberType = GetComponentTypeHandle<HouseholdMember>(true),
+                Renters = GetComponentLookup<PropertyRenter>(true), Prefabs = GetComponentLookup<PrefabRef>(true),
+                Providers = GetComponentLookup<LeisureProviderData>(true), Buildings = GetComponentLookup<Building>(true),
+                Services = GetComponentLookup<ServiceAvailable>(true), Processes = GetComponentLookup<IndustrialProcessData>(true),
+                Resources = GetBufferLookup<Resources>(true),
                 Tourists = GetComponentLookup<TouristHousehold>(true),
                 Targets = targets.AsReadOnly(),
                 Matches = matches };
@@ -170,7 +179,15 @@ namespace CS2AreaSystem.Modules.Park
         {
             [ReadOnly] public EntityTypeHandle EntityType;
             [ReadOnly] public ComponentTypeHandle<CurrentBuilding> CurrentBuildingType;
+            [ReadOnly] public ComponentTypeHandle<Leisure> LeisureType;
             [ReadOnly] public ComponentTypeHandle<HouseholdMember> HouseholdMemberType;
+            [ReadOnly] public ComponentLookup<PropertyRenter> Renters;
+            [ReadOnly] public ComponentLookup<PrefabRef> Prefabs;
+            [ReadOnly] public ComponentLookup<LeisureProviderData> Providers;
+            [ReadOnly] public ComponentLookup<Building> Buildings;
+            [ReadOnly] public ComponentLookup<ServiceAvailable> Services;
+            [ReadOnly] public ComponentLookup<IndustrialProcessData> Processes;
+            [ReadOnly] public BufferLookup<Resources> Resources;
             [ReadOnly] public ComponentLookup<TouristHousehold> Tourists;
             [ReadOnly] public NativeParallelHashMap<Entity, ParkVisitTarget>.ReadOnly Targets;
             public NativeList<ParkVisitMatch> Matches;
@@ -178,14 +195,38 @@ namespace CS2AreaSystem.Modules.Park
             {
                 var entities = chunk.GetNativeArray(EntityType);
                 var buildings = chunk.GetNativeArray(ref CurrentBuildingType);
+                var leisure = chunk.GetNativeArray(ref LeisureType);
                 var households = chunk.GetNativeArray(ref HouseholdMemberType);
                 for (int i = 0; i < entities.Length; i++)
                 {
                     if (!Targets.TryGetValue(buildings[i].m_CurrentBuilding, out var target)) continue;
+                    var agent = leisure[i].m_TargetAgent;
+                    if (agent == Entity.Null) continue;
+                    var building = buildings[i].m_CurrentBuilding;
+                    var property = Renters.HasComponent(agent) ? Renters[agent].m_Property : Entity.Null;
+                    if (!ParkLeisureObservation.TryResolveProvider(agent, building, property, ReadProvider(agent), ReadProvider(building), out var provider)) continue;
+                    float facility = ParkVisitModel.FacilityExperience(true, Providers[Prefabs[provider].m_Prefab].m_Efficiency);
                     var household = households[i].m_Household;
-                    Matches.Add(new ParkVisitMatch { Citizen = entities[i], ParkId = target.ParkId, Facility = target.Facility,
+                    Matches.Add(new ParkVisitMatch { Citizen = entities[i], ParkId = target.ParkId, Facility = facility,
                         Tourist = household != Entity.Null && Tourists.HasComponent(household) });
                 }
+            }
+            private ParkLeisureProviderState ReadProvider(Entity entity)
+            {
+                var state = new ParkLeisureProviderState { Entity = entity };
+                if (entity == Entity.Null || !Prefabs.HasComponent(entity)) return state;
+                var prefab = Prefabs[entity].m_Prefab;
+                state.HasPrefab = true;
+                state.HasLeisureData = Providers.HasComponent(prefab);
+                if (!state.HasLeisureData) return state;
+                state.Inactive = Buildings.HasComponent(entity) && BuildingUtils.CheckOption(Buildings[entity], BuildingOption.Inactive);
+                state.ServiceUnavailable = Services.HasComponent(entity) && Services[entity].m_ServiceAvailable <= 0;
+                if (Processes.HasComponent(prefab))
+                {
+                    var output = Processes[prefab].m_Output.m_Resource;
+                    state.OutOfStock = output != Resource.NoResource && Resources.HasBuffer(entity) && EconomyUtils.GetResources(output, Resources[entity]) <= 0;
+                }
+                return state;
             }
         }
     }

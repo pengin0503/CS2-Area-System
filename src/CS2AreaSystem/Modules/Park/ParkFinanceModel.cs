@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Game.City;
 namespace CS2AreaSystem.Modules.Park
 {
     // Management need derives from the Park itself. Vanilla member-building upkeep/revenue are not inputs:
@@ -19,6 +20,8 @@ namespace CS2AreaSystem.Modules.Park
     public static class ParkFinanceModel
     {
         public const uint FramesPerDay = 262144;
+        // PlayerMoney.Add clamps the stored balance to this range in game 1.6.2f1.
+        public const long CityMoneyLimit = 2_000_000_000L;
         public const int MaxAdmissionFee = 60, AdmissionFeeStep = 1, AdmissionUnlockLevel = 2;
         public const float MinBudget = 0.5f, MaxBudget = 1.5f, DefaultBudget = 1f, BudgetStep = 0.05f;
         public static bool IsAdmissionUnlocked(int level) => level >= AdmissionUnlockLevel;
@@ -35,6 +38,37 @@ namespace CS2AreaSystem.Modules.Park
         // Collect at most what the household can pay; never drive its money below zero (design §15.3).
         public static long ComputeCollectibleAdmission(long requestedFee, long availableHouseholdMoney) =>
             requestedFee <= 0 || availableHouseholdMoney <= 0 ? 0 : Math.Min(requestedFee, availableHouseholdMoney);
+        public static long CollectAdmission(ref PlayerMoney money, long requestedFee, long householdMoney)
+        {
+            // Use the stored balance even in unlimited mode; the display getter always returns the upper limit.
+            long amount = Math.Min(ComputeCollectibleAdmission(requestedFee, householdMoney), Math.Max(0L, CityMoneyLimit - StoredCityMoney(money)));
+            ApplyMoneyDelta(ref money, amount);
+            return amount;
+        }
+        public static long PayManagement(ref PlayerMoney money, long requested)
+        {
+            long paid = Math.Min(Math.Max(0L, requested), Math.Max(0L, StoredCityMoney(money) + CityMoneyLimit));
+            ApplyMoneyDelta(ref money, -paid);
+            return paid;
+        }
+        public static long StoredCityMoney(PlayerMoney money)
+        {
+            // The stored field is private. Disable the public unlimited flag on a local copy to read it through
+            // the supported getter; the city's component and its unlimited setting remain untouched.
+            money.m_Unlimited = false;
+            return money.money;
+        }
+        private static void ApplyMoneyDelta(ref PlayerMoney money, long delta)
+        {
+            // A bounded balance can move by up to four billion. Safe int chunks preserve PlayerMoney.Add semantics
+            // without overflowing its intermediate addition; accepted deltas never cross either city-money bound.
+            while (delta != 0)
+            {
+                int step = (int)Math.Max(-int.MaxValue, Math.Min(int.MaxValue, delta));
+                money.Add(step);
+                delta -= step;
+            }
+        }
         // One admission per session: Level-gated fee, collected from real household money into city money.
         public static ParkAdmissionPlan PlanAdmission(int level, int storedFee, long householdMoney)
         {

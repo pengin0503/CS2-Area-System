@@ -11,24 +11,24 @@ public class ParkTransactionLedgerTests {
   ledger.EnqueueAdmission(new ParkAdmissionRequest { Citizen = other, Area = area, ParkId = 7, Fee = 20 });
   var batch = ledger.TakeBatch();
   Assert.That(batch.Admissions.Count, Is.EqualTo(2)); Assert.That(ledger.PendingAdmissions, Is.Zero);
-  var outcomes = ParkTransactionLedger.Resolve(batch, new long[] { 20, 7 }, cityApplied: true);
+  var outcomes = ParkTransactionLedger.Resolve(batch, new long[] { 20, 7 }, managementPaid: 150);
   Assert.That(outcomes.Admissions.Select(o => o.Collected), Is.EqualTo(new long[] { 20, 7 }));
   Assert.That(outcomes.Admissions.Select(o => o.Uncollected), Is.EqualTo(new long[] { 0, 13 }));
  }
  [Test] public void CollectedAmountsAreClampedToTheRequestedFee() {
   var ledger = new ParkTransactionLedger();
   ledger.EnqueueAdmission(new ParkAdmissionRequest { Citizen = citizen, Area = area, ParkId = 7, Fee = 20 });
-  var outcomes = ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[] { 999 }, true);
+  var outcomes = ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[] { 999 }, 0);
   Assert.That(outcomes.Admissions.Single().Collected, Is.EqualTo(20));
-  Assert.That(ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[0], true).Admissions, Is.Empty);
+  Assert.That(ParkTransactionLedger.Resolve(ledger.TakeBatch(), new long[0], 0).Admissions, Is.Empty);
  }
  [Test] public void ManagementExpenseIsRecordedOnlyWhenTheCityPaid() {
   var ledger = new ParkTransactionLedger();
   ledger.EnqueueManagement(area, 7, 120); ledger.EnqueueManagement(area, 8, 30); ledger.EnqueueManagement(area, 9, 0);
   var batch = ledger.TakeBatch();
   Assert.That(batch.CityDelta, Is.EqualTo(-150), "one aggregated city-money change per batch");
-  Assert.That(ParkTransactionLedger.Resolve(batch, new long[0], cityApplied: true).Management.Select(m => m.Paid), Is.EqualTo(new long[] { 120, 30 }));
-  Assert.That(ParkTransactionLedger.Resolve(batch, new long[0], cityApplied: false).Management, Is.Empty, "no city entity: nothing booked");
+  Assert.That(ParkTransactionLedger.Resolve(batch, new long[0], managementPaid: 150).Management.Select(m => m.Paid), Is.EqualTo(new long[] { 120, 30 }));
+  Assert.That(ParkTransactionLedger.Resolve(batch, new long[0], managementPaid: 0).Management, Is.Empty, "no city entity: nothing booked");
  }
 }
 public class ParkVisitTargetTests {

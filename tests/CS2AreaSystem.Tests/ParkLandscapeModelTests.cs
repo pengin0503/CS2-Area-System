@@ -2,13 +2,27 @@ using CS2AreaSystem.Modules.Park;
 using NUnit.Framework;
 namespace CS2AreaSystem.Tests;
 public class ParkLandscapeModelTests {
+ [Test] public void SingletonVariationsDoNotResetDominantPrefabDiminishingReturns() {
+  var dominant = new ParkLandscapeTally(); var balanced = new ParkLandscapeTally();
+  for (int prefab = 0; prefab < 20; prefab++) {
+   int a = prefab == 0 ? 100 : 1, b = prefab == 19 ? 5 : 6;
+   for (int i = 0; i < a; i++) dominant.Add(ParkLandscapeCategory.Vegetation, prefab);
+   for (int i = 0; i < b; i++) balanced.Add(ParkLandscapeCategory.Vegetation, prefab);
+  }
+  var aInputs = dominant.ToInputs(10_000, 0); var bInputs = balanced.ToInputs(10_000, 0);
+  Assert.That(aInputs.Vegetation.Count, Is.EqualTo(bInputs.Vegetation.Count));
+  Assert.That(aInputs.Vegetation.DistinctPrefabs, Is.EqualTo(bInputs.Vegetation.DistinctPrefabs));
+  Assert.That(ParkLandscapeModel.EffectiveCount(aInputs.Vegetation), Is.EqualTo(24 + Math.Sqrt(95)).Within(0.001));
+  Assert.That(ParkLandscapeModel.EffectiveCount(bInputs.Vegetation), Is.EqualTo(119).Within(0.001));
+  Assert.That(ParkLandscapeModel.ComputeLandscape(aInputs).Vegetation, Is.LessThan(ParkLandscapeModel.ComputeLandscape(bInputs).Vegetation));
+ }
  private const float Hectare = 10_000f;
  private static ParkLandscapeInputs Inputs(float area = Hectare, int trees = 0, int treeKinds = 1, int benches = 0, int benchKinds = 1, int decor = 0, int lights = 0, float path = 0, int unknown = 0, int decorKinds = 1, int lightKinds = 1) => new() {
   AreaSquareMeters = area,
-  Vegetation = new ParkLandscapeCategoryInput { Count = trees, DistinctPrefabs = trees > 0 ? treeKinds : 0 },
-  Amenities = new ParkLandscapeCategoryInput { Count = benches, DistinctPrefabs = benches > 0 ? benchKinds : 0 },
-  Decoration = new ParkLandscapeCategoryInput { Count = decor, DistinctPrefabs = decor > 0 ? decorKinds : 0 },
-  Lighting = new ParkLandscapeCategoryInput { Count = lights, DistinctPrefabs = lights > 0 ? lightKinds : 0 },
+  Vegetation = Support.LandscapeInputs.Balanced(trees, treeKinds),
+  Amenities = Support.LandscapeInputs.Balanced(benches, benchKinds),
+  Decoration = Support.LandscapeInputs.Balanced(decor, decorKinds),
+  Lighting = Support.LandscapeInputs.Balanced(lights, lightKinds),
   PathLength = path, UnknownCount = unknown };
  private static float Score(ParkLandscapeInputs i) => ParkLandscapeModel.ComputeLandscape(i).Score;
  [Test] public void EmptyParkScoresZeroAndScoreIsBounded() {

@@ -40,6 +40,7 @@ namespace CS2AreaSystem.Modules.Park
         {
             public ParkRuntimeSnapshot Snapshot;
             public Geometry Geometry;
+            public ulong BoundaryRevision;
             public ParkPolygon Polygon;
             public ParkLandscapeScan<Entity> Objects;
             public ParkLandscapeTally Tally = new ParkLandscapeTally();
@@ -87,6 +88,10 @@ namespace CS2AreaSystem.Modules.Park
         private void SyncParks()
         {
             parksDirty = false;
+            // Updated carries polygon edits whose outer bounds do not change (including edits while paused).
+            var edited = new HashSet<Entity>();
+            using (var changes = changedParks.ToEntityArray(Allocator.Temp))
+                foreach (var entity in changes) edited.Add(entity);
             runtime.CollectParks(parks);
             runtime.PruneStore(parks);
             runtime.EnsureParkState(parks);
@@ -97,7 +102,9 @@ namespace CS2AreaSystem.Modules.Park
                 bool known = scheduler.IsTracked(park.StableId);
                 var box = EntityManager.HasComponent<Geometry>(park.Area) ? EntityManager.GetComponentData<Geometry>(park.Area).m_Bounds.xz : default;
                 // A new Park or a changed boundary needs a new scan.
-                if (!known || !bounds.TryGetValue(park.StableId, out var old) || !old.Equals(box)) { scheduler.Track(park.StableId); scheduler.MarkDirty(park.StableId); }
+                if (!known) scheduler.Track(park.StableId);
+                else if (edited.Contains(park.Area) || !bounds.TryGetValue(park.StableId, out var old) || !old.Equals(box))
+                    scheduler.BoundaryChanged(park.StableId);
                 bounds[park.StableId] = box;
                 runtime.Store.GetOrCreate(park.StableId, park.Area);
             }
@@ -132,7 +139,7 @@ namespace CS2AreaSystem.Modules.Park
                 dependency.Complete();
                 var iterator = new BoundsIterator { Bounds = search, Items = candidates };
                 tree.Iterate(ref iterator);
-                current = new ActiveScan { Snapshot = snapshot, Geometry = geometry, Polygon = new ParkPolygon(ParkGeometry.Triangles(EntityManager, snapshot.Area)),
+                current = new ActiveScan { Snapshot = snapshot, Geometry = geometry, BoundaryRevision = scheduler.RevisionOf(id), Polygon = new ParkPolygon(ParkGeometry.Triangles(EntityManager, snapshot.Area)),
                     Objects = new ParkLandscapeScan<Entity>(candidates) };
                 Continue();
             }
@@ -144,7 +151,8 @@ namespace CS2AreaSystem.Modules.Park
             try
             {
                 // The Park may be deleted or edited while a sliced scan runs: drop the partial result.
-                if (!EntityManager.Exists(scan.Snapshot.Area) || !EntityManager.HasComponent<Geometry>(scan.Snapshot.Area)) { current = null; return; }
+                if (!scheduler.IsCurrent(scan.Snapshot.StableId, scan.BoundaryRevision) || !EntityManager.Exists(scan.Snapshot.Area) ||
+                    EntityManager.HasComponent<Deleted>(scan.Snapshot.Area) || !EntityManager.HasComponent<Geometry>(scan.Snapshot.Area)) { current = null; return; }
                 scan.Objects.Process(ObjectsPerFrame, entity => Classify(scan, entity));
                 if (!scan.Objects.Done) return;
                 current = null;

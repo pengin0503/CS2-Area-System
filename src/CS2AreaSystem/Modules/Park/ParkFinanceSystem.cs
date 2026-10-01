@@ -14,7 +14,7 @@ namespace CS2AreaSystem.Modules.Park
     // Park budget and admission (design §14–15). Money only moves between real household resources and the city's
     // PlayerMoney; there is no Park wallet. Member buildings' vanilla upkeep/revenue are never booked here.
     // Transfers run in a scheduled job ordered by ECS dependencies, so the main thread never forces the vanilla
-    // economy jobs that use Resources/PlayerMoney to complete; results are recorded on the next update.
+    // economy jobs that use Resources/PlayerMoney to complete; results are recorded on the next update or save.
     public partial class ParkFinanceSystem : GameSystemBase, IParkVisitListener
     {
         public const uint UpdateFrames = ParkVisitCadence.UpdateInterval;
@@ -27,7 +27,7 @@ namespace CS2AreaSystem.Modules.Park
         private ParkTransactionBatch inFlight;
         private NativeArray<ParkAdmissionRequestData> requests;
         private NativeArray<long> collected;
-        private NativeArray<bool> cityApplied;
+        private NativeArray<long> managementPaid;
         private JobHandle pending;
         private uint lastSettlement, inFlightFrame;
         private int loadGeneration = -1;
@@ -92,6 +92,13 @@ namespace CS2AreaSystem.Modules.Park
                 if (!settlementFailureLogged) { settlementFailureLogged = true; Mod.Log.Error(error, "Park management settlement failed"); }
             }
         }
+        internal void FlushForSave() => ParkFinanceSaveBoundary.Flush(runtime.Ready, loadGeneration, runtime.LoadGeneration,
+            CompleteAndRecord, () => ledger.HasPending, () => EntityManager.CompleteAllTrackedJobs(), () => Schedule(runtime.SimulationFrame));
+        private void CompleteAndRecord()
+        {
+            pending.Complete();
+            RecordResults();
+        }
         public void OnVisitStarted(in ParkVisitEvent visit, Entity area, ParkRuntimeSnapshot snapshot, ParkVisitTracker tracker)
         {
             // Restored visits are fee-satisfied; every other session gets exactly one attempt, whatever its outcome.
@@ -119,9 +126,9 @@ namespace CS2AreaSystem.Modules.Park
             for (int i = 0; i < inFlight.Admissions.Count; i++)
                 requests[i] = new ParkAdmissionRequestData { Citizen = inFlight.Admissions[i].Citizen, Fee = inFlight.Admissions[i].Fee };
             collected = new NativeArray<long>(requests.Length, Allocator.Persistent);
-            cityApplied = new NativeArray<bool>(1, Allocator.Persistent);
+            managementPaid = new NativeArray<long>(1, Allocator.Persistent);
             var job = new TransferJob {
-                Requests = requests, Collected = collected, CityApplied = cityApplied, City = city.City, CityDelta = inFlight.CityDelta,
+                Requests = requests, Collected = collected, ManagementPaid = managementPaid, City = city.City, CityDelta = inFlight.CityDelta,
                 Members = GetComponentLookup<HouseholdMember>(true), Resources = GetBufferLookup<Resources>(false),
                 Money = GetComponentLookup<PlayerMoney>(false) };
             pending = job.Schedule(Dependency);
@@ -133,7 +140,7 @@ namespace CS2AreaSystem.Modules.Park
             var batch = inFlight; inFlight = null;
             var amounts = new long[collected.Length];
             for (int i = 0; i < amounts.Length; i++) amounts[i] = collected[i];
-            var outcomes = ParkTransactionLedger.Resolve(batch, amounts, cityApplied[0]);
+            var outcomes = ParkTransactionLedger.Resolve(batch, amounts, managementPaid[0]);
             DisposeBuffers();
             try
             {
@@ -164,14 +171,14 @@ namespace CS2AreaSystem.Modules.Park
         {
             if (requests.IsCreated) requests.Dispose();
             if (collected.IsCreated) collected.Dispose();
-            if (cityApplied.IsCreated) cityApplied.Dispose();
+            if (managementPaid.IsCreated) managementPaid.Dispose();
         }
         public struct ParkAdmissionRequestData { public Entity Citizen; public long Fee; }
         private struct TransferJob : IJob
         {
             [ReadOnly] public NativeArray<ParkAdmissionRequestData> Requests;
             public NativeArray<long> Collected;
-            public NativeArray<bool> CityApplied;
+            public NativeArray<long> ManagementPaid;
             public Entity City;
             public long CityDelta;
             [ReadOnly] public ComponentLookup<HouseholdMember> Members;
@@ -189,17 +196,18 @@ namespace CS2AreaSystem.Modules.Park
                     var household = Members[request.Citizen].m_Household;
                     if (!Resources.HasBuffer(household)) continue;
                     var buffer = Resources[household];
-                    long amount = ParkFinanceModel.ComputeCollectibleAdmission(request.Fee, EconomyUtils.GetResources(Resource.Money, buffer));
+                    var money = Money[City];
+                    long amount = ParkFinanceModel.CollectAdmission(ref money, request.Fee, EconomyUtils.GetResources(Resource.Money, buffer));
                     if (amount <= 0) continue;
                     EconomyUtils.AddResources(Resource.Money, (int)-amount, buffer);
-                    var money = Money[City]; money.Add((int)amount); Money[City] = money;
+                    Money[City] = money;
                     Collected[i] = amount;
                 }
-                CityApplied[0] = hasCity;
-                if (hasCity && CityDelta != 0)
+                ManagementPaid[0] = 0;
+                if (hasCity && CityDelta < 0)
                 {
                     var money = Money[City];
-                    money.Add((int)System.Math.Max(int.MinValue, System.Math.Min(int.MaxValue, CityDelta)));
+                    ManagementPaid[0] = ParkFinanceModel.PayManagement(ref money, -CityDelta);
                     Money[City] = money;
                 }
             }

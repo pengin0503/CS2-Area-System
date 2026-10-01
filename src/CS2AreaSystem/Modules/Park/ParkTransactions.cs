@@ -49,7 +49,7 @@ namespace CS2AreaSystem.Modules.Park
         }
         public ParkTransactionBatch TakeBatch() { var batch = pending; pending = new ParkTransactionBatch(); return batch; }
         public void Clear() => pending = new ParkTransactionBatch();
-        public static ParkTransactionOutcomes Resolve(ParkTransactionBatch batch, IReadOnlyList<long> collected, bool cityApplied)
+        public static ParkTransactionOutcomes Resolve(ParkTransactionBatch batch, IReadOnlyList<long> collected, long managementPaid)
         {
             var outcomes = new ParkTransactionOutcomes();
             int count = Math.Min(batch.Admissions.Count, collected.Count);
@@ -58,7 +58,15 @@ namespace CS2AreaSystem.Modules.Park
                 var request = batch.Admissions[i];
                 outcomes.Admissions.Add(new ParkAdmissionOutcome { Request = request, Collected = Math.Max(0, Math.Min(request.Fee, collected[i])) });
             }
-            if (cityApplied) outcomes.Management.AddRange(batch.Management);
+            // Allocate the actual debit in request order. Unpaid expenses are never counted as city spending.
+            long remaining = Math.Max(0, managementPaid);
+            foreach (var charge in batch.Management)
+            {
+                long paid = Math.Min(remaining, charge.Paid);
+                if (paid > 0) outcomes.Management.Add(new ParkManagementCharge { Area = charge.Area, ParkId = charge.ParkId, Paid = paid });
+                remaining -= paid;
+                if (remaining == 0) break;
+            }
             return outcomes;
         }
     }
