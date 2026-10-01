@@ -24,8 +24,11 @@ namespace CS2AreaSystem.Modules.Park
         // Above this many changed objects in one frame, every Park is simply re-queued.
         public const int MaxTrackedChanges = 512;
         public const float TransitRadius = 120f;
-        // Candidate objects classified per frame; a large Park is scanned over several frames.
+        // Per-frame budget for candidate enumeration and classification together; a large Park is scanned over several
+        // frames, its search bounds enumerated tile by tile (#57).
         public const int ObjectsPerFrame = 4096;
+        // Tree queries per frame, so a scan over mostly empty tiles still advances in bounded steps.
+        public const int TilesPerFrame = 64;
         private const int PathSamples = 8;
         private ParkRuntimeSystem runtime;
         private Game.Objects.SearchSystem objectSearch;
@@ -43,12 +46,19 @@ namespace CS2AreaSystem.Modules.Park
             public Geometry Geometry;
             public ulong BoundaryRevision;
             public ParkPolygon Polygon;
-            public ParkLandscapeScan<Entity> Objects;
+            public ParkLandscapeTiling Tiling;
+            public ParkLandscapeCollector<Entity> Objects;
+            public System.Func<ParkLandscapeTile, List<Entity>, int> Enumerate;
+            public System.Action<Entity> Classify;
             public ParkLandscapeTally Tally = new ParkLandscapeTally();
             public List<(Entity Root, int TransportType)> Transit = new List<(Entity Root, int TransportType)>();
         }
         private ActiveScan current;
         public int ScanCount { get; private set; }
+        // Diagnostics (#57): static objects visited by tile queries, candidates classified, and the largest frame's work.
+        public long EnumeratedObjects { get; private set; }
+        public long ClassifiedObjects { get; private set; }
+        public int MaxScanFrameWork { get; private set; }
         [Preserve]
         protected override void OnCreate()
         {
@@ -135,14 +145,13 @@ namespace CS2AreaSystem.Modules.Park
             try
             {
                 var geometry = EntityManager.GetComponentData<Geometry>(snapshot.Area);
-                var candidates = new List<Entity>();
                 var search = new Bounds2(geometry.m_Bounds.xz.min - TransitRadius, geometry.m_Bounds.xz.max + TransitRadius);
-                var tree = objectSearch.GetStaticSearchTree(true, out var dependency);
-                dependency.Complete();
-                var iterator = new BoundsIterator { Bounds = search, Items = candidates };
-                tree.Iterate(ref iterator);
-                current = new ActiveScan { Snapshot = snapshot, Geometry = geometry, BoundaryRevision = scheduler.RevisionOf(id), Polygon = new ParkPolygon(ParkGeometry.Triangles(EntityManager, snapshot.Area)),
-                    Objects = new ParkLandscapeScan<Entity>(candidates) };
+                var tiling = new ParkLandscapeTiling(search, ParkLandscapeTiling.DefaultTileSize);
+                var scan = new ActiveScan { Snapshot = snapshot, Geometry = geometry, BoundaryRevision = scheduler.RevisionOf(id), Polygon = new ParkPolygon(ParkGeometry.Triangles(EntityManager, snapshot.Area)),
+                    Tiling = tiling, Objects = new ParkLandscapeCollector<Entity>(tiling, ObjectsPerFrame, TilesPerFrame) };
+                scan.Enumerate = (tile, into) => EnumerateTile(scan.Tiling, tile, into);
+                scan.Classify = entity => Classify(scan, entity);
+                current = scan;
                 Continue();
             }
             catch (System.Exception error) { Fail(error, snapshot.Area); }
@@ -155,7 +164,10 @@ namespace CS2AreaSystem.Modules.Park
                 // The Park may be deleted or edited while a sliced scan runs: drop the partial result.
                 if (!scheduler.IsCurrent(scan.Snapshot.StableId, scan.BoundaryRevision) || !EntityManager.Exists(scan.Snapshot.Area) ||
                     EntityManager.HasComponent<Deleted>(scan.Snapshot.Area) || !EntityManager.HasComponent<Geometry>(scan.Snapshot.Area)) { current = null; return; }
-                scan.Objects.Process(ObjectsPerFrame, entity => Classify(scan, entity));
+                long enumerated = scan.Objects.Enumerated, classified = scan.Objects.Classified;
+                scan.Objects.Step(scan.Enumerate, scan.Classify);
+                EnumeratedObjects += scan.Objects.Enumerated - enumerated; ClassifiedObjects += scan.Objects.Classified - classified;
+                MaxScanFrameWork = System.Math.Max(MaxScanFrameWork, scan.Objects.LastFrameWork);
                 if (!scan.Objects.Done) return;
                 current = null;
                 ScanCount++;
@@ -173,6 +185,15 @@ namespace CS2AreaSystem.Modules.Park
                 failures.Recovered(scan.Snapshot.Area, "Park.Landscape");
             }
             catch (System.Exception error) { Fail(error); }
+        }
+        // One tile of the static search tree; the tree's producers are completed before it is read on the main thread.
+        private int EnumerateTile(ParkLandscapeTiling tiling, ParkLandscapeTile tile, List<Entity> into)
+        {
+            var tree = objectSearch.GetStaticSearchTree(true, out var dependency);
+            dependency.Complete();
+            var iterator = new TileIterator { Tiling = tiling, Tile = tile, Items = into };
+            tree.Iterate(ref iterator);
+            return iterator.Visited;
         }
         // Keep the last good snapshot; without one the metric stays unavailable (neutral in Quality).
         private void Fail(System.Exception error, Entity area = default)
@@ -283,6 +304,20 @@ namespace CS2AreaSystem.Modules.Park
                 length += curve.m_Length * inside / PathSamples;
             }
             return length;
+        }
+        private struct TileIterator : INativeQuadTreeIterator<Entity, QuadTreeBoundsXZ>
+        {
+            public ParkLandscapeTiling Tiling;
+            public ParkLandscapeTile Tile;
+            public List<Entity> Items;
+            public int Visited;
+            public bool Intersect(QuadTreeBoundsXZ bounds) => math.all(Tile.Query.min <= bounds.m_Bounds.xz.max) && math.all(Tile.Query.max >= bounds.m_Bounds.xz.min);
+            public void Iterate(QuadTreeBoundsXZ bounds, Entity item)
+            {
+                if (!Intersect(bounds)) return;
+                Visited++;
+                if (Tiling.Owns(Tile, bounds.m_Bounds.xz)) Items.Add(item);
+            }
         }
         private struct BoundsIterator : INativeQuadTreeIterator<Entity, QuadTreeBoundsXZ>
         {
