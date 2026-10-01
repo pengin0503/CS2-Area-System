@@ -64,4 +64,24 @@ public class ModSystemOrderTests {
         Assert.That(runtime, Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem))), "current lifecycle state is resolved first");
         Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem)), Is.GreaterThanOrEqualTo(0));
     }
+    [Test] public void AreaFinanceAppliesAfterEveryGameSimulationProducer() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Finance.AreaFinanceSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Core.Finance.AreaFinanceSystem), null, SystemUpdatePhase.GameSimulation) }));
+        var order = Schedule(SystemUpdatePhase.GameSimulation);
+        int finance = order.IndexOf(typeof(CS2AreaSystem.Core.Finance.AreaFinanceSystem));
+        Assert.That(finance, Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkFinanceSystem))), "Park charges are queued first");
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkFinanceSystem)), Is.GreaterThanOrEqualTo(0));
+        var producers = ModCalls.Where(c => c.Phase == SystemUpdatePhase.GameSimulation && c.Method == "UpdateAt").Select(c => c.System!).ToList();
+        Assert.That(producers, Is.Not.Empty);
+        foreach (var producer in producers) Assert.That(finance, Is.GreaterThan(order.IndexOf(producer)), producer.Name);
+        Assert.That(finance, Is.GreaterThan(order.IndexOf(typeof(Game.Simulation.BudgetApplySystem))), "same frame as the vanilla budget apply, after it");
+    }
+    [Test] public void AreaFinanceSaveFlushRunsBeforeTheSerializer() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateBefore", typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem), typeof(Game.Serialization.SerializerSystem), SystemUpdatePhase.Serialize) }));
+        var order = Schedule(SystemUpdatePhase.Serialize);
+        int flush = order.IndexOf(typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem));
+        Assert.That(flush, Is.GreaterThanOrEqualTo(0));
+        Assert.That(flush, Is.LessThan(order.IndexOf(typeof(Game.Serialization.SerializerSystem))));
+    }
 }

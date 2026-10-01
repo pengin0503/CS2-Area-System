@@ -31,6 +31,7 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
             try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicySystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Area policy runtime unavailable; Area Core and modules remain registered."); }
+            RegisterAreaFinance(updateSystem);
             RegisterParkSystems(updateSystem);
             RegisterIndustrialSystems(updateSystem);
             RegisterLocalization();
@@ -56,6 +57,17 @@ namespace CS2AreaSystem
             var localization = manager == null ? null : manager.localizationManager;
             if (localization == null) return;
             registered.Unregister(localization.RemoveSource, (locale, error) => Log.Error(error, "Area localization removal failed: " + locale));
+        }
+        // Shared Area finance applies queued Area amounts after every GameSimulation producer (UpdateAt) and flushes them
+        // before a save serializes city money. A registration failure leaves Area Core and the modules running.
+        private static void RegisterAreaFinance(UpdateSystem updateSystem)
+        {
+            try
+            {
+                updateSystem.UpdateAfter<CS2AreaSystem.Core.Finance.AreaFinanceSystem>(SystemUpdatePhase.GameSimulation);
+                updateSystem.UpdateBefore<CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize);
+            }
+            catch (System.Exception error) { Log.Error(error, "Area finance unavailable; Area Core and modules remain registered."); }
         }
         // Park gameplay observes the city after Core. A Park registration failure leaves Core geometry, lifecycle,
         // persistence and the other area types running.
