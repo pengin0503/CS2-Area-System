@@ -6,8 +6,12 @@ using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Industrial
 {
-    public sealed class IndustrialAreaModule : AnchorAreaModule, IAreaExistingAnchorPolicy, IAreaPolicyProvider, IAreaPolicyUpkeepProvider
+    public sealed class IndustrialAreaModule : AnchorAreaModule, IAreaExistingAnchorPolicy, IAreaPolicyProvider, IAreaPolicyUpkeepProvider, Core.Persistence.IAreaSavedStateValidator
     {
+        public void ValidateSavedState(Entity area, EntityManager entities, Core.Persistence.AreaSavedStateReport report)
+        {
+            if (entities.HasComponent<IndustrialAreaState>(area)) IndustrialSavedStateValidator.Validate(entities.GetComponentData<IndustrialAreaState>(area), report);
+        }
         private readonly Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
         private readonly IndustrialPanelCache panels = new IndustrialPanelCache(250, () => clock.ElapsedMilliseconds);

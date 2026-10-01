@@ -124,6 +124,10 @@ for (const source of walk('src').filter(p=>p.endsWith('.cs'))) {
     failures.push(`${source}: saved stable IDs must be observed only through AreaIdentityLifecycle.Observe`);
 }
 check(!lifecycle.includes('ObserveExisting') && !lifecycle.includes('savedIds'), 'ManagedAreaLifecycleSystem must not observe saved IDs a second time');
+const observeStep = coordinatorSource.slice(coordinatorSource.indexOf('private void ObserveIdentities'), coordinatorSource.indexOf('private void ValidateSavedState'));
+check(/services\.Identity\.Observe\(records\)[\s\S]*ValidateSavedState\(managed\)/.test(observeStep),
+  'identity and saved-state quarantine must both be decided in the first recovery step, before membership is rebuilt');
+check(/sequence\.TryRecover\(true, ObserveIdentities, membership\.RebuildNow, ValidateModules\)/.test(coordinatorSource), 'recovery order: identities, membership, activation');
 for (const [file, what] of [
   ['src/CS2AreaSystem/Core/Membership/AreaMembershipSystem.cs', 'membership'],
   ['src/CS2AreaSystem/Core/Anchors/AreaActivationSystem.cs', 'activation'],

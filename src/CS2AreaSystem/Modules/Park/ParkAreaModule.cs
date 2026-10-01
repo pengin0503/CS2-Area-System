@@ -6,8 +6,12 @@ using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Park
 {
-    public sealed class ParkAreaModule : AnchorAreaModule, IAreaPolicyProvider, IAreaPolicyUpkeepProvider
+    public sealed class ParkAreaModule : AnchorAreaModule, IAreaPolicyProvider, IAreaPolicyUpkeepProvider, Core.Persistence.IAreaSavedStateValidator
     {
+        public void ValidateSavedState(Entity area, EntityManager entities, Core.Persistence.AreaSavedStateReport report)
+        {
+            if (entities.HasComponent<ParkAreaState>(area)) ParkSavedStateValidator.Validate(entities.GetComponentData<ParkAreaState>(area), report);
+        }
         private readonly Func<Entity, EntityManager, ParkFacilityTraits> readTraits;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
         private readonly ParkPanelCache panels = new ParkPanelCache(250, () => clock.ElapsedMilliseconds);

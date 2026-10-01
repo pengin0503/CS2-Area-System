@@ -54,6 +54,7 @@ namespace CS2AreaSystem.Core.Persistence
             sequence.TryRecover(true, ObserveIdentities, membership.RebuildNow, ValidateModules);
         }
         // The only place saved stable IDs are observed (#65): once per load generation, before membership and activation.
+        // Saved-state validation (#69) runs in the same step so every quarantine is known before any consumer runs.
         // Zero and duplicate IDs are quarantined and reported, never renumbered (#63).
         private void ObserveIdentities()
         {
@@ -66,6 +67,32 @@ namespace CS2AreaSystem.Core.Persistence
                     "stable ID " + entry.StableId + ", which another managed area also uses") +
                     ". It is quarantined for this session: its saved data is kept unchanged and it takes no part in membership, " +
                     "activation, policies or finance. Delete the area (or the unwanted copy) and reload to recover.");
+            // Before membership is rebuilt, so an Area with uninterpretable saved values never enters the index.
+            using var managed = areas.ToEntityArray(Allocator.Temp);
+            ValidateSavedState(managed);
+        }
+        // #69: Core and module saved components are checked once per load, before activation. Nothing is rewritten.
+        private void ValidateSavedState(NativeArray<Entity> entities)
+        {
+            var report = new AreaSavedStateReport();
+            foreach (var area in entities)
+            {
+                report.Clear();
+                if (EntityManager.HasComponent<ManagedAreaProgress>(area)) CoreSavedStateValidator.ValidateProgress(EntityManager.GetComponentData<ManagedAreaProgress>(area), report);
+                if (EntityManager.HasComponent<ManagedAreaSettings>(area)) CoreSavedStateValidator.ValidateSettings(EntityManager.GetComponentData<ManagedAreaSettings>(area), report);
+                if (services.Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor) && descriptor.Module is IAreaSavedStateValidator module)
+                {
+                    try { module.ValidateSavedState(area, EntityManager, report); }
+                    catch (System.Exception error) { Mod.Log.Error(error, "Saved-state validation failed for managed area " + area + "; its module state is not checked"); }
+                }
+                ulong id = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
+                if (report.IsInvalid && services.Quarantine.Add(area, AreaQuarantineReason.InvalidSavedState))
+                    Mod.Log.Error("Managed area " + area + " (stable ID " + id + ") has saved values that cannot be interpreted: " +
+                        report.Describe(AreaSavedValueSeverity.Invalid) + ". It is quarantined for this session and its saved data is kept unchanged.");
+                if (report.HasWarnings)
+                    Mod.Log.Warn("Managed area " + area + " (stable ID " + id + ") has out-of-range saved values that are clamped when read: " +
+                        report.Describe(AreaSavedValueSeverity.Warning));
+            }
         }
         public void ValidateModules()
         {
