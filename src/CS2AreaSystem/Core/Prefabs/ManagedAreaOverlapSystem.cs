@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Colossal.Collections;
+using Colossal.Mathematics;
 using CS2AreaSystem.Core.Areas;
 using Game;
 using Game.Areas;
@@ -10,6 +12,7 @@ using Game.Simulation;
 using Game.Tools;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine.Scripting;
 
 namespace CS2AreaSystem.Core.Prefabs
@@ -30,6 +33,10 @@ namespace CS2AreaSystem.Core.Prefabs
         private ModificationEndBarrier barrier;
         private IconCommandSystem icons;
         private EntityQuery previews, errorPrefabs;
+        private readonly HashSet<Entity> nearby = new HashSet<Entity>();
+        // Diagnostics (#60): updates with a managed preview that skipped or ran the full native re-validation.
+        public long SkippedValidations { get; private set; }
+        public long FullValidations { get; private set; }
         [Preserve]
         protected override void OnCreate()
         {
@@ -58,7 +65,10 @@ namespace CS2AreaSystem.Core.Prefabs
                 if (!CS2AreaSystem.Core.Settings.AreaSettings.Current.AllowManagedAreaOverlap ||
                     tools.activeTool != areaTool || areaTool.prefab == null || tools.actionMode.IsEditor() ||
                     !TryDescribePrefab(prefabs.GetEntity(areaTool.prefab), out _) || previews.IsEmptyIgnoreFilter) return;
-                ApplyManagedPolicy();
+                using var entities = previews.ToEntityArray(Allocator.Temp);
+                if (!AnyPreviewMayOverlap(entities)) { SkippedValidations++; return; }
+                FullValidations++;
+                ApplyManagedPolicy(entities);
                 services.Failures.Recovered(Entity.Null, "Overlap");
             }
             catch (Exception error)
@@ -67,7 +77,53 @@ namespace CS2AreaSystem.Core.Prefabs
                 services.Failures.Report(Entity.Null, "Overlap", error, "Managed overlap validation unavailable; native errors remain authoritative.");
             }
         }
-        private void ApplyManagedPolicy()
+        // Only the area search tree is completed here; the object/net/water producers are waited on only for a full run.
+        private bool AnyPreviewMayOverlap(NativeArray<Entity> entities)
+        {
+            var areaTree = areaSearch.GetSearchTree(true, out var areaDependency);
+            areaDependency.Complete();
+            foreach (var entity in entities)
+            {
+                if (!IsValidatedPreview(entity)) continue;
+                // Without bounds the neighbours are unknown: keep the full check.
+                if (!EntityManager.HasComponent<Geometry>(entity)) return true;
+                nearby.Clear();
+                var iterator = new NearbyAreaIterator { Bounds = EntityManager.GetComponentData<Geometry>(entity).m_Bounds.xz, Areas = nearby };
+                areaTree.Iterate(ref iterator);
+                if (ManagedOverlapGate.MayHavePermittedOverlap(entity, nearby, IgnoredByNativeAreaValidation, TopLevel, Permits)) { nearby.Clear(); return true; }
+            }
+            nearby.Clear();
+            return false;
+        }
+        // The same previews ApplyManagedPolicy validates.
+        private bool IsValidatedPreview(Entity entity)
+        {
+            if (!IsOwned(entity)) return false;
+            if ((EntityManager.GetComponentData<Temp>(entity).m_Flags & (TempFlags.Delete | TempFlags.Select | TempFlags.Duplicate)) != 0) return false;
+            return (EntityManager.GetComponentData<Area>(entity).m_Flags & AreaFlags.Slave) == 0;
+        }
+        // Game.Areas.ValidationHelpers.AreaIterator skips Hidden and Slave Areas.
+        private bool IgnoredByNativeAreaValidation(Entity area) => !EntityManager.Exists(area) || EntityManager.HasComponent<Hidden>(area) ||
+            (EntityManager.HasComponent<Area>(area) && (EntityManager.GetComponentData<Area>(area).m_Flags & AreaFlags.Slave) != 0);
+        // The entity native errors carry as m_PermanentEntity (AreaIterator's owner walk).
+        private Entity TopLevel(Entity entity)
+        {
+            for (int depth = 0; depth < 16 && EntityManager.HasComponent<Owner>(entity) && !EntityManager.HasComponent<Game.Buildings.Building>(entity); depth++)
+            {
+                var owner = EntityManager.GetComponentData<Owner>(entity).m_Owner;
+                if (!EntityManager.Exists(owner) || EntityManager.HasComponent<Game.Objects.AssetStamp>(owner)) break;
+                entity = owner;
+            }
+            return entity;
+        }
+        private struct NearbyAreaIterator : INativeQuadTreeIterator<AreaSearchItem, QuadTreeBoundsXZ>
+        {
+            public Bounds2 Bounds;
+            public HashSet<Entity> Areas;
+            public bool Intersect(QuadTreeBoundsXZ bounds) => MathUtils.Intersect(bounds.m_Bounds.xz, Bounds);
+            public void Iterate(QuadTreeBoundsXZ bounds, AreaSearchItem item) { if (Intersect(bounds)) Areas.Add(item.m_Area); }
+        }
+        private void ApplyManagedPolicy(NativeArray<Entity> entities)
         {
             var objectTree = objectSearch.GetStaticSearchTree(true, out var objectDependency);
             var netTree = netSearch.GetNetSearchTree(true, out var netDependency);
@@ -79,14 +135,11 @@ namespace CS2AreaSystem.Core.Prefabs
             var errors = new List<ErrorData>();
             using var queue = new NativeQueue<ErrorData>(Allocator.TempJob);
             var writer = queue.AsParallelWriter();
-            using var entities = previews.ToEntityArray(Allocator.Temp);
             foreach (var entity in entities)
             {
-                if (!IsOwned(entity)) continue;
+                if (!IsValidatedPreview(entity)) continue;
                 var temp = EntityManager.GetComponentData<Temp>(entity);
-                if ((temp.m_Flags & (TempFlags.Delete | TempFlags.Select | TempFlags.Duplicate)) != 0) continue;
                 var area = EntityManager.GetComponentData<Area>(entity);
-                if ((area.m_Flags & AreaFlags.Slave) != 0) continue;
                 var owner = EntityManager.HasComponent<Owner>(entity) ? EntityManager.GetComponentData<Owner>(entity) : default;
                 var geometry = EntityManager.HasComponent<Geometry>(entity) ? EntityManager.GetComponentData<Geometry>(entity) : default;
                 var reference = EntityManager.GetComponentData<PrefabRef>(entity);
