@@ -20,10 +20,24 @@ namespace CS2AreaSystem.Core.Membership
         // same-kind primary flag) change. Compare by equality only; 0 means unknown/untouched. A token is kept while
         // an existing Area is temporarily empty and removed with the Area.
         private readonly Dictionary<ulong, ulong> revisions = new Dictionary<ulong, ulong>();
+        // Read-only member snapshot per Area, built on first read after a change (#71). Snapshots are never mutated, so a
+        // caller may keep one; the next change to that Area drops it and the following read builds a new one.
+        private readonly Dictionary<ulong, System.Collections.ObjectModel.ReadOnlyCollection<Entity>> snapshots =
+            new Dictionary<ulong, System.Collections.ObjectModel.ReadOnlyCollection<Entity>>();
+        private static readonly System.Collections.ObjectModel.ReadOnlyCollection<Entity> NoMembers = Array.AsReadOnly(Array.Empty<Entity>());
+        // Advances when revisions restart (Clear) or an Area's revision is removed, so (Epoch, revision) never repeats (#72).
+        public int Epoch { get; private set; }
         public IReadOnlyList<AreaMembership> GetAreas(Entity member) =>
             byMember.TryGetValue(member, out var values) ? values : Array.Empty<AreaMembership>();
-        public IReadOnlyCollection<Entity> GetMembers(ulong areaId) =>
-            byArea.TryGetValue(areaId, out var values) ? Array.AsReadOnly(values.ToArray()) : Array.Empty<Entity>();
+        public IReadOnlyCollection<Entity> GetMembers(ulong areaId)
+        {
+            if (snapshots.TryGetValue(areaId, out var snapshot)) return snapshot;
+            if (!byArea.TryGetValue(areaId, out var values)) return NoMembers;
+            var array = new Entity[values.Count];
+            values.CopyTo(array);
+            snapshots[areaId] = snapshot = Array.AsReadOnly(array);
+            return snapshot;
+        }
         public ulong GetAreaRevision(ulong areaStableId) => revisions.TryGetValue(areaStableId, out var revision) ? revision : 0UL;
         // Unchecked increment that never yields the "untouched" value 0.
         public static ulong NextRevision(ulong revision) { revision = unchecked(revision + 1); return revision == 0 ? 1UL : revision; }
@@ -40,7 +54,7 @@ namespace CS2AreaSystem.Core.Membership
                 {
                     if (!byArea.TryGetValue(relation.AreaStableId, out var members))
                         byArea[relation.AreaStableId] = members = new HashSet<Entity>();
-                    members.Add(member);
+                    if (members.Add(member)) snapshots.Remove(relation.AreaStableId);
                 }
             }
             foreach (var area in changed) Advance(area);
@@ -57,15 +71,17 @@ namespace CS2AreaSystem.Core.Membership
                 ReplaceMembership(member, GetAreas(member).Where(x => x.AreaStableId != areaStableId).ToArray());
             byArea.Remove(areaStableId);
             revisions.Remove(areaStableId);
+            snapshots.Remove(areaStableId);
+            Epoch++;
         }
-        public void Clear() { byMember.Clear(); byArea.Clear(); revisions.Clear(); }
+        public void Clear() { byMember.Clear(); byArea.Clear(); revisions.Clear(); snapshots.Clear(); Epoch++; }
         private void Unlink(Entity member)
         {
             if (!byMember.TryGetValue(member, out var relations)) return;
             foreach (var relation in relations)
                 if (byArea.TryGetValue(relation.AreaStableId, out var members))
                 {
-                    members.Remove(member);
+                    if (members.Remove(member)) snapshots.Remove(relation.AreaStableId);
                     if (members.Count == 0) byArea.Remove(relation.AreaStableId);
                 }
             byMember.Remove(member);

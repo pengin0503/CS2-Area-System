@@ -101,16 +101,24 @@ namespace CS2AreaSystem.Core.Membership
             using var members = allMembers.ToEntityArray(Allocator.Temp);
             return members.ToArray();
         }
+        // Building candidates inside the Area's bounds. The returned set is reused: it is valid until the next call.
         public IEnumerable<Entity> GetSpatialCandidates(Entity area)
         {
-            var candidates = new HashSet<Entity>();
-            if (!EntityManager.HasComponent<Geometry>(area)) return candidates;
-            var iterator = new ObjectIterator { Bounds = EntityManager.GetComponentData<Geometry>(area).m_Bounds.xz, Candidates = candidates };
+            spatialCandidates.Clear();
+            if (!EntityManager.HasComponent<Geometry>(area)) return spatialCandidates;
+            var iterator = new MembershipObjectIterator<BuildingMemberFilter> {
+                Bounds = EntityManager.GetComponentData<Geometry>(area).m_Bounds.xz, Candidates = spatialCandidates,
+                Filter = new BuildingMemberFilter { Buildings = GetComponentLookup<Game.Buildings.Building>(true), Deleted = GetComponentLookup<Deleted>(true) } };
             var tree = objectSearch.GetStaticSearchTree(true, out var dependency);
             dependency.Complete();
             tree.Iterate(ref iterator);
-            return candidates;
+            SpatialObjectsVisited += iterator.Visited; SpatialCandidatesAccepted += iterator.Accepted;
+            return spatialCandidates;
         }
+        private readonly HashSet<Entity> spatialCandidates = new HashSet<Entity>();
+        // Diagnostics counters (#51): static objects examined and building candidates kept by boundary searches.
+        public long SpatialObjectsVisited { get; private set; }
+        public long SpatialCandidatesAccepted { get; private set; }
         public IReadOnlyList<AreaMembership> FindContainingAreas(Entity member)
         {
             var results = new List<AreaMembership>();
@@ -149,13 +157,6 @@ namespace CS2AreaSystem.Core.Membership
         private bool IsCandidate(Entity entity) => EntityManager.Exists(entity) && AreaMembershipCandidatePolicy.IsCandidate(
             EntityManager.HasComponent<Transform>(entity), EntityManager.HasComponent<Static>(entity), EntityManager.HasComponent<Game.Buildings.Building>(entity),
             EntityManager.HasComponent<Deleted>(entity), EntityManager.HasComponent<Temp>(entity), EntityManager.HasComponent<Overridden>(entity));
-        private struct ObjectIterator : INativeQuadTreeIterator<Entity, QuadTreeBoundsXZ>
-        {
-            public Bounds2 Bounds;
-            public HashSet<Entity> Candidates;
-            public bool Intersect(QuadTreeBoundsXZ bounds) => math.all(Bounds.min <= bounds.m_Bounds.xz.max) && math.all(Bounds.max >= bounds.m_Bounds.xz.min);
-            public void Iterate(QuadTreeBoundsXZ bounds, Entity item) { if (Intersect(bounds)) Candidates.Add(item); }
-        }
         private struct AreaIterator : INativeQuadTreeIterator<AreaSearchItem, QuadTreeBoundsXZ>
         {
             public float2 Position;

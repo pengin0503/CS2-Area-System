@@ -16,6 +16,7 @@ namespace CS2AreaSystem.Core.Membership
         public int FullRebuildCount { get; private set; }
         public int IncrementalMemberUpdateCount { get; private set; }
         public int IncrementalAreaUpdateCount { get; private set; }
+        private readonly HashSet<Entity> affected = new HashSet<Entity>();
         public AreaMembershipUpdater(AreaMembershipIndex index, IAreaMembershipSpatialSource spatial) { this.index = index; this.spatial = spatial; }
         public void Rebuild()
         {
@@ -36,9 +37,12 @@ namespace CS2AreaSystem.Core.Membership
             if (deleted) index.RemoveArea(stableId);
             else
             {
-                var affected = new HashSet<Entity>(index.GetMembers(stableId));
+                // Existing members (removal) and building candidates inside the new bounds (addition).
+                affected.Clear();
+                affected.UnionWith(index.GetMembers(stableId));
                 affected.UnionWith(spatial.GetSpatialCandidates(area));
                 foreach (var member in affected) index.ReplaceMembership(member, spatial.FindContainingAreas(member));
+                affected.Clear();
             }
             IncrementalAreaUpdateCount++;
         }
