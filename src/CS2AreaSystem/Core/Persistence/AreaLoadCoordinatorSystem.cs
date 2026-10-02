@@ -11,6 +11,7 @@ namespace CS2AreaSystem.Core.Persistence
     public partial class AreaLoadCoordinatorSystem : GameSystemBase
     {
         private readonly AreaLoadSequence sequence = new AreaLoadSequence();
+        private readonly AreaNativeReadiness nativeReadiness = new AreaNativeReadiness();
         private AreaCoreServicesSystem services;
         private AreaMembershipSystem membership;
         private Game.Areas.SearchSystem search;
@@ -38,22 +39,50 @@ namespace CS2AreaSystem.Core.Persistence
         protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
         {
             loadingComplete = false; sequence.Reset(); membership.RequestRebuild();
+            nativeReadiness.BeginLoad(search.LastSystemVersion);
             // A new load generation: no stable ID or quarantine of the previous city survives (#62).
             services.Identity.BeginLoad();
             // ... and every failure is diagnosed again in the new city (#67).
             services.Failures.NewGeneration();
         }
-        protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) => loadingComplete = true;
+        protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
+        {
+            // Observe only native passes after loading finished; a tree left from the previous city is not evidence.
+            nativeReadiness.BeginLoad(search.LastSystemVersion);
+            loadingComplete = true;
+        }
         protected override void OnUpdate()
         {
             if (!RebuildPending || !loadingComplete || GameManager.instance.isGameLoading) return;
             // Existing managed state can recover independently from toolbar exposure or an unrelated
             // area type's prefab readiness. Native search geometry is the authoritative readiness gate.
             search.GetSearchTree(true, out var dependency, out var triangleCounts); dependency.Complete();
+            uint searchVersion = search.LastSystemVersion;
+            var nodeType = GetBufferTypeHandle<Game.Areas.Node>(true);
+            var triangleType = GetBufferTypeHandle<Game.Areas.Triangle>(true);
+            bool allReady = true;
             using var entities = areas.ToEntityArray(Allocator.Temp);
             foreach (var area in entities)
-                if (EntityManager.HasComponent<Game.Areas.Area>(area) && !triangleCounts.ContainsKey(area)) return;
-            sequence.TryRecover(true, ObserveIdentities, membership.RebuildNow, ValidateModules);
+            {
+                if (services.IsQuarantined(area)) continue;
+                bool hasNodes = EntityManager.HasBuffer<Game.Areas.Node>(area), hasTriangles = EntityManager.HasBuffer<Game.Areas.Triangle>(area);
+                var nodes = hasNodes ? EntityManager.GetBuffer<Game.Areas.Node>(area, true) : default;
+                var triangles = hasTriangles ? EntityManager.GetBuffer<Game.Areas.Triangle>(area, true) : default;
+                var chunk = EntityManager.GetChunk(area);
+                var geometry = AreaNativeGeometryEvidence.Read(EntityManager.HasComponent<Game.Areas.Area>(area),
+                    hasNodes ? nodes.Length : -1, hasTriangles ? triangles.Length : -1, i => nodes[i], i => triangles[i],
+                    hasNodes ? chunk.GetChangeVersion(ref nodeType) : 0, hasTriangles ? chunk.GetChangeVersion(ref triangleType) : 0);
+                bool nativeReady = triangleCounts.TryGetValue(area, out int count) && count == geometry.TriangleCount;
+                var result = nativeReadiness.Observe(area, nativeReady, searchVersion, geometry);
+                if (result == AreaNativeReadinessResult.Waiting) allReady = false;
+                else if (result == AreaNativeReadinessResult.Quarantine && services.Quarantine.Add(area, AreaQuarantineReason.NativeGeometryUnavailable))
+                    Mod.Log.Error("Managed area " + area + " (stable ID " + EntityManager.GetComponentData<ManagedAreaStableId>(area).Value +
+                        ") has no usable native search geometry after distinct completed search updates with unchanged geometry (" +
+                        (geometry.Problem == AreaNativeGeometryProblem.None ? "search entry missing or triangle count mismatched" : geometry.Problem.ToString()) +
+                        ", nodes " + geometry.NodeCount + ", triangles " + geometry.TriangleCount +
+                        "). It is quarantined for this session; saved geometry and state are kept unchanged. Other Areas can recover.");
+            }
+            sequence.TryRecover(allReady, ObserveIdentities, membership.RebuildNow, ValidateModules);
         }
         // The only place saved stable IDs are observed (#65): once per load generation, before membership and activation.
         // Saved-state validation (#69) runs in the same step so every quarantine is known before any consumer runs.

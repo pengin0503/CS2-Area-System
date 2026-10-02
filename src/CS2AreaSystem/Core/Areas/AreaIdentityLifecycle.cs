@@ -4,7 +4,7 @@ using Unity.Entities;
 namespace CS2AreaSystem.Core.Areas
 {
     [Flags]
-    public enum AreaQuarantineReason : byte { None = 0, ZeroStableId = 1, DuplicateStableId = 2, InvalidSavedState = 4 }
+    public enum AreaQuarantineReason : byte { None = 0, ZeroStableId = 1, DuplicateStableId = 2, InvalidSavedState = 4, NativeGeometryUnavailable = 8 }
     public readonly struct AreaIdentityRecord
     {
         public Entity Area { get; }

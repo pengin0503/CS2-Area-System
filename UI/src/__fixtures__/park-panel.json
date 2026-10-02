@@ -4536,7 +4536,7 @@
     "CS2AS.Summary.Active": "Active",
     "CS2AS.Summary.AnchorRequired": "Assign a required facility to activate this area.",
     "CS2AS.Summary.ModuleUnavailable": "This area's module is unavailable. Saved state is retained.",
-    "CS2AS.Summary.Quarantined": "This area's saved data is inconsistent (for example its ID is 0 or used by another area), so it is isolated for this session. Its saved data is kept unchanged and it takes no part in membership, activation, policies or finance. Only Edit and Delete are available; delete the unwanted area and reload to recover.",
+    "CS2AS.Summary.Quarantined": "This area's saved data is inconsistent or its native search geometry is unavailable, so it is isolated for this session. Saved data and geometry are kept unchanged; membership, activation, policies and finance are disabled. Only Edit and Delete are available. Edit the geometry or delete the unwanted area, then reload.",
     "CS2AS.Summary.TourismBoundaryOnly": "Boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
     "CS2AS.Tab.Employment": "Employment",
     "CS2AS.Tab.Finances": "Finances",
