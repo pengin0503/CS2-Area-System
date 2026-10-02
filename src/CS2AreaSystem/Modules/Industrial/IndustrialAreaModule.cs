@@ -48,8 +48,9 @@ namespace CS2AreaSystem.Modules.Industrial
                 return IndustrialPanelBuilder.Build(model);
             });
         }
-        // Industrial v1 has no module actions; Core's HQ/Edit/Delete actions are handled by Core.
-        public override bool HandleAction(Entity area, string action, string value, in AreaPanelContext context) => false;
+        // The only Industrial module action is the read-only diagnostic focus; Core's HQ/Edit/Delete actions are handled by Core.
+        public override bool HandleAction(Entity area, string action, string value, in AreaPanelContext context) =>
+            IndustrialGameplayFacade.HandleAction(area, action, value, context);
         public System.Collections.Generic.IReadOnlyList<AreaPolicyDefinition> PolicyDefinitions => IndustrialPolicyCatalog.Definitions;
         public bool IsPolicyEffectAvailable(Entity area, int policyId, in AreaPolicyContext context, out string reasonKey)
         {

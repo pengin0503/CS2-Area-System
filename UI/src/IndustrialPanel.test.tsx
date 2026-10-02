@@ -105,7 +105,7 @@ describe('Industrial management tabs (real C# payload)',()=>{
   render(<AreaInfoSection {...section('maxLevel')}/>);open('CS2AS.Tab.Progress');
   expect(row(t('CS2AS.Industrial.MaxLevel'))).toHaveTextContent(t('CS2AS.Industrial.LevelName.5'));
  });
- it('offers no Industrial-specific action: only Core HQ/Edit/Delete buttons trigger',()=>{
+ it('offers no Industrial mutation: the only module action is the read-only bottleneck focus button',()=>{
   for(const name of ['active','paused','overlapping'] as Name[]){
    const {unmount}=render(<AreaInfoSection {...section(name)}/>);
    for(const tab of ['CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress']){
@@ -116,7 +116,25 @@ describe('Industrial management tabs (real C# payload)',()=>{
   }
   expect(env.trigger).not.toHaveBeenCalledWith('cs2AreaSystem','moduleAction',expect.anything(),expect.anything(),expect.anything());
   const items=Object.values(fixture.sections).flatMap(s=>(s as unknown as AreaSectionData).tabs.flatMap(tab=>tab.items??[]));
-  expect(items.filter(i=>i.action!==null||i.kind==='slider'||i.kind==='button')).toEqual([]);
+  const actions=items.filter(i=>i.action!==null||i.kind==='slider'||i.kind==='button');
+  expect(actions.length).toBeGreaterThan(0);
+  expect(actions.every(i=>i.kind==='button'&&i.action==='focusDiagnosticTarget'&&/^\d+\.\d+$/.test(i.value??''))).toBe(true);
+ });
+ it('production tab lists each observed recipe as input and output rows with its measured rate',()=>{
+  render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Production');
+  // Resource titles are game localization (Resources.TITLE[...]), absent from the test dictionary; rows are found by role text.
+  const roles=(key:string)=>screen.getAllByRole('row').filter(r=>r.lastElementChild?.textContent===t(key)).length;
+  expect(roles('CS2AS.Industrial.Process.Input')).toBe(5);
+  expect(roles('CS2AS.Industrial.Process.Output')).toBe(3);
+  expect(item('active','production','process.1.input.1').labelKey).toBe('Resources.TITLE[Ore]');
+  const rates=screen.getAllByRole('row').filter(r=>r.firstElementChild?.textContent===t('CS2AS.Industrial.Process.ActualPerDay')).map(r=>r.lastElementChild?.textContent);
+  expect(rates).toEqual([item('active','production','process.0.actual').value,item('active','production','process.1.actual').value,t('CS2AS.Industrial.Status.Unavailable')]);
+ });
+ it('a bottleneck focus button sends its opaque target key through the guarded module action',()=>{
+  render(<AreaInfoSection {...section('overlapping')}/>);
+  const button=section('overlapping').tabs[0].items!.find(i=>i.kind==='button')!;
+  fireEvent.click(screen.getAllByRole('button',{name:t(button.labelKey)})[0]);
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','moduleAction','42','focusDiagnosticTarget',button.value);
  });
  it('every mod key the payload uses is localized',()=>{
   const keys=new Set<string>();

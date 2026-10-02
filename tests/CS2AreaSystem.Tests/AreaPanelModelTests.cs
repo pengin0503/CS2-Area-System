@@ -91,6 +91,34 @@ public class AreaPanelModelTests {
   Assert.That(AreaModuleActionDispatcher.Dispatch(true, provider, area, "setBudget", "130", default, e => seen = e), Is.False);
   Assert.That(seen?.Message, Is.EqualTo("module"));
  }
+ private sealed class FocusingProvider : IAreaPanelProvider {
+  public Entity Target;
+  public string BuildSummary(Entity area, in AreaPanelContext context) => "s";
+  public AreaPanelDocument BuildPanel(Entity area, in AreaPanelContext context) => new();
+  public bool HandleAction(Entity area, string action, string value, in AreaPanelContext context) {
+   if (action != "focusDiagnosticTarget" || context.Focus == null) return false;
+   context.Focus(Target); return true; }
+ }
+ [Test] public void FocusCallbackRunsOnlyAfterTheActionGuard() {
+  var area = new Entity { Index = 3, Version = 1 }; var target = new Entity { Index = 70, Version = 2 };
+  var focused = new List<Entity>();
+  var context = new AreaPanelContext(null, default, e => focused.Add(e));
+  var provider = new FocusingProvider { Target = target };
+  Assert.That(AreaModuleActionDispatcher.Dispatch(false, provider, area, "focusDiagnosticTarget", "70.2", context, _ => { }), Is.False);
+  Assert.That(focused, Is.Empty, "a stale stable ID or selection never focuses");
+  Assert.That(AreaModuleActionDispatcher.Dispatch(true, provider, area, "focusDiagnosticTarget", "70.2", context, _ => { }), Is.True);
+  Assert.That(focused, Is.EqualTo(new[] { target }));
+  Assert.That(new AreaPanelContext(null, default).Focus, Is.Null, "existing two-argument call sites keep compiling and get no focus");
+ }
+ [Test] public void UiSystemSuppliesTheSelectionFocusOnlyForModuleActions() {
+  var source = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../../src/CS2AreaSystem/Core/UI/AreaManagementUISystem.cs"));
+  var action = source.Substring(source.IndexOf("private void ModuleAction(", StringComparison.Ordinal));
+  action = action.Substring(0, action.IndexOf("private void RemoveAnchor(", StringComparison.Ordinal));
+  Assert.That(action, Does.Contain("new Core.Modules.AreaPanelContext(World, EntityManager, selection.Focus)"));
+  Assert.That(action.IndexOf("AreaUIActionGuard.Matches", StringComparison.Ordinal), Is.LessThan(action.IndexOf("selection.Focus", StringComparison.Ordinal)));
+  Assert.That(System.Text.RegularExpressions.Regex.Matches(source, @"AreaPanelContext\(World, EntityManager, selection\.Focus\)").Count, Is.EqualTo(1),
+   "panel building never receives the focus callback");
+ }
  [Test] public void AnchorLinkKeysResolveOnlyAgainstTheCurrentLinksOfTheRole() {
   var gate = new Entity { Index = 30, Version = 2 }; var hq = new Entity { Index = 40, Version = 1 };
   var links = new[] { new AreaAnchorLink { Anchor = gate, Role = AreaAnchorRole.Entrance }, new AreaAnchorLink { Anchor = hq, Role = AreaAnchorRole.Headquarters } };

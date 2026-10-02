@@ -44,13 +44,13 @@ namespace CS2AreaSystem.Modules.Park
         {
             public ParkRuntimeSnapshot Snapshot;
             public Geometry Geometry;
-            public ulong BoundaryRevision;
             public ParkPolygon Polygon;
             public ParkLandscapeTiling Tiling;
             public ParkLandscapeCollector<Entity> Objects;
             public System.Func<ParkLandscapeTile, List<Entity>, int> Enumerate;
             public System.Action<Entity> Classify;
-            public ParkLandscapeTally Tally = new ParkLandscapeTally();
+            // Category tally and the bounded diagnostic grid, fed by the same classification (Wave A5).
+            public ParkLandscapeScanState State;
             public List<(Entity Root, int TransportType)> Transit = new List<(Entity Root, int TransportType)>();
         }
         private ActiveScan current;
@@ -147,7 +147,9 @@ namespace CS2AreaSystem.Modules.Park
                 var geometry = EntityManager.GetComponentData<Geometry>(snapshot.Area);
                 var search = new Bounds2(geometry.m_Bounds.xz.min - TransitRadius, geometry.m_Bounds.xz.max + TransitRadius);
                 var tiling = new ParkLandscapeTiling(search, ParkLandscapeTiling.DefaultTileSize);
-                var scan = new ActiveScan { Snapshot = snapshot, Geometry = geometry, BoundaryRevision = scheduler.RevisionOf(id), Polygon = new ParkPolygon(ParkGeometry.Triangles(EntityManager, snapshot.Area)),
+                var box = geometry.m_Bounds.xz;
+                var scan = new ActiveScan { Snapshot = snapshot, Geometry = geometry,
+                    State = new ParkLandscapeScanState(id, scheduler.RevisionOf(id), box.min.x, box.min.y, box.max.x, box.max.y), Polygon = new ParkPolygon(ParkGeometry.Triangles(EntityManager, snapshot.Area)),
                     Tiling = tiling, Objects = new ParkLandscapeCollector<Entity>(tiling, ObjectsPerFrame, TilesPerFrame) };
                 scan.Enumerate = (tile, into) => EnumerateTile(scan.Tiling, tile, into);
                 scan.Classify = entity => Classify(scan, entity);
@@ -162,7 +164,7 @@ namespace CS2AreaSystem.Modules.Park
             try
             {
                 // The Park may be deleted or edited while a sliced scan runs: drop the partial result.
-                if (!scheduler.IsCurrent(scan.Snapshot.StableId, scan.BoundaryRevision) || !EntityManager.Exists(scan.Snapshot.Area) ||
+                if (!scheduler.IsCurrent(scan.State.ParkId, scan.State.Revision) || !EntityManager.Exists(scan.Snapshot.Area) ||
                     EntityManager.HasComponent<Deleted>(scan.Snapshot.Area) || !EntityManager.HasComponent<Geometry>(scan.Snapshot.Area)) { current = null; return; }
                 long enumerated = scan.Objects.Enumerated, classified = scan.Objects.Classified;
                 scan.Objects.Step(scan.Enumerate, scan.Classify);
@@ -173,14 +175,12 @@ namespace CS2AreaSystem.Modules.Park
                 ScanCount++;
                 var pathSamples = new List<(float X, float Z)>();
                 float pathLength = MeasurePaths(scan.Geometry.m_Bounds.xz, scan.Polygon, pathSamples);
+                if (!scan.State.TryComplete(scheduler, scan.Geometry.m_SurfaceArea, pathLength, runtime.SimulationFrame, out var landscape)) return;
                 var snapshot = scan.Snapshot;
                 snapshot.AreaSquareMeters = scan.Geometry.m_SurfaceArea;
-                var landscape = new ParkLandscapeSnapshot {
-                    Inputs = scan.Tally.ToInputs(scan.Geometry.m_SurfaceArea, pathLength), ScannedFrame = runtime.SimulationFrame, Available = true };
                 landscape.PathSamples = pathSamples;
                 var transit = ParkTransitAccess.Summarize(scan.Transit);
                 landscape.TransitPoints = transit.Points; landscape.TransitTypes = transit.Types;
-                landscape.Result = ParkLandscapeModel.ComputeLandscape(landscape.Inputs);
                 snapshot.Landscape = landscape;
                 failures.Recovered(scan.Snapshot.Area, "Park.Landscape");
             }
@@ -213,7 +213,7 @@ namespace CS2AreaSystem.Modules.Park
             }
             if (!scan.Polygon.Contains(position)) return;
             var traits = ReadObject(entity, out int prefabKey);
-            scan.Tally.Add(ParkLandscapeClassifier.Classify(traits), prefabKey);
+            scan.State.Add(ParkLandscapeClassifier.Classify(traits), prefabKey, position.x, position.y, entity);
         }
         private bool IsTransit(Entity entity) =>
             !EntityManager.HasComponent<Temp>(entity) && !EntityManager.HasComponent<Deleted>(entity) &&

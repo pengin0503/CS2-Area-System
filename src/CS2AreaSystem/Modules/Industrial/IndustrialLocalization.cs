@@ -103,6 +103,13 @@ namespace CS2AreaSystem.Modules.Industrial
             Add(P + "RawActivity", "Activity incl. bonuses", "稼働率（ボーナス込み）");
             Add(P + "RawActivity.Tip", "Unclamped value; only scoring is limited to 100%.", "上限なしの値です。スコア計算のみ100%で頭打ちにします。");
             Add(P + "MeaningfulOutputs", "Meaningful outputs (now / six-hour average)", "有意な生産品目（現在 / 6時間平均）");
+            Add(P + "FocusTarget", "Show facility", "施設を表示");
+            Add(P + "FocusTarget.Tip", "Moves the camera to a representative facility behind this diagnostic. Nothing in the city is changed.", "この診断の代表的な施設にカメラを移動します。都市の状態は何も変更しません。");
+            Add(P + "Process.Input", "Input", "原料");
+            Add(P + "Process.Output", "Output", "製品");
+            Add(P + "Process.Companies", "Companies with this process", "この工程の企業数");
+            Add(P + "Process.ActualPerDay", "Actual output", "実際の生産量");
+            Add(P + "Process.Tip", "A production process observed in this area: the input resources the game's recipe consumes and the resource it produces, with the current daily output of its companies (sampled).", "このエリアで観測された生産工程です。ゲームのレシピが消費する原料と生産する製品、およびその企業の現在の1日あたり生産量（サンプリング値）を示します。");
             Add(P + "Resource.Tip", "Current production rate per day shown by the game for companies here (sampled, not a lifetime counter).", "エリア内の企業についてゲームが表示する1日あたりの現在の生産量（サンプリング値で累計ではありません）。");
             // Logistics tab.
             Add(P + "StorageFacilities", "Storage facilities", "保管施設");

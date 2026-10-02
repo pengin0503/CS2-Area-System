@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Diagnostics;
 using CS2AreaSystem.Core.Modules;
 namespace CS2AreaSystem.Modules.Park
 {
@@ -31,6 +32,9 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var w in Warnings) yield return P + "Warning." + w;
             foreach (var a in Actions) yield return P + "Action." + a;
             foreach (var c in Checks) yield return P + "Check." + c;
+            foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
+            foreach (var d in ParkLandscapeDiagnostics.Keys) if (d != ParkLandscapeDiagnostics.Cluttered) { yield return P + "Diagnostic." + d; yield return P + "Diagnostic." + d + ".Tip"; }
+            yield return P + "FocusTarget"; yield return P + "FocusTarget.Tip";
         }
         private static AreaPanelItem Row(string id, string label, string value = null, string valueKey = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Row, Id = id, LabelKey = label, Value = value, ValueKey = valueKey, TooltipKey = tooltip };
@@ -42,6 +46,11 @@ namespace CS2AreaSystem.Modules.Park
         private static string Money(long value) => (value < 0 ? "-¢" : "¢") + Math.Abs(value).ToString("N0", Invariant);
         private static string Percent(double ratio) => Math.Round(ratio * 100).ToString("N0", Invariant) + "%";
         private static string OneDecimal(float value) => value.ToString("0.0", Invariant);
+        private static string OneDecimal(double value) => value.ToString("0.0", Invariant);
+        private static string MoneyAmount(double value) => Money((long)Math.Round(value));
+        // Runtime trend row directly after its headline metric, only once a sample exists (Wave A1).
+        private static void Trend(List<AreaPanelItem> items, string id, ParkRuntimeSnapshot runtime, Func<ParkTrendSnapshot, RuntimeTrendSeries> series, Func<double, string> magnitude)
+        { if (runtime != null) RuntimeTrendPresentation.Add(items, id, series(runtime.Trends), magnitude); }
         private static long Recent(ParkRuntimeSnapshot runtime, Func<ParkRuntimeSnapshot, ParkRollingWindow> window, uint frame) => runtime == null ? 0 : window(runtime).Sum(frame);
         private static AreaPanelItem Metric(string name, ParkMetric metric) =>
             metric.Available ? Bar(name.ToLowerInvariant(), P + "Metric." + name, metric.Value, tooltip: P + "Metric." + name + ".Tip")
@@ -59,6 +68,7 @@ namespace CS2AreaSystem.Modules.Park
                 Row("level", P + "Level", valueKey: P + "LevelName." + model.Level),
                 ExperienceBar(model),
                 q != null ? Bar("quality", P + "Quality", q.Quality, tooltip: P + "Quality.Tip") : Row("quality", P + "Quality", valueKey: P + "Calculating") };
+            Trend(items, "quality", model.Runtime, t => t.Quality, OneDecimal);
             if (q != null) { items.Add(Metric("Satisfaction", q.Satisfaction)); items.Add(Metric("Attractiveness", q.Attractiveness)); items.Add(Metric("Accessibility", q.Accessibility));
                 items.Add(Metric("Variety", q.Variety)); items.Add(Metric("Maintenance", q.Maintenance)); items.Add(Metric("Comfort", q.Comfort)); }
             items.Add(Row("activeVisitors", P + "ActiveVisitors", Number(model.Runtime?.ActiveVisitors ?? 0)));
@@ -75,16 +85,19 @@ namespace CS2AreaSystem.Modules.Park
             var s = model.State; var q = model.Runtime?.Quality; uint frame = model.Frame;
             var items = new List<AreaPanelItem> {
                 Row("activeVisitors", P + "ActiveVisitors", Number(model.Runtime?.ActiveVisitors ?? 0)),
-                Row("recentVisitors", P + "RecentVisitors", Number(Recent(model.Runtime, r => r.RecentVisitors, frame)), tooltip: P + "Recent.Tip"),
-                Row("lifetimeVisitors", P + "LifetimeVisitors", Number(s.LifetimeVisitors)),
-                Row("residentVisitors", P + "ResidentVisitors", Number(s.LifetimeResidentVisitors)),
-                Row("touristVisitors", P + "TouristVisitors", Number(s.LifetimeTouristVisitors)),
-                Bar("satisfaction", P + "Metric.Satisfaction", s.Satisfaction.Display),
-                Bar("residentSatisfaction", P + "ResidentSatisfaction", s.ResidentSatisfaction.Display),
-                Bar("touristSatisfaction", P + "TouristSatisfaction", s.TouristSatisfaction.Display) };
+                Row("recentVisitors", P + "RecentVisitors", Number(Recent(model.Runtime, r => r.RecentVisitors, frame)), tooltip: P + "Recent.Tip") };
+            Trend(items, "recentVisitors", model.Runtime, t => t.Visitors, v => Number(v));
+            items.Add(Row("lifetimeVisitors", P + "LifetimeVisitors", Number(s.LifetimeVisitors)));
+            items.Add(Row("residentVisitors", P + "ResidentVisitors", Number(s.LifetimeResidentVisitors)));
+            items.Add(Row("touristVisitors", P + "TouristVisitors", Number(s.LifetimeTouristVisitors)));
+            items.Add(Bar("satisfaction", P + "Metric.Satisfaction", s.Satisfaction.Display));
+            Trend(items, "satisfaction", model.Runtime, t => t.Satisfaction, OneDecimal);
+            items.Add(Bar("residentSatisfaction", P + "ResidentSatisfaction", s.ResidentSatisfaction.Display));
+            items.Add(Bar("touristSatisfaction", P + "TouristSatisfaction", s.TouristSatisfaction.Display));
             if (s.Satisfaction.Confidence < 0.5f) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "satisfactionPrior", LabelKey = P + "Note.SatisfactionPrior" });
             items.Add(Row("capacity", P + "Capacity", q != null ? Number(q.ComfortableCapacity) : null, q == null ? P + "Calculating" : null, P + "Capacity.Tip"));
             items.Add(Row("occupancy", P + "Occupancy", q != null ? Percent(q.OccupancyRatio) : null, q == null ? P + "Calculating" : null));
+            Trend(items, "occupancy", model.Runtime, t => t.Occupancy, OneDecimal);
             items.Add(Row("peakOccupancy", P + "PeakOccupancy", Number(model.Runtime?.PeakOccupancy ?? 0)));
             items.Add(Row("tourismContribution", P + "TourismContribution", q != null ? OneDecimal(q.TourismContribution) : null, q == null ? P + "Calculating" : null, P + "TourismContribution.Tip"));
             return items;
@@ -105,10 +118,12 @@ namespace CS2AreaSystem.Modules.Park
                     TooltipKey = unlocked ? P + "Fee.Tip" : P + "Fee.Locked" } };
             if (!unlocked) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "feeLocked", LabelKey = P + "Fee.Locked" });
             items.Add(Row("recentAdmission", P + "RecentAdmission", Money(income), tooltip: P + "Recent.Tip"));
+            Trend(items, "recentAdmission", model.Runtime, t => t.AdmissionIncome, MoneyAmount);
             items.Add(Row("lifetimeAdmission", P + "LifetimeAdmission", Money(s.LifetimeAdmissionRevenue)));
             items.Add(Row("recentUncollected", P + "RecentUncollected", Money(Recent(model.Runtime, r => r.RecentUncollected, frame)), tooltip: P + "RecentUncollected.Tip"));
             items.Add(Row("managementCost", P + "ManagementCost", Money((long)Math.Round(model.Runtime?.ManagementCostPerDay ?? 0)), tooltip: P + "ManagementCost.Tip"));
             items.Add(Row("recentExpense", P + "RecentExpense", Money(expense), tooltip: P + "Recent.Tip"));
+            Trend(items, "recentExpense", model.Runtime, t => t.ManagementExpense, MoneyAmount);
             items.Add(Row("lifetimeExpense", P + "LifetimeExpense", Money(s.LifetimeManagementExpense)));
             items.Add(Row("recentNet", P + "RecentNet", Money(income - expense), tooltip: P + "RecentNet.Tip"));
             items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "vanillaSeparate", LabelKey = P + "Note.VanillaSeparate" });
@@ -130,10 +145,43 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("paths", P + "Paths", Part(r.Paths, ParkLandscapeModel.PathWeight)));
             items.Add(Row("diversity", P + "Diversity", Part(r.Diversity, ParkLandscapeModel.DiversityWeight)));
             if (r.Cluttered) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "clutter", LabelKey = P + "Warning.Cluttered", Value = "-" + OneDecimal(r.ClutterPenalty) });
+            Diagnostics(items, l, r);
             items.Add(Row("pathLength", P + "PathLength", Number(l.Inputs.PathLength) + " m"));
             items.Add(Row("transit", P + "TransitStops", Number(l.TransitPoints)));
             items.Add(Row("facilityCategories", P + "FacilityCategories", Number(model.Runtime?.Facilities?.DistinctCategories ?? 0)));
             return items;
+        }
+        // Wave A5: advisory landscape findings of the last scan. A shortage the policy-adjusted breakdown no longer shows
+        // is dropped; clutter keeps its existing warning row and only gains the focus button.
+        private static void Diagnostics(List<AreaPanelItem> items, ParkLandscapeSnapshot l, ParkLandscapeResult effective)
+        {
+            if (l.Diagnostics == null) return;
+            // The clutter button sits directly under the existing clutter warning, the others in severity order after it.
+            foreach (var d in l.Diagnostics)
+                if (d != null && d.Key == ParkLandscapeDiagnostics.Cluttered && effective.Cluttered) Focus(items, d);
+            foreach (var d in l.Diagnostics)
+            {
+                if (d == null || d.Key == ParkLandscapeDiagnostics.Cluttered || !StillShort(d.Key, effective)) continue;
+                items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "diagnostic." + d.Key, LabelKey = P + "Diagnostic." + d.Key,
+                        TooltipKey = P + "Diagnostic." + d.Key + ".Tip" });
+                Focus(items, d);
+            }
+        }
+        // A finding without a reliable representative stays a plain, non-clickable warning.
+        private static void Focus(List<AreaPanelItem> items, ParkLandscapeDiagnostic d)
+        {
+            if (d.Target == Unity.Entities.Entity.Null) return;
+            items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = "focus.landscape." + d.Key, LabelKey = P + "FocusTarget",
+                TooltipKey = P + "FocusTarget.Tip", Action = ParkGameplayFacade.FocusDiagnosticTarget, Value = AreaDiagnosticTargetKey.Format(d.Target) });
+        }
+        private static bool StillShort(string key, ParkLandscapeResult r)
+        {
+            switch (key)
+            {
+                case "LowVegetation": return r.Vegetation < ParkLandscapeModel.VegetationWeight * ParkLandscapeDiagnostics.ShortageShare;
+                case "LowDecoration": return r.Decoration < ParkLandscapeModel.DecorationWeight * ParkLandscapeDiagnostics.ShortageShare;
+                default: return true;
+            }
         }
         private static List<AreaPanelItem> Progress(ParkPanelModel model)
         {

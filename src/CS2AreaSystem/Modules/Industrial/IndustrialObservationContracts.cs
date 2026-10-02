@@ -45,6 +45,8 @@ namespace CS2AreaSystem.Modules.Industrial
         // Actual / attainable production in percent (raw, may exceed 100); null when unproven for this facility.
         public double? ProductiveActivity;
         public IndustrialResourceActivity[] Resources;
+        // Vanilla recipes of the producer tenants (Wave A4); empty when none has valid process data.
+        public IndustrialProcessActivity[] Processes;
         public double? StoredAmount, StorageCapacity;
         public IndustrialFlowState Input, Output;
         public bool? CargoOperational;

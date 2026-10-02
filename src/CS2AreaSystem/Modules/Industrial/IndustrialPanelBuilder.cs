@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Diagnostics;
 using CS2AreaSystem.Core.Modules;
 using Game.Economy;
 namespace CS2AreaSystem.Modules.Industrial
@@ -24,9 +25,11 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialDayResult? LastCompletedDay;
         public IndustrialPromotionResult Promotion;
         public double NowHours;
+        // Runtime-only trend samples of this Area (null when no runtime snapshot exists).
+        public IndustrialTrendSnapshot Trends;
     }
-    // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only:
-    // no item carries an action, unavailable data is never rendered as zero.
+    // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
+    // item with an action is the diagnostic focus button (camera only); unavailable data is never rendered as zero.
     public static class IndustrialPanelBuilder
     {
         public const string P = "CS2AS.Industrial.";
@@ -69,8 +72,10 @@ namespace CS2AreaSystem.Modules.Industrial
                 "OverlapMembers", "Extractors", "Processors", "Producers", "RawActivity", "RawActivity.Tip", "MeaningfulOutputs", "StorageFacilities", "StorageUtilization",
                 "CargoFacilities", "Jobs", "Employees", "Vacancies", "ProducerJobs", "SupportJobs", "NextLevel", "MaxLevel", "HourlyXp", "HourlyXp.Tip", "DailyXp", "DailyXp.Tip",
                 "StreakDays", "DayAverage", "DayHours", "LastDay", "LastDay.Tip", "Headquarters", "Hq.Valid", "Hq.Invalid", "Hq.Missing", "Resource.Tip", "Bottlenecks.None",
-                "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid" })
+                "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid",
+                "Process.Input", "Process.Output", "Process.Companies", "Process.ActualPerDay", "Process.Tip", "FocusTarget", "FocusTarget.Tip" })
                 yield return P + k;
+            foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
         }
         // ---- formatting
         private static string Number(double value) => Math.Round(value).ToString("N0", Invariant);
@@ -91,6 +96,9 @@ namespace CS2AreaSystem.Modules.Industrial
         private static AreaPanelItem Note(string id, string key) => new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = id, LabelKey = P + "Note." + key };
         private static AreaPanelItem Warning(string id, string key, string value = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = id, LabelKey = key, Value = value, TooltipKey = tooltip };
+        // Runtime trend row directly after its headline metric, only once a sample exists (Wave A1).
+        private static void Trend(List<AreaPanelItem> items, IndustrialPanelModel m, string id, Func<IndustrialTrendSnapshot, RuntimeTrendSeries> series, Func<double, string> magnitude = null)
+        { if (m.Trends != null) RuntimeTrendPresentation.Add(items, id, series(m.Trends), magnitude ?? One); }
         private static bool Stale(IndustrialPanelModel m) => m.Current != null && (m.Paused || m.Current.Delayed || m.Lifecycle != AreaLifecycleState.Active);
         // A metric: bar when it has a value, otherwise its reason; partial coverage and warm-up progress are shown.
         // Stale values are shown as plain rows (never as a current score).
@@ -132,6 +140,10 @@ namespace CS2AreaSystem.Modules.Industrial
                 items.Add(Warning("bottleneck." + b.Key, P + "Bottleneck." + b.Key,
                     "(" + Percent(b.EvidenceValue) + " · ×" + Number(b.AffectedFacilities) + " · " + Hours(b.ObservedHours) + ")", P + "Bottleneck." + b.Key + ".Tip"));
                 items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "suggestion." + b.Key, LabelKey = P + "Suggestion." + b.Key });
+                // Read-only camera focus on the representative facility; the key is re-validated when clicked.
+                if (b.Target != Unity.Entities.Entity.Null)
+                    items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = "focus." + b.Key, LabelKey = P + "FocusTarget", TooltipKey = P + "FocusTarget.Tip",
+                        Action = IndustrialGameplayFacade.FocusDiagnosticTarget, Value = AreaDiagnosticTargetKey.Format(b.Target) });
             }
         }
         // ---- tabs
@@ -142,11 +154,16 @@ namespace CS2AreaSystem.Modules.Industrial
                 Row("headquarters", P + "Headquarters", valueKey: P + "Hq." + m.Headquarters) };
             StateWarnings(items, m);
             Metric(items, m, "performance", "Performance", r?.Performance ?? default);
+            Trend(items, m, "performance", t => t.Performance);
             foreach (var c in Components)
+            {
                 Metric(items, m, c.ToLowerInvariant(), c, r == null ? default : c == "Production" ? r.Production : c == "Logistics" ? r.Logistics : c == "Employment" ? r.Employment : r.Efficiency);
+                Trend(items, m, c.ToLowerInvariant(), t => c == "Production" ? t.Production : c == "Logistics" ? t.Logistics : c == "Employment" ? t.Employment : t.Efficiency);
+            }
             if (r != null)
             {
                 items.Add(Row("activeFacilities", P + "ActiveFacilities", Number(r.OperatingProducers) + " / " + Number(r.ProducerFacilities)));
+                Trend(items, m, "activeFacilities", t => t.ProductiveFacilities, Number);
                 items.Add(Row("employees", P + "EmployeesJobs", Number(r.Employees) + " / " + Number(r.Jobs)));
                 if (r.Bottlenecks.Count == 0 && !Stale(m)) items.Add(Row("bottlenecks", P + "Bottlenecks.None", "—"));
                 Bottlenecks(items, r.Bottlenecks, key => true);
@@ -176,10 +193,39 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (name == null) continue;
                 items.Add(Row("resource." + name, "Resources.TITLE[" + name + "]", Number(resource.ActualPerDay) + " /d", tooltip: P + "Resource.Tip"));
             }
+            Processes(items, m);
             Metric(items, m, "production", "Production", r.Production);
             items.Add(Note("sampled", "Sampled"));
             return items;
         }
+        public const int MaxProcesses = 5;
+        // Observed processes (Wave A4): per recipe, localized resource-title rows for its inputs and output, then its actual
+        // daily output and company count. A stale result keeps the stale context; an unmeasured rate is never shown as 0.
+        private static void Processes(List<AreaPanelItem> items, IndustrialPanelModel m)
+        {
+            var processes = m.Current?.Processes;
+            if (processes == null) return;
+            string tip = P + "Process.Tip";
+            int shown = 0;
+            foreach (var p in processes)
+            {
+                if (shown >= MaxProcesses) break;
+                string output = ResourceName(p.Process.Output), input1 = ResourceName(p.Process.Input1), input2 = ResourceName(p.Process.Input2);
+                if (output == null || (p.Process.Input1 != 0 && input1 == null) || (p.Process.Input2 != 0 && input2 == null)) continue;
+                string id = "process." + shown++ + ".";
+                int n = 0;
+                foreach (var input in new[] { input1, input2 })
+                    if (input != null) items.Add(Row(id + "input." + ++n, "Resources.TITLE[" + input + "]", valueKey: P + "Process.Input", tooltip: tip));
+                items.Add(Row(id + "output", "Resources.TITLE[" + output + "]", valueKey: P + "Process.Output", tooltip: tip));
+                items.Add(p.MeasuredCompanies > 0
+                    ? Row(id + "actual", P + "Process.ActualPerDay", Number(p.ActualOutputPerDay) + " /d", tooltip: Stale(m) ? P + "Status.Stale" : tip)
+                    : Row(id + "actual", P + "Process.ActualPerDay", valueKey: P + "Status.Unavailable", tooltip: tip));
+                if (p.MeasuredCompanies > 0 && p.MeasuredCompanies < p.Companies)
+                    items.Add(Row(id + "coverage", P + "PartialData", Number(p.MeasuredCompanies) + " / " + Number(p.Companies)));
+                items.Add(Row(id + "companies", P + "Process.Companies", Number(p.Companies), tooltip: tip));
+            }
+        }
+        private static string ResourceName(ulong resource) => resource == 0 ? null : Enum.GetName(typeof(Resource), (Resource)resource);
         private static List<AreaPanelItem> Logistics(IndustrialPanelModel m)
         {
             var r = m.Current; var items = new List<AreaPanelItem>();

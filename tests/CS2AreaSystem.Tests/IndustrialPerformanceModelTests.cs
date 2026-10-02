@@ -186,4 +186,9 @@ public class IndustrialPerformanceModelTests {
   Assert.That(IndustrialLogisticsModel.Channel(new IndustrialChannelInputs { Applicable = true, Supported = true, CoveredHours = 6, AffectedWeightedTime = 1, ValidWeightedTime = 0 }).HasValue, Is.False);
  }
  private static IndustrialJobFacility Job(int jobs, int employees) => new() { Jobs = jobs, Employees = employees };
+ [Test] public void PureModelBottlenecksCarryNoTarget() {
+  var all = IndustrialPerformanceModel.FindAllBottlenecks(new IndustrialBottleneckInputs { JobFill = M(10), ProducerFacilities = 2, UnderstaffedFacilities = 2, SampleHours = 1 });
+  Assert.That(all, Is.Not.Empty);
+  Assert.That(all.All(b => b.Target == Unity.Entities.Entity.Null), Is.True, "targets are attached only from observation evidence");
+ }
 }

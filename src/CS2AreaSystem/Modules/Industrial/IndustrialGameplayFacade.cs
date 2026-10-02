@@ -1,12 +1,48 @@
+using System;
+using System.Collections.Generic;
 using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Membership;
 using CS2AreaSystem.Core.Modules;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Industrial
 {
-    // Read-only boundary between the Industrial panel and gameplay state. It has no setters and handles no actions:
-    // HQ assignment, Edit and Delete stay in Core's guarded generic actions.
+    // Read-only boundary between the Industrial panel and gameplay state. It has no setters. Its only action is the
+    // read-only diagnostic camera focus (Wave A3); HQ assignment, Edit and Delete stay in Core's guarded generic actions.
     public static class IndustrialGameplayFacade
     {
+        public const string FocusDiagnosticTarget = "focusDiagnosticTarget";
+        // Core already checked the stable ID and live selection. Never modifies simulation state.
+        public static bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
+        {
+            if (action != FocusDiagnosticTarget || context.Focus == null || context.World == null) return false;
+            var entities = context.Entities;
+            if (!entities.Exists(area) || !entities.HasComponent<ManagedAreaStableId>(area)) return false;
+            var runtime = context.World.GetExistingSystemManaged<IndustrialRuntimeSystem>();
+            ulong areaId = entities.GetComponentData<ManagedAreaStableId>(area).Value;
+            if (runtime == null || !runtime.Store.TryGet(areaId, out var snapshot)) return false;
+            return TryFocus(snapshot.Current, value, areaId, e => entities.Exists(e) && !entities.HasComponent<Game.Common.Deleted>(e), runtime.Membership, context.Focus);
+        }
+        public static bool TryFocus(IndustrialObservationResult current, string key, ulong areaId, Func<Entity, bool> isLive, AreaMembershipIndex membership, Action<Entity> focus)
+        {
+            if (focus == null || !TryResolveFocusTarget(current, key, areaId, isLive, membership, out var target)) return false;
+            focus(target);
+            return true;
+        }
+        // The key resolves only against targets of the current snapshot's bottlenecks; the entity must still exist and
+        // still be primary-owned by this Industrial Area in Core membership. No world scan beyond these lookups.
+        public static bool TryResolveFocusTarget(IndustrialObservationResult current, string key, ulong areaId, Func<Entity, bool> isLive, AreaMembershipIndex membership, out Entity target)
+        {
+            target = Entity.Null;
+            if (current?.AllBottlenecks == null || isLive == null || membership == null) return false;
+            if (!AreaDiagnosticTargetKey.TryResolve(key, Targets(current.AllBottlenecks), out var resolved) || !isLive(resolved)) return false;
+            foreach (var relation in membership.GetAreas(resolved))
+                if (relation.AreaStableId == areaId && relation.TypeId == (int)AreaTypeId.Industrial && relation.IsPrimaryForType) { target = resolved; return true; }
+            return false;
+        }
+        private static IEnumerable<Entity> Targets(List<IndustrialBottleneck> bottlenecks)
+        {
+            foreach (var b in bottlenecks) if (b != null && b.Target != Entity.Null) yield return b.Target;
+        }
         public static IndustrialPanelModel Read(Entity area, in AreaPanelContext context)
         {
             var entities = context.Entities;
@@ -27,7 +63,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (runtime.TryGetClock(out var clock)) model.NowHours = clock.GameHours(runtime.SimulationFrame);
                 if (runtime.Store.TryGet(model.StableId, out var snapshot))
                 {
-                    model.Current = snapshot.Current; model.Paused = snapshot.Paused;
+                    model.Current = snapshot.Current; model.Paused = snapshot.Paused; model.Trends = snapshot.Trends;
                     model.HasXp = snapshot.HasXpResult; model.Xp = snapshot.LastXp; model.LastCompletedDay = snapshot.LastCompletedDay;
                 }
             }
