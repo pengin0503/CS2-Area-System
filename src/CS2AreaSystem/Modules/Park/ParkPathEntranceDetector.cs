@@ -9,16 +9,19 @@ namespace CS2AreaSystem.Modules.Park
     public static class ParkPathEntranceDetector
     {
         public const int Segments=16;
+        // Each coarse interval is subdivided so an enter+exit pair cannot hide merely because both 1/16 endpoints are outside.
+        // This remains fixed and bounded: 16 * 8 = 128 intervals / 129 containment samples per edge.
+        public const int SubdivisionsPerSegment=8;
         public const float MergeRadius=8f;
         public static IReadOnlyList<ParkEntrancePoint> Detect(Entity edge, bool dedicated, Bezier4x3 curve, Func<float2,bool> contains)
         {
             var result=new List<ParkEntrancePoint>();if(!dedicated)return result;
+            int intervals=Segments*SubdivisionsPerSegment;
             bool previous=contains(MathUtils.Position(curve,0).xz);
-            for(int i=1;i<=Segments;i++) {
-                float end=(float)i/Segments;bool inside=contains(MathUtils.Position(curve,end).xz);
+            for(int i=1;i<=intervals;i++) {
+                float end=(float)i/intervals;bool inside=contains(MathUtils.Position(curve,end).xz);
                 if(inside!=previous) {
-                    float lo=(float)(i-1)/Segments,hi=end;
-                    // Refine only detected transitions; the topology contract remains 17 sampled points.
+                    float lo=(float)(i-1)/intervals,hi=end;
                     for(int step=0;step<10;step++){float mid=(lo+hi)*0.5f;if(contains(MathUtils.Position(curve,mid).xz)==previous)lo=mid;else hi=mid;}
                     var p=MathUtils.Position(curve,(lo+hi)*0.5f);result.Add(new ParkEntrancePoint(p.x,p.z,edge));
                 }
