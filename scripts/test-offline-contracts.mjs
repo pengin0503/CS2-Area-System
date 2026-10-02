@@ -291,6 +291,13 @@ check(tryBlocks.length >= 3, 'policy and finance registrations must each be isol
 const requirements = read('docs/verification/area-core-requirements.md');
 check(!requirements.includes('Main is unchanged; all implementation commits are on feat/area-core'), 'verification docs must describe the current merged repository state');
 
+const entranceSystem = code('src/CS2AreaSystem/Modules/Park/ParkEntranceSystem.cs');
+const entranceEvidence = code('src/CS2AreaSystem/Modules/Park/ParkEntranceEvidence.cs');
+check(entranceSystem.includes('HasComponent<PathwayData>'), 'automatic Park entrance classification must use PathwayData');
+check(!/ISerializable|IBufferElementData|IComponentData/.test(entranceEvidence), 'path entrance evidence must remain runtime-only');
+check(!/Pathfind|Citizen|GetEntityQuery\([^;]*ReadOnly<Game.Net.Edge>/s.test(entranceSystem.split('private ParkNetPage ReadPage')[1]??''), 'entrance query must be spatial, with no citizen/pathfinding changes');
+check(/UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem,\s*CS2AreaSystem.Core.Anchors.AreaActivationSystem>/.test(mod), 'Park entrances must update before activation');
+
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);
   for (const failure of failures) console.error(` - ${failure}`);
