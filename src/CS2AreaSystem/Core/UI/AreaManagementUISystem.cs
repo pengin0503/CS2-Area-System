@@ -193,8 +193,9 @@ namespace CS2AreaSystem.Core.UI
             var area = EntityManager.GetComponentData<ManagedArea>(entity);
             if (services.IsQuarantined(entity)) return new CoreView { View = QuarantinedView(entity, area, key.ConfirmDelete) };
             bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
-            var roles = (descriptor?.Module as IAreaAnchorPolicy)?.AnchorRoles;
-            AreaAnchorRole? role = roles != null && roles.Count > 0 ? roles[0] : (AreaAnchorRole?)null;
+            var anchorPolicy = descriptor?.Module as IAreaAnchorPolicy;
+            var roles = GetAnchorRoles(entity, anchorPolicy);
+            AreaAnchorRole? role = roles.Count > 0 ? roles[0] : (AreaAnchorRole?)null;
             var provider = descriptor?.Module?.PanelProvider;
             var anchors = role.HasValue ? services.Anchors.GetValidAnchors(entity, role.Value) : System.Array.Empty<Entity>();
             var links = role.HasValue ? services.Anchors.GetAnchorLinks(entity, role.Value) : System.Array.Empty<AreaAnchorLinkState>();
@@ -206,7 +207,7 @@ namespace CS2AreaSystem.Core.UI
                 AnchorName = anchors.Count > 0 ? names.GetRenderedLabelName(anchors[0]) : null,
                 Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link =>
                     new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })),
-                AnchorGroups = BuildAnchorGroups(entity, descriptor?.Module as IAreaAnchorPolicy),
+                AnchorGroups = BuildAnchorGroups(entity, anchorPolicy, roles),
                 PendingAnchor = key.PendingAnchor,
                 ConfirmDelete = key.ConfirmDelete
             };
@@ -292,15 +293,46 @@ namespace CS2AreaSystem.Core.UI
             catch (Exception error) { Mod.Log.Error(error, "Area module action rejected"); }
         }
         internal static bool TryRole(string text, out AreaAnchorRole role) => Enum.TryParse(text, false, out role) && Enum.IsDefined(typeof(AreaAnchorRole), role) && text == role.ToString();
-        private System.Collections.Generic.IReadOnlyList<AreaAnchorGroupView> BuildAnchorGroups(Entity area, IAreaAnchorPolicy policy)
+        private System.Collections.Generic.IReadOnlyList<AreaAnchorRole> GetAnchorRoles(Entity area, IAreaAnchorPolicy policy)
         {
-            if (policy == null) return System.Array.Empty<AreaAnchorGroupView>();
+            if (policy == null) return System.Array.Empty<AreaAnchorRole>();
+            try { var roles = policy.AnchorRoles ?? System.Array.Empty<AreaAnchorRole>(); services.Failures.Recovered(area, "UI.AnchorRoles"); return roles; }
+            catch (Exception error) {
+                services.Failures.Report(area, "UI.AnchorRoles", error, "Area module anchor roles unavailable for managed area " + area);
+                return System.Array.Empty<AreaAnchorRole>();
+            }
+        }
+        private bool CanAssignAnchorForUI(Entity area, IAreaAnchorPolicy policy, AreaAnchorRole role)
+        {
+            try { var result = policy.CanAssignAnchor(area, role, EntityManager); services.Failures.Recovered(area, "UI.AnchorAssign." + role); return result; }
+            catch (Exception error) {
+                services.Failures.Report(area, "UI.AnchorAssign." + role, error, "Area module anchor assignment capability unavailable for managed area " + area);
+                return false;
+            }
+        }
+        private bool TryDerivedAnchorForUI(Entity area, IAreaAnchorPolicy policy, AreaAnchorRole role, out int count, out string status)
+        {
+            count = 0; status = null;
+            if (!(policy is IAreaDerivedAnchorPolicy derived)) return false;
+            try {
+                var result = derived.TryGetDerivedAnchor(area, role, new Core.Modules.AreaActivationContext(World, EntityManager), out count, out status);
+                services.Failures.Recovered(area, "UI.DerivedAnchor." + role);
+                return result;
+            }
+            catch (Exception error) {
+                services.Failures.Report(area, "UI.DerivedAnchor." + role, error, "Area module derived anchor unavailable for managed area " + area);
+                count = 0; status = null; return false;
+            }
+        }
+        private System.Collections.Generic.IReadOnlyList<AreaAnchorGroupView> BuildAnchorGroups(Entity area, IAreaAnchorPolicy policy, System.Collections.Generic.IReadOnlyList<AreaAnchorRole> roles)
+        {
+            if (policy == null || roles == null || roles.Count == 0) return System.Array.Empty<AreaAnchorGroupView>();
             var groups = new System.Collections.Generic.List<AreaAnchorGroupView>();
-            foreach(var role in policy.AnchorRoles) {
+            foreach(var role in roles) {
                 var links = services.Anchors.GetAnchorLinks(area, role);
-                var group=new AreaAnchorGroupView { Role = role.ToString(), AssignmentSupported = policy.CanAssignAnchor(area, role, EntityManager),
+                var group=new AreaAnchorGroupView { Role = role.ToString(), AssignmentSupported = CanAssignAnchorForUI(area, policy, role),
                     Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link => new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })) };
-                if(policy is IAreaDerivedAnchorPolicy derived && derived.TryGetDerivedAnchor(area,role,new Core.Modules.AreaActivationContext(World,EntityManager),out var count,out var status))
+                if(TryDerivedAnchorForUI(area, policy, role, out var count, out var status))
                 {group.DerivedCount=count;group.DerivedStatusKey=status;}
                 groups.Add(group);
             }
