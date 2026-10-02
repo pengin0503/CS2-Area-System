@@ -38,4 +38,31 @@ public class IndustrialCompanyAssignmentTests {
   var index=new IndustrialCompanyAssignmentIndex();index.Rebuild(new[]{new IndustrialCompanyClaim(0,E(1),E(2)),new IndustrialCompanyClaim(3,Entity.Null,E(2)),new IndustrialCompanyClaim(4,E(1),Entity.Null),new IndustrialCompanyClaim(7,E(1),E(2))});
   Assert.That(index.TryGetOwner(E(1),out var id),Is.True);Assert.That(id,Is.EqualTo(7UL));
  }
+ [Test] public void OwnerTransfersAndFallbackInvalidateOnlyFormerAndNewResolvedAreas() {
+  var index=new IndustrialCompanyAssignmentIndex();var claim=new IndustrialCompanyClaim(7,E(1),E(100));
+  index.Rebuild(new[]{claim},fallbackOwner:(_,_)=>2);
+  Assert.That(index.ChangedAreas,Is.EquivalentTo(new ulong[]{2,7}));
+  var primary=index.GetAreaRevision(2);var manual=index.GetAreaRevision(7);var unrelated=index.GetAreaRevision(40);
+  index.Rebuild(new[]{new IndustrialCompanyClaim(9,E(1),E(100))},fallbackOwner:(_,_)=>2);
+  Assert.That(index.ChangedAreas,Is.EquivalentTo(new ulong[]{7,9}));
+  Assert.That(index.GetAreaRevision(2),Is.EqualTo(primary));Assert.That(index.GetAreaRevision(7),Is.Not.EqualTo(manual));Assert.That(index.GetAreaRevision(40),Is.EqualTo(unrelated));
+  index.Rebuild(Array.Empty<IndustrialCompanyClaim>(),fallbackOwner:(_,_)=>20);
+  Assert.That(index.ChangedAreas,Is.EquivalentTo(new ulong[]{9,20}),"moved renter falls back at its current Building");
+ }
+ [Test] public void LosingDuplicateRemovalAndUnchangedRebuildPreserveCoverageGenerations() {
+  var index=new IndustrialCompanyAssignmentIndex();var winner=new IndustrialCompanyClaim(7,E(1),E(100));
+  index.Rebuild(new[]{winner,new IndustrialCompanyClaim(9,E(1),E(100))},fallbackOwner:(_,_)=>2);
+  var revision=index.Revision;var area=index.GetAreaRevision(7);
+  index.Rebuild(new[]{winner},fallbackOwner:(_,_)=>2);
+  Assert.That(index.ChangedAreas,Is.Empty);Assert.That(index.Revision,Is.EqualTo(revision));Assert.That(index.GetAreaRevision(7),Is.EqualTo(area));
+  index.Clear();Assert.That(index.GetAreaRevision(7),Is.Zero);Assert.That(index.ChangedAreas,Is.Empty);
+ }
+ [Test] public void ScopedRuntimeInvalidationKeepsUnrelatedFlowAndProgressionEndpoint() {
+  var store=new IndustrialRuntimeStore();var affected=store.GetOrCreate(7,E(7));var unrelated=store.GetOrCreate(40,E(40));
+  foreach(var row in store.All){row.Publish(new IndustrialObservationResult{CycleId=17,HourBucket=5,Active=true});row.InputWindow.Add(0,4,0,1);row.HasFlowBaseline=true;}
+  store.InvalidateOwnership(new ulong[]{7,9});
+  Assert.That(affected.Paused,Is.True);Assert.That(affected.LastConsumedCycle,Is.EqualTo(17));Assert.That(affected.InputWindow.CoveredHours(4),Is.Zero);
+  Assert.That(unrelated.Paused,Is.False);Assert.That(unrelated.LastConsumedCycle,Is.EqualTo(-1));Assert.That(unrelated.HasFlowBaseline,Is.True);Assert.That(unrelated.InputWindow.CoveredHours(4),Is.EqualTo(4));
+ }
+
 }

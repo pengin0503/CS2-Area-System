@@ -19,13 +19,20 @@ namespace CS2AreaSystem.Modules.Industrial
         private readonly Dictionary<ulong, IReadOnlyList<Entity>> buildings = new Dictionary<ulong, IReadOnlyList<Entity>>();
         public IReadOnlyList<Entity> GetBuildings(ulong areaId) => buildings.TryGetValue(areaId, out var list) ? list : Array.Empty<Entity>();
         public ulong Revision { get; private set; }
+        private readonly Dictionary<ulong, ulong> areaRevisions = new Dictionary<ulong, ulong>();
+        private readonly HashSet<ulong> changedAreas = new HashSet<ulong>();
+        public IEnumerable<ulong> ChangedAreas => changedAreas;
+        public ulong GetAreaRevision(ulong areaId) => areaRevisions.TryGetValue(areaId, out var revision) ? revision : 0;
+        private void MarkChanged(ulong areaId) { if (areaId != 0) changedAreas.Add(areaId); }
+        private static bool Same(IndustrialCompanyClaim a, IndustrialCompanyClaim b) => a.AreaId == b.AreaId && a.Building == b.Building;
         public IEnumerable<IndustrialCompanyClaim> Claims => owners.Values;
         public bool TryGetOwner(Entity company, out ulong areaId)
         { bool found = owners.TryGetValue(company, out var claim); areaId = found ? claim.AreaId : 0; return found; }
         public bool TryGetClaim(Entity company, out IndustrialCompanyClaim claim) => owners.TryGetValue(company, out claim);
-        public void Rebuild(IEnumerable<IndustrialCompanyClaim> claims, Func<IndustrialCompanyClaim, bool> valid = null)
+        public void Rebuild(IEnumerable<IndustrialCompanyClaim> claims, Func<IndustrialCompanyClaim, bool> valid = null,
+            Func<Entity, Entity, ulong> fallbackOwner = null)
         {
-            next.Clear();
+            next.Clear(); changedAreas.Clear();
             foreach (var claim in claims)
             {
                 if (claim.AreaId == 0 || claim.Company == Entity.Null || claim.Building == Entity.Null || (valid != null && !valid(claim))) continue;
@@ -36,6 +43,22 @@ namespace CS2AreaSystem.Modules.Industrial
             if (!changed) foreach (var pair in next)
                 if (!owners.TryGetValue(pair.Key, out var old) || old.AreaId != pair.Value.AreaId || old.Building != pair.Value.Building) { changed = true; break; }
             if (!changed) return;
+            // Compare effective claims before swapping: only former/new resolved owners lose their coverage.
+            foreach (var pair in owners)
+            {
+                bool hasNext = next.TryGetValue(pair.Key, out var replacement);
+                if (hasNext && Same(pair.Value, replacement)) continue;
+                MarkChanged(pair.Value.AreaId);
+                if (!hasNext && fallbackOwner != null) MarkChanged(fallbackOwner(pair.Key, pair.Value.Building));
+            }
+            foreach (var pair in next)
+            {
+                bool hadOwner = owners.TryGetValue(pair.Key, out var previous);
+                if (hadOwner && Same(previous, pair.Value)) continue;
+                MarkChanged(pair.Value.AreaId);
+                if (!hadOwner && fallbackOwner != null) MarkChanged(fallbackOwner(pair.Key, pair.Value.Building));
+            }
+            foreach (var areaId in changedAreas) areaRevisions[areaId] = AreaMembershipIndex.NextRevision(GetAreaRevision(areaId));
             (owners, next) = (next, owners);
             buildings.Clear();
             var grouped = new Dictionary<ulong, HashSet<Entity>>();
@@ -48,6 +71,6 @@ namespace CS2AreaSystem.Modules.Industrial
             Revision = AreaMembershipIndex.NextRevision(Revision);
         }
         private static int Compare(Entity a, Entity b) => a.Index != b.Index ? a.Index.CompareTo(b.Index) : a.Version.CompareTo(b.Version);
-        public void Clear() { owners.Clear(); next.Clear(); buildings.Clear(); Revision = AreaMembershipIndex.NextRevision(Revision); }
+        public void Clear() { owners.Clear(); next.Clear(); buildings.Clear(); areaRevisions.Clear(); changedAreas.Clear(); Revision = AreaMembershipIndex.NextRevision(Revision); }
     }
 }

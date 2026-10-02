@@ -115,6 +115,8 @@ check(/GetBuffer<IndustrialCompanyAssignment>/.test(industrialFacade), 'assignme
 check(/candidates.AssignmentRevision != assignments.Revision/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must reject stale revisions');
 check(/live.Building == candidate.Building/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must revalidate the exact rented building');
 check(!/EntityQuery|ToEntityArray/.test(read(`${industrialDir}/IndustrialCompanyOwnership.cs`)), 'ownership resolution must not add a whole-world scan');
+check(/assignments.GetAreaRevision\(areaId\)/.test(read(`${industrialDir}/IndustrialObservationSystem.cs`)), 'assignment observation generations must be scoped per Area');
+check(/Store.InvalidateOwnership\(Assignments.ChangedAreas\)/.test(read(`${industrialDir}/IndustrialRuntimeSystem.cs`)), 'assignment changes must invalidate only affected owner snapshots');
 const classifier = read(`${industrialDir}/IndustrialFacilityClassifier.cs`);
 const classify = classifier.slice(classifier.indexOf('public static IndustrialFacilityRole Classify'), classifier.indexOf('public static bool IsHeadquartersEligible'));
 const positiveClassify = classify.replace(/if\s*\([^;]*HasOffice[^;]*\)\s*return\s+IndustrialFacilityRole\.None;/, '');

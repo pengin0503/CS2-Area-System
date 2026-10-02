@@ -237,6 +237,10 @@ namespace CS2AreaSystem.Modules.Industrial
             snapshot.Area = area;
             return snapshot;
         }
+        public void InvalidateOwnership(IEnumerable<ulong> affectedAreas)
+        {
+            foreach (var id in affectedAreas) if (areas.TryGetValue(id, out var snapshot)) snapshot.InvalidateOwnership();
+        }
         public void Remove(ulong id) => areas.Remove(id);
         public void Clear() => areas.Clear();
         // Drops snapshots of Industrial Areas that no longer exist; Suspended Areas stay.

@@ -94,11 +94,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 }
             }
         }
-        public void AssignmentChanged()
-        {
-            Assignments.Clear(); RefreshAssignments();
-            foreach (var snapshot in Store.All) snapshot.InvalidateOwnership();
-        }
+        public void AssignmentChanged() => RefreshAssignments();
         private EntityQuery managedAreas, writtenAreas, changedAreas, timeData, rentersUpdated, damagedMembers;
         private List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>(), building = new List<IndustrialAreaRef>();
         private readonly List<(Entity Area, ManagedArea Managed, ulong StableId)> rows = new List<(Entity Area, ManagedArea Managed, ulong StableId)>();
@@ -182,7 +178,6 @@ namespace CS2AreaSystem.Modules.Industrial
         public void RefreshAssignments(bool initialize = false)
         {
             AssignmentsReady = false;
-            ulong previousRevision = Assignments.Revision;
             assignmentClaims.Clear();
             foreach (var area in areas)
             {
@@ -199,9 +194,12 @@ namespace CS2AreaSystem.Modules.Industrial
             Assignments.Rebuild(assignmentClaims, claim => {
                 var eligibility = IndustrialCompanyOwnership.ReadLive(claim.Company, EntityManager, services.Semantics, out var rentedBuilding);
                 return IndustrialCompanyOwnership.IsValidClaim(claim, rentedBuilding, Membership.GetAreas(rentedBuilding), eligibility);
+            }, (company, savedBuilding) => {
+                // A removed/moved/ineligible claim falls back using its live renter, never its saved Building.
+                var eligibility = IndustrialCompanyOwnership.ReadLive(company, EntityManager, services.Semantics, out var rentedBuilding);
+                return IndustrialCompanyOwnership.Resolve(company, rentedBuilding, Membership.GetAreas(rentedBuilding), null, eligibility).AreaStableId;
             });
-            if (Assignments.Revision != previousRevision)
-                foreach (var snapshot in Store.All) snapshot.InvalidateOwnership();
+            Store.InvalidateOwnership(Assignments.ChangedAreas);
             AssignmentsReady = true;
         }
         // Builds the new list aside and swaps it in, so a failed rebuild leaves the previous list and the gate open.

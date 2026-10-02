@@ -46,6 +46,16 @@ public class IndustrialManualObservationTests {
   Assert.That(scheduler.TakeFinished(source,1,2,1),Has.Count.EqualTo(1));
   a.Clear();scheduler.Sync(areas,1,3,1,source);Assert.That(scheduler.Cycle(7),Is.Not.Null);
  }
+ [Test] public void AssignmentChangeLeavesUnrelatedCycleAndCachedMembersUntouched() {
+  var membership=Membership();membership.ReplaceMembership(E(400),new[]{new AreaMembership(40,(int)AreaTypeId.Industrial,true)});
+  var assignments=new IndustrialCompanyAssignmentIndex();var source=new IndustrialMembershipCycleSource(membership,new IndustrialStructureTracker(),assignments,true);
+  var scheduler=new IndustrialObservationScheduler();var areas=new[]{new IndustrialAreaRef(E(7),7,AreaLifecycleState.Active),new IndustrialAreaRef(E(40),40,AreaLifecycleState.Active)};
+  scheduler.Sync(areas,1,0,1,source);var target=scheduler.Cycle(7).CycleId;var unrelated=scheduler.Cycle(40).CycleId;var members=source.PrimaryMembers(40,out _);
+  assignments.Rebuild(new[]{new IndustrialCompanyClaim(7,E(1),E(100))});scheduler.Sync(areas,1,1,1,source);
+  Assert.That(scheduler.Cycle(7).CycleId,Is.Not.EqualTo(target));
+  Assert.That(scheduler.Cycle(40).CycleId,Is.EqualTo(unrelated),"unrelated ownership has not changed");
+  Assert.That(source.PrimaryMembers(40,out _),Is.SameAs(members));
+ }
  [Test] public void ManyManualBuildingsStillShareTheExisting128ReadBudgetAndCachedLists() {
   var m=Membership(300);var a=new IndustrialCompanyAssignmentIndex();a.Rebuild(Enumerable.Range(0,300).Select(i=>new IndustrialCompanyClaim(7,E(i+1000),E(i+100))));
   var source=new IndustrialMembershipCycleSource(m,new IndustrialStructureTracker(),a);var members=source.PrimaryMembers(7,out _);

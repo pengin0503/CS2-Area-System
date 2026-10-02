@@ -43,11 +43,11 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialMembershipCycleSource(AreaMembershipIndex index, IndustrialStructureTracker structure, IndustrialCompanyAssignmentIndex assignments = null, bool includeOwnershipCandidates = false)
         { this.index = index; this.structure = structure; this.assignments = assignments; this.includeOwnershipCandidates = includeOwnershipCandidates; epoch = index.Epoch; }
         public ulong MembershipToken(ulong areaId) => index.GetAreaRevision(areaId);
-        public ulong StructureToken(ulong areaId) => assignments == null ? structure.Get(areaId) : IndustrialGenerations.Combine(structure.Get(areaId), assignments.Revision);
+        public ulong StructureToken(ulong areaId) => assignments == null ? structure.Get(areaId) : IndustrialGenerations.Combine(structure.Get(areaId), assignments.GetAreaRevision(areaId));
         public IReadOnlyList<Entity> PrimaryMembers(ulong areaId, out int nonPrimary)
         {
             if (epoch != index.Epoch) { lists.Clear(); epoch = index.Epoch; }
-            ulong revision = assignments == null ? index.GetAreaRevision(areaId) : IndustrialGenerations.Combine(index.GetAreaRevision(areaId), assignments.Revision);
+            ulong revision = assignments == null ? index.GetAreaRevision(areaId) : IndustrialGenerations.Combine(index.GetAreaRevision(areaId), assignments.GetAreaRevision(areaId));
             if (lists.TryGetValue(areaId, out var cached) && cached.Revision == revision) { nonPrimary = cached.NonPrimary; return cached.Members; }
             buffer.Clear(); nonPrimary = 0;
             foreach (var member in index.GetMembers(areaId))
