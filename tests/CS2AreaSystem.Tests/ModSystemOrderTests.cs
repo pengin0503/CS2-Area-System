@@ -123,13 +123,19 @@ public class ModSystemOrderTests {
     // only intended change is that PreTool now runs ManagedAreaToolGuardSystem instead of ManagedAreaLifecycleSystem).
     [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
-    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaActivationSystem,AreaPolicySystem,ParkLandscapeSystem,IndustrialRuntimeSystem")]
+    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaActivationSystem,AreaPolicySystem,ParkLandscapeSystem,IndustrialRuntimeSystem")]
     [TestCase(SystemUpdatePhase.GameSimulation, "AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,AreaFinanceSystem")]
     [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem")]
     [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]
     public void ModSystemOrderPerPhaseIsUnchanged(SystemUpdatePhase phase, string expected) {
         var ours = Schedule(phase).Where(t => t.Assembly == typeof(Mod).Assembly).Select(t => t.Name);
         Assert.That(string.Join(",", ours), Is.EqualTo(expected));
+    }
+    // A new Area is named and selected in the same ModificationEnd that gives it its identity.
+    [Test] public void PlacementRunsAfterLifecycleInModificationEnd() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Labels.AreaPlacementSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Core.Labels.AreaPlacementSystem),
+                typeof(CS2AreaSystem.Core.Areas.ManagedAreaLifecycleSystem), SystemUpdatePhase.ModificationEnd) }));
     }
     [Test] public void EveryModSystemIsRegisteredInExactlyOnePhase() {
         var phases = new HashSet<SystemUpdatePhase> { SystemUpdatePhase.PrefabUpdate, SystemUpdatePhase.PreTool, SystemUpdatePhase.ModificationEnd,

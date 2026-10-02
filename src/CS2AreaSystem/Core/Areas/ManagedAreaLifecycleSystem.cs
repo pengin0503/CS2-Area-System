@@ -19,6 +19,10 @@ namespace CS2AreaSystem.Core.Areas
         private EntityQuery changedAreas;
         private EntityQuery missingAnchorLinks;
         private readonly ManagedAreaTypeResolver resolver = new ManagedAreaTypeResolver();
+        private readonly List<Entity> identified = new List<Entity>();
+        // Areas that received their ManagedArea identity in the latest update (new placements, or unidentified Areas found
+        // after a load), in query order. Read by AreaPlacementSystem in the same ModificationEnd; cleared every update.
+        public IReadOnlyList<Entity> Identified => identified;
         [Preserve]
         protected override void OnCreate()
         {
@@ -41,6 +45,7 @@ namespace CS2AreaSystem.Core.Areas
         [Preserve]
         protected override void OnUpdate()
         {
+            identified.Clear();
             // New IDs are allocated only after AreaLoadCoordinatorSystem observed this load's saved IDs.
             if (GameManager.instance.isGameLoading ||
                 !World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>().Ready || !services.Identity.Observed) return;
@@ -55,7 +60,7 @@ namespace CS2AreaSystem.Core.Areas
                 var identity = ManagedAreaIdentity.Ensure((int)kind,
                     hasManaged ? EntityManager.GetComponentData<ManagedArea>(entity) : (ManagedArea?)null,
                     hasId ? EntityManager.GetComponentData<ManagedAreaStableId>(entity) : (ManagedAreaStableId?)null, services.StableIds);
-                if (!hasManaged) EntityManager.AddComponentData(entity, identity.Managed);
+                if (!hasManaged) { EntityManager.AddComponentData(entity, identity.Managed); identified.Add(entity); }
                 if (!hasId) EntityManager.AddComponentData(entity, identity.StableId);
             }
             if (!missingAnchorLinks.IsEmptyIgnoreFilter) EntityManager.AddComponent<Anchors.AreaAnchorLink>(missingAnchorLinks);
