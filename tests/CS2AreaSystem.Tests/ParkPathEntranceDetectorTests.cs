@@ -13,6 +13,12 @@ public class ParkPathEntranceDetectorTests
   var points=ParkPathEntranceDetector.Detect(E(1),dedicated,Line(a,b),p=>p.x>=0);
   Assert.That(points.Count,Is.EqualTo(count));if(count>0)Assert.That(points[0].X,Is.EqualTo(0).Within(0.02));
  }
+ [Test] public void EnterAndExitInsideOneCoarseIntervalAreBothDetected() {
+  // The Park is narrower than one 1/16 interval and both coarse endpoints are outside.
+  var points=ParkPathEntranceDetector.Detect(E(1),true,Line(0,100),p=>p.x>=8.2f&&p.x<=9.8f);
+  Assert.That(points.Count,Is.EqualTo(2));
+  Assert.That(points[0].X,Is.EqualTo(8.2f).Within(0.05));Assert.That(points[1].X,Is.EqualTo(9.8f).Within(0.05));
+ }
  [Test] public void TwoCrossingsAndNearbyDuplicatesUseLowestEdgeDeterministically() {
   var points=ParkPathEntranceDetector.Detect(E(2),true,Line(-40,40),p=>p.x>=-15&&p.x<=15);
   Assert.That(points.Count,Is.EqualTo(2));
