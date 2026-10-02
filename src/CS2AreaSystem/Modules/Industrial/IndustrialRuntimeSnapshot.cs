@@ -188,6 +188,7 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         public ulong StableId;
         public Entity Area;
+        public readonly IndustrialCompanyCandidateSet OwnershipCandidates = new IndustrialCompanyCandidateSet();
         // Last completed coherent generation; null after load until observation rebuilds it.
         public IndustrialObservationResult Current { get; private set; }
         public bool HasPublished => Current != null;
@@ -211,6 +212,13 @@ namespace CS2AreaSystem.Modules.Industrial
         public int DelayedCycles;
         public readonly IndustrialTrendSnapshot Trends = new IndustrialTrendSnapshot();
         public void Publish(IndustrialObservationResult result) { Current = result; Trends.Record(result); }
+        public void InvalidateOwnership()
+        {
+            Paused = true; OwnershipCandidates.Clear(); ResetBaselines();
+            InputWindow.Clear(); OutputWindow.Clear(); ResourceHistory.Clear();
+            // The previous result remains visible as stale, but cannot be settled under the new ownership.
+            if (Current != null) LastConsumedCycle = Current.CycleId;
+        }
         public void ResetBaselines() { HasFlowBaseline = false; ActivityBaseline = null; }
     }
     public sealed class IndustrialRuntimeStore
@@ -228,6 +236,10 @@ namespace CS2AreaSystem.Modules.Industrial
             }
             snapshot.Area = area;
             return snapshot;
+        }
+        public void InvalidateOwnership(IEnumerable<ulong> affectedAreas)
+        {
+            foreach (var id in affectedAreas) if (areas.TryGetValue(id, out var snapshot)) snapshot.InvalidateOwnership();
         }
         public void Remove(ulong id) => areas.Remove(id);
         public void Clear() => areas.Clear();

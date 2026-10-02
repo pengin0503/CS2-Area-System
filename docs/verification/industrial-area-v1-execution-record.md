@@ -72,3 +72,67 @@ Branch `claude/pre-tourism-wave-a1-a5-l5pses`, base `c04ebf4cf586b4d46532662000d
 This update supersedes the historical industrial-capability HQ eligibility and unchanged-HQ-validation statements above. Headquarters now uses stable office-building evidence; vacancy retains eligibility, while old extractor/factory/storage/cargo HQ links remain visible but invalid. Office/commercial observation exclusions remain enforced. B1 adds explicit registered asset roles, C1 persists 168 hourly buckets and seeds the newest 24 distinct hours after load, and C3 adds a read-only comparison of managed Industrial Areas with stale/unavailable data preserved.
 
 Final automated evidence and review decisions are in [the Foundation + Phase 1 execution record](foundation-phase1-execution-record.md). Runtime and official Unity postprocessing/deployment remain **NOT RUN**; use F01/F02 and P05–P08 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md). The original v1/Wave A records above describe their dated revisions rather than current prerequisites.
+
+## Phase 2 B2 execution record — 2026-10-02
+
+Execution-time latest `main`: `135ff11bfa762d6d0085c574a9ef5d800e3a50b4` (verified through GitHub). Native branch: `feat/phase2-b2-manual-company-assignment`. Followed `2026-10-02-usage-constrained-phase2-b2-implementation.md` and `2026-10-02-phase2-industrial-company-assignment-implementation.md` using Superpowers executing-plans, no task subagents. B2 only; C4/C5/C6, Phase 3 and Tourism are excluded.
+
+### Task evidence
+
+Each task followed RED → implementation → focused tests → commit, with the Task 4 correction noted below. Native commits are shown here; GitHub publication preserves all five task trees/messages but may assign different author metadata/SHA values (canonical published commits are in the PR).
+
+| Task | Native commit | Evidence |
+| --- | --- | --- |
+| 1 Persistence/index | `b6ea5c5` | Missing new types RED; assignment/serialization/presentation focused 31/31 GREEN. Supported Entity reference serialization remaps both Company and rented Building; unknown schema rejects payload. |
+| 2 Resolver | `dccc081` | Missing eligibility/resolver RED; ownership/reader/API contracts focused 26/26 GREEN. Manual priority, geometric fallback, lowest valid StableId, moved/dead/reused/ineligible company and office/commercial exclusion. |
+| 3 Observation | `56c450e` | Missing generation/source/mapper contracts RED; manual/observation/performance/reader/classifier focused 57/57 GREEN. Exact Company filtering, separate overlap batches, unchanged shared 128 reads. |
+| 4 UI/actions | `c6a10b4` | Missing actions/candidates and Companies fixture RED; C# 45/45 and affected UI 43/43 GREEN. An obsolete UI focus-only whitelist was initially missed at commit; fixed and Task 4 amended before Task 5. |
+| 5 Guards/review | final task commit | Offline focus-only guards RED; new stale-coverage/candidate/focus contracts RED, candidate flag/cap and candidate-only count assertions RED → affected C# 84/84 GREEN. One whole-branch self-review; concrete B2 findings fixed. |
+
+### Self-review fixes
+
+- Candidate-only indexed overlap reads allow initial assignment when the geometric primary Area is suspended. They use the existing cached membership lists and shared budget, and never inflate member/ignored counts or metrics.
+- Assignment changes, including automatic invalidation, discard flow/resource baselines and coverage, mark the last result stale, and prevent an unconsumed old cycle from being settled for XP. The assignment revision restarts in-flight and already-completed hourly generations.
+- Current non-primary manual-owner bottlenecks can be focused after live ownership validation. Stale actions revalidate load/hour/revision, exact Entity version, renter Building, Area relation and eligibility.
+- Re-observation retains saved claim removal flags; saved invalid/duplicate claims displace automatic candidate rows at the 64-row cap. Removing a losing duplicate never clears another Area's winning claim.
+- Shared Park fixture regeneration exposed a pre-existing mismatch: its suspended case lacked completed entrance evidence while the UI expected the missing-entrance warning. Corrected only that fixture input; Park runtime behavior is unchanged.
+
+### Final verification
+
+Runtime: .NET SDK 8.0.408, NUnit/NUnitLite 4.2.2, PowerShell 7.4.6; supplied 1.6.2f1 managed/toolchain references used for API compilation. Six existing test-side CS8632 warnings; Release mod build has no warnings.
+
+| Command | Result |
+| --- | --- |
+| `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -p:AreaApiCheck=true` | **FAILED before test execution**, exit 1: VSTest `TestEngine.ShouldRunInProcess` NullReferenceException. API/test compilation succeeded. Standard runner is not verified in this process environment. |
+| Temporary NUnitLite runner on the same API-check compiled test assembly, unfiltered, `--noresult` | **PASS 1039/1039**, one full C# run. No runner/project dependency changes committed. |
+| `dotnet build src/CS2AreaSystem/CS2AreaSystem.csproj -p:AreaApiCheck=true -c Release` | **PASS**, exit 0, 0 warnings/errors. Initial launcher process-information failure was retried; no source change. |
+| `cd UI && npm test -- --run` | Initial full run **107/108**; suspended Park fixture mismatch above. After fixture correction, affected Park test and C# fixture checks rerun below; no second full suite. |
+| `cd UI && npm run build` | **PASS**, exit 0, webpack production build. |
+| `node scripts/test-offline-contracts.mjs` | **PASS**, exit 0. B2 whitelist, exact renter/revision, module-buffer boundary and no second ownership query; existing economy/path/tax guards retained. |
+| `pwsh -NoProfile -File scripts/verify-source.ps1` | **PASS**, exit 0. |
+| `pwsh -NoProfile -File scripts/test-source-guards.ps1` | **PASS**, exit 0, clean/four forbidden patterns/provenance cases. |
+| `git diff --check` | **PASS**, exit 0. |
+
+Only focused verification follows the final-gate fixture correction. In-game B201–B208, save/load with real saves, runtime Entity reuse/migration, official ModPostProcessor/deployment, live frame profiling, and Foundation/Phase 1 gameplay regression: **NOT RUN**. See `scripts/runtime-smoke-checklist.md`; API compilation/unit tests do not establish playable readiness.
+
+### Rulings and limits
+
+1. The usage-constrained plan's one author self-review and focused-per-task checks override generic reviewer/full-suite skill steps. Risk: author blind spots remain for PR review.
+2. Persist rented Building alongside Company to invalidate moves within the same Area across save/load. Risk: one additional Entity reference in the new schema; serializer remapping is covered.
+3. Correct the baseline derived-anchor adapter `out int` to its interface's `out int?` so API compilation can proceed. No membership or primary ownership change; nullable display value is forwarded.
+4. VSTest cannot start here; temporary NUnitLite executes the same compiled tests without repository test infrastructure changes. Exact requested command is reported failed rather than replaced silently.
+5. Candidate-only overlap reads extend the source's primary-plus-assigned list so an active target does not depend on an active primary. No extra world query; risk is longer bounded cycles in dense overlaps, pending in-game profiling.
+6. Shared localization fixture regeneration requires complete entrance evidence in its existing suspended Park example. Only fixture setup changes; post-fix validation is focused to respect the one-full-suite gate.
+
+Post-gate fixture correction: `ParkPanelFixtureTests` **2/2 PASS** (regenerated fixture retains all existing Park payloads and adds only shared B2 localization); `cd UI && npm test -- --run src/ParkPanel.test.tsx` **13/13 PASS**. The other 95 UI tests passed in the single full run. Final `git diff --check` remains PASS.
+
+## B2 PR follow-up — 2026-10-02
+
+User requested remaining B2 work. Automated PR #83 review reported two P2 issues after initial completion; evaluated against actual code/spec, with no C4 work.
+
+- Building efficiency / LackResources factor leaked into a non-primary manual company owner. Regression `ManualOwnerGetsCompanyProfitAndActivityButBuildingEfficiencyStaysPrimary` failed at manual efficiency = 25 (expected null); cleared building-owned efficiency/factor in the non-primary mapping, retaining Company activity/profit and primary Building efficiency. Affected C# tests **45/45 PASS** through the temporary NUnitLite runner; API-check test compilation passed. Review: `discussion_r4166676441`.
+- Original full C# run remains 1039/1039 evidence for the initial branch; follow-up changes receive focused checks only, preserving the requested single full-suite run. Standard VSTest and game/deployment checks remain unverified / **NOT RUN** as recorded above.
+
+- Assignment invalidation was global: `AssignmentChangeLeavesUnrelatedCycleAndCachedMembersUntouched` reproduced unrelated cycle ID changing 2 → 4. Added runtime-only per-Area assignment revisions and effective-owner deltas; compare old/new claims without clearing the index first. Only former/new resolved owners lose baselines/coverage and restart; add/remove uses the live geometric fallback, including moved/ineligible/deleted companies. A losing duplicate removal or unchanged rebuild leaves generations intact. Scoped store invalidation preserves unrelated flow coverage and progression endpoint. Regression/API contracts were RED before implementation; assignment/manual/runtime/performance/observation/action/progression focused checks **97/97 PASS**. Review: `discussion_r4166676432`.
+- Follow-up Release API build **PASS**, 0 warnings/errors (includes production UI webpack build); offline contracts, source guards and guard regression checks **PASS**. `git diff --check` **PASS**. Added source guards for per-Area generations and scoped snapshot invalidation. No additional whole-world query, Core ownership change, UI feature, economy/path/tax/resource-enum change or full-suite rerun.
+- Ruling: keep the global assignment revision for stale UI key rejection, but use per-Area revisions for metrics/cycle invalidation. Native refresh supplies the current live fallback owner over changed explicit claims only. Risk: live fallback/ownership churn behavior still needs the B201/B206 game checks, **NOT RUN**.

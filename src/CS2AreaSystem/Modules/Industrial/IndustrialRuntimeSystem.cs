@@ -69,6 +69,32 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         public IndustrialRuntimeStore Store { get; } = new IndustrialRuntimeStore();
         public IndustrialStructureTracker Structure { get; } = new IndustrialStructureTracker();
+        public IndustrialCompanyAssignmentIndex Assignments { get; } = new IndustrialCompanyAssignmentIndex();
+        private readonly List<IndustrialCompanyClaim> assignmentClaims = new List<IndustrialCompanyClaim>();
+        public bool AssignmentsReady { get; private set; }
+        // Mirror bounded candidates from existing observation reads to all geometric Industrial relations.
+        // This lets a non-primary Area assign companies without a second company scan.
+        public void ObserveCompanyCandidate(in IndustrialBuildingRead read, in IndustrialCompanyRead company, long hourBucket)
+        {
+            var facts = IndustrialCompanyOwnership.ReadLive(company.Company, EntityManager, services.Semantics, out var currentBuilding, read.Traits);
+            if (currentBuilding != company.Building || !facts.Eligible) return;
+            var relations = Membership.GetAreas(currentBuilding);
+            var owner = IndustrialCompanyOwnership.Resolve(company.Company, currentBuilding, relations, Assignments, facts);
+            var names = World.GetExistingSystemManaged<Game.UI.NameSystem>();
+            string label = names?.GetRenderedLabelName(company.Company);
+            foreach (var relation in relations)
+            {
+                if (relation.TypeId != (int)AreaTypeId.Industrial) continue;
+                foreach (var area in areas) if (area.StableId == relation.AreaStableId)
+                {
+                    var candidates = Store.GetOrCreate(area.StableId, area.Area).OwnershipCandidates;
+                    candidates.Begin(area.StableId, LoadGeneration, hourBucket, Assignments.Revision);
+                    candidates.Record(company.Company, currentBuilding, owner, label);
+                    break;
+                }
+            }
+        }
+        public void AssignmentChanged() => RefreshAssignments();
         private EntityQuery managedAreas, writtenAreas, changedAreas, timeData, rentersUpdated, damagedMembers;
         private List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>(), building = new List<IndustrialAreaRef>();
         private readonly List<(Entity Area, ManagedArea Managed, ulong StableId)> rows = new List<(Entity Area, ManagedArea Managed, ulong StableId)>();
@@ -100,7 +126,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 All = new[] { ComponentType.ReadOnly<ManagedArea>() },
                 Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<Deleted>() },
                 None = new[] { ComponentType.ReadOnly<Temp>() } });
-            cycleSource = new IndustrialMembershipCycleSource(Membership, Structure);
+            cycleSource = new IndustrialMembershipCycleSource(Membership, Structure, Assignments, true);
             timeData = GetEntityQuery(ComponentType.ReadOnly<TimeData>());
             // Native change evidence for tenant/role structure (design §18.2): vanilla tenant events and member
             // destruction/abandonment. Ordinary economic changes carry no such evidence.
@@ -113,6 +139,7 @@ namespace CS2AreaSystem.Modules.Industrial
         protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
         {
             Store.Clear(); Structure.Clear(); cycleSource.Clear(); areas.Clear(); gate.Invalidate(); LoadGeneration++;
+            Assignments.Clear(); assignmentClaims.Clear(); AssignmentsReady = false;
         }
         public IIndustrialCycleSource CycleSource => cycleSource;
         [Preserve]
@@ -129,6 +156,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     PruneStore(areas);
                     statePending = true;
                     gate.Refreshed(generation, quarantine);
+                    RefreshAssignments(true);
                 }
                 if (statePending) statePending = !EnsureIndustrialState(areas);
                 TrackStructureChanges();
@@ -144,6 +172,35 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             result.Clear();
             result.AddRange(areas);
+        }
+        // Load/Area migration initializes empty buffers; existing saved claims are never overwritten.
+        // Validation is performed over the explicit claims only, not over every company in the world.
+        public void RefreshAssignments(bool initialize = false)
+        {
+            AssignmentsReady = false;
+            assignmentClaims.Clear();
+            foreach (var area in areas)
+            {
+                if (!EntityManager.Exists(area.Area)) continue;
+                if (!EntityManager.HasBuffer<IndustrialCompanyAssignment>(area.Area))
+                {
+                    if (!initialize) continue;
+                    EntityManager.AddBuffer<IndustrialCompanyAssignment>(area.Area);
+                }
+                var buffer = EntityManager.GetBuffer<IndustrialCompanyAssignment>(area.Area);
+                for (int i = 0; i < buffer.Length; i++)
+                    assignmentClaims.Add(new IndustrialCompanyClaim(area.StableId, buffer[i].Company, buffer[i].Building));
+            }
+            Assignments.Rebuild(assignmentClaims, claim => {
+                var eligibility = IndustrialCompanyOwnership.ReadLive(claim.Company, EntityManager, services.Semantics, out var rentedBuilding);
+                return IndustrialCompanyOwnership.IsValidClaim(claim, rentedBuilding, Membership.GetAreas(rentedBuilding), eligibility);
+            }, (company, savedBuilding) => {
+                // A removed/moved/ineligible claim falls back using its live renter, never its saved Building.
+                var eligibility = IndustrialCompanyOwnership.ReadLive(company, EntityManager, services.Semantics, out var rentedBuilding);
+                return IndustrialCompanyOwnership.Resolve(company, rentedBuilding, Membership.GetAreas(rentedBuilding), null, eligibility).AreaStableId;
+            });
+            Store.InvalidateOwnership(Assignments.ChangedAreas);
+            AssignmentsReady = true;
         }
         // Builds the new list aside and swaps it in, so a failed rebuild leaves the previous list and the gate open.
         private void RefreshAreas()

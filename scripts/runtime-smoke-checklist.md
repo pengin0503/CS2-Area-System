@@ -147,4 +147,20 @@ Status: **NOT RUN.** These are procedures and expected results, not completed te
 | P07 Bounded performance | Profile a dense Park and many Areas through scan, network edits, selected-panel updates and save flush. Inspect Entrance LastWork/MaxWork and Connectivity LastWork. | No whole-city per-frame net scan. Entrance work <=2048 and connectivity work <=4096 per update; cap exhaustion remains partial/unknown. History <=168 per Area; ordinary updates persist <=4 Areas. | NOT RUN |
 | P08 Regression and UI | Re-run A1–A5, overlap/primary ownership, policies, finance under negative city balance, unsupported-save isolation and native selection. Test ja-JP/en-US, separate HQ/Entrance groups and generated panel features in the deployed MOD. | Existing behavior preserved with revised activation/history prerequisites. No raw localization keys or incorrect zero/stale labels. Official postprocessing/deployment succeeds. | NOT RUN |
 
-Do not change these Results to PASS without direct game evidence. Phase 2/3 and Tourism gameplay are outside this checklist.
+Do not change these Results to PASS without direct game evidence. C4/C5/C6, Phase 3 and Tourism gameplay are outside this checklist.
+
+
+# Phase 2 B2 — Manual Industrial Company Assignment
+
+Status: **NOT RUN**. Use Cities: Skylines II 1.6.2f1 with official postprocessing/deployment; record save, Area StableIds, company/building Entity versions and evidence.
+
+| Case | Procedure and expected result | Result |
+| --- | --- | --- |
+| B201 Company overlap | Put two eligible companies in one overlapping Building. Assign only one to the non-primary Area. Company metrics follow their separate owners; Core membership/primary, other company and static Building/cargo/efficiency ownership stay geometric; non-primary Company metrics do not inherit Building-wide efficiency or LackResources evidence. | NOT RUN |
+| B202 Suspended primary | Suspend the geometric primary Area while the overlap Area is active. Companies candidates appear through bounded reads; assigning one starts observations for it. | NOT RUN |
+| B203 Duplicate claims | Load duplicate valid claims with different StableIds. Lowest StableId wins once; removing a losing claim leaves winner unchanged. | NOT RUN |
+| B204 Move/eligibility | Move an assigned company within/outside target, delete/reuse it, or change it to office/commercial. Claim becomes invalid, metrics fall back if eligible, invalid row can be removed; stale actions cannot affect a replacement. | NOT RUN |
+| B205 Save/load/migration | Load an older save without assignment buffers; assign/save/load with Entity remapping. Empty buffers initialize, valid claims survive, runtime index rebuilds before consumption; Foundation/Phase 1 Level/XP/history/finance persist. | NOT RUN |
+| B206 Revision/stale UI | Assign/remove mid-cycle, then click an old key or switch Area. Old cycle/coverage cannot earn XP, cycle restarts with current revision and no old time interval bridges; stale key/StableId is rejected. Unrelated Areas retain in-flight cycles, flow coverage and progression endpoints; removing a losing duplicate causes no restart. | NOT RUN |
+| B207 Removal/cap/focus | Fill 64 candidate rows, include invalid/duplicate saved claims and refresh observations. Saved claim removal stays accessible; manual owner's current bottleneck focus works, deleted/moved/stale target does not. | NOT RUN |
+| B208 Performance/regression | Profile many overlapping Areas and compare Foundation/Phase 1 behavior/UI ja-JP/en-US. Shared read work <=128/update, no second whole-world scan; record delayed cycles/frame timings. Native company assignment never changes economy/tax/pathfinding. | NOT RUN |

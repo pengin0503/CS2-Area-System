@@ -39,7 +39,12 @@ namespace CS2AreaSystem.Modules.Industrial
     // Blittable per-company read (only attributable industrial tenants; offices/commercial are never emitted).
     public struct IndustrialCompanyRead
     {
+        public Entity Company;
         public Entity Building;
+        public ulong AreaId;
+        public long CycleId;
+        public bool HasStorage;
+        public double Stored, Capacity;
         public bool Producer, Extractor, Storage;
         public bool HasJobs;
         public int Jobs, Employees;
@@ -90,6 +95,53 @@ namespace CS2AreaSystem.Modules.Industrial
     // Converts raw reads of one building into the module-owned observation DTO. Pure.
     public static class IndustrialObservationMapper
     {
+        public static bool Matches(in IndustrialCompanyRead company, in IndustrialBuildingRead building) =>
+            company.Building == building.Building && company.AreaId == building.AreaId && company.CycleId == building.CycleId;
+        // Buildings keep Core ownership. Company facts, jobs and warehouse stocks follow only the resolved Company owner.
+        public static IndustrialEntityObservation ToOwnedObservation(in IndustrialBuildingRead building, IReadOnlyList<IndustrialCompanyRead> companies,
+            Core.Membership.AreaMembershipIndex membership, IndustrialCompanyAssignmentIndex assignments,
+            Func<IndustrialCompanyRead, IndustrialCompanyEligibility> eligibility, Core.Semantics.AreaAssetSemanticRegistry registry = null)
+        {
+            var read = building;
+            bool primary = false;
+            foreach (var r in membership.GetAreas(read.Building))
+                if (r.TypeId == (int)Core.Areas.AreaTypeId.Industrial && r.AreaStableId == read.AreaId) { primary = r.IsPrimaryForType; break; }
+            var selected = new List<IndustrialCompanyRead>();
+            var seen = new HashSet<Entity>();
+            bool companyStorage = false;
+            foreach (var company in companies)
+            {
+                companyStorage |= company.HasStorage;
+                if (company.Building != read.Building || !seen.Add(company.Company)) continue;
+                var owner = IndustrialCompanyOwnership.Resolve(company.Company, company.Building, membership.GetAreas(company.Building), assignments, eligibility(company));
+                if (owner.Valid && owner.AreaStableId == read.AreaId) selected.Add(company);
+            }
+            read.Traits.HasOfficeCompany = false;
+            read.Traits.HasExtractorCompany = read.Traits.HasProcessorCompany = read.Traits.HasStorageCompany = false;
+            if (!primary || (companies.Count > 0 && selected.Count == 0))
+            {
+                read.Traits.HasExtractorProperty = read.Traits.HasExtractorFacility = read.Traits.ManufacturesGoods = false;
+            }
+            if (!primary)
+            {
+                read.HasBuildingWorkplace = false;
+                read.HasEfficiency = false; read.Efficiency = 0; read.LackResourcesZero = false;
+                read.Traits.HasCargoStation = read.Traits.HasStorageProperty = read.Traits.HasWorkplaces = false;
+                read.HasStorage = false;
+            }
+            if (companyStorage) { read.HasStorage = false; read.Stored = read.Capacity = 0; }
+            foreach (var company in selected)
+            {
+                read.Traits.HasExtractorCompany |= company.Extractor;
+                read.Traits.HasProcessorCompany |= company.Producer && !company.Extractor;
+                read.Traits.HasStorageCompany |= company.Storage;
+                read.Traits.HasWorkplaces |= company.HasJobs;
+                if (company.HasStorage) { read.HasStorage = true; read.Stored += company.Stored; read.Capacity += company.Capacity; }
+            }
+            // No non-primary facility facts are credited unless one of its companies resolves here.
+            if (!primary && selected.Count == 0) return new IndustrialEntityObservation { Facility = read.Building, CandidateOnly = true };
+            return ToObservation(read, selected, registry);
+        }
         public static IndustrialEntityObservation ToObservation(in IndustrialBuildingRead building, IReadOnlyList<IndustrialCompanyRead> companies,Core.Semantics.AreaAssetSemanticRegistry registry=null)
         {
             var obs = new IndustrialEntityObservation { Facility = building.Building, Input = IndustrialFlowState.NotApplicable, Output = IndustrialFlowState.NotApplicable };
@@ -204,6 +256,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 companies.Length = companyStart;
                 read = new IndustrialBuildingRead { Building = request.Building, AreaId = request.AreaId, CycleId = request.CycleId, Exists = true, Failed = true };
             }
+            for (int i = companyStart; i < companies.Length; i++)
+            { var company = companies[i]; company.AreaId = request.AreaId; company.CycleId = request.CycleId; companies[i] = company; }
             buildings.Add(read);
         }
         private void ReadBuilding(Entity entity, ref IndustrialBuildingRead read, ref NativeList<IndustrialCompanyRead> companies)
@@ -260,7 +314,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     // Offices and commercial tenants are never attributable industrial activity.
                     if (office || CommercialCompanies.HasComponent(company) || ServiceAvailables.HasComponent(company)) continue;
                     var companyPrefab = Prefabs[company].m_Prefab;
-                    var c = new IndustrialCompanyRead { Building = entity };
+                    var c = new IndustrialCompanyRead { Company = company, Building = entity };
                     c.Extractor = ExtractorCompanies.HasComponent(company);
                     bool processor = !c.Extractor && ProcessingCompanies.HasComponent(company) && IndustrialCompanies.HasComponent(company);
                     c.Storage = StorageCompanies.HasComponent(company);
@@ -274,8 +328,12 @@ namespace CS2AreaSystem.Modules.Industrial
                     }
                     if (Profitabilities.HasComponent(company)) { c.HasProfit = true; c.ProfitIndex = IndustrialSourceNormalization.ProfitIndex(Profitabilities[company].m_Profitability); }
                     if (c.Producer) ReadProduction(entity, company, companyPrefab, level, efficiency, efficiencyWithoutLack, ref c);
-                    if (c.Storage && !storageFromCompany && ReadWarehouse(company, companyPrefab, prefab, allowedStored, out var stored, out var capacity))
-                    { storageFromCompany = true; read.HasStorage = true; read.Stored = stored; read.Capacity = capacity; }
+                    if (c.Storage && ReadWarehouse(company, companyPrefab, prefab, allowedStored, out var stored, out var capacity))
+                    {
+                        c.HasStorage = true; c.Stored = stored; c.Capacity = capacity;
+                        if (!storageFromCompany) { read.HasStorage = true; read.Stored = stored; read.Capacity = capacity; }
+                        storageFromCompany = true;
+                    }
                     companies.Add(c);
                 }
             }

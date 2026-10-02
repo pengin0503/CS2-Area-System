@@ -310,7 +310,7 @@ namespace CS2AreaSystem.Core.UI
                 return false;
             }
         }
-        private bool TryDerivedAnchorForUI(Entity area, IAreaAnchorPolicy policy, AreaAnchorRole role, out int count, out string status)
+        private bool TryDerivedAnchorForUI(Entity area, IAreaAnchorPolicy policy, AreaAnchorRole role, out int? count, out string status)
         {
             count = 0; status = null;
             if (!(policy is IAreaDerivedAnchorPolicy derived)) return false;

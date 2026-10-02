@@ -75,7 +75,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public static void Apply(IndustrialCycleAccumulator acc, in IndustrialEntityObservation obs)
         {
             // Each member building is credited once per cycle, even if it was read twice.
-            if (!acc.Seen.Add(obs.Facility)) return;
+            if (obs.CandidateOnly || !acc.Seen.Add(obs.Facility)) return;
             acc.Members++;
             var roles = obs.Roles;
             if ((roles & IndustrialFacilityClassifier.EligibleRoles) == 0) { acc.Ignored++; return; }

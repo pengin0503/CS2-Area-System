@@ -99,18 +99,24 @@ check(/UpdateAt<CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialProgressionSystem,\s*CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialProgressionSystem must run after observation');
 check(/catch\s*\(System\.Exception error\)\s*\{\s*industrial\.Fail\(error,\s*type => Disable\(updateSystem,\s*type\),\s*ReportRegistrationFailure\);/.test(industrialRegistration), 'Industrial registration failure must be isolated, disable the whole module and be logged');
 const industrialFacade = read(`${industrialDir}/IndustrialGameplayFacade.cs`);
-// Wave A3: Industrial stays simulation-read-only. Its single whitelisted module action is the diagnostic camera focus.
+// B2: simulation remains read-only; assignment writes are confined to module-owned Area buffers.
 check(!/SetComponentData|AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity/.test(industrialFacade), 'Industrial facade must stay read-only (no setters)');
 const industrialFacadeActions = [...industrialFacade.matchAll(/public const string (\w+)\s*=\s*"([^"]*)"/g)].map(m => m[2]);
-check(industrialFacadeActions.length === 1 && industrialFacadeActions[0] === 'focusDiagnosticTarget', 'Industrial facade may accept only the focusDiagnosticTarget action');
-check(/if \(action != FocusDiagnosticTarget/.test(industrialFacade), 'Industrial facade must reject every action except focusDiagnosticTarget first');
+check(JSON.stringify(industrialFacadeActions) === JSON.stringify(['focusDiagnosticTarget', 'assignCompanyHere', 'clearCompanyAssignment']), 'Industrial facade must whitelist exactly focus and company assignment/removal');
+check(/if \(action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment\) return false;/.test(industrialFacade), 'Industrial facade must reject actions outside the B2 whitelist first');
 const industrialModule = read(`${industrialDir}/IndustrialAreaModule.cs`);
 check(/HandleAction\([^)]*\)\s*=>\s*IndustrialGameplayFacade\.HandleAction\(area, action, value, context\);/.test(industrialModule), 'Industrial module must route actions only to the read-only facade');
 const panelBuilder = read(`${industrialDir}/IndustrialPanelBuilder.cs`);
 check(!/AreaPanelItemKind\.Slider/.test(panelBuilder), 'Industrial panel must not emit sliders');
 const panelActions = [...panelBuilder.matchAll(/Action\s*=\s*([^,}]+)/g)].map(m => m[1].trim());
-check(panelActions.length === 1 && panelActions[0] === 'IndustrialGameplayFacade.FocusDiagnosticTarget', 'Industrial panel may emit only the focusDiagnosticTarget action');
-check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 1, 'Industrial panel may emit only the diagnostic focus button');
+check(panelActions.length === 3 && panelActions.every(action => ['IndustrialGameplayFacade.FocusDiagnosticTarget', 'IndustrialGameplayFacade.AssignCompanyHere', 'IndustrialGameplayFacade.ClearCompanyAssignment'].includes(action)), 'Industrial panel may emit only the B2 whitelist');
+check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 3, 'Industrial panel must emit only focus, assign and remove buttons');
+check(/GetBuffer<IndustrialCompanyAssignment>/.test(industrialFacade), 'assignment persistence must use only the module-owned buffer');
+check(/candidates.AssignmentRevision != assignments.Revision/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must reject stale revisions');
+check(/live.Building == candidate.Building/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must revalidate the exact rented building');
+check(!/EntityQuery|ToEntityArray/.test(read(`${industrialDir}/IndustrialCompanyOwnership.cs`)), 'ownership resolution must not add a whole-world scan');
+check(/assignments.GetAreaRevision\(areaId\)/.test(read(`${industrialDir}/IndustrialObservationSystem.cs`)), 'assignment observation generations must be scoped per Area');
+check(/Store.InvalidateOwnership\(Assignments.ChangedAreas\)/.test(read(`${industrialDir}/IndustrialRuntimeSystem.cs`)), 'assignment changes must invalidate only affected owner snapshots');
 const classifier = read(`${industrialDir}/IndustrialFacilityClassifier.cs`);
 const classify = classifier.slice(classifier.indexOf('public static IndustrialFacilityRole Classify'), classifier.indexOf('public static bool IsHeadquartersEligible'));
 const positiveClassify = classify.replace(/if\s*\([^;]*HasOffice[^;]*\)\s*return\s+IndustrialFacilityRole\.None;/, '');

@@ -1568,6 +1568,163 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "companies",
+          "labelKey": "CS2AS.Tab.Companies",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "company.tip",
+              "labelKey": "CS2AS.Industrial.Company.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.1:42:1:501.1:101.1.name",
+              "labelKey": "CS2AS.Industrial.Company.Name",
+              "value": "Automatic Steelworks",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.1:42:1:501.1:101.1.status",
+              "labelKey": "CS2AS.Industrial.Company.Ownership",
+              "value": null,
+              "valueKey": "CS2AS.Industrial.Company.Automatic",
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.1:42:1:501.1:101.1.owner",
+              "labelKey": "CS2AS.Industrial.Company.Owner",
+              "value": "42",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "button",
+              "id": "company.1:42:1:501.1:101.1.assign",
+              "labelKey": "CS2AS.Industrial.Company.Assign",
+              "value": "1:42:1:501.1:101.1",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": "assignCompanyHere"
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.1:42:1:502.1:102.1.name",
+              "labelKey": "CS2AS.Industrial.Company.Name",
+              "value": "Manual Steelworks",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.1:42:1:502.1:102.1.status",
+              "labelKey": "CS2AS.Industrial.Company.Ownership",
+              "value": null,
+              "valueKey": "CS2AS.Industrial.Company.Manual",
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.1:42:1:502.1:102.1.owner",
+              "labelKey": "CS2AS.Industrial.Company.Owner",
+              "value": "42",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "button",
+              "id": "company.1:42:1:502.1:102.1.assign",
+              "labelKey": "CS2AS.Industrial.Company.Assign",
+              "value": "1:42:1:502.1:102.1",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": true,
+              "tooltipKey": null,
+              "action": "assignCompanyHere"
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "button",
+              "id": "company.1:42:1:502.1:102.1.clear",
+              "labelKey": "CS2AS.Industrial.Company.Clear",
+              "value": "1:42:1:502.1:102.1",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": "clearCompanyAssignment"
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -2058,6 +2215,43 @@
               "kind": "row",
               "id": "comparison.empty",
               "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "companies",
+          "labelKey": "CS2AS.Tab.Companies",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "company.tip",
+              "labelKey": "CS2AS.Industrial.Company.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.empty",
+              "labelKey": "CS2AS.Industrial.Company.Empty",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -3092,6 +3286,43 @@
               "kind": "row",
               "id": "comparison.empty",
               "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "companies",
+          "labelKey": "CS2AS.Tab.Companies",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "company.tip",
+              "labelKey": "CS2AS.Industrial.Company.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.empty",
+              "labelKey": "CS2AS.Industrial.Company.Empty",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -4163,6 +4394,43 @@
               "kind": "row",
               "id": "comparison.empty",
               "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "companies",
+          "labelKey": "CS2AS.Tab.Companies",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "company.tip",
+              "labelKey": "CS2AS.Industrial.Company.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.empty",
+              "labelKey": "CS2AS.Industrial.Company.Empty",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -5440,6 +5708,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "companies",
+          "labelKey": "CS2AS.Tab.Companies",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "company.tip",
+              "labelKey": "CS2AS.Industrial.Company.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.empty",
+              "labelKey": "CS2AS.Industrial.Company.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -6421,6 +6726,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "companies",
+          "labelKey": "CS2AS.Tab.Companies",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "company.tip",
+              "labelKey": "CS2AS.Industrial.Company.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "company.empty",
+              "labelKey": "CS2AS.Industrial.Company.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -6466,6 +6808,17 @@
     "CS2AS.Industrial.Check.PrestigeOutputs": "Prestige: 3+ meaningful outputs",
     "CS2AS.Industrial.Check.PrestigeStreak": "Prestige: 7 consecutive high-activity days",
     "CS2AS.Industrial.Check.Production": "Production",
+    "CS2AS.Industrial.Company.Assign": "Assign company here",
+    "CS2AS.Industrial.Company.Automatic": "Automatic (geometry)",
+    "CS2AS.Industrial.Company.Clear": "Remove manual assignment",
+    "CS2AS.Industrial.Company.Empty": "Waiting for observed Industrial companies",
+    "CS2AS.Industrial.Company.Invalid": "Invalid assignment (not effective)",
+    "CS2AS.Industrial.Company.Manual": "Manual",
+    "CS2AS.Industrial.Company.Name": "Company",
+    "CS2AS.Industrial.Company.Owner": "Owner Area ID",
+    "CS2AS.Industrial.Company.Ownership": "Ownership mode",
+    "CS2AS.Industrial.Company.Tip": "Up to 64 observed companies. Manual ownership affects only the selected company. Offices and commercial companies are excluded. Invalid or duplicate claims can be removed.",
+    "CS2AS.Industrial.Company.Unnamed": "Industrial company",
     "CS2AS.Industrial.Comparison.Area": "Industrial Area",
     "CS2AS.Industrial.Comparison.Empty": "No Industrial Areas to compare",
     "CS2AS.Industrial.Comparison.Tip": "Managed Industrial Areas only. Current Performance sorts first; stale results are advisory and do not affect gameplay.",
@@ -6759,6 +7112,7 @@
     "CS2AS.Summary.ModuleUnavailable": "This area's module is unavailable. Saved state is retained.",
     "CS2AS.Summary.Quarantined": "This area's saved data is inconsistent or its native search geometry is unavailable, so it is isolated for this session. Saved data and geometry are kept unchanged; membership, activation, policies and finance are disabled. Only Edit and Delete are available. Edit the geometry or delete the unwanted area, then reload.",
     "CS2AS.Summary.TourismBoundaryOnly": "Boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
+    "CS2AS.Tab.Companies": "Companies / Ownership",
     "CS2AS.Tab.Comparison": "Comparison",
     "CS2AS.Tab.Employment": "Employment",
     "CS2AS.Tab.Finances": "Finances",
