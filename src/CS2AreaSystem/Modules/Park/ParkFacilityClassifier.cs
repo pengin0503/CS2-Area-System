@@ -9,6 +9,8 @@ namespace CS2AreaSystem.Modules.Park
     public struct ParkFacilityTraits
     {
         public bool IsBuilding, HasRoadAccess, HasPark, HasLeisureProvider, HasAttractivenessProvider;
+        public bool HasParkMaintenance;
+        public Entity Prefab;
         // HasLeisureData: the building prefab carries LeisureProviderData (LeisureType/efficiency below are valid).
         public bool HasLeisureData;
         public LeisureType LeisureType;
@@ -21,6 +23,7 @@ namespace CS2AreaSystem.Modules.Park
     public enum ParkFacilityRoles : byte { None = 0, CoreParkFacility = 1, Leisure = 2, Attraction = 4, SupportingAmenity = 8 }
     public static class ParkFacilityClassifier
     {
+        public static bool IsHeadquartersEligible(in ParkFacilityTraits traits) => traits.IsBuilding && traits.HasParkMaintenance;
         public static uint LeisureBit(LeisureType type) => 1u << (int)type;
         // Park-local roles; a building may hold several. Unrelated residential/industrial/office members get None.
         public static ParkFacilityRoles Classify(in ParkFacilityTraits traits)
@@ -53,6 +56,8 @@ namespace CS2AreaSystem.Modules.Park
             var traits = new ParkFacilityTraits();
             if (!entities.Exists(entity) || !entities.HasComponent<Building>(entity)) return traits;
             traits.IsBuilding = true;
+            traits.HasParkMaintenance = entities.HasComponent<Game.Buildings.ParkMaintenance>(entity);
+            if (entities.HasComponent<PrefabRef>(entity)) traits.Prefab = entities.GetComponentData<PrefabRef>(entity).m_Prefab;
             traits.HasRoadAccess = !includeRoadAccess || entities.GetComponentData<Building>(entity).m_RoadEdge != Entity.Null;
             traits.HasPark = entities.HasComponent<Game.Buildings.Park>(entity);
             traits.HasLeisureProvider = entities.HasComponent<Game.Buildings.LeisureProvider>(entity);

@@ -26,6 +26,7 @@ namespace CS2AreaSystem.Modules.Park
     {
         public const uint FramesPerDay = ParkFinanceModel.FramesPerDay;
         public ParkRuntimeStore Store { get; } = new ParkRuntimeStore();
+        public ParkEntranceEvidenceStore Entrances { get; } = new ParkEntranceEvidenceStore();
         private EntityQuery managedAreas;
         private AreaCoreServicesSystem services;
         public bool Ready => !GameManager.instance.isGameLoading && World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready;
@@ -40,7 +41,7 @@ namespace CS2AreaSystem.Modules.Park
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() }
             });
         }
-        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) { Store.Clear(); LoadGeneration++; }
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode) { Store.Clear(); Entrances.Clear(); LoadGeneration++; }
         protected override void OnUpdate() { }
         public void CollectParks(List<ParkAreaRef> parks)
         {

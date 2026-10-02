@@ -13,14 +13,29 @@ namespace CS2AreaSystem.Modules.Park
             if (entities.HasComponent<ParkAreaState>(area)) ParkSavedStateValidator.Validate(entities.GetComponentData<ParkAreaState>(area), report);
         }
         private readonly Func<Entity, EntityManager, ParkFacilityTraits> readTraits;
+        private readonly Func<Entity, AreaActivationContext, ParkEntranceEvidence> readEntrances;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
         private readonly ParkPanelCache panels = new ParkPanelCache(250, () => clock.ElapsedMilliseconds);
-        public ParkAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, ParkFacilityTraits> readTraits = null)
-            : base(AreaTypeId.Park, anchors, AreaAnchorRole.Entrance)
-        { this.readTraits = readTraits ?? ParkFacilityReader.ReadAnchor; }
+        public ParkAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, ParkFacilityTraits> readTraits = null,
+            Func<Entity, AreaActivationContext, ParkEntranceEvidence> readEntrances = null)
+            : base(AreaTypeId.Park, anchors, AreaAnchorRole.Headquarters, AreaAnchorRole.Entrance)
+        { this.readTraits = readTraits ?? ParkFacilityReader.ReadAnchor; this.readEntrances = readEntrances ?? ReadEntrances; }
+        private static ParkEntranceEvidence ReadEntrances(Entity area, AreaActivationContext context)
+        {
+            if(context.World == null || !context.Entities.HasComponent<ManagedAreaStableId>(area))return null;
+            var runtime=context.World.GetExistingSystemManaged<ParkRuntimeSystem>();
+            return runtime!=null && runtime.Entrances.TryGet(context.Entities.GetComponentData<ManagedAreaStableId>(area).Value,out var evidence)?evidence:null;
+        }
+        public override bool CanAssignAnchor(Entity area, AreaAnchorRole role, EntityManager entities) => role == AreaAnchorRole.Headquarters;
+        public override bool ValidateActivation(Entity area, in AreaActivationContext context)
+        {
+            if(!Anchors.HasValidAnchor(area,AreaAnchorRole.Headquarters))return false;
+            var evidence=readEntrances(area,context);
+            return evidence!=null && evidence.Status==ParkEntranceEvidenceStatus.Complete && evidence.Count>0;
+        }
         public override string BuildSummary(Entity area, in AreaPanelContext context)
         {
-            if (ValidateActivation(area, default)) return "CS2AS.Park.Summary.Active";
+            if (ValidateActivation(area, new AreaActivationContext(context.World,context.Entities))) return "CS2AS.Park.Summary.Active";
             // Links exist but none qualifies (e.g. a pre-v1 save with an arbitrary building, or a demolished entrance).
             return Anchors.HasLinks(area, AreaAnchorRole.Entrance) ? "CS2AS.Park.Summary.EntranceInvalid" : "CS2AS.Park.Summary.EntranceRequired";
         }
@@ -38,8 +53,8 @@ namespace CS2AreaSystem.Modules.Park
         }
         public override bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities)
         {
-            if (role != AreaAnchorRole.Entrance) return false;
-            try { return ParkFacilityClassifier.IsPlausibleEntrance(readTraits(anchor, entities)); }
+            if (role != AreaAnchorRole.Headquarters) return false;
+            try { return ParkFacilityClassifier.IsHeadquartersEligible(readTraits(anchor, entities)); }
             catch (Exception) { return false; }
         }
         public System.Collections.Generic.IReadOnlyList<AreaPolicyDefinition> PolicyDefinitions => ParkPolicyCatalog.Definitions;
