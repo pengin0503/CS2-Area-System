@@ -2,7 +2,7 @@
 
 Date: 2026-10-02  
 Target: Cities: Skylines II 1.6.2f1  
-Source of truth at design start: latest `main` after the deferred-feature documentation commit.
+Source of truth at design start: `cacc8caf71abee3bf6088c616e5f2512f85655b2` (`main` after the deferred-feature documentation commit).
 
 ## Goal
 
