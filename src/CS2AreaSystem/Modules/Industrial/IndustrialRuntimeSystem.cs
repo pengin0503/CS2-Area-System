@@ -69,6 +69,9 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         public IndustrialRuntimeStore Store { get; } = new IndustrialRuntimeStore();
         public IndustrialStructureTracker Structure { get; } = new IndustrialStructureTracker();
+        public IndustrialCompanyAssignmentIndex Assignments { get; } = new IndustrialCompanyAssignmentIndex();
+        private readonly List<IndustrialCompanyClaim> assignmentClaims = new List<IndustrialCompanyClaim>();
+        public bool AssignmentsReady { get; private set; }
         private EntityQuery managedAreas, writtenAreas, changedAreas, timeData, rentersUpdated, damagedMembers;
         private List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>(), building = new List<IndustrialAreaRef>();
         private readonly List<(Entity Area, ManagedArea Managed, ulong StableId)> rows = new List<(Entity Area, ManagedArea Managed, ulong StableId)>();
@@ -113,6 +116,7 @@ namespace CS2AreaSystem.Modules.Industrial
         protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
         {
             Store.Clear(); Structure.Clear(); cycleSource.Clear(); areas.Clear(); gate.Invalidate(); LoadGeneration++;
+            Assignments.Clear(); assignmentClaims.Clear(); AssignmentsReady = false;
         }
         public IIndustrialCycleSource CycleSource => cycleSource;
         [Preserve]
@@ -129,6 +133,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     PruneStore(areas);
                     statePending = true;
                     gate.Refreshed(generation, quarantine);
+                    RefreshAssignments();
                 }
                 if (statePending) statePending = !EnsureIndustrialState(areas);
                 TrackStructureChanges();
@@ -144,6 +149,23 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             result.Clear();
             result.AddRange(areas);
+        }
+        // Load/Area migration initializes empty buffers; existing saved claims are never overwritten.
+        // Validation is performed over the explicit claims only, not over every company in the world.
+        public void RefreshAssignments()
+        {
+            AssignmentsReady = false;
+            assignmentClaims.Clear();
+            foreach (var area in areas)
+            {
+                if (!EntityManager.Exists(area.Area)) continue;
+                if (!EntityManager.HasBuffer<IndustrialCompanyAssignment>(area.Area)) EntityManager.AddBuffer<IndustrialCompanyAssignment>(area.Area);
+                var buffer = EntityManager.GetBuffer<IndustrialCompanyAssignment>(area.Area);
+                for (int i = 0; i < buffer.Length; i++)
+                    assignmentClaims.Add(new IndustrialCompanyClaim(area.StableId, buffer[i].Company, buffer[i].Building));
+            }
+            Assignments.Rebuild(assignmentClaims);
+            AssignmentsReady = true;
         }
         // Builds the new list aside and swaps it in, so a failed rebuild leaves the previous list and the gate open.
         private void RefreshAreas()
