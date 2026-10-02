@@ -72,7 +72,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 "OverlapMembers", "Extractors", "Processors", "Producers", "RawActivity", "RawActivity.Tip", "MeaningfulOutputs", "StorageFacilities", "StorageUtilization",
                 "CargoFacilities", "Jobs", "Employees", "Vacancies", "ProducerJobs", "SupportJobs", "NextLevel", "MaxLevel", "HourlyXp", "HourlyXp.Tip", "DailyXp", "DailyXp.Tip",
                 "StreakDays", "DayAverage", "DayHours", "LastDay", "LastDay.Tip", "Headquarters", "Hq.Valid", "Hq.Invalid", "Hq.Missing", "Resource.Tip", "Bottlenecks.None",
-                "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid" })
+                "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid",
+                "Process.Input", "Process.Output", "Process.Companies", "Process.ActualPerDay", "Process.Tip" })
                 yield return P + k;
             foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
         }
@@ -188,10 +189,39 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (name == null) continue;
                 items.Add(Row("resource." + name, "Resources.TITLE[" + name + "]", Number(resource.ActualPerDay) + " /d", tooltip: P + "Resource.Tip"));
             }
+            Processes(items, m);
             Metric(items, m, "production", "Production", r.Production);
             items.Add(Note("sampled", "Sampled"));
             return items;
         }
+        public const int MaxProcesses = 5;
+        // Observed processes (Wave A4): per recipe, localized resource-title rows for its inputs and output, then its actual
+        // daily output and company count. A stale result keeps the stale context; an unmeasured rate is never shown as 0.
+        private static void Processes(List<AreaPanelItem> items, IndustrialPanelModel m)
+        {
+            var processes = m.Current?.Processes;
+            if (processes == null) return;
+            string tip = P + "Process.Tip";
+            int shown = 0;
+            foreach (var p in processes)
+            {
+                if (shown >= MaxProcesses) break;
+                string output = ResourceName(p.Process.Output), input1 = ResourceName(p.Process.Input1), input2 = ResourceName(p.Process.Input2);
+                if (output == null || (p.Process.Input1 != 0 && input1 == null) || (p.Process.Input2 != 0 && input2 == null)) continue;
+                string id = "process." + shown++ + ".";
+                int n = 0;
+                foreach (var input in new[] { input1, input2 })
+                    if (input != null) items.Add(Row(id + "input." + ++n, "Resources.TITLE[" + input + "]", valueKey: P + "Process.Input", tooltip: tip));
+                items.Add(Row(id + "output", "Resources.TITLE[" + output + "]", valueKey: P + "Process.Output", tooltip: tip));
+                items.Add(p.MeasuredCompanies > 0
+                    ? Row(id + "actual", P + "Process.ActualPerDay", Number(p.ActualOutputPerDay) + " /d", tooltip: Stale(m) ? P + "Status.Stale" : tip)
+                    : Row(id + "actual", P + "Process.ActualPerDay", valueKey: P + "Status.Unavailable", tooltip: tip));
+                if (p.MeasuredCompanies > 0 && p.MeasuredCompanies < p.Companies)
+                    items.Add(Row(id + "coverage", P + "PartialData", Number(p.MeasuredCompanies) + " / " + Number(p.Companies)));
+                items.Add(Row(id + "companies", P + "Process.Companies", Number(p.Companies), tooltip: tip));
+            }
+        }
+        private static string ResourceName(ulong resource) => resource == 0 ? null : Enum.GetName(typeof(Resource), (Resource)resource);
         private static List<AreaPanelItem> Logistics(IndustrialPanelModel m)
         {
             var r = m.Current; var items = new List<AreaPanelItem>();

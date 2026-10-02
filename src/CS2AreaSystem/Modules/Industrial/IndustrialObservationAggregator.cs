@@ -34,6 +34,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public readonly List<IndustrialWeightedValue> Profitability = new List<IndustrialWeightedValue>();
         public double RawActivitySum, RawActivityWeight, RawEfficiencySum, RawEfficiencyWeight;
         public readonly Dictionary<ulong, IndustrialResourceTotal> Resources = new Dictionary<ulong, IndustrialResourceTotal>();
+        public readonly Dictionary<IndustrialProcessKey, IndustrialProcessSummary> Processes = new Dictionary<IndustrialProcessKey, IndustrialProcessSummary>();
         public IndustrialFlowSample Input, Output;
         public double Stored, Capacity;
         public int StorageObserved;
@@ -80,6 +81,7 @@ namespace CS2AreaSystem.Modules.Industrial
             if (!obs.IsProducer) return;
             acc.ProducerFacilities++;
             if (obs.IsOperatingProducer && obs.Available) acc.OperatingProducers++; else acc.IdleProducers++;
+            IndustrialProcessDiagnostics.Add(acc.Processes, obs.Processes, obs.Available);
             if (obs.ProducerTenants > 0)
             {
                 // Unusable (abandoned/destroyed/inactive) facilities have no productive activity.
@@ -127,6 +129,8 @@ namespace CS2AreaSystem.Modules.Industrial
             Array.Copy(acc.VacanciesByLevel, result.VacanciesByLevel, 5);
             foreach (var total in acc.Resources.Values) result.Resources.Add(total);
             result.Resources.Sort((a, b) => b.WeightedActivity.CompareTo(a.WeightedActivity));
+            result.Processes.AddRange(acc.Processes.Values);
+            IndustrialProcessDiagnostics.Sort(result.Processes);
             result.RawActivity = acc.RawActivityWeight > 0 ? acc.RawActivitySum / acc.RawActivityWeight : (double?)null;
             result.RawEfficiency = acc.RawEfficiencyWeight > 0 ? acc.RawEfficiencySum / acc.RawEfficiencyWeight : (double?)null;
             // Production.

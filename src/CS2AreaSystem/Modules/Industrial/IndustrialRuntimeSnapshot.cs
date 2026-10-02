@@ -70,6 +70,8 @@ namespace CS2AreaSystem.Modules.Industrial
         public int Jobs, Employees, ProducerJobs, ProducerEmployees, SupportJobs, SupportEmployees, InvalidJobFacilities, JobFacilities;
         public int[] VacanciesByLevel = new int[5];
         public List<IndustrialResourceTotal> Resources = new List<IndustrialResourceTotal>();
+        // Observed input -> output processes grouped by exact recipe (Wave A4).
+        public List<IndustrialProcessSummary> Processes = new List<IndustrialProcessSummary>();
         public double? RawActivity, RawEfficiency;
         public double StoredAmount, StorageCapacity;
         public int StorageObserved;

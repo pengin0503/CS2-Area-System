@@ -238,6 +238,48 @@ public class IndustrialPanelBuilderTests {
   Assert.That(Find(o, "employment.trend")!.Value, Is.EqualTo("0.0"));
   Assert.That(o.Items.Where(i => i.Id.EndsWith(".trend")).All(i => i.Value == null || !i.Value.Contains('%')), Is.True);
  }
+ // ---- Wave A4 processes
+ private static IndustrialProcessSummary Process(Resource in1, Resource in2, Resource output, int companies, int measured, double actual) =>
+  new() { Process = new IndustrialProcessKey((ulong)in1, in1 == Resource.NoResource ? 0 : 1, (ulong)in2, in2 == Resource.NoResource ? 0 : 1, (ulong)output, 1),
+   Companies = companies, MeasuredCompanies = measured, ActualOutputPerDay = actual };
+ [Test] public void ProductionTabShowsEachProcessAsLocalizedInputAndOutputRows() {
+  var m = Model("active");
+  m.Current.Processes = new List<IndustrialProcessSummary> { Process(Resource.NoResource, Resource.NoResource, Resource.Wood, 1, 1, 80),
+   Process(Resource.Plastics, Resource.Wood, Resource.Furniture, 2, 2, 50) };
+  var p = IndustrialPanelBuilder.Build(m).Tabs.Single(t => t.Id == "production");
+  var rows = p.Items.Where(i => i.Id.StartsWith("process.")).ToList();
+  Assert.That(rows.Select(i => i.Id), Is.EqualTo(new[] { "process.0.output", "process.0.actual", "process.0.companies",
+   "process.1.input.1", "process.1.input.2", "process.1.output", "process.1.actual", "process.1.companies" }));
+  Assert.That(rows[0].LabelKey, Is.EqualTo("Resources.TITLE[Wood]")); Assert.That(rows[0].ValueKey, Is.EqualTo("CS2AS.Industrial.Process.Output"));
+  Assert.That(rows[1].LabelKey, Is.EqualTo("CS2AS.Industrial.Process.ActualPerDay")); Assert.That(rows[1].Value, Is.EqualTo("80 /d"));
+  Assert.That(rows[2].LabelKey, Is.EqualTo("CS2AS.Industrial.Process.Companies")); Assert.That(rows[2].Value, Is.EqualTo("1"));
+  Assert.That(rows[3].LabelKey, Is.EqualTo("Resources.TITLE[Plastics]")); Assert.That(rows[3].ValueKey, Is.EqualTo("CS2AS.Industrial.Process.Input"));
+  Assert.That(rows[4].LabelKey, Is.EqualTo("Resources.TITLE[Wood]")); Assert.That(rows[4].ValueKey, Is.EqualTo("CS2AS.Industrial.Process.Input"));
+  Assert.That(rows[5].LabelKey, Is.EqualTo("Resources.TITLE[Furniture]"));
+  Assert.That(rows.All(i => i.TooltipKey == "CS2AS.Industrial.Process.Tip"), Is.True);
+  Assert.That(rows.All(i => i.Value == null || !i.Value.Contains("Resources.TITLE")), Is.True, "no raw localization key in a sentence");
+  int production = p.Items.ToList().FindIndex(i => i.Id == "production");
+  Assert.That(p.Items.ToList().FindIndex(i => i.Id == "process.1.companies"), Is.LessThan(production), "processes precede the Production score");
+ }
+ [Test] public void PartialOrUnmeasuredProcessOutputIsShownHonestly() {
+  var m = Model("active");
+  m.Current.Processes = new List<IndustrialProcessSummary> { Process(Resource.Wood, Resource.NoResource, Resource.Paper, 3, 1, 20),
+   Process(Resource.Grain, Resource.NoResource, Resource.Food, 2, 0, 0) };
+  var p = IndustrialPanelBuilder.Build(m).Tabs.Single(t => t.Id == "production");
+  AreaPanelItem Row(string id) => p.Items.Single(i => i.Id == id);
+  Assert.That(Row("process.0.actual").Value, Is.EqualTo("20 /d"));
+  Assert.That(Row("process.0.coverage").LabelKey, Is.EqualTo("CS2AS.Industrial.PartialData")); Assert.That(Row("process.0.coverage").Value, Is.EqualTo("1 / 3"));
+  Assert.That(Row("process.1.actual").ValueKey, Is.EqualTo("CS2AS.Industrial.Status.Unavailable"), "no measured company: never a zero rate");
+ }
+ [Test] public void StaleProcessRowsKeepTheStaleContext() {
+  var m = Model("paused");
+  m.Current.Processes = new List<IndustrialProcessSummary> { Process(Resource.Wood, Resource.NoResource, Resource.Paper, 1, 1, 20) };
+  var p = IndustrialPanelBuilder.Build(m).Tabs.Single(t => t.Id == "production");
+  var actual = p.Items.Single(i => i.Id == "process.0.actual");
+  Assert.That(actual.Kind, Is.EqualTo(AreaPanelItemKind.Row));
+  Assert.That(actual.TooltipKey, Is.EqualTo("CS2AS.Industrial.Status.Stale"));
+  Assert.That(IndustrialPanelBuilder.Build(Model("suspended")).Tabs.SelectMany(t => t.Items).Any(i => i.Id.StartsWith("process.")), Is.False, "no observation, no process rows");
+ }
  [TestCase("en-US")] [TestCase("ja-JP")]
  public void EveryKeyTheIndustrialPanelCanEmitIsLocalized(string locale) {
   var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);

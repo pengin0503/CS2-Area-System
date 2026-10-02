@@ -50,6 +50,10 @@ namespace CS2AreaSystem.Modules.Industrial
         public ulong OutputResource;
         public double ActualPerDay, CapacityPerDay;
         public IndustrialFlowState Input, Output;
+        // The tenant's vanilla recipe (IndustrialProcessData), copied for producers with a valid output (Wave A4).
+        public bool HasProcess;
+        public ulong ProcessInput1, ProcessInput2, ProcessOutput;
+        public int ProcessInput1Amount, ProcessInput2Amount, ProcessOutputAmount;
     }
     // Symptom rules reconstructed from the 1.6.2f1 production systems (docs/verification/industrial-observation-contracts.md).
     public static class IndustrialFlowRules
@@ -104,6 +108,7 @@ namespace CS2AreaSystem.Modules.Industrial
             double actual = 0, capacity = 0, profitSum = 0, profitWeight = 0;
             bool anyActivity = false, operating = false;
             var resources = new List<IndustrialResourceActivity>();
+            List<IndustrialProcessActivity> processes = null;
             foreach (var c in companies)
             {
                 if (c.HasJobs)
@@ -120,6 +125,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 obs.ProducerTenants++;
                 obs.Input = IndustrialFlowRules.Worst(obs.Input, c.Input);
                 obs.Output = IndustrialFlowRules.Worst(obs.Output, c.Output);
+                if (c.HasProcess) (processes ??= new List<IndustrialProcessActivity>()).Add(new IndustrialProcessActivity(IndustrialProcessDiagnostics.KeyOf(c), c.HasActivity, c.ActualPerDay));
                 if (!c.HasActivity) continue;
                 anyActivity = true; actual += c.ActualPerDay; capacity += c.CapacityPerDay;
                 operating |= c.ActualPerDay > 0;
@@ -128,6 +134,7 @@ namespace CS2AreaSystem.Modules.Industrial
             obs.Jobs = jobs; obs.Employees = employees;
             obs.VacanciesByLevel = vacancies;
             obs.Resources = resources.ToArray();
+            obs.Processes = processes != null ? processes.ToArray() : Array.Empty<IndustrialProcessActivity>();
             obs.ProductiveActivity = anyActivity ? IndustrialSourceNormalization.ActivityPercent(actual, capacity) : null;
             obs.IsOperatingProducer = obs.IsProducer && obs.Available && operating && obs.ProductiveActivity.HasValue;
             obs.Efficiency = building.HasEfficiency ? IndustrialSourceNormalization.EfficiencyPercent(building.Efficiency) : null;
@@ -296,10 +303,13 @@ namespace CS2AreaSystem.Modules.Industrial
         private void ReadProduction(Entity property, Entity company, Entity companyPrefab, int level, float efficiency, float efficiencyWithoutLack, ref IndustrialCompanyRead c)
         {
             c.Input = c.Output = IndustrialFlowState.Unavailable;
-            if (!Processes.HasComponent(companyPrefab) || !WorkProviders.HasComponent(company) || !WorkplaceDatas.HasComponent(companyPrefab) || !ResourceBuffers.HasBuffer(company)) return;
+            if (!Processes.HasComponent(companyPrefab)) return;
             var process = Processes[companyPrefab];
             var output = process.m_Output.m_Resource;
             if (output == Resource.NoResource || !ResourceDatas.HasComponent(ResourcePrefabs[output])) return;
+            // The recipe is prefab data: known even when this cycle cannot measure the company's production rate.
+            IndustrialProcessDiagnostics.TryCopy(process, ref c);
+            if (!WorkProviders.HasComponent(company) || !WorkplaceDatas.HasComponent(companyPrefab) || !ResourceBuffers.HasBuffer(company)) return;
             c.OutputResource = (ulong)output;
             var resources = ResourceBuffers[company];
             var workplace = WorkplaceDatas[companyPrefab];
