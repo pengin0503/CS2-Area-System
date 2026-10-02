@@ -116,7 +116,7 @@ Commit: `feat(core): add bounded runtime trend series`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialRuntimeSnapshot.cs`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialObservationAggregator.cs`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialPanelBuilder.cs`
-- Modify: `src/CS2AreaSystem/Core/Prefabs/NativeAreaLocalization.cs`
+- Modify: `src/CS2AreaSystem/Core/UI/NativeAreaLocalization.cs`
 - Test: `tests/CS2AreaSystem.Tests/ParkPanelBuilderTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/IndustrialObservationTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/IndustrialPanelBuilderTests.cs`
@@ -235,8 +235,8 @@ Commit: `feat(core): add guarded diagnostic focus targets`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialObservationAggregator.cs`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialRuntimeSnapshot.cs`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialPanelBuilder.cs`
-- Modify: `src/CS2AreaSystem/Core/Prefabs/NativeAreaLocalization.cs`
-- Test: `tests/CS2AreaSystem.Tests/IndustrialObservationReaderTests.cs`
+- Modify: `src/CS2AreaSystem/Core/UI/NativeAreaLocalization.cs`
+- Create: `tests/CS2AreaSystem.Tests/IndustrialObservationReaderTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/IndustrialObservationTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/IndustrialPanelBuilderTests.cs`
 - Create: `tests/CS2AreaSystem.Tests/IndustrialProcessDiagnosticsTests.cs`
@@ -301,7 +301,7 @@ Commit: `feat(industrial): show observed input-output processes`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialPanelBuilder.cs`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialGameplayFacade.cs`
 - Modify: `src/CS2AreaSystem/Modules/Industrial/IndustrialAreaModule.cs`
-- Modify: `src/CS2AreaSystem/Core/Prefabs/NativeAreaLocalization.cs`
+- Modify: `src/CS2AreaSystem/Core/UI/NativeAreaLocalization.cs`
 - Modify: `scripts/test-offline-contracts.mjs`
 - Test: `tests/CS2AreaSystem.Tests/IndustrialPerformanceModelTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/IndustrialObservationTests.cs`
@@ -386,7 +386,7 @@ Commit: `feat(industrial): focus facilities behind bottlenecks`
 - Modify: `src/CS2AreaSystem/Modules/Park/ParkPanelBuilder.cs`
 - Modify: `src/CS2AreaSystem/Modules/Park/ParkGameplayFacade.cs`
 - Modify: `src/CS2AreaSystem/Modules/Park/ParkAreaModule.cs`
-- Modify: `src/CS2AreaSystem/Core/Prefabs/NativeAreaLocalization.cs`
+- Modify: `src/CS2AreaSystem/Core/UI/NativeAreaLocalization.cs`
 - Test: `tests/CS2AreaSystem.Tests/ParkFacilityClassifierTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/ParkPanelBuilderTests.cs`
 - Create: `tests/CS2AreaSystem.Tests/ParkLandscapeDiagnosticTests.cs`
@@ -464,7 +464,7 @@ Commit: `feat(park): add bounded landscape diagnostics`
 
 **Files:**
 - Modify: `tests/CS2AreaSystem.Tests/ParkPanelFixtureTests.cs`
-- Modify: `tests/CS2AreaSystem.Tests/IndustrialPanelFixtureTests.cs` if present; otherwise the existing Industrial fixture generator test owning `UI/src/__fixtures__/industrial-panel.json`
+- Modify: `tests/CS2AreaSystem.Tests/IndustrialPanelFixtureTests.cs`
 - Modify generated: `UI/src/__fixtures__/park-panel.json`
 - Modify generated: `UI/src/__fixtures__/industrial-panel.json`
 - Modify: `scripts/runtime-smoke-checklist.md`
