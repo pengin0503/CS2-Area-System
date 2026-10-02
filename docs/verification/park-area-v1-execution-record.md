@@ -49,3 +49,11 @@ A whole-branch review filed #20–#30; all except #30 (in-game verification, can
 | #28 | `1ae1b94` | C#-generated UI fixture, Park offline contracts, dispatcher tests |
 
 Final `scripts/verify.ps1 -ApiCheck`: exit 0 — NUnit 250/250, Vitest 52/52, guards/contracts, net8 API build 0/0. Separate net48 API compile 0/0. Runtime items (including new item 21 and the prop-menu/transit/job assumptions) remain NOT RUN (#30).
+
+## Pre-Tourism Wave A1–A5 (Park)
+
+Branch `claude/pre-tourism-wave-a1-a5-l5pses`, base `c04ebf4cf586b4d46532662000dc650f62df0e2f`. Adds runtime trend rows (A1) and bounded landscape diagnostics (A5): a fixed 4×4 evidence grid fed by the existing sliced scan, at most four advisory findings, and a read-only camera focus re-validated against the current scan, the object and the Park geometry. Scan budget, Quality inputs, activation and saved state are unchanged.
+
+- Automated: `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -p:AreaApiCheck=true` 950/950; Release API-check build against the supplied 1.6.2f1 DLLs 0 warnings / 0 errors; Vitest 104/104; webpack production build; offline contracts, `verify-source.ps1`, `test-source-guards.ps1`; `pwsh scripts/verify.ps1 -ApiCheck` exit 0.
+- Runtime: **NOT RUN.** See the "Pre-Tourism Wave A1–A5" section of [the smoke checklist](../../scripts/runtime-smoke-checklist.md).
+- Not included: A6 (pedestrian connectivity), A7 (budget/fee what-if) and Waves B–D.

@@ -58,3 +58,11 @@ None of these compiles or tests runs Unity, the game simulation or the deployed 
 | Balance notes (XP pace, gate reachability) | not measured | not measured |
 
 Live-field semantic validation (separate from the compile and model-example evidence above): not performed — `m_LastUpdateProduce`, `GetCompanyProductionPerDay`, the `LackResources` factor, storage limits, `Profitability` and `RentersUpdated` behavior must be compared with the vanilla info sections in game.
+
+## Pre-Tourism Wave A1–A5 (Industrial)
+
+Branch `claude/pre-tourism-wave-a1-a5-l5pses`, base `c04ebf4cf586b4d46532662000dc650f62df0e2f`. Adds runtime trend rows (A1), the read-only bottleneck facility focus (A2/A3; the only Industrial panel action) and observed input→output process rows (A4), all from the existing budgeted observation cycle. Scores, XP, policies and saved state are unchanged.
+
+- Automated: `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -p:AreaApiCheck=true` 950/950; Release API-check build against the supplied 1.6.2f1 DLLs 0 warnings / 0 errors; Vitest 104/104; webpack production build; offline contracts, `verify-source.ps1`, `test-source-guards.ps1`; `pwsh scripts/verify.ps1 -ApiCheck` exit 0.
+- Runtime: **NOT RUN.** See the "Pre-Tourism Wave A1–A5" section of [the smoke checklist](../../scripts/runtime-smoke-checklist.md).
+- Not included: A6 (pedestrian connectivity), A7 (budget/fee what-if) and Waves B–D.

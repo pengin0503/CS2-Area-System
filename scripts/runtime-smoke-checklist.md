@@ -107,3 +107,18 @@ Status: **NOT RUN.** The record is in `docs/verification/area-policy-system-runt
 15. Policies 2002, 2003, 2006 and 3001–3007 are visibly unavailable and non-billable.
 
 If a Budget Area row is missing, check `Player.log`/the UI console for "Area budget". The vanilla budget item ids are asset data; see `docs/verification/area-budget-ui-contracts.md`.
+
+# Pre-Tourism Wave A1–A5 — Cities: Skylines II 1.6.2f1 runtime verification
+
+Status: **NOT RUN.** Automated tests (NUnit, Vitest, offline contracts, API-check build) do not establish any item below. Record the game version/build, save and observations next to each item.
+
+1. Trends (A1): after two in-game hours a Park shows "vs previous" rows under Quality, recent visits, satisfaction, occupancy, admission income and management expense; an Industrial Area shows them under Performance, the four components and active facilities. The first sample reads "first sample", and rising/falling/unchanged follows the visible values.
+2. Trends survive no save: after save → load every trend row is gone until new samples arrive, and the first Park admission/expense trend after load is not a false "falling" from a partly observed hour.
+3. Industrial bottleneck focus (A3): "Show facility" under a suggestion moves the camera to a facility that matches that bottleneck (e.g. the understaffed or input-starved company), and changes nothing in the city (money, resources, policies, selection state otherwise unchanged).
+4. The focus button rejects a facility that was demolished, moved out of the Area, or became primary-owned by another Industrial Area after the panel was built (no camera move, no error), and works again once the next observation cycle names a current facility.
+5. Industrial processes (A4): Production tab recipe rows (inputs → output) match the vanilla company info section of a representative company for each listed process; a recipe with no measured rate this cycle shows "Unavailable", never 0.
+6. Park landscape diagnostics (A5): removing most trees/benches/lights from a Park makes the matching shortage warning appear after the next landscape scan; adding them back clears it. Packing props tightly shows the existing clutter warning with "Show location" pointing into the dense spot.
+7. Sparse amenity/lighting warnings appear only for a Park whose benches/lights sit in one corner of a well-landscaped Park, and "Show location" points to a landscaped spot without them.
+8. Park "Show location" rejects a prop that was deleted or moved outside the Park after the scan; with Landscape Protection active, a vegetation/decoration shortage the policy offsets is not shown.
+9. Performance: in a dense Park (thousands of props) and a large Industrial Area, frame time during the landscape scan and observation cycle is no worse than before Wave A (`ParkLandscapeSystem.MaxScanFrameWork` stays within the unchanged 4096-object budget plus one tile); no new frame spike while the panel is open.
+10. ja-JP and en-US show no raw `CS2AS.*` keys for the new trend, process, diagnostic and focus rows.

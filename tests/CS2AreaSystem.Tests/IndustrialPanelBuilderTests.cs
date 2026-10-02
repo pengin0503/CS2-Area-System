@@ -13,6 +13,8 @@ public class IndustrialPanelBuilderTests {
   Facility = E(index), Roles = IndustrialFacilityRole.Processor, IsProducer = true, ProducerTenants = 1, Available = true, IsOperatingProducer = activity > 0, ProductiveActivity = activity,
   Resources = new[] { new IndustrialResourceActivity { Resource = (ulong)resource, ActualPerDay = activity * 12, CapacityPerDay = 1200 } }, Input = input, Output = output,
   Jobs = jobs, Employees = employees, VacanciesByLevel = new[] { jobs - employees, 0, 0, 0, 0 }, Efficiency = efficiency, Profitability = profit };
+ private static IndustrialProcessActivity[] Recipe(Resource in1, int a1, Resource in2, int a2, Resource output, int amount, double? actualPerDay) =>
+  new[] { new IndustrialProcessActivity(new IndustrialProcessKey((ulong)in1, a1, (ulong)in2, a2, (ulong)output, amount), actualPerDay.HasValue, actualPerDay ?? 0) };
  private static IndustrialEntityObservation Warehouse(int index) => new() { Facility = E(index), Roles = IndustrialFacilityRole.Storage | IndustrialFacilityRole.SupportingWorkplace,
   Available = true, Jobs = 10, Employees = 8, VacanciesByLevel = new[] { 2, 0, 0, 0, 0 }, StoredAmount = 3000, StorageCapacity = 12000, Efficiency = 100, Profitability = 60,
   Input = IndustrialFlowState.NotApplicable, Output = IndustrialFlowState.NotApplicable };
@@ -35,7 +37,10 @@ public class IndustrialPanelBuilderTests {
   switch (kind) {
    case "active": {
     var runtime = new IndustrialRuntimeSnapshot();
-    m.Current = Observe(6, h => new[] { Producer(1, 95, 40, 38, Resource.Furniture), Producer(2, 90, 30, 30, Resource.Steel), Producer(3, 80, 50, 45, Resource.Paper), Warehouse(4) }, snapshot: runtime);
+    // Vanilla-shaped recipes (Wave A4): two inputs, one input, and a recipe whose rate is not measured this cycle.
+    m.Current = Observe(6, h => new[] { Producer(1, 95, 40, 38, Resource.Furniture) with { Processes = Recipe(Resource.Wood, 1, Resource.Plastics, 1, Resource.Furniture, 1, 95 * 12) },
+     Producer(2, 90, 30, 30, Resource.Steel) with { Processes = Recipe(Resource.Ore, 2, Resource.Coal, 1, Resource.Steel, 1, 90 * 12) },
+     Producer(3, 80, 50, 45, Resource.Paper) with { Processes = Recipe(Resource.Wood, 1, Resource.NoResource, 0, Resource.Paper, 1, null) }, Warehouse(4) }, snapshot: runtime);
     m.Trends = runtime.Trends;
     m.HasXp = true; m.Xp = new IndustrialXpResult { Hourly = 9, Award = 9, OperatingScore = 88.4 };
     m.LastCompletedDay = new IndustrialDayResult { Day = 7, ObservedHours = 17.5, Average = 91, Reason = "InsufficientCoverage" };

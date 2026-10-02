@@ -120,6 +120,16 @@ describe('Industrial management tabs (real C# payload)',()=>{
   expect(actions.length).toBeGreaterThan(0);
   expect(actions.every(i=>i.kind==='button'&&i.action==='focusDiagnosticTarget'&&/^\d+\.\d+$/.test(i.value??''))).toBe(true);
  });
+ it('production tab lists each observed recipe as input and output rows with its measured rate',()=>{
+  render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Production');
+  // Resource titles are game localization (Resources.TITLE[...]), absent from the test dictionary; rows are found by role text.
+  const roles=(key:string)=>screen.getAllByRole('row').filter(r=>r.lastElementChild?.textContent===t(key)).length;
+  expect(roles('CS2AS.Industrial.Process.Input')).toBe(5);
+  expect(roles('CS2AS.Industrial.Process.Output')).toBe(3);
+  expect(item('active','production','process.1.input.1').labelKey).toBe('Resources.TITLE[Ore]');
+  const rates=screen.getAllByRole('row').filter(r=>r.firstElementChild?.textContent===t('CS2AS.Industrial.Process.ActualPerDay')).map(r=>r.lastElementChild?.textContent);
+  expect(rates).toEqual([item('active','production','process.0.actual').value,item('active','production','process.1.actual').value,t('CS2AS.Industrial.Status.Unavailable')]);
+ });
  it('a bottleneck focus button sends its opaque target key through the guarded module action',()=>{
   render(<AreaInfoSection {...section('overlapping')}/>);
   const button=section('overlapping').tabs[0].items!.find(i=>i.kind==='button')!;

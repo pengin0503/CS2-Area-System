@@ -152,16 +152,19 @@ public class ParkPanelBuilderTests {
   var d = ParkPanelBuilder.Build(Model());
   Assert.That(d.Tabs.SelectMany(t => t.Items).Any(i => i.Id.EndsWith(".trend")), Is.False);
  }
- [Test] public void TrendRowsFollowTheirHeadlineMetric() {
+ internal static ParkPanelModel WithTrends() {
   var m = Model();
-  var t = m.Runtime.Trends;
+  var t = m.Runtime!.Trends;
   t.Quality.Record(4, 50); t.Quality.Record(5, 47.5f);
   t.Visitors.Record(4, 30); t.Visitors.Record(5, 42);
   t.Satisfaction.Record(5, 60);
   t.Occupancy.Record(4, 20); t.Occupancy.Record(5, 20);
   t.AdmissionIncome.Record(4, 600); t.AdmissionIncome.Record(5, 900);
   t.ManagementExpense.Record(4, 300); t.ManagementExpense.Record(5, 250);
-  var d = ParkPanelBuilder.Build(m);
+  return m;
+ }
+ [Test] public void TrendRowsFollowTheirHeadlineMetric() {
+  var d = ParkPanelBuilder.Build(WithTrends());
   void Adjacent(string tab, string id, string label, string? value) {
    var items = Tab(d, tab).Items.ToList();
    int metric = items.FindIndex(i => i.Id == id);
