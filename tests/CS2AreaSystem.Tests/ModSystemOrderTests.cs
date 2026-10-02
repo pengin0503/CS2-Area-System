@@ -124,7 +124,7 @@ public class ModSystemOrderTests {
     [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
     [TestCase(SystemUpdatePhase.ToolUpdate, "AreaLabelSystem")]
-    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaActivationSystem,AreaPolicySystem,ParkLandscapeSystem,IndustrialRuntimeSystem")]
+    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkLandscapeSystem,IndustrialRuntimeSystem")]
     [TestCase(SystemUpdatePhase.GameSimulation, "AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,AreaFinanceSystem")]
     [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem")]
     [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]
@@ -152,6 +152,19 @@ public class ModSystemOrderTests {
         foreach (var group in ModCalls.GroupBy(c => c.System))
             Assert.That(group.Select(c => c.Phase).Distinct().Count(), Is.EqualTo(1), group.Key!.Name);
         Assert.That(ModCalls.Select(c => c.Phase).Distinct(), Is.SubsetOf(phases));
+    }
+    [Test] public void ParkLoadGenerationOwnerIsRegisteredOnceBeforeLandscape() {
+        var runtime = typeof(CS2AreaSystem.Modules.Park.ParkRuntimeSystem);
+        Assert.That(ModCalls.Where(c => c.System == runtime).Select(c => c.Phase), Is.EqualTo(new[] { SystemUpdatePhase.ModificationEnd }));
+        var order = Schedule(SystemUpdatePhase.ModificationEnd);
+        Assert.That(order.IndexOf(runtime), Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem))));
+        Assert.That(order.IndexOf(runtime), Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkLandscapeSystem))));
+    }
+    [Test] public void NativeAreaGeometryAndSearchRunBeforeLoadRecovery() {
+        Assert.That(VanillaRegistration<Game.Areas.GeometrySystem>().Phase, Is.EqualTo(SystemUpdatePhase.Modification2B));
+        Assert.That(VanillaRegistration<Game.Areas.SearchSystem>().Phase, Is.EqualTo(SystemUpdatePhase.Modification5));
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem)).Select(c => c.Phase),
+            Is.EqualTo(new[] { SystemUpdatePhase.ModificationEnd }));
     }
     // #52: PreTool runs before the tool writes its definitions; structural Area identity work belongs to ModificationEnd.
     [Test] public void ToolGuardIsTheOnlyPreToolSystemAndLifecycleRunsInModificationEndOnly() {

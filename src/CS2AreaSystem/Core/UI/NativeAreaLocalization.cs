@@ -40,8 +40,8 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.State.ModuleUnavailable"] = ja ? "モジュール利用不可" : "Module unavailable",
                 ["CS2AS.State.Deleted"] = ja ? "削除済み" : "Deleted",
                 ["CS2AS.State.Quarantined"] = ja ? "隔離中" : "Quarantined",
-                ["CS2AS.Summary.Quarantined"] = ja ? "このエリアの保存データに矛盾があるため（ID が 0 または他のエリアと重複など）、今回のセッションでは隔離しています。保存データは変更されず、メンバー判定・有効化・条例・財務は動作しません。編集または削除のみ可能です。不要なエリアを削除して再読み込みすると復旧します。"
-                    : "This area's saved data is inconsistent (for example its ID is 0 or used by another area), so it is isolated for this session. Its saved data is kept unchanged and it takes no part in membership, activation, policies or finance. Only Edit and Delete are available; delete the unwanted area and reload to recover.",
+                ["CS2AS.Summary.Quarantined"] = ja ? "このエリアの保存データに矛盾があるか、ゲーム側の検索用形状を利用できないため、今回のセッションでは隔離しています。保存データと形状は変更されず、メンバー判定・有効化・条例・財務は動作しません。編集または削除のみ可能です。形状の編集または不要なエリアの削除後に再読み込みしてください。"
+                    : "This area's saved data is inconsistent or its native search geometry is unavailable, so it is isolated for this session. Saved data and geometry are kept unchanged; membership, activation, policies and finance are disabled. Only Edit and Delete are available. Edit the geometry or delete the unwanted area, then reload.",
                 ["CS2AS.UI.Level"] = ja ? "レベル" : "Level",
                 ["CS2AS.UI.Experience"] = ja ? "経験値" : "Experience",
                 ["CS2AS.UI.EditArea"] = ja ? "エリアを編集" : "Edit area",

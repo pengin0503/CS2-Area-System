@@ -60,16 +60,37 @@ namespace CS2AreaSystem.Modules.Park
             World.GetExistingSystemManaged<ParkVisitSystem>()?.RemoveListener(this);
             base.OnDestroy();
         }
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
+        {
+            // 1.6.2f1 invokes preload before CleanupMemory/LoadGameSystem.RunOnce. The job may already have moved
+            // money, so complete and record its old-city lifetime counters before discarding the runtime ledger.
+            // Do not refill Area finance accounts: its preload subscriber may have reset them before this callback.
+            pending.Complete();
+            try { RecordResults(true); }
+            finally
+            {
+                DropPending();
+                loadGeneration = -1;
+                lastSettlement = inFlightFrame = 0;
+            }
+        }
         [Preserve]
         protected override void OnUpdate()
         {
-            if (!runtime.Ready) return;
-            uint frame = runtime.SimulationFrame;
             pending.Complete();
+            if (!runtime.Ready)
+            {
+                // Defensive unready path even if no preload callback is involved. Only the same generation still
+                // owns these entities; never resolve old entity references against a newly loaded city.
+                try { if (loadGeneration == runtime.LoadGeneration) RecordResults(true); }
+                finally { DropPending(); }
+                return;
+            }
+            uint frame = runtime.SimulationFrame;
             if (loadGeneration != runtime.LoadGeneration)
             {
                 loadGeneration = runtime.LoadGeneration; lastSettlement = frame;
-                inFlight = null; DisposeBuffers(); ledger.Clear();
+                DropPending();
                 return;
             }
             RecordResults();
@@ -147,7 +168,7 @@ namespace CS2AreaSystem.Modules.Park
             pending = job.Schedule(Dependency);
             Dependency = pending;
         }
-        private void RecordResults()
+        private void RecordResults(bool loadBoundary = false)
         {
             if (inFlight == null) return;
             var batch = inFlight; inFlight = null;
@@ -158,7 +179,7 @@ namespace CS2AreaSystem.Modules.Park
             // The household transfers already credited the city; these are records only, one failure never skips the rest.
             ParkAdmissionRecording.RecordAll(outcomes.Admissions, recordSink ??= new RecordSink(this), (error, outcome, what) =>
                 failures.Report(outcome.Request.Area, "Park.AdmissionRecord:" + what, error, "Park admission " + what + " could not be recorded for Park " +
-                    outcome.Request.ParkId + " (collected " + outcome.Collected + "); other admissions are recorded"));
+                    outcome.Request.ParkId + " (collected " + outcome.Collected + "); other admissions are recorded"), loadBoundary);
         }
         private RecordSink recordSink;
         private sealed class RecordSink : IParkAdmissionRecordSink
@@ -198,6 +219,16 @@ namespace CS2AreaSystem.Modules.Park
         {
             if (requests.IsCreated) requests.Dispose();
             if (collected.IsCreated) collected.Dispose();
+        }
+        // Called only after pending.Complete(): neither requests nor results outlive their city. Listeners belong
+        // to the system instance, not the save, and deliberately remain registered across this reset.
+        private void DropPending()
+        {
+            inFlight = null;
+            DisposeBuffers();
+            pending = default;
+            ledger.Clear();
+            parks.Clear();
         }
         public struct ParkAdmissionRequestData { public Entity Citizen; public long Fee; }
         private struct TransferJob : IJob
