@@ -25,6 +25,8 @@ public class ParkPanelFixtureTests {
   Section(writer, "level4", ParkPanelBuilderTests.Model(level: 4));
   Section(writer, "unscanned", ParkPanelBuilderTests.Model(level: 2, landscape: false));
   Section(writer, "suspended", ParkPanelBuilderTests.Model(quality: false, entrances: 0), entrances: false);
+  Section(writer, "diagnostics", ParkPanelBuilderTests.WithDiagnostics(true, new ParkLandscapeDiagnostic("LowLighting", 1, Unity.Entities.Entity.Null),
+   new ParkLandscapeDiagnostic("SparseAmenities", 0.5, ParkPanelBuilderTests.Prop)));
   writer.MapEnd();
   writer.PropertyName("enUS"); writer.MapBegin(0);
   foreach (var entry in NativeAreaLocalization.Entries("en-US").OrderBy(e => e.Key, StringComparer.Ordinal)) { writer.PropertyName(entry.Key); writer.Write(entry.Value); }

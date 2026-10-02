@@ -1,6 +1,8 @@
+using System;
 using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Modules;
 using Unity.Entities;
+using Unity.Mathematics;
 namespace CS2AreaSystem.Modules.Park
 {
     // Read model for one selected Park, assembled only while the panel is built.
@@ -19,9 +21,11 @@ namespace CS2AreaSystem.Modules.Park
     }
     // Boundary between the module UI and Park gameplay: selected-Park reads and the only validated setters.
     // Entrance add/remove stays in Core's guarded anchor actions. No policies, events or XP/level setters exist.
+    // FocusDiagnosticTarget is read-only (camera focus on a landscape diagnostic target) and never reaches the setters.
     public static class ParkGameplayFacade
     {
         public const string SetBudget = "setBudget", SetFee = "setFee";
+        public const string FocusDiagnosticTarget = "focusDiagnosticTarget";
         public static bool TryApplyAction(string action, string value, int level, ref ManagedAreaSettings settings, ref ParkAreaState state)
         {
             switch (action)
@@ -39,6 +43,7 @@ namespace CS2AreaSystem.Modules.Park
         }
         public static bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
         {
+            if (action == FocusDiagnosticTarget) return HandleFocus(area, value, context);
             var entities = context.Entities;
             if (!entities.Exists(area) || !entities.HasComponent<ParkAreaState>(area) || !entities.HasComponent<ManagedAreaSettings>(area)) return false;
             var settings = entities.GetComponentData<ManagedAreaSettings>(area);
@@ -47,6 +52,36 @@ namespace CS2AreaSystem.Modules.Park
             if (!TryApplyAction(action, value, level, ref settings, ref state)) return false;
             entities.SetComponentData(area, settings);
             entities.SetComponentData(area, state);
+            return true;
+        }
+        private static bool HandleFocus(Entity area, string key, in AreaPanelContext context)
+        {
+            if (context.Focus == null || context.World == null) return false;
+            var entities = context.Entities;
+            if (!entities.Exists(area) || !entities.HasComponent<ManagedAreaStableId>(area)) return false;
+            var runtime = context.World.GetExistingSystemManaged<ParkRuntimeSystem>();
+            if (runtime == null || !runtime.Store.TryGet(entities.GetComponentData<ManagedAreaStableId>(area).Value, out var snapshot)) return false;
+            return TryFocus(snapshot.Landscape, key, e => StandalonePosition(entities, e), new ParkPolygon(ParkGeometry.Triangles(entities, area)), context.Focus);
+        }
+        // Landscape targets are standalone static objects (never Core building members): still alive, still standalone.
+        private static (bool Valid, float X, float Z) StandalonePosition(EntityManager entities, Entity e)
+        {
+            if (!entities.Exists(e) || !entities.HasComponent<Game.Objects.Transform>(e) || !entities.HasComponent<Game.Objects.Static>(e) ||
+                !entities.HasComponent<Game.Objects.Object>(e) || entities.HasComponent<Game.Common.Owner>(e) || entities.HasComponent<Game.Tools.Temp>(e) ||
+                entities.HasComponent<Game.Common.Deleted>(e) || entities.HasComponent<Game.Buildings.Building>(e)) return (false, 0, 0);
+            var position = entities.GetComponentData<Game.Objects.Transform>(e).m_Position;
+            return (true, position.x, position.z);
+        }
+        // Resolves the key only against the current scan's targets, then requires the object to still stand inside the Park.
+        public static bool TryFocus(ParkLandscapeSnapshot landscape, string key, Func<Entity, (bool Valid, float X, float Z)> standalonePosition, ParkPolygon polygon, Action<Entity> focus)
+        {
+            if (landscape == null || !landscape.Available || landscape.Diagnostics == null || focus == null || standalonePosition == null || polygon == null) return false;
+            var targets = new System.Collections.Generic.List<Entity>();
+            foreach (var diagnostic in landscape.Diagnostics) if (diagnostic != null && diagnostic.Target != Entity.Null) targets.Add(diagnostic.Target);
+            if (!AreaDiagnosticTargetKey.TryResolve(key, targets, out var target)) return false;
+            var position = standalonePosition(target);
+            if (!position.Valid || !polygon.Contains(new float2(position.X, position.Z))) return false;
+            focus(target);
             return true;
         }
         public static ParkPanelModel Read(Entity area, in AreaPanelContext context)

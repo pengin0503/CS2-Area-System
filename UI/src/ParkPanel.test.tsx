@@ -16,7 +16,7 @@ vi.mock('cs2/modding',()=>({getModule:(_p:string,name:string)=>{
 const {AreaInfoSection}=await import('./AreaInfoSection');
 const {resetVanillaCache}=await import('./vanilla');
 afterEach(()=>{env.trigger.mockClear();resetVanillaCache();});
-type Name='level1'|'level2'|'level4'|'unscanned'|'suspended';
+type Name='level1'|'level2'|'level4'|'unscanned'|'suspended'|'diagnostics';
 const section=(name:Name)=>fixture.sections[name] as unknown as AreaSectionData;
 const t=(key:string)=>env.dict[key]??key;
 const item=(name:Name,tab:string,id:string)=>section(name).tabs.find(x=>x.id===tab)!.items!.find(x=>x.id===id) as AreaPanelItem;
@@ -75,6 +75,18 @@ describe('Park management tabs (real C# payload)',()=>{
   render(<AreaInfoSection {...section('level2')}/>);open('CS2AS.Tab.Landscape');
   expect(screen.getByRole('progressbar',{name:t('CS2AS.Park.Landscape')})).toBeInTheDocument();
   expect(row(t('CS2AS.Park.Vegetation'))).toHaveTextContent(item('level2','landscape','vegetation').value!);
+ });
+ it('landscape diagnostics are warnings; only a targeted one offers a focus button that sends its opaque key',()=>{
+  render(<AreaInfoSection {...section('diagnostics')}/>);open('CS2AS.Tab.Landscape');
+  const alerts=screen.getAllByRole('alert').map(a=>a.textContent);
+  expect(alerts).toContain(t('CS2AS.Park.Diagnostic.LowLighting'));
+  expect(alerts).toContain(t('CS2AS.Park.Diagnostic.SparseAmenities'));
+  const buttons=screen.getAllByRole('button',{name:t('CS2AS.Park.FocusTarget')});
+  expect(buttons).toHaveLength(1);
+  const focus=item('diagnostics','landscape','focus.landscape.SparseAmenities');
+  fireEvent.click(buttons[0]);
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','moduleAction','42','focusDiagnosticTarget',focus.value);
+  expect(focus.value).toMatch(/^\d+\.\d+$/);
  });
  it('progress tab shows the checklist with met/not met and the Landmark rule',()=>{
   render(<AreaInfoSection {...section('level4')}/>);open('CS2AS.Tab.Progress');

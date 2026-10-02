@@ -60,6 +60,8 @@ namespace CS2AreaSystem.Modules.Park
         public System.Collections.Generic.List<(float X, float Z)> PathSamples = new System.Collections.Generic.List<(float X, float Z)>();
         public uint ScannedFrame;
         public bool Available;
+        // Advisory findings of this scan (at most ParkLandscapeDiagnostics.MaxDiagnostics); never a Quality input.
+        public System.Collections.Generic.IReadOnlyList<ParkLandscapeDiagnostic> Diagnostics = System.Array.Empty<ParkLandscapeDiagnostic>();
     }
     // Derived, runtime-only view of one Park. Rebuilt after load; never serialized.
     public sealed class ParkRuntimeSnapshot

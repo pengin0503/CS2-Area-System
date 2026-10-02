@@ -33,6 +33,8 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var a in Actions) yield return P + "Action." + a;
             foreach (var c in Checks) yield return P + "Check." + c;
             foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
+            foreach (var d in ParkLandscapeDiagnostics.Keys) if (d != ParkLandscapeDiagnostics.Cluttered) { yield return P + "Diagnostic." + d; yield return P + "Diagnostic." + d + ".Tip"; }
+            yield return P + "FocusTarget"; yield return P + "FocusTarget.Tip";
         }
         private static AreaPanelItem Row(string id, string label, string value = null, string valueKey = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Row, Id = id, LabelKey = label, Value = value, ValueKey = valueKey, TooltipKey = tooltip };
@@ -143,10 +145,43 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("paths", P + "Paths", Part(r.Paths, ParkLandscapeModel.PathWeight)));
             items.Add(Row("diversity", P + "Diversity", Part(r.Diversity, ParkLandscapeModel.DiversityWeight)));
             if (r.Cluttered) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "clutter", LabelKey = P + "Warning.Cluttered", Value = "-" + OneDecimal(r.ClutterPenalty) });
+            Diagnostics(items, l, r);
             items.Add(Row("pathLength", P + "PathLength", Number(l.Inputs.PathLength) + " m"));
             items.Add(Row("transit", P + "TransitStops", Number(l.TransitPoints)));
             items.Add(Row("facilityCategories", P + "FacilityCategories", Number(model.Runtime?.Facilities?.DistinctCategories ?? 0)));
             return items;
+        }
+        // Wave A5: advisory landscape findings of the last scan. A shortage the policy-adjusted breakdown no longer shows
+        // is dropped; clutter keeps its existing warning row and only gains the focus button.
+        private static void Diagnostics(List<AreaPanelItem> items, ParkLandscapeSnapshot l, ParkLandscapeResult effective)
+        {
+            if (l.Diagnostics == null) return;
+            // The clutter button sits directly under the existing clutter warning, the others in severity order after it.
+            foreach (var d in l.Diagnostics)
+                if (d != null && d.Key == ParkLandscapeDiagnostics.Cluttered && effective.Cluttered) Focus(items, d);
+            foreach (var d in l.Diagnostics)
+            {
+                if (d == null || d.Key == ParkLandscapeDiagnostics.Cluttered || !StillShort(d.Key, effective)) continue;
+                items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "diagnostic." + d.Key, LabelKey = P + "Diagnostic." + d.Key,
+                        TooltipKey = P + "Diagnostic." + d.Key + ".Tip" });
+                Focus(items, d);
+            }
+        }
+        // A finding without a reliable representative stays a plain, non-clickable warning.
+        private static void Focus(List<AreaPanelItem> items, ParkLandscapeDiagnostic d)
+        {
+            if (d.Target == Unity.Entities.Entity.Null) return;
+            items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = "focus.landscape." + d.Key, LabelKey = P + "FocusTarget",
+                TooltipKey = P + "FocusTarget.Tip", Action = ParkGameplayFacade.FocusDiagnosticTarget, Value = AreaDiagnosticTargetKey.Format(d.Target) });
+        }
+        private static bool StillShort(string key, ParkLandscapeResult r)
+        {
+            switch (key)
+            {
+                case "LowVegetation": return r.Vegetation < ParkLandscapeModel.VegetationWeight * ParkLandscapeDiagnostics.ShortageShare;
+                case "LowDecoration": return r.Decoration < ParkLandscapeModel.DecorationWeight * ParkLandscapeDiagnostics.ShortageShare;
+                default: return true;
+            }
         }
         private static List<AreaPanelItem> Progress(ParkPanelModel model)
         {

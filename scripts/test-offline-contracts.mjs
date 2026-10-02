@@ -54,6 +54,12 @@ check(/isBuilding\s*&&/.test(candidatePolicy), 'Core membership must stay buildi
 const facade = read('src/CS2AreaSystem/Modules/Park/ParkGameplayFacade.cs');
 const facadeActions = [...facade.matchAll(/case\s+([^:]+?)\s*:/g)].map(m=>m[1].trim()).sort().join(',');
 check(facadeActions==='SetBudget,SetFee', `Park UI actions must be limited to budget and admission fee (found ${facadeActions})`);
+// Wave A5: the only other Park action is the read-only landscape diagnostic focus, routed before any setter runs.
+const parkActionConsts = [...facade.matchAll(/(\w+)\s*=\s*"[^"]*"/g)].map(m=>m[1]).sort().join(',');
+check(parkActionConsts==='FocusDiagnosticTarget,SetBudget,SetFee', `Park facade action constants must be budget, fee and diagnostic focus (found ${parkActionConsts})`);
+check(/if\s*\(action\s*==\s*FocusDiagnosticTarget\)\s*return\s+HandleFocus\(/.test(facade), 'Park diagnostic focus must be routed before the setters');
+const parkFocus = facade.slice(facade.indexOf('private static bool HandleFocus'), facade.indexOf('public static ParkPanelModel Read'));
+check(parkFocus.length > 0 && !/SetComponentData|AddComponent|RemoveComponent|SetBuffer|DestroyEntity/.test(parkFocus), 'Park diagnostic focus must not change any entity');
 const parkPanelTest = read('UI/src/ParkPanel.test.tsx');
 check(parkPanelTest.includes("./__fixtures__/park-panel.json"), 'Park UI tests must use the fixture generated from the C# payload');
 

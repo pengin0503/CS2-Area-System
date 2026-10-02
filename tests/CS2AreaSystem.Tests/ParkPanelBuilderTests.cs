@@ -98,6 +98,54 @@ public class ParkPanelBuilderTests {
   var actions = d.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null).Select(i => i.Action).Distinct();
   Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee" }));
  }
+ // ---- Wave A5 landscape diagnostics
+ internal static readonly Unity.Entities.Entity Prop = new() { Index = 41, Version = 3 };
+ internal static ParkPanelModel WithDiagnostics(bool quality, params ParkLandscapeDiagnostic[] diagnostics) {
+  var m = Model(quality: quality);
+  m.Runtime!.Landscape.Diagnostics = diagnostics.ToList();
+  return m;
+ }
+ [Test] public void LandscapeDiagnosticsAreWarningsWithAFocusButtonOnlyWhenTargeted() {
+  var m = WithDiagnostics(false, new ParkLandscapeDiagnostic("Cluttered", 0.8, Prop), new ParkLandscapeDiagnostic("LowLighting", 1, Unity.Entities.Entity.Null),
+   new ParkLandscapeDiagnostic("SparseAmenities", 0.5, Prop));
+  m.Runtime!.Landscape.Result.Cluttered = true; m.Runtime.Landscape.Result.ClutterPenalty = 12;
+  var items = Tab(ParkPanelBuilder.Build(m), "landscape").Items.ToList();
+  int clutter = items.FindIndex(i => i.Id == "clutter");
+  Assert.That(items[clutter + 1].Id, Is.EqualTo("focus.landscape.Cluttered"), "the existing clutter warning gains only the button");
+  Assert.That(items.Count(i => i.LabelKey == "CS2AS.Park.Warning.Cluttered"), Is.EqualTo(1));
+  Assert.That(items.Any(i => i.Id == "diagnostic.Cluttered"), Is.False);
+  var lighting = Item(Tab(ParkPanelBuilder.Build(m), "landscape"), "diagnostic.LowLighting");
+  Assert.That(lighting.Kind, Is.EqualTo(AreaPanelItemKind.Warning));
+  Assert.That(lighting.LabelKey, Is.EqualTo("CS2AS.Park.Diagnostic.LowLighting"));
+  Assert.That(lighting.TooltipKey, Is.EqualTo("CS2AS.Park.Diagnostic.LowLighting.Tip"));
+  Assert.That(items.Any(i => i.Id == "focus.landscape.LowLighting"), Is.False, "no reliable target, no button");
+  int sparse = items.FindIndex(i => i.Id == "diagnostic.SparseAmenities");
+  var button = items[sparse + 1];
+  Assert.That(button.Kind, Is.EqualTo(AreaPanelItemKind.Button));
+  Assert.That(button.Id, Is.EqualTo("focus.landscape.SparseAmenities"));
+  Assert.That(button.Action, Is.EqualTo(ParkGameplayFacade.FocusDiagnosticTarget));
+  Assert.That(button.Value, Is.EqualTo(AreaDiagnosticTargetKey.Format(Prop)));
+  Assert.That(button.LabelKey, Is.EqualTo("CS2AS.Park.FocusTarget"));
+  Assert.That(button.TooltipKey, Is.EqualTo("CS2AS.Park.FocusTarget.Tip"));
+ }
+ [Test] public void ShortageLiftedByThePolicyAdjustedBreakdownIsNotShown() {
+  var m = WithDiagnostics(true, new ParkLandscapeDiagnostic("LowVegetation", 0.6, Unity.Entities.Entity.Null), new ParkLandscapeDiagnostic("LowLighting", 1, Unity.Entities.Entity.Null));
+  Assert.That(m.Runtime!.Quality!.EffectiveLandscape!.Value.Vegetation, Is.GreaterThanOrEqualTo(ParkLandscapeModel.VegetationWeight / 2));
+  var items = Tab(ParkPanelBuilder.Build(m), "landscape").Items;
+  Assert.That(items.Any(i => i.Id == "diagnostic.LowVegetation"), Is.False);
+  Assert.That(items.Any(i => i.Id == "diagnostic.LowLighting"), Is.True);
+ }
+ [Test] public void FocusIsTheOnlyActionDiagnosticsAdd() {
+  var m = WithDiagnostics(false, new ParkLandscapeDiagnostic("SparseLighting", 0.5, Prop));
+  var actions = ParkPanelBuilder.Build(m).Tabs.SelectMany(t => t.Items).Where(i => i.Action != null).Select(i => i.Action).Distinct();
+  Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee", "focusDiagnosticTarget" }));
+ }
+ [Test] public void DiagnosticKeysAreLocalizationKeys() {
+  var keys = ParkPanelBuilder.AllKeys().ToList();
+  foreach (var key in ParkLandscapeDiagnostics.Keys.Where(k => k != "Cluttered"))
+   Assert.That(keys, Does.Contain("CS2AS.Park.Diagnostic." + key).And.Contain("CS2AS.Park.Diagnostic." + key + ".Tip"));
+  Assert.That(keys, Does.Contain("CS2AS.Park.FocusTarget").And.Contain("CS2AS.Park.FocusTarget.Tip"));
+ }
  // ---- Wave A1 trends
  private static AreaPanelItem? Find(AreaPanelTabData t, string id) => t.Items.SingleOrDefault(i => i.Id == id);
  [Test] public void NoTrendRowsBeforeAnySample() {
