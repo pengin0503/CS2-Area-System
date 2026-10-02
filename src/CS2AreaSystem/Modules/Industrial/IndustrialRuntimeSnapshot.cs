@@ -159,6 +159,26 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         public void Clear() => samples.Clear();
     }
+    // Runtime-only hourly trend samples of one Industrial Area (Wave A1). Never serialized; a load clears the store.
+    public sealed class IndustrialTrendSnapshot
+    {
+        public const int Capacity = 24;
+        public readonly CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries Production = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity),
+            Logistics = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity), Employment = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity),
+            Efficiency = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity), Performance = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity),
+            ProductiveFacilities = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity);
+        // Only a current (Active, not Delayed) result is a sample; metrics without a value are skipped, never zero.
+        public void Record(IndustrialObservationResult result)
+        {
+            if (result == null || !result.Active || result.Delayed) return;
+            long bucket = result.HourBucket;
+            Add(Production, bucket, result.Production); Add(Logistics, bucket, result.Logistics); Add(Employment, bucket, result.Employment);
+            Add(Efficiency, bucket, result.Efficiency); Add(Performance, bucket, result.Performance);
+            ProductiveFacilities.Record(bucket, result.OperatingProducers);
+        }
+        private static void Add(CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries series, long bucket, IndustrialMetric metric)
+        { if (metric.HasValue) series.Record(bucket, metric.Value); }
+    }
     // Derived, runtime-only view of one Industrial Area. Never serialized; cleared on load.
     public sealed class IndustrialRuntimeSnapshot
     {
@@ -185,7 +205,8 @@ namespace CS2AreaSystem.Modules.Industrial
         public long LastConsumedCycle = -1;
         // Recorded for tuning: cycles that took more than one game hour.
         public int DelayedCycles;
-        public void Publish(IndustrialObservationResult result) => Current = result;
+        public readonly IndustrialTrendSnapshot Trends = new IndustrialTrendSnapshot();
+        public void Publish(IndustrialObservationResult result) { Current = result; Trends.Record(result); }
         public void ResetBaselines() { HasFlowBaseline = false; ActivityBaseline = null; }
     }
     public sealed class IndustrialRuntimeStore

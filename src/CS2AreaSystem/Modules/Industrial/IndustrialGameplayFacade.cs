@@ -27,7 +27,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (runtime.TryGetClock(out var clock)) model.NowHours = clock.GameHours(runtime.SimulationFrame);
                 if (runtime.Store.TryGet(model.StableId, out var snapshot))
                 {
-                    model.Current = snapshot.Current; model.Paused = snapshot.Paused;
+                    model.Current = snapshot.Current; model.Paused = snapshot.Paused; model.Trends = snapshot.Trends;
                     model.HasXp = snapshot.HasXpResult; model.Xp = snapshot.LastXp; model.LastCompletedDay = snapshot.LastCompletedDay;
                 }
             }

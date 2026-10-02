@@ -98,6 +98,47 @@ public class ParkPanelBuilderTests {
   var actions = d.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null).Select(i => i.Action).Distinct();
   Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee" }));
  }
+ // ---- Wave A1 trends
+ private static AreaPanelItem? Find(AreaPanelTabData t, string id) => t.Items.SingleOrDefault(i => i.Id == id);
+ [Test] public void NoTrendRowsBeforeAnySample() {
+  var d = ParkPanelBuilder.Build(Model());
+  Assert.That(d.Tabs.SelectMany(t => t.Items).Any(i => i.Id.EndsWith(".trend")), Is.False);
+ }
+ [Test] public void TrendRowsFollowTheirHeadlineMetric() {
+  var m = Model();
+  var t = m.Runtime.Trends;
+  t.Quality.Record(4, 50); t.Quality.Record(5, 47.5f);
+  t.Visitors.Record(4, 30); t.Visitors.Record(5, 42);
+  t.Satisfaction.Record(5, 60);
+  t.Occupancy.Record(4, 20); t.Occupancy.Record(5, 20);
+  t.AdmissionIncome.Record(4, 600); t.AdmissionIncome.Record(5, 900);
+  t.ManagementExpense.Record(4, 300); t.ManagementExpense.Record(5, 250);
+  var d = ParkPanelBuilder.Build(m);
+  void Adjacent(string tab, string id, string label, string? value) {
+   var items = Tab(d, tab).Items.ToList();
+   int metric = items.FindIndex(i => i.Id == id);
+   Assert.That(metric, Is.GreaterThanOrEqualTo(0), id);
+   Assert.That(items[metric + 1].Id, Is.EqualTo(id + ".trend"), tab + "/" + id);
+   Assert.That(items[metric + 1].LabelKey, Is.EqualTo(label), id);
+   Assert.That(items[metric + 1].Value, Is.EqualTo(value), id);
+   Assert.That(items[metric + 1].TooltipKey, Is.EqualTo("CS2AS.Trend.Tip"));
+  }
+  Adjacent("overview", "quality", "CS2AS.Trend.Down", "-2.5");
+  Adjacent("visitors", "recentVisitors", "CS2AS.Trend.Up", "+12");
+  Adjacent("visitors", "satisfaction", "CS2AS.Trend.New", "—");
+  Adjacent("visitors", "occupancy", "CS2AS.Trend.Flat", "0.0");
+  Adjacent("finances", "recentAdmission", "CS2AS.Trend.Up", "+¢300");
+  Adjacent("finances", "recentExpense", "CS2AS.Trend.Down", "-¢50");
+  Assert.That(Find(Tab(d, "overview"), "recentVisitors.trend"), Is.Null, "one trend row per metric, on its detail tab");
+ }
+ [TestCase("en-US")] [TestCase("ja-JP")]
+ public void TrendKeysAreLocalized(string locale) {
+  var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);
+  foreach (var key in new[] { "CS2AS.Trend.Up", "CS2AS.Trend.Down", "CS2AS.Trend.Flat", "CS2AS.Trend.New", "CS2AS.Trend.Tip" })
+   Assert.That(entries.ContainsKey(key), Is.True, locale + " is missing " + key);
+  Assert.That(ParkPanelBuilder.AllKeys(), Does.Contain("CS2AS.Trend.New"));
+  Assert.That(CS2AreaSystem.Modules.Industrial.IndustrialPanelBuilder.AllKeys(), Does.Contain("CS2AS.Trend.New"));
+ }
  [TestCase("en-US")] [TestCase("ja-JP")]
  public void EveryKeyTheParkPanelCanEmitIsLocalized(string locale) {
   var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);

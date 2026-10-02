@@ -72,6 +72,14 @@ namespace CS2AreaSystem.Core.UI
             };
             entries["CS2AS.UI.Met"] = ja ? "達成" : "Met";
             entries["CS2AS.UI.NotMet"] = ja ? "未達成" : "Not met";
+            // Runtime trend rows (Wave A1): direction label + signed change since the previous hourly sample.
+            entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.Up] = ja ? "前回比 上昇" : "vs previous: rising";
+            entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.Down] = ja ? "前回比 低下" : "vs previous: falling";
+            entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.Flat] = ja ? "前回比 横ばい" : "vs previous: unchanged";
+            entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.New] = ja ? "前回比 （記録開始）" : "vs previous: first sample";
+            entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.Tip] = ja
+                ? "直前の項目について、1時間ごとの最新記録と前回記録の差です。記録はこのセッション中のみ保持され、ロード時にリセットされます。"
+                : "Change of the item above between its latest and previous hourly samples. Samples are kept for this session only and reset on load.";
             CS2AreaSystem.Core.Settings.AreaSettingsLocalization.Append(entries, ja);
             CS2AreaSystem.Core.Policies.AreaPolicyLocalization.Append(entries, ja);
             // Budget page sub-items (vanilla EconomyPanel.BUDGET_SUB_ITEM keys, see UI/src/AreaBudgetDetails.tsx).

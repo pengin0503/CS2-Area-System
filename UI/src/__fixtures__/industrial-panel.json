@@ -79,6 +79,21 @@
             },
             {
               "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "performance.trend",
+              "labelKey": "CS2AS.Trend.Flat",
+              "value": "0.0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Trend.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
               "kind": "bar",
               "id": "production",
               "labelKey": "CS2AS.Industrial.Metric.Production",
@@ -90,6 +105,21 @@
               "step": null,
               "disabled": false,
               "tooltipKey": "CS2AS.Industrial.Metric.Production.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "production.trend",
+              "labelKey": "CS2AS.Trend.Flat",
+              "value": "0.0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Trend.Tip",
               "action": null
             },
             {
@@ -109,6 +139,21 @@
             },
             {
               "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "logistics.trend",
+              "labelKey": "CS2AS.Trend.Flat",
+              "value": "0.0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Trend.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
               "kind": "bar",
               "id": "employment",
               "labelKey": "CS2AS.Industrial.Metric.Employment",
@@ -120,6 +165,21 @@
               "step": null,
               "disabled": false,
               "tooltipKey": "CS2AS.Industrial.Metric.Employment.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "employment.trend",
+              "labelKey": "CS2AS.Trend.Flat",
+              "value": "0.0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Trend.Tip",
               "action": null
             },
             {
@@ -140,6 +200,21 @@
             {
               "__Type": "CS2AreaSystem.AreaPanelItem",
               "kind": "row",
+              "id": "efficiency.trend",
+              "labelKey": "CS2AS.Trend.Flat",
+              "value": "0.0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Trend.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
               "id": "activeFacilities",
               "labelKey": "CS2AS.Industrial.ActiveFacilities",
               "value": "3 / 3",
@@ -150,6 +225,21 @@
               "step": null,
               "disabled": false,
               "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "activeFacilities.trend",
+              "labelKey": "CS2AS.Trend.Flat",
+              "value": "0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Trend.Tip",
               "action": null
             },
             {
@@ -5891,6 +5981,11 @@
     "CS2AS.Tab.Production": "Production",
     "CS2AS.Tab.Progress": "Progress",
     "CS2AS.Tab.Visitors": "Visitors",
+    "CS2AS.Trend.Down": "vs previous: falling",
+    "CS2AS.Trend.Flat": "vs previous: unchanged",
+    "CS2AS.Trend.New": "vs previous: first sample",
+    "CS2AS.Trend.Tip": "Change of the item above between its latest and previous hourly samples. Samples are kept for this session only and reset on load.",
+    "CS2AS.Trend.Up": "vs previous: rising",
     "CS2AS.Type.Industrial": "Industrial Area",
     "CS2AS.Type.Park": "Park Area",
     "CS2AS.Type.Tourism": "Tourism Area",

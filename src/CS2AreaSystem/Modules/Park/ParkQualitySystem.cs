@@ -78,6 +78,7 @@ namespace CS2AreaSystem.Modules.Park
                     Active = park.State == AreaLifecycleState.Active, Policies = policyEffects.Read(park.Area) });
                 snapshot.Experience = snapshot.Quality.Experience;
                 snapshot.QualityFrame = frame;
+                snapshot.RecordTrends(frame);
                 services.Failures.Recovered(park.Area, "Park.Quality");
             }
             catch (System.Exception error)

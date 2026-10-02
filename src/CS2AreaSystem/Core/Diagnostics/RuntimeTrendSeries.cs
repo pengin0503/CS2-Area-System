@@ -61,3 +61,31 @@ namespace CS2AreaSystem.Core.Diagnostics
         public void Clear() { start = 0; Count = 0; }
     }
 }
+namespace CS2AreaSystem.Core.Diagnostics
+{
+    // Compact latest-vs-previous trend row shared by module panel builders (Wave A1). No chart, no inferred percentage:
+    // the caller formats the magnitude in the metric's own unit.
+    public static class RuntimeTrendPresentation
+    {
+        public const string Up = "CS2AS.Trend.Up", Down = "CS2AS.Trend.Down", Flat = "CS2AS.Trend.Flat", New = "CS2AS.Trend.New", Tip = "CS2AS.Trend.Tip";
+        public static readonly string[] Keys = { Up, Down, Flat, New, Tip };
+        // Null when the series has no sample; "New" with one sample; otherwise the signed delta, flat when it rounds to zero.
+        public static Modules.AreaPanelItem Row(string metricId, RuntimeTrendSeries series, Func<double, string> magnitude)
+        {
+            if (series == null || !series.TryLatest(out var latest)) return null;
+            var item = new Modules.AreaPanelItem { Kind = Modules.AreaPanelItemKind.Row, Id = metricId + ".trend", TooltipKey = Tip };
+            if (!series.TryPrevious(out var previous)) { item.LabelKey = New; item.Value = "—"; return item; }
+            double delta = latest.Value - previous.Value;
+            string text = magnitude(Math.Abs(delta));
+            if (text == magnitude(0)) { item.LabelKey = Flat; item.Value = text; return item; }
+            item.LabelKey = delta > 0 ? Up : Down;
+            item.Value = (delta > 0 ? "+" : "-") + text;
+            return item;
+        }
+        public static void Add(List<Modules.AreaPanelItem> items, string metricId, RuntimeTrendSeries series, Func<double, string> magnitude)
+        {
+            var row = Row(metricId, series, magnitude);
+            if (row != null) items.Add(row);
+        }
+    }
+}

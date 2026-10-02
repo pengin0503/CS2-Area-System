@@ -16,8 +16,8 @@ public class IndustrialPanelBuilderTests {
  private static IndustrialEntityObservation Warehouse(int index) => new() { Facility = E(index), Roles = IndustrialFacilityRole.Storage | IndustrialFacilityRole.SupportingWorkplace,
   Available = true, Jobs = 10, Employees = 8, VacanciesByLevel = new[] { 2, 0, 0, 0, 0 }, StoredAmount = 3000, StorageCapacity = 12000, Efficiency = 100, Profitability = 60,
   Input = IndustrialFlowState.NotApplicable, Output = IndustrialFlowState.NotApplicable };
- private static IndustrialObservationResult Observe(int hours, Func<int, IndustrialEntityObservation[]> at, int nonPrimary = 0) {
-  var snapshot = new IndustrialRuntimeSnapshot();
+ private static IndustrialObservationResult Observe(int hours, Func<int, IndustrialEntityObservation[]> at, int nonPrimary = 0, IndustrialRuntimeSnapshot snapshot = null) {
+  snapshot ??= new IndustrialRuntimeSnapshot();
   IndustrialObservationResult last = null!;
   for (int h = 0; h <= hours; h++) {
    var acc = new IndustrialCycleAccumulator();
@@ -33,11 +33,13 @@ public class IndustrialPanelBuilderTests {
   m.State = IndustrialAreaState.CreateDefault(8);
   m.State.XpGrantedToday = 120; m.State.ActivityObservedHours = 6; m.State.ActivityWeightedSum = 6 * 88; m.State.HighThroughputStreakDays = 3; m.State.LifetimePeakEmployees = 160;
   switch (kind) {
-   case "active":
-    m.Current = Observe(6, h => new[] { Producer(1, 95, 40, 38, Resource.Furniture), Producer(2, 90, 30, 30, Resource.Steel), Producer(3, 80, 50, 45, Resource.Paper), Warehouse(4) });
+   case "active": {
+    var runtime = new IndustrialRuntimeSnapshot();
+    m.Current = Observe(6, h => new[] { Producer(1, 95, 40, 38, Resource.Furniture), Producer(2, 90, 30, 30, Resource.Steel), Producer(3, 80, 50, 45, Resource.Paper), Warehouse(4) }, snapshot: runtime);
+    m.Trends = runtime.Trends;
     m.HasXp = true; m.Xp = new IndustrialXpResult { Hourly = 9, Award = 9, OperatingScore = 88.4 };
     m.LastCompletedDay = new IndustrialDayResult { Day = 7, ObservedHours = 17.5, Average = 91, Reason = "InsufficientCoverage" };
-    break;
+    break; }
    case "suspended":
     m.Lifecycle = AreaLifecycleState.Suspended; m.Headquarters = IndustrialHeadquartersState.Missing; m.Level = 1; m.Experience = 0;
     break;
@@ -203,6 +205,38 @@ public class IndustrialPanelBuilderTests {
   Assert.That(module.BuildSummary(E(1), default), Is.EqualTo("CS2AS.Industrial.Summary.HeadquartersInvalid"));
   store.Links[E(1)] = new[] { new AreaAnchorLink { Anchor = E(5), Role = AreaAnchorRole.Headquarters } };
   Assert.That(module.BuildSummary(E(1), default), Is.EqualTo("CS2AS.Industrial.Summary.Active"));
+ }
+ // ---- Wave A1 trends
+ private static AreaPanelItem? Find(AreaPanelTabData t, string id) => t.Items.SingleOrDefault(i => i.Id == id);
+ [Test] public void TrendRowsFollowEachHeadlineMetricOnlyWhenSamplesExist() {
+  var none = IndustrialPanelBuilder.Build(Model("unavailable"));
+  Assert.That(none.Tabs.SelectMany(t => t.Items).Any(i => i.Id.EndsWith(".trend")), Is.False, "no samples, no trend rows");
+  var o = IndustrialPanelBuilder.Build(Model("active")).Tabs.Single(t => t.Id == "overview");
+  foreach (var id in new[] { "performance", "production", "logistics", "employment", "efficiency", "activeFacilities" }) {
+   var trend = Find(o, id + ".trend");
+   Assert.That(trend, Is.Not.Null, id);
+   int metric = o.Items.ToList().FindIndex(i => i.Id == id), row = o.Items.ToList().IndexOf(trend!);
+   Assert.That(row, Is.GreaterThan(metric), id + " trend follows its metric");
+   Assert.That(o.Items.Skip(metric + 1).Take(row - metric - 1).All(i => i.Id.StartsWith(id + ".")), Is.True, id + " trend is adjacent");
+   Assert.That(trend!.TooltipKey, Is.EqualTo("CS2AS.Trend.Tip"));
+  }
+ }
+ [Test] public void TrendDeltaUsesLatestAndPreviousSamplesWithoutPercentForCounts() {
+  var m = Model("active");
+  var trends = new IndustrialTrendSnapshot();
+  trends.Performance.Record(10, 60); trends.Performance.Record(11, 64.25);
+  trends.ProductiveFacilities.Record(10, 5); trends.ProductiveFacilities.Record(11, 3);
+  trends.Production.Record(11, 80);
+  trends.Employment.Record(10, 70); trends.Employment.Record(11, 70.01);
+  m.Trends = trends;
+  var o = IndustrialPanelBuilder.Build(m).Tabs.Single(t => t.Id == "overview");
+  Assert.That(Find(o, "performance.trend")!.LabelKey, Is.EqualTo("CS2AS.Trend.Up")); Assert.That(Find(o, "performance.trend")!.Value, Is.EqualTo("+4.3"));
+  Assert.That(Find(o, "activeFacilities.trend")!.LabelKey, Is.EqualTo("CS2AS.Trend.Down")); Assert.That(Find(o, "activeFacilities.trend")!.Value, Is.EqualTo("-2"));
+  Assert.That(Find(o, "production.trend")!.LabelKey, Is.EqualTo("CS2AS.Trend.New"), "one sample is new, never a fabricated delta");
+  Assert.That(Find(o, "production.trend")!.Value, Is.EqualTo("—"));
+  Assert.That(Find(o, "employment.trend")!.LabelKey, Is.EqualTo("CS2AS.Trend.Flat"), "a change below display precision is flat");
+  Assert.That(Find(o, "employment.trend")!.Value, Is.EqualTo("0.0"));
+  Assert.That(o.Items.Where(i => i.Id.EndsWith(".trend")).All(i => i.Value == null || !i.Value.Contains('%')), Is.True);
  }
  [TestCase("en-US")] [TestCase("ja-JP")]
  public void EveryKeyTheIndustrialPanelCanEmitIsLocalized(string locale) {

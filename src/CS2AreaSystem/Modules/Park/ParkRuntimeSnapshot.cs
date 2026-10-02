@@ -27,7 +27,25 @@ namespace CS2AreaSystem.Modules.Park
                 if (stamps[i] > current - stamps.Length && stamps[i] <= current) sum += values[i];
             return sum;
         }
+        // Amount of the single bucket holding frame (the active hour for the current frame); Sum is unchanged.
+        public long CurrentBucket(uint frame)
+        {
+            long index = frame / bucketFrames;
+            int slot = (int)(index % stamps.Length);
+            return stamps[slot] == index ? values[slot] : 0;
+        }
         public void Clear() { for (int i = 0; i < stamps.Length; i++) { stamps[i] = -1; values[i] = 0; } }
+    }
+    // Runtime-only hourly trend samples of one Park (Wave A1). Never serialized; a load clears ParkRuntimeStore.
+    public sealed class ParkTrendSnapshot
+    {
+        public const int Capacity = 24;
+        public readonly CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries Visitors = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity),
+            Quality = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity), Satisfaction = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity),
+            Occupancy = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity), AdmissionIncome = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity),
+            ManagementExpense = new CS2AreaSystem.Core.Diagnostics.RuntimeTrendSeries(Capacity);
+        // Bucket of the first capture; flow amounts of hours that began before it were only partly observed.
+        public long FirstBucket = -1;
     }
 }
 namespace CS2AreaSystem.Modules.Park
@@ -71,6 +89,25 @@ namespace CS2AreaSystem.Modules.Park
         // Finance settlement remainder (runtime only; at most one currency unit is lost across a load).
         public double ExpenseCarry;
         public float ManagementNeedPerDay, ManagementCostPerDay;
+        public readonly ParkTrendSnapshot Trends = new ParkTrendSnapshot();
+        // Called after a Quality evaluation. Levels (Quality, satisfaction, occupancy) are sampled into the current hour,
+        // replacing an earlier sample of the same hour. Flows (visits, admission, expense) are recorded for the previous,
+        // completed hour only, and only when that whole hour was observed, so latest and previous are comparable.
+        public void RecordTrends(uint frame)
+        {
+            if (Quality == null) return;
+            long bucket = frame / RecentBucketFrames;
+            if (Trends.FirstBucket < 0) Trends.FirstBucket = bucket;
+            Trends.Quality.Record(bucket, Quality.Quality);
+            if (Quality.Satisfaction.Available) Trends.Satisfaction.Record(bucket, Quality.Satisfaction.Value);
+            Trends.Occupancy.Record(bucket, Quality.OccupancyRatio * 100.0);
+            long completed = bucket - 1;
+            if (completed <= Trends.FirstBucket) return;
+            uint previousFrame = (uint)(completed * RecentBucketFrames);
+            Trends.Visitors.Record(completed, RecentVisitors.CurrentBucket(previousFrame));
+            Trends.AdmissionIncome.Record(completed, RecentAdmission.CurrentBucket(previousFrame));
+            Trends.ManagementExpense.Record(completed, RecentExpense.CurrentBucket(previousFrame));
+        }
     }
     public sealed class ParkRuntimeStore
     {

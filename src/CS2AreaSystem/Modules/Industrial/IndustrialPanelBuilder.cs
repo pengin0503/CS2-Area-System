@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Diagnostics;
 using CS2AreaSystem.Core.Modules;
 using Game.Economy;
 namespace CS2AreaSystem.Modules.Industrial
@@ -24,6 +25,8 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialDayResult? LastCompletedDay;
         public IndustrialPromotionResult Promotion;
         public double NowHours;
+        // Runtime-only trend samples of this Area (null when no runtime snapshot exists).
+        public IndustrialTrendSnapshot Trends;
     }
     // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only:
     // no item carries an action, unavailable data is never rendered as zero.
@@ -71,6 +74,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 "StreakDays", "DayAverage", "DayHours", "LastDay", "LastDay.Tip", "Headquarters", "Hq.Valid", "Hq.Invalid", "Hq.Missing", "Resource.Tip", "Bottlenecks.None",
                 "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid" })
                 yield return P + k;
+            foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
         }
         // ---- formatting
         private static string Number(double value) => Math.Round(value).ToString("N0", Invariant);
@@ -91,6 +95,9 @@ namespace CS2AreaSystem.Modules.Industrial
         private static AreaPanelItem Note(string id, string key) => new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = id, LabelKey = P + "Note." + key };
         private static AreaPanelItem Warning(string id, string key, string value = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = id, LabelKey = key, Value = value, TooltipKey = tooltip };
+        // Runtime trend row directly after its headline metric, only once a sample exists (Wave A1).
+        private static void Trend(List<AreaPanelItem> items, IndustrialPanelModel m, string id, Func<IndustrialTrendSnapshot, RuntimeTrendSeries> series, Func<double, string> magnitude = null)
+        { if (m.Trends != null) RuntimeTrendPresentation.Add(items, id, series(m.Trends), magnitude ?? One); }
         private static bool Stale(IndustrialPanelModel m) => m.Current != null && (m.Paused || m.Current.Delayed || m.Lifecycle != AreaLifecycleState.Active);
         // A metric: bar when it has a value, otherwise its reason; partial coverage and warm-up progress are shown.
         // Stale values are shown as plain rows (never as a current score).
@@ -142,11 +149,16 @@ namespace CS2AreaSystem.Modules.Industrial
                 Row("headquarters", P + "Headquarters", valueKey: P + "Hq." + m.Headquarters) };
             StateWarnings(items, m);
             Metric(items, m, "performance", "Performance", r?.Performance ?? default);
+            Trend(items, m, "performance", t => t.Performance);
             foreach (var c in Components)
+            {
                 Metric(items, m, c.ToLowerInvariant(), c, r == null ? default : c == "Production" ? r.Production : c == "Logistics" ? r.Logistics : c == "Employment" ? r.Employment : r.Efficiency);
+                Trend(items, m, c.ToLowerInvariant(), t => c == "Production" ? t.Production : c == "Logistics" ? t.Logistics : c == "Employment" ? t.Employment : t.Efficiency);
+            }
             if (r != null)
             {
                 items.Add(Row("activeFacilities", P + "ActiveFacilities", Number(r.OperatingProducers) + " / " + Number(r.ProducerFacilities)));
+                Trend(items, m, "activeFacilities", t => t.ProductiveFacilities, Number);
                 items.Add(Row("employees", P + "EmployeesJobs", Number(r.Employees) + " / " + Number(r.Jobs)));
                 if (r.Bottlenecks.Count == 0 && !Stale(m)) items.Add(Row("bottlenecks", P + "Bottlenecks.None", "—"));
                 Bottlenecks(items, r.Bottlenecks, key => true);
