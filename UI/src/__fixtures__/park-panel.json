@@ -859,6 +859,7 @@
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -1763,6 +1764,7 @@
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -2682,6 +2684,7 @@
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -3451,6 +3454,7 @@
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -4250,6 +4254,7 @@
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": []
     },
     "trends": {
@@ -5216,6 +5221,7 @@
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -6150,6 +6156,7 @@
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -6514,6 +6521,9 @@
     "CS2AS.UI.NoAreas": "No managed areas yet.",
     "CS2AS.UI.NotAssigned": "Not assigned",
     "CS2AS.UI.NotMet": "Not met",
+    "CS2AS.UI.PathEntrances": "Detected path entrances",
+    "CS2AS.UI.PathEntrancesComplete": "Dedicated path boundary crossings checked",
+    "CS2AS.UI.PathEntrancesUnknown": "Path entrances pending scan",
     "CS2AS.UI.RemoveEntrance": "Remove",
     "CS2AS.UI.SelectAnchor": "Select an existing building inside this area.",
     "CS2AS.UI.SelectEntrance": "Click a park, leisure or attraction building inside this area to add it as an entrance.",

@@ -95,6 +95,8 @@ namespace CS2AreaSystem.Core.UI
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "deleteArea", id => Act(id, Delete, true)));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignHeadquarters", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Headquarters))));
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "assignEntrance", id => Act(id, area => BeginAssignment(area, AreaAnchorRole.Entrance))));
+            AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "assignAnchor", (id, role) => Act(id, area => { if (TryRole(role, out var parsed)) BeginAssignment(area, parsed); })));
+            AddBinding(new TriggerBinding<string, string, string>("cs2AreaSystem", "removeRoleAnchor", (id, role, key) => Act(id, area => { if (TryRole(role, out var parsed)) RemoveAnchor(area, key, parsed); })));
             AddBinding(new TriggerBinding<string, string>("cs2AreaSystem", "removeAnchor", (id, key) => Act(id, area => RemoveAnchor(area, key))));
             // Generic module action: (expected stable ID, action, value). Guarded like every other mutating action.
             AddBinding(new TriggerBinding<string, string, string>("cs2AreaSystem", "moduleAction", ModuleAction));
@@ -204,6 +206,7 @@ namespace CS2AreaSystem.Core.UI
                 AnchorName = anchors.Count > 0 ? names.GetRenderedLabelName(anchors[0]) : null,
                 Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link =>
                     new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })),
+                AnchorGroups = BuildAnchorGroups(entity, descriptor?.Module as IAreaAnchorPolicy),
                 PendingAnchor = key.PendingAnchor,
                 ConfirmDelete = key.ConfirmDelete
             };
@@ -288,11 +291,24 @@ namespace CS2AreaSystem.Core.UI
             }
             catch (Exception error) { Mod.Log.Error(error, "Area module action rejected"); }
         }
-        private void RemoveAnchor(Entity area, string key)
+        internal static bool TryRole(string text, out AreaAnchorRole role) => Enum.TryParse(text, false, out role) && Enum.IsDefined(typeof(AreaAnchorRole), role) && text == role.ToString();
+        private System.Collections.Generic.IReadOnlyList<AreaAnchorGroupView> BuildAnchorGroups(Entity area, IAreaAnchorPolicy policy)
+        {
+            if (policy == null) return System.Array.Empty<AreaAnchorGroupView>();
+            var groups = new System.Collections.Generic.List<AreaAnchorGroupView>();
+            foreach(var role in policy.AnchorRoles) {
+                var links = services.Anchors.GetAnchorLinks(area, role);
+                groups.Add(new AreaAnchorGroupView { Role = role.ToString(), AssignmentSupported = policy.CanAssignAnchor(area, role, EntityManager),
+                    Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link => new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })) });
+            }
+            return groups;
+        }
+        private void RemoveAnchor(Entity area, string key, AreaAnchorRole? requestedRole = null)
         {
             var type = EntityManager.GetComponentData<ManagedArea>(area).TypeId;
             if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.AnchorRoles.Count == 0) return;
-            var role = policy.AnchorRoles[0];
+            var role = requestedRole ?? policy.AnchorRoles[0];
+            if (!System.Linq.Enumerable.Contains(policy.AnchorRoles, role)) return;
             var links = EntityManager.HasBuffer<AreaAnchorLink>(area) ? new EntityAreaAnchorStore(EntityManager).Read(area) : System.Array.Empty<AreaAnchorLink>();
             if (AreaAnchorLinkKey.TryResolve(links, role, key, out var anchor) && services.Anchors.Remove(area, anchor, role)) { presentation.Invalidate(); selection.SetDirty(); }
         }

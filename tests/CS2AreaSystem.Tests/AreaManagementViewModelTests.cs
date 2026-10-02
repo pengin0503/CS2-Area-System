@@ -3,6 +3,15 @@ using CS2AreaSystem.Core.UI;
 using NUnit.Framework;
 namespace CS2AreaSystem.Tests;
 public class AreaManagementViewModelTests {
+    [Test] public void GroupsSerializeIndependentAssignmentAndDerivedEvidenceAndInvalidateTheView() {
+        var a=View();a.AnchorGroups=new[]{new AreaAnchorGroupView{Role="Headquarters",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="1.1",Valid=false}}},
+            new AreaAnchorGroupView{Role="Entrance",AssignmentSupported=false,DerivedCount=2,DerivedStatusKey="CS2AS.UI.PathEntrancesComplete"}};
+        var writer=new Support.RecordingJsonWriter();writer.MapBegin(0);a.WriteProperties(writer);writer.MapEnd();var json=writer.Parse();
+        Assert.That(json.GetProperty("anchorGroups")[1].GetProperty("derivedCount").GetInt32(),Is.EqualTo(2));
+        Assert.That(json.GetProperty("anchorGroups")[1].GetProperty("assignmentSupported").GetBoolean(),Is.False);
+        var b=View();b.AnchorGroups=new[]{new AreaAnchorGroupView{Role="Entrance",DerivedCount=3}};
+        Assert.That(AreaManagementViewModel.Equivalent(a,b),Is.False);
+    }
     private static AreaManagementViewModel View() => new() {
         StableId = "7", AnchorName = "Harbor Offices", TypeKey = "CS2AS.Type.Industrial", State = "CS2AS.State.Active",
         Summary = "CS2AS.Summary.Active", AnchorRole = "Headquarters", Level = 2, Experience = "10",

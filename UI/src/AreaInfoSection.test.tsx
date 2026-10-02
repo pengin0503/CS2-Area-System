@@ -27,6 +27,18 @@ const industrial:AreaSectionData={stableId:'9007199254740993',typeKey:'CS2AS.Typ
 const row=(label:string)=>screen.getAllByRole('row').find(r=>r.firstElementChild?.textContent===label)!;
 afterEach(()=>{env.trigger.mockClear();env.registryFails=false;resetVanillaCache();});
 describe('managed area selected-info section',()=>{
+ it('presents HQ and derived entrances independently with role-scoped actions',()=>{
+  const groups=[{role:'Headquarters' as const,assignmentSupported:true,anchors:[{key:'20.1',name:'Old HQ',valid:false}],derivedCount:null,derivedStatusKey:null},
+   {role:'Entrance' as const,assignmentSupported:false,anchors:[{key:'30.1',name:'Legacy entrance',valid:false}],derivedCount:2,derivedStatusKey:'CS2AS.UI.PathEntrancesComplete'}];
+  render(<AreaInfoSection {...industrial} anchorGroups={groups}/>);
+  expect(screen.getByText('Legacy entrance')).toBeInTheDocument();
+  expect(screen.getByText('Old HQ')).toBeInTheDocument();
+  expect(screen.queryByRole('button',{name:'Assign entrance'})).toBeNull();
+  fireEvent.click(screen.getByRole('button',{name:'Assign headquarters'}));
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','assignAnchor',industrial.stableId,'Headquarters');
+  fireEvent.click(screen.getAllByRole('button',{name:'Remove'})[1]);
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','removeRoleAnchor',industrial.stableId,'Entrance','30.1');
+ });
  it('matches the C# section type name used as __Type',()=>expect(AREA_INFO_SECTION_TYPE).toBe('CS2AreaSystem.Core.UI.AreaInfoSection'));
  it('renders district-style rows inside the vanilla InfoSection',()=>{
   const view=render(<AreaInfoSection {...industrial}/>);

@@ -14,6 +14,7 @@ namespace CS2AreaSystem.Core.UI
         public AreaPanelDocument Panel = AreaPanelDocument.Overview();
         // Every valid anchor of the module's role (several Entrances, at most one Headquarters).
         public IReadOnlyList<AreaAnchorView> Anchors = new AreaAnchorView[0];
+        public IReadOnlyList<AreaAnchorGroupView> AnchorGroups = new AreaAnchorGroupView[0];
         // Comparing avoids rewriting the selected-info sections every frame.
         public static bool Equivalent(AreaManagementViewModel a, AreaManagementViewModel b)
         {
@@ -27,6 +28,9 @@ namespace CS2AreaSystem.Core.UI
             if (left.Count != right.Count) return false;
             for (int i = 0; i < left.Count; i++)
                 if (left[i]?.Key != right[i]?.Key || left[i]?.Name != right[i]?.Name || left[i]?.Valid != right[i]?.Valid) return false;
+            var ag = a.AnchorGroups ?? new AreaAnchorGroupView[0]; var bg = b.AnchorGroups ?? new AreaAnchorGroupView[0];
+            if (ag.Count != bg.Count) return false;
+            for (int i = 0; i < ag.Count; i++) if (!AreaAnchorGroupView.Equivalent(ag[i], bg[i])) return false;
             return AreaPanelDocument.Equivalent(a.Panel, b.Panel);
         }
         // Module summary and panel change on the module's own cadence, so they are composed onto the cached Core view
@@ -54,6 +58,10 @@ namespace CS2AreaSystem.Core.UI
             writer.PropertyName("confirmDelete"); writer.Write(ConfirmDelete);
             writer.PropertyName("tabs"); (Panel ?? new AreaPanelDocument()).Write(writer);
             writer.PropertyName("moduleShowsProgress"); writer.Write(Panel != null && Panel.ShowsProgress);
+            var groups = AnchorGroups ?? new AreaAnchorGroupView[0];
+            writer.PropertyName("anchorGroups"); writer.ArrayBegin((uint)groups.Count);
+            foreach (var group in groups) group.Write(writer);
+            writer.ArrayEnd();
             var anchors = Anchors ?? new AreaAnchorView[0];
             writer.PropertyName("anchors"); writer.ArrayBegin((uint)anchors.Count);
             foreach (var anchor in anchors)
@@ -72,5 +80,34 @@ namespace CS2AreaSystem.Core.UI
         // Name is null when the anchored building no longer exists; Valid=false marks an ineligible or removed anchor.
         public string Key, Name;
         public bool Valid;
+    }
+    public sealed class AreaAnchorGroupView
+    {
+        public string Role, DerivedStatusKey;
+        public bool AssignmentSupported;
+        public IReadOnlyList<AreaAnchorView> Anchors = new AreaAnchorView[0];
+        public int? DerivedCount;
+        public static bool Equivalent(AreaAnchorGroupView a, AreaAnchorGroupView b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a == null || b == null || a.Role != b.Role || a.AssignmentSupported != b.AssignmentSupported || a.DerivedCount != b.DerivedCount || a.DerivedStatusKey != b.DerivedStatusKey || a.Anchors.Count != b.Anchors.Count) return false;
+            for (int i=0;i<a.Anchors.Count;i++) if (a.Anchors[i].Key != b.Anchors[i].Key || a.Anchors[i].Name != b.Anchors[i].Name || a.Anchors[i].Valid != b.Anchors[i].Valid) return false;
+            return true;
+        }
+        public void Write(IJsonWriter writer)
+        {
+            writer.TypeBegin("CS2AreaSystem.AreaAnchorGroupView");
+            writer.PropertyName("role"); writer.Write(Role);
+            writer.PropertyName("assignmentSupported"); writer.Write(AssignmentSupported);
+            writer.PropertyName("derivedCount"); if(DerivedCount.HasValue) writer.Write(DerivedCount.Value); else writer.WriteNull();
+            writer.PropertyName("derivedStatusKey"); if(DerivedStatusKey != null) writer.Write(DerivedStatusKey); else writer.WriteNull();
+            writer.PropertyName("anchors"); writer.ArrayBegin((uint)Anchors.Count);
+            foreach(var anchor in Anchors) {
+                writer.TypeBegin("CS2AreaSystem.AreaAnchorView");
+                writer.PropertyName("key");writer.Write(anchor.Key);writer.PropertyName("name");if(anchor.Name != null)writer.Write(anchor.Name);else writer.WriteNull();
+                writer.PropertyName("valid");writer.Write(anchor.Valid);writer.TypeEnd();
+            }
+            writer.ArrayEnd();writer.TypeEnd();
+        }
     }
 }

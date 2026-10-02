@@ -71,6 +71,9 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };
             entries["CS2AS.UI.Met"] = ja ? "達成" : "Met";
+            entries["CS2AS.UI.PathEntrances"] = ja ? "検出された歩道入口" : "Detected path entrances";
+            entries["CS2AS.UI.PathEntrancesComplete"] = ja ? "専用歩道の境界横断を確認済み" : "Dedicated path boundary crossings checked";
+            entries["CS2AS.UI.PathEntrancesUnknown"] = ja ? "歩道入口を調査中" : "Path entrances pending scan";
             entries["CS2AS.UI.NotMet"] = ja ? "未達成" : "Not met";
             // Runtime trend rows (Wave A1): direction label + signed change since the previous hourly sample.
             entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.Up] = ja ? "前回比 上昇" : "vs previous: rising";
