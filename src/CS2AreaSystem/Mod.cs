@@ -38,6 +38,9 @@ namespace CS2AreaSystem
             RegisterIndustrialSystems(updateSystem);
             RegisterLocalization();
             RegisterSettings();
+            // After DefaultToolSystem in the same frame, so an accepted label click replaces the selection vanilla just made.
+            try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Labels.AreaLabelSystem, Game.Tools.DefaultToolSystem>(SystemUpdatePhase.ToolUpdate); }
+            catch (System.Exception error) { Log.Error(error, "Area map labels unavailable; Areas stay selectable from the Area list."); }
             try { updateSystem.UpdateAfter<AreaManagementUISystem>(SystemUpdatePhase.UIUpdate); }
             catch (System.Exception error) { Log.Error(error, "Area management UI registration failed; simulation remains registered."); }
             try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Finance.AreaBudgetBindingSystem>(SystemUpdatePhase.UIUpdate); }

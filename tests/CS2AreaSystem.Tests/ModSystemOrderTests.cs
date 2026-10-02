@@ -123,6 +123,7 @@ public class ModSystemOrderTests {
     // only intended change is that PreTool now runs ManagedAreaToolGuardSystem instead of ManagedAreaLifecycleSystem).
     [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
+    [TestCase(SystemUpdatePhase.ToolUpdate, "AreaLabelSystem")]
     [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaActivationSystem,AreaPolicySystem,ParkLandscapeSystem,IndustrialRuntimeSystem")]
     [TestCase(SystemUpdatePhase.GameSimulation, "AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,AreaFinanceSystem")]
     [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem")]
@@ -137,9 +138,17 @@ public class ModSystemOrderTests {
             Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Core.Labels.AreaPlacementSystem),
                 typeof(CS2AreaSystem.Core.Areas.ManagedAreaLifecycleSystem), SystemUpdatePhase.ModificationEnd) }));
     }
+    // The label click overrides the selection DefaultToolSystem made from the same press, so it must run after it.
+    [Test] public void LabelsRunAfterTheDefaultToolInToolUpdate() {
+        Assert.That(VanillaRegistration<Game.Tools.DefaultToolSystem>(), Is.EqualTo(new UpdateSystemCall("UpdateAt", typeof(Game.Tools.DefaultToolSystem), null, SystemUpdatePhase.ToolUpdate)));
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Labels.AreaLabelSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Core.Labels.AreaLabelSystem), typeof(Game.Tools.DefaultToolSystem), SystemUpdatePhase.ToolUpdate) }));
+        var order = Schedule(SystemUpdatePhase.ToolUpdate);
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Labels.AreaLabelSystem)), Is.GreaterThan(order.IndexOf(typeof(Game.Tools.DefaultToolSystem))));
+    }
     [Test] public void EveryModSystemIsRegisteredInExactlyOnePhase() {
         var phases = new HashSet<SystemUpdatePhase> { SystemUpdatePhase.PrefabUpdate, SystemUpdatePhase.PreTool, SystemUpdatePhase.ModificationEnd,
-            SystemUpdatePhase.GameSimulation, SystemUpdatePhase.Serialize, SystemUpdatePhase.UIUpdate };
+            SystemUpdatePhase.GameSimulation, SystemUpdatePhase.Serialize, SystemUpdatePhase.UIUpdate, SystemUpdatePhase.ToolUpdate };
         foreach (var group in ModCalls.GroupBy(c => c.System))
             Assert.That(group.Select(c => c.Phase).Distinct().Count(), Is.EqualTo(1), group.Key!.Name);
         Assert.That(ModCalls.Select(c => c.Phase).Distinct(), Is.SubsetOf(phases));

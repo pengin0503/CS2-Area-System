@@ -21,7 +21,7 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Game;Colossal.Collections;Colossal.Core;Colossal.Logging;Colossal.Localization;Colossal.UI.Binding;Colossal.IO.AssetDatabase;Colossal.AssetPipeline;Unity.Entities;Unity.Collections;Unity.Mathematics;UnityEngine.CoreModule;UnityEngine.AudioModule;Unity.Burst;Colossal.Mathematics">
+    <Reference Include="Game;Colossal.Collections;Colossal.Core;Colossal.Logging;Colossal.Localization;Colossal.UI.Binding;Colossal.IO.AssetDatabase;Colossal.AssetPipeline;Unity.Entities;Unity.Collections;Unity.Mathematics;UnityEngine.CoreModule;UnityEngine.AudioModule;Unity.Burst;Colossal.Mathematics;Unity.TextMeshPro;Unity.InputSystem;UnityEngine.UI">
       <HintPath>$(ManagedPath)/%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>

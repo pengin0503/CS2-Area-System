@@ -18,7 +18,8 @@ namespace CS2AreaSystem.Core.UI
     // Controller of the managed-area UI. Area details render as a section of the vanilla selected-info panel
     // (AreaInfoSection), whose title section already names/renames the area and whose actions section
     // provides "locate". This system owns the mutating actions, anchor assignment, the managed area list
-    // (the only route to select a completed Space area) and the pending-assignment banner.
+    // (one route to select a completed Space area; the other is its map label, Labels.AreaLabelSystem) and the
+    // pending-assignment banner.
     public partial class AreaManagementUISystem : UISystemBase
     {
         private AreaCoreServicesSystem services;
