@@ -33,25 +33,27 @@
 **Files:** `IndustrialCompanyAssignmentActions.cs`, `IndustrialCompanyAssignmentActionTests.cs` under their existing source/test directories.
 **Interfaces:** Keep `Record(Entity, Entity, IndustrialCompanyOwnerResolution, string, bool hasClaimHere=false, bool invalid=false)` and `TryApply` signatures.
 
-- [ ] Add `NullCompanySavedClaimIsVisibleRemovableAndNeverAssignable`: ordinary Null is skipped; saved Null claim gets one invalid row; assign rejects, wrong Area rejects, exact clear removes only the selected saved claim; other company and other Area claims survive.
-- [ ] Build API-check tests; run that method alone. Expected RED: saved row count is 0 rather than 1.
-- [ ] Allow Null only when `hasClaimHere`, force invalid state, preserve exact claim removal/action guards and capacity.
-- [ ] Run assignment actions/index/manual ownership/panel focused tests; expected zero failures.
-- [ ] Commit `fix(industrial): expose null saved company claims for removal`.
+- [x] Add `NullCompanySavedClaimIsVisibleRemovableAndNeverAssignable`: ordinary Null is skipped; saved Null claim gets one invalid row; assign rejects, wrong Area rejects, exact clear removes only the selected saved claim; other company and other Area claims survive.
+- [x] Build API-check tests; run that method alone. Expected RED: saved row count is 0 rather than 1.
+- [x] Allow Null only when `hasClaimHere`, force invalid state, preserve exact claim removal/action guards and capacity.
+- [x] Run assignment actions/index/manual ownership/panel focused tests; expected zero failures.
+- [x] Commit `fix(industrial): expose null saved company claims for removal`.
 
 ### Task 2 — #85 consumption-hour candidate publication
 
 **Files:** `src/CS2AreaSystem/Modules/Industrial/IndustrialObservationSystem.cs`, `scripts/test-offline-contracts.mjs`.
 **Interfaces:** Private `Consume(long currentHourBucket)` is called from OnUpdate with its current `bucket`; `ObserveCompanyCandidate` gets that same hour. Cycle/request identity and publication stamps remain untouched.
 
-- [ ] Add a Native wiring contract requiring current-bucket Consume and prohibiting candidate publication with `cycle.HourBucket`; run offline contracts. Expected RED on original wiring.
-- [ ] Pass current bucket into Consume and only the candidate publication path; keep cycle/token checks and aggregator state.
-- [ ] Run offline contracts plus candidate/action/manual/reader/observation focused tests. Existing hour-key test must still reject old keys.
-- [ ] Commit `fix(industrial): publish company candidates at consumption time`.
+- [x] Add a Native wiring contract requiring current-bucket Consume and prohibiting candidate publication with `cycle.HourBucket`; run offline contracts. Expected RED on original wiring.
+- [x] Pass current bucket into Consume and only the candidate publication path; keep cycle/token checks and aggregator state.
+- [x] Run offline contracts plus candidate/action/manual/reader/observation focused tests. Existing hour-key test must still reject old keys.
+- [x] Commit `fix(industrial): publish company candidates at consumption time`.
 
 ### Final gate / publication
 
-- [ ] One focused branch review; fix concrete regressions only.
-- [ ] One full C# suite, Release API build, UI tests/build, offline/source guards and whole-branch diff check. No runtime claims.
-- [ ] Update execution record, preserve RED/GREEN evidence and rulings.
+- [x] One focused branch review; fix concrete regressions only.
+- [x] One full C# suite, Release API build, UI tests/build, offline/source guards and whole-branch diff check. No runtime claims.
+- [x] Update execution record, preserve RED/GREEN evidence and rulings.
 - [ ] Publish a follow-up PR targeting latest main with `Fixes #84` / `Fixes #85`. Do not merge it without user instruction; existing runtime-only issues remain open.
+
+Final evidence: [execution record](../../verification/post-b2-code-audit-execution-record.md). Publication checkbox stays pending until the follow-up PR exists.
