@@ -54,8 +54,7 @@ namespace CS2AreaSystem.Modules.Park
                 All = new[] { ComponentType.ReadOnly<Citizen>(), ComponentType.ReadOnly<Leisure>(), ComponentType.ReadOnly<CurrentBuilding>(),
                     ComponentType.ReadOnly<HouseholdMember>(), ComponentType.ReadOnly<UpdateFrame>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() } });
-            targets = new NativeParallelHashMap<Entity, ParkVisitTarget>(256, Allocator.Persistent);
-            matches = new NativeList<ParkVisitMatch>(256, Allocator.Persistent);
+            EnsureBuffers();
         }
         [Preserve]
         protected override void OnDestroy()
@@ -65,19 +64,29 @@ namespace CS2AreaSystem.Modules.Park
             if (matches.IsCreated) matches.Dispose();
             base.OnDestroy();
         }
+        protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
+        {
+            // Read-only observations have no old-city result to commit. Drain before deserialization, then release
+            // all entity-keyed containers. Recreate them only when the new city's geometry is ready.
+            pending.Complete();
+            ResetVisits();
+            if (targets.IsCreated) targets.Dispose();
+            if (matches.IsCreated) matches.Dispose();
+            loadGeneration = -1;
+        }
         [Preserve]
         protected override void OnUpdate()
         {
-            if (!runtime.Ready) return;
-            uint frame = simulation.frameIndex;
             // Our own previous job ran during the last 64 frames; completing it here does not wait on vanilla work.
             pending.Complete();
+            if (!runtime.Ready) { DropPending(); return; }
+            uint frame = simulation.frameIndex;
+            EnsureBuffers();
             if (loadGeneration != runtime.LoadGeneration)
             {
                 // Sessions are runtime-only: restored in-Park visitors are re-observed as already paid.
                 loadGeneration = runtime.LoadGeneration;
-                hasPending = false; matches.Clear(); targetsDirty = true;
-                tracker.Clear();
+                ResetVisits();
                 tracker.SeedPreExistingUntil(frame + ParkVisitCadence.SeedFrames);
             }
             try
@@ -96,6 +105,26 @@ namespace CS2AreaSystem.Modules.Park
                 events.Clear(); hasPending = false;
                 failures.Report(Entity.Null, "Park.Visits", error, "Park visit observation failed this update");
             }
+        }
+        private void EnsureBuffers()
+        {
+            if (!targets.IsCreated) targets = new NativeParallelHashMap<Entity, ParkVisitTarget>(256, Allocator.Persistent);
+            if (!matches.IsCreated) matches = new NativeList<ParkVisitMatch>(256, Allocator.Persistent);
+        }
+        // Only after pending.Complete(); old observations must never be consumed by another generation.
+        private void DropPending()
+        {
+            hasPending = false;
+            if (matches.IsCreated) matches.Clear();
+            pending = default;
+        }
+        private void ResetVisits()
+        {
+            DropPending();
+            if (targets.IsCreated) targets.Clear();
+            tracker.Clear(); events.Clear(); parks.Clear(); activeParks.Clear();
+            activeSignature = ""; targetsDirty = true;
+            ObservedLastUpdate = 0; pendingFrame = 0;
         }
         private void RefreshParks()
         {

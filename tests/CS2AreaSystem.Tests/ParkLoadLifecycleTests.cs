@@ -64,4 +64,40 @@ public class ParkLoadLifecycleTests {
             "listeners survive a new city; owners remove them only at destruction");
         Assert.That(IlCallScanner.Find(drop, c => c.Name == "DisposeBuffers"), Has.Count.EqualTo(1));
     }
+    [Test] public void VisitPreloadCompletesBeforeResetAndDisposesBothContainers() {
+        var preload = OwnMethod<ParkVisitSystem>("OnGamePreload");
+        Assert.That(preload, Is.Not.Null);
+        var calls = IlCallScanner.Find(preload, _ => true);
+        Assert.That(calls.FindIndex(c => c.Target.Name == "Complete"), Is.LessThan(calls.FindIndex(c => c.Target.Name == "ResetVisits")));
+        Assert.That(calls.Count(c => c.Target.Name == "Dispose"), Is.EqualTo(2), "persistent matches and target entity keys belong to the old city");
+        Assert.That(calls.Any(c => c.Target.Name == "SeedPreExistingUntil"), Is.False, "seed uses the new city's first ready frame");
+    }
+    [Test] public void VisitCompletesAndDiscardsBeforeAnUnreadyReturn() {
+        var calls = IlCallScanner.Find(OwnMethod<ParkVisitSystem>("OnUpdate"), _ => true);
+        Assert.That(calls.FindIndex(c => c.Target.Name == "Complete"), Is.LessThan(calls.FindIndex(c => c.Target.Name == "get_Ready")));
+        Assert.That(calls.FindIndex(c => c.Target.Name == "DropPending"), Is.LessThan(calls.FindIndex(c => c.Target.Name == "ConsumeMatches")));
+        Assert.That(calls.Count(c => c.Target.Name == "SeedPreExistingUntil"), Is.EqualTo(1));
+    }
+    [Test] public void VisitResetDropsOldSessionsEventsTargetsAndCachesBeforeRestoredSeed() {
+        var visits = new ParkVisitSystem();
+        var citizen = new Entity { Index = 12, Version = 1 };
+        var events = (List<ParkVisitEvent>)Field<ParkVisitSystem>("events").GetValue(visits)!;
+        visits.Tracker.Observe(citizen, 7, false, 50, 100, events);
+        Field<ParkVisitSystem>("hasPending").SetValue(visits, true);
+        Field<ParkVisitSystem>("activeSignature").SetValue(visits, "7,");
+        var reset = OwnMethod<ParkVisitSystem>("ResetVisits");
+        Assert.That(reset, Is.Not.Null);
+        reset.Invoke(visits, null);
+        Assert.That(visits.Tracker.ActiveCount(7), Is.Zero); Assert.That(events, Is.Empty);
+        Assert.That(Field<ParkVisitSystem>("hasPending").GetValue(visits), Is.False);
+        Assert.That(Field<ParkVisitSystem>("activeSignature").GetValue(visits), Is.EqualTo(""));
+        Assert.That(Field<ParkVisitSystem>("targetsDirty").GetValue(visits), Is.True);
+        visits.Tracker.SeedPreExistingUntil(500);
+        visits.Tracker.Observe(citizen, 7, false, 50, 200, events);
+        visits.Tracker.Observe(citizen, 7, false, 50, 300, events);
+        Assert.That(events.Count(e => e.Kind == ParkVisitEventKind.Started && e.FeeSatisfied), Is.EqualTo(1));
+        visits.Tracker.Observe(new Entity { Index = 13, Version = 1 }, 7, false, 50, 600, events);
+        Assert.That(events.Count(e => e.Kind == ParkVisitEventKind.Started && !e.FeeSatisfied), Is.EqualTo(1));
+        Assert.That(IlCallScanner.Find(reset, c => c.Name == "RemoveListener"), Is.Empty);
+    }
 }
