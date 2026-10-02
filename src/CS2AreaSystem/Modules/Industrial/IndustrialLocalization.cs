@@ -11,6 +11,11 @@ namespace CS2AreaSystem.Modules.Industrial
             Add("CS2AS.Tab.Logistics", "Logistics", "物流");
             Add("CS2AS.Tab.Employment", "Employment", "雇用");
             Add("CS2AS.Tab.Progress", "Progress", "進捗");
+            Add("CS2AS.Tab.Comparison","Comparison","比較");
+            Add(P+"Comparison.Tip","Managed Industrial Areas only. Current Performance sorts first; stale results are advisory and do not affect gameplay.","管理中のIndustrial Areaだけを比較します。現在のPerformance順に表示し、古い観測値は助言として扱いゲーム動作には影響しません。");
+            Add(P+"Comparison.Area","Industrial Area","産業エリア");
+            Add(P+"Comparison.Trend","Performance: latest vs previous hour","Performance：前の時間との比較");
+            Add(P+"Comparison.Empty","No Industrial Areas to compare","比較できる産業エリアがありません");
             Add(P + "Summary.Active", "Active. Metrics come from the real companies inside this area, observed once per game hour.", "稼働中。指標はエリア内の実際の企業を1ゲーム時間ごとに観測した値です。");
             Add(P + "Summary.HeadquartersRequired", "Assign an office building inside this area as the headquarters to activate it.", "エリア内のオフィス建物を本部に割り当てると稼働します。");
             Add(P + "Summary.HeadquartersInvalid", "Suspended: the headquarters building was removed or is no longer inside this area. Assign a new headquarters; Level and XP are kept.", "停止中：本部の建物が撤去されたか、エリア外になりました。新しい本部を割り当ててください。レベルと経験値は保持されます。");

@@ -1321,6 +1321,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -1774,6 +1811,43 @@
               "kind": "note",
               "id": "noBuff",
               "labelKey": "CS2AS.Industrial.Note.NoBuff",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -2771,6 +2845,43 @@
               "kind": "note",
               "id": "noBuff",
               "labelKey": "CS2AS.Industrial.Note.NoBuff",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -3805,6 +3916,43 @@
               "kind": "note",
               "id": "noBuff",
               "labelKey": "CS2AS.Industrial.Note.NoBuff",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -5045,6 +5193,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -5989,6 +6174,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -6034,6 +6256,10 @@
     "CS2AS.Industrial.Check.PrestigeOutputs": "Prestige: 3+ meaningful outputs",
     "CS2AS.Industrial.Check.PrestigeStreak": "Prestige: 7 consecutive high-activity days",
     "CS2AS.Industrial.Check.Production": "Production",
+    "CS2AS.Industrial.Comparison.Area": "Industrial Area",
+    "CS2AS.Industrial.Comparison.Empty": "No Industrial Areas to compare",
+    "CS2AS.Industrial.Comparison.Tip": "Managed Industrial Areas only. Current Performance sorts first; stale results are advisory and do not affect gameplay.",
+    "CS2AS.Industrial.Comparison.Trend": "Performance: latest vs previous hour",
     "CS2AS.Industrial.DailyXp": "XP today",
     "CS2AS.Industrial.DailyXp.Tip": "At most 240 XP per game day.",
     "CS2AS.Industrial.Day.InsufficientCoverage": "Not counted: fewer than 18 observed hours",
@@ -6323,6 +6549,7 @@
     "CS2AS.Summary.ModuleUnavailable": "This area's module is unavailable. Saved state is retained.",
     "CS2AS.Summary.Quarantined": "This area's saved data is inconsistent or its native search geometry is unavailable, so it is isolated for this session. Saved data and geometry are kept unchanged; membership, activation, policies and finance are disabled. Only Edit and Delete are available. Edit the geometry or delete the unwanted area, then reload.",
     "CS2AS.Summary.TourismBoundaryOnly": "Boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
+    "CS2AS.Tab.Comparison": "Comparison",
     "CS2AS.Tab.Employment": "Employment",
     "CS2AS.Tab.Finances": "Finances",
     "CS2AS.Tab.Landscape": "Landscape",

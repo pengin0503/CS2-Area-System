@@ -27,13 +27,14 @@ namespace CS2AreaSystem.Modules.Industrial
         public double NowHours;
         // Runtime-only trend samples of this Area (null when no runtime snapshot exists).
         public IndustrialTrendSnapshot Trends;
+        public IReadOnlyList<IndustrialComparisonRow> Comparison=Array.Empty<IndustrialComparisonRow>();
     }
     // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
     // item with an action is the diagnostic focus button (camera only); unavailable data is never rendered as zero.
     public static class IndustrialPanelBuilder
     {
         public const string P = "CS2AS.Industrial.";
-        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress" };
+        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress", "comparison" };
         public static readonly string[] Components = { "Production", "Logistics", "Employment", "Efficiency" };
         public static readonly string[] Statuses = { "Unavailable", "NotApplicable", "WarmingUp", "Stale" };
         public static readonly string[] XpReasons = { "Suspended", "Stale", "NoOperatingProducer", "InsufficientInputs", "DailyCap", "AlreadySettled" };
@@ -50,12 +51,32 @@ namespace CS2AreaSystem.Modules.Industrial
                 new AreaPanelTabData { Id = "production", LabelKey = "CS2AS.Tab.Production", Items = Production(model) },
                 new AreaPanelTabData { Id = "logistics", LabelKey = "CS2AS.Tab.Logistics", Items = Logistics(model) },
                 new AreaPanelTabData { Id = "employment", LabelKey = "CS2AS.Tab.Employment", Items = Employment(model) },
-                new AreaPanelTabData { Id = "progress", LabelKey = "CS2AS.Tab.Progress", Items = Progress(model) } } };
+                new AreaPanelTabData { Id = "progress", LabelKey = "CS2AS.Tab.Progress", Items = Progress(model) },
+                new AreaPanelTabData { Id = "comparison", LabelKey = "CS2AS.Tab.Comparison", Items = Comparison(model) } } };
+        }
+        private static List<AreaPanelItem> Comparison(IndustrialPanelModel model)
+        {
+            var items=new List<AreaPanelItem>{new AreaPanelItem{Kind=AreaPanelItemKind.Note,Id="comparison.note",LabelKey=P+"Comparison.Tip"}};
+            foreach(var area in model.Comparison) {
+                string prefix="comparison."+area.StableId.ToString(Invariant)+".";
+                items.Add(Row(prefix+"name",P+"Comparison.Area",area.Name??area.StableId.ToString(Invariant)));
+                if(area.Stale)items.Add(Warning(prefix+"stale",P+"Status.Stale"));
+                void Add(string name,IndustrialMetric metric) {
+                    bool value=metric.HasValue||metric.Status==IndustrialMetricStatus.Stale;
+                    items.Add(Row(prefix+name,P+"Metric."+name,value?One(metric.Value):null,value?null:P+"Status."+metric.Status,area.Stale?P+"Status.Stale":metric.Status==IndustrialMetricStatus.Partial?P+"PartialData":null));
+                }
+                Add("Production",area.Production);Add("Logistics",area.Logistics);Add("Employment",area.Employment);Add("Efficiency",area.Efficiency);Add("Performance",area.Performance);
+                items.Add(Row(prefix+"trend",P+"Comparison.Trend",area.PerformanceDelta.HasValue?(area.PerformanceDelta.Value>0?"+":"")+One(area.PerformanceDelta.Value):null,area.PerformanceDelta.HasValue?null:P+"Status.Unavailable"));
+            }
+            if(model.Comparison.Count==0)items.Add(Row("comparison.empty",P+"Comparison.Empty"));
+            return items;
         }
         // Every module key the builder can emit (resource titles are vanilla "Resources.TITLE[...]" keys).
         public static IEnumerable<string> AllKeys()
         {
             foreach (var tab in new[] { "Production", "Logistics", "Employment", "Progress" }) yield return "CS2AS.Tab." + tab;
+            yield return "CS2AS.Tab.Comparison";
+            foreach(var key in new[]{"Tip","Area","Trend","Empty"})yield return P+"Comparison."+key;
             for (int level = IndustrialProgressionModel.MinLevel; level <= IndustrialProgressionModel.MaxLevel; level++) yield return P + "LevelName." + level;
             foreach (var c in Components) { yield return P + "Metric." + c; yield return P + "Metric." + c + ".Tip"; }
             foreach (var m in new[] { "Performance", "Activity", "ActiveShare", "Diversity", "InputContinuity", "OutputContinuity", "JobFill", "StaffingBalance", "BuildingEfficiency", "Profitability" })

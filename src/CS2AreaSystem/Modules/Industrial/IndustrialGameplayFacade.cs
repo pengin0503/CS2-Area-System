@@ -66,6 +66,17 @@ namespace CS2AreaSystem.Modules.Industrial
                     model.Current = snapshot.Current; model.Paused = snapshot.Paused; model.Trends = snapshot.Trends;
                     model.HasXp = snapshot.HasXpResult; model.Xp = snapshot.LastXp; model.LastCompletedDay = snapshot.LastCompletedDay;
                 }
+                var services=context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
+                var names=context.World.GetExistingSystemManaged<Game.UI.NameSystem>();
+                var areas=new List<IndustrialAreaRef>();runtime.CollectAreas(areas);
+                var sources=new List<IndustrialComparisonSource>(areas.Count);
+                foreach(var other in areas) {
+                    if(!entities.Exists(other.Area)||entities.HasComponent<Game.Common.Deleted>(other.Area)||services==null||services.IsQuarantined(other.Area))continue;
+                    runtime.Store.TryGet(other.StableId,out var otherSnapshot);
+                    var managed=entities.GetComponentData<ManagedArea>(other.Area);
+                    sources.Add(new IndustrialComparisonSource{StableId=other.StableId,TypeId=managed.TypeId,Lifecycle=managed.State,Snapshot=otherSnapshot,Name=names?.GetRenderedLabelName(other.Area)});
+                }
+                model.Comparison=IndustrialAreaComparison.Build(sources,runtime.TryGetClock(out var comparisonClock)?comparisonClock.GameHours(runtime.SimulationFrame):(double?)null);
             }
             var inputs = IndustrialProgressionSystem.BuildInputs(model.Current, model.State);
             model.Promotion = IndustrialProgressionModel.EvaluatePromotion(model.Level, model.Experience, inputs);
