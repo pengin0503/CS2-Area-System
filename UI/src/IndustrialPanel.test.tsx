@@ -23,9 +23,21 @@ const item=(name:Name,tab:string,id:string)=>section(name).tabs.find(x=>x.id===t
 const row=(label:string)=>screen.getAllByRole('row').find(r=>r.firstElementChild?.textContent===label)!;
 const open=(key:string)=>fireEvent.click(screen.getByRole('button',{name:t(key)}));
 describe('Industrial management tabs (real C# payload)',()=>{
+ it('assigns and removes ownership with the rendered stable ID and opaque company key',()=>{
+  render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Companies');
+  const companies=section('active').tabs.find(tab=>tab.id==='companies')!.items!;
+  const assign=companies.find(item=>item.action==='assignCompanyHere'&&!item.disabled)!;
+  fireEvent.click(screen.getAllByRole('button',{name:t('CS2AS.Industrial.Company.Assign')})[0]);
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','assignCompanyHere',assign.value);
+  const clear=companies.find(item=>item.action==='clearCompanyAssignment')!;
+  fireEvent.click(screen.getByRole('button',{name:t('CS2AS.Industrial.Company.Clear')}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','clearCompanyAssignment',clear.value);
+  expect(screen.getByText(t('CS2AS.Industrial.Company.Automatic'))).toBeInTheDocument();
+  expect(screen.getByText(t('CS2AS.Industrial.Company.Manual'))).toBeInTheDocument();
+ });
  it('offers exactly Overview | Production | Logistics | Employment | Progress | Comparison and hides the duplicate core level rows',()=>{
   render(<AreaInfoSection {...section('active')}/>);
-  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress','CS2AS.Tab.Comparison'].map(t));
+  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress','CS2AS.Tab.Comparison','CS2AS.Tab.Companies'].map(t));
   expect(screen.queryByText(t('CS2AS.UI.Level'))).toBeNull();
   expect(row(t('CS2AS.UI.Headquarters'))).toHaveTextContent('Riverside Steelworks');
  });
@@ -118,7 +130,7 @@ describe('Industrial management tabs (real C# payload)',()=>{
   const items=Object.values(fixture.sections).flatMap(s=>(s as unknown as AreaSectionData).tabs.flatMap(tab=>tab.items??[]));
   const actions=items.filter(i=>i.action!==null||i.kind==='slider'||i.kind==='button');
   expect(actions.length).toBeGreaterThan(0);
-  expect(actions.every(i=>i.kind==='button'&&i.action==='focusDiagnosticTarget'&&/^\d+\.\d+$/.test(i.value??''))).toBe(true);
+  expect(actions.every(i=>i.kind==='button'&&['focusDiagnosticTarget','assignCompanyHere','clearCompanyAssignment'].includes(i.action!)&&!!i.value)).toBe(true);
  });
  it('production tab lists each observed recipe as input and output rows with its measured rate',()=>{
   render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Production');

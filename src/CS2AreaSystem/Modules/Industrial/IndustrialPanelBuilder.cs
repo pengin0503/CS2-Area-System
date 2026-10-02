@@ -28,13 +28,14 @@ namespace CS2AreaSystem.Modules.Industrial
         // Runtime-only trend samples of this Area (null when no runtime snapshot exists).
         public IndustrialTrendSnapshot Trends;
         public IReadOnlyList<IndustrialComparisonRow> Comparison=Array.Empty<IndustrialComparisonRow>();
+        public IReadOnlyList<IndustrialCompanyCandidate> Companies = Array.Empty<IndustrialCompanyCandidate>();
     }
     // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
     // item with an action is the diagnostic focus button (camera only); unavailable data is never rendered as zero.
     public static class IndustrialPanelBuilder
     {
         public const string P = "CS2AS.Industrial.";
-        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress", "comparison" };
+        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress", "comparison", "companies" };
         public static readonly string[] Components = { "Production", "Logistics", "Employment", "Efficiency" };
         public static readonly string[] Statuses = { "Unavailable", "NotApplicable", "WarmingUp", "Stale" };
         public static readonly string[] XpReasons = { "Suspended", "Stale", "NoOperatingProducer", "InsufficientInputs", "DailyCap", "AlreadySettled" };
@@ -52,7 +53,27 @@ namespace CS2AreaSystem.Modules.Industrial
                 new AreaPanelTabData { Id = "logistics", LabelKey = "CS2AS.Tab.Logistics", Items = Logistics(model) },
                 new AreaPanelTabData { Id = "employment", LabelKey = "CS2AS.Tab.Employment", Items = Employment(model) },
                 new AreaPanelTabData { Id = "progress", LabelKey = "CS2AS.Tab.Progress", Items = Progress(model) },
-                new AreaPanelTabData { Id = "comparison", LabelKey = "CS2AS.Tab.Comparison", Items = Comparison(model) } } };
+                new AreaPanelTabData { Id = "comparison", LabelKey = "CS2AS.Tab.Comparison", Items = Comparison(model) },
+                new AreaPanelTabData { Id = "companies", LabelKey = "CS2AS.Tab.Companies", Items = Companies(model) } } };
+        }
+        private static List<AreaPanelItem> Companies(IndustrialPanelModel model)
+        {
+            var items = new List<AreaPanelItem> { new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "company.tip", LabelKey = P + "Company.Tip" } };
+            int count = 0;
+            foreach (var company in model.Companies)
+            {
+                if (count++ >= IndustrialCompanyCandidateSet.Capacity) break;
+                string id = "company." + company.Key;
+                items.Add(Row(id + ".name", P + "Company.Name", company.Label, company.Label == null ? P + "Company.Unnamed" : null));
+                items.Add(Row(id + ".status", P + "Company.Ownership", valueKey: P + "Company." + (company.Invalid ? "Invalid" : company.Manual ? "Manual" : "Automatic")));
+                items.Add(Row(id + ".owner", P + "Company.Owner", company.Owner == 0 ? null : company.Owner.ToString(Invariant), company.Owner == 0 ? P + "Status.Unavailable" : null));
+                items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = id + ".assign", LabelKey = P + "Company.Assign",
+                    Action = IndustrialGameplayFacade.AssignCompanyHere, Value = company.Key, Disabled = !company.CanAssign(model.StableId) });
+                if (company.HasClaimHere) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = id + ".clear", LabelKey = P + "Company.Clear",
+                    Action = IndustrialGameplayFacade.ClearCompanyAssignment, Value = company.Key });
+            }
+            if (count == 0) items.Add(Row("company.empty", P + "Company.Empty"));
+            return items;
         }
         private static List<AreaPanelItem> Comparison(IndustrialPanelModel model)
         {
@@ -76,6 +97,8 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             foreach (var tab in new[] { "Production", "Logistics", "Employment", "Progress" }) yield return "CS2AS.Tab." + tab;
             yield return "CS2AS.Tab.Comparison";
+            yield return "CS2AS.Tab.Companies";
+            foreach (var key in new[] { "Tip", "Name", "Unnamed", "Ownership", "Owner", "Automatic", "Manual", "Invalid", "Assign", "Clear", "Empty" }) yield return P + "Company." + key;
             foreach(var key in new[]{"Tip","Area","Trend","Empty"})yield return P+"Comparison."+key;
             for (int level = IndustrialProgressionModel.MinLevel; level <= IndustrialProgressionModel.MaxLevel; level++) yield return P + "LevelName." + level;
             foreach (var c in Components) { yield return P + "Metric." + c; yield return P + "Metric." + c + ".Tip"; }

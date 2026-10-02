@@ -17,6 +17,10 @@ public class IndustrialPanelFixtureTests {
  private static void Section(RecordingJsonWriter writer, string name) {
   var model = IndustrialPanelBuilderTests.Model(name);
   if(name=="active") {
+   var companies = new IndustrialCompanyCandidateSet(); companies.Begin(42, 1, 206, 1);
+   companies.Record(new Unity.Entities.Entity { Index = 501, Version = 1 }, new Unity.Entities.Entity { Index = 101, Version = 1 }, new IndustrialCompanyOwnerResolution(42, false), "Automatic Steelworks");
+   companies.Record(new Unity.Entities.Entity { Index = 502, Version = 1 }, new Unity.Entities.Entity { Index = 102, Version = 1 }, new IndustrialCompanyOwnerResolution(42, true), "Manual Steelworks", true);
+   model.Companies = companies.Rows;
    var current=new IndustrialRuntimeSnapshot();current.Publish(model.Current);
    var stale=new IndustrialRuntimeSnapshot();stale.Publish(model.Current);
    model.Comparison=IndustrialAreaComparison.Build(new[]{

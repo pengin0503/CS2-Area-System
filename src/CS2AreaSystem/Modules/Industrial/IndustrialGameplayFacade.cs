@@ -11,16 +11,31 @@ namespace CS2AreaSystem.Modules.Industrial
     public static class IndustrialGameplayFacade
     {
         public const string FocusDiagnosticTarget = "focusDiagnosticTarget";
+        public const string AssignCompanyHere = "assignCompanyHere";
+        public const string ClearCompanyAssignment = "clearCompanyAssignment";
         // Core already checked the stable ID and live selection. Never modifies simulation state.
         public static bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
         {
-            if (action != FocusDiagnosticTarget || context.Focus == null || context.World == null) return false;
+            if (action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment) return false;
+            if (context.World == null) return false;
             var entities = context.Entities;
-            if (!entities.Exists(area) || !entities.HasComponent<ManagedAreaStableId>(area)) return false;
+            if (!entities.Exists(area) || entities.HasComponent<Game.Common.Deleted>(area) || !entities.HasComponent<ManagedAreaStableId>(area) ||
+                !entities.HasComponent<ManagedArea>(area) || entities.GetComponentData<ManagedArea>(area).TypeId != (int)AreaTypeId.Industrial) return false;
             var runtime = context.World.GetExistingSystemManaged<IndustrialRuntimeSystem>();
             ulong areaId = entities.GetComponentData<ManagedAreaStableId>(area).Value;
             if (runtime == null || !runtime.Store.TryGet(areaId, out var snapshot)) return false;
-            return TryFocus(snapshot.Current, value, areaId, e => entities.Exists(e) && !entities.HasComponent<Game.Common.Deleted>(e), runtime.Membership, context.Focus);
+            if (action == FocusDiagnosticTarget)
+                return TryFocus(snapshot.Current, value, areaId, e => entities.Exists(e) && !entities.HasComponent<Game.Common.Deleted>(e), runtime.Membership, context.Focus);
+            var services = context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            if (!runtime.Ready || !runtime.AssignmentsReady || services == null || services.IsQuarantined(area)) return false;
+            // Refresh invalid references first: a changed revision rejects the rendered snapshot key.
+            runtime.RefreshAssignments();
+            bool applied = IndustrialCompanyAssignmentActions.TryApply(action, value, areaId, snapshot.OwnershipCandidates, runtime.Assignments, company => {
+                var eligibility = IndustrialCompanyOwnership.ReadLive(company, entities, services.Semantics, out var building);
+                return new IndustrialCompanyLive(company, building, eligibility);
+            }, runtime.Membership, new EntityAssignmentStore(runtime, entities));
+            if (applied) runtime.AssignmentChanged();
+            return applied;
         }
         public static bool TryFocus(IndustrialObservationResult current, string key, ulong areaId, Func<Entity, bool> isLive, AreaMembershipIndex membership, Action<Entity> focus)
         {
@@ -42,6 +57,43 @@ namespace CS2AreaSystem.Modules.Industrial
         private static IEnumerable<Entity> Targets(List<IndustrialBottleneck> bottlenecks)
         {
             foreach (var b in bottlenecks) if (b != null && b.Target != Entity.Null) yield return b.Target;
+        }
+        private sealed class EntityAssignmentStore : IIndustrialCompanyAssignmentStore
+        {
+            private readonly EntityManager entities;
+            private readonly List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>();
+            public EntityAssignmentStore(IndustrialRuntimeSystem runtime, EntityManager entities) { this.entities = entities; runtime.CollectAreas(areas); }
+            private Entity Area(ulong id)
+            {
+                foreach (var a in areas) if (a.StableId == id && entities.Exists(a.Area) && !entities.HasComponent<Game.Common.Deleted>(a.Area) &&
+                    entities.HasComponent<ManagedAreaStableId>(a.Area) && entities.GetComponentData<ManagedAreaStableId>(a.Area).Value == id) return a.Area;
+                return Entity.Null;
+            }
+            public bool CanWrite(ulong areaId) { var area = Area(areaId); return area != Entity.Null && entities.HasBuffer<IndustrialCompanyAssignment>(area); }
+            public bool HasClaim(ulong areaId, Entity company, Entity building)
+            {
+                if (!CanWrite(areaId)) return false;
+                var claims = entities.GetBuffer<IndustrialCompanyAssignment>(Area(areaId), true);
+                for (int i = 0; i < claims.Length; i++) if (claims[i].Company == company && claims[i].Building == building) return true;
+                return false;
+            }
+            public void Assign(ulong areaId, Entity company, Entity building)
+            {
+                foreach (var a in areas)
+                {
+                    if (!CanWrite(a.StableId)) continue;
+                    var claims = entities.GetBuffer<IndustrialCompanyAssignment>(a.Area);
+                    for (int i = claims.Length - 1; i >= 0; i--) if (claims[i].Company == company) claims.RemoveAt(i);
+                }
+                entities.GetBuffer<IndustrialCompanyAssignment>(Area(areaId)).Add(new IndustrialCompanyAssignment {
+                    SchemaVersion = IndustrialCompanyAssignment.CurrentSchemaVersion, Company = company, Building = building });
+            }
+            public void Remove(ulong areaId, Entity company, Entity building)
+            {
+                var claims = entities.GetBuffer<IndustrialCompanyAssignment>(Area(areaId));
+                for (int i = claims.Length - 1; i >= 0; i--)
+                    if (claims[i].Company == company && claims[i].Building == building) claims.RemoveAt(i);
+            }
         }
         public static IndustrialPanelModel Read(Entity area, in AreaPanelContext context)
         {
@@ -68,6 +120,25 @@ namespace CS2AreaSystem.Modules.Industrial
                 }
                 var services=context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
                 var names=context.World.GetExistingSystemManaged<Game.UI.NameSystem>();
+                var candidates = runtime.Store.GetOrCreate(model.StableId, area).OwnershipCandidates;
+                long hour = runtime.TryGetClock(out var candidateClock) ? candidateClock.HourBucket(runtime.SimulationFrame) : long.MinValue;
+                candidates.Begin(model.StableId, runtime.LoadGeneration, hour, runtime.Assignments.Revision);
+                if (entities.HasBuffer<IndustrialCompanyAssignment>(area) && services != null)
+                {
+                    var claims = entities.GetBuffer<IndustrialCompanyAssignment>(area, true);
+                    // Saved invalid/duplicate claims stay visible and safely removable, within the same 64-row bound.
+                    for (int i = 0; i < claims.Length && i < IndustrialCompanyCandidateSet.Capacity; i++)
+                    {
+                        var claim = claims[i];
+                        var eligibility = IndustrialCompanyOwnership.ReadLive(claim.Company, entities, services.Semantics, out var building);
+                        var relations = runtime.Membership.GetAreas(building);
+                        var owner = IndustrialCompanyOwnership.Resolve(claim.Company, building, relations, runtime.Assignments, eligibility);
+                        bool valid = IndustrialCompanyOwnership.IsValidClaim(new IndustrialCompanyClaim(model.StableId, claim.Company, claim.Building), building, relations, eligibility) &&
+                            owner.Manual && owner.AreaStableId == model.StableId;
+                        candidates.Record(claim.Company, claim.Building, owner, entities.Exists(claim.Company) ? names?.GetRenderedLabelName(claim.Company) : null, true, !valid);
+                    }
+                }
+                model.Companies = candidates.Rows;
                 var areas=new List<IndustrialAreaRef>();runtime.CollectAreas(areas);
                 var sources=new List<IndustrialComparisonSource>(areas.Count);
                 foreach(var other in areas) {

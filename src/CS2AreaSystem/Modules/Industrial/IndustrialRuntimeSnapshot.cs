@@ -188,6 +188,7 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         public ulong StableId;
         public Entity Area;
+        public readonly IndustrialCompanyCandidateSet OwnershipCandidates = new IndustrialCompanyCandidateSet();
         // Last completed coherent generation; null after load until observation rebuilds it.
         public IndustrialObservationResult Current { get; private set; }
         public bool HasPublished => Current != null;

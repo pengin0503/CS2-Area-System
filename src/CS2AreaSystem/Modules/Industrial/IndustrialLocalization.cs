@@ -12,6 +12,18 @@ namespace CS2AreaSystem.Modules.Industrial
             Add("CS2AS.Tab.Employment", "Employment", "雇用");
             Add("CS2AS.Tab.Progress", "Progress", "進捗");
             Add("CS2AS.Tab.Comparison","Comparison","比較");
+            Add("CS2AS.Tab.Companies", "Companies / Ownership", "企業・所属");
+            Add(P + "Company.Tip", "Up to 64 observed companies. Manual ownership affects only the selected company. Offices and commercial companies are excluded. Invalid or duplicate claims can be removed.", "観測した企業を最大64件表示します。手動所属は選んだ企業だけに適用します。オフィス・商業企業は対象外です。無効な割当や重複した割当は解除できます。");
+            Add(P + "Company.Name", "Company", "企業");
+            Add(P + "Company.Unnamed", "Industrial company", "産業企業");
+            Add(P + "Company.Ownership", "Ownership mode", "所属方式");
+            Add(P + "Company.Owner", "Owner Area ID", "所属エリアID");
+            Add(P + "Company.Automatic", "Automatic (geometry)", "自動（エリア境界）");
+            Add(P + "Company.Manual", "Manual", "手動");
+            Add(P + "Company.Invalid", "Invalid assignment (not effective)", "無効な割当（適用されません）");
+            Add(P + "Company.Assign", "Assign company here", "このエリアに割り当て");
+            Add(P + "Company.Clear", "Remove manual assignment", "手動割当を解除");
+            Add(P + "Company.Empty", "Waiting for observed Industrial companies", "産業企業の観測を待っています");
             Add(P+"Comparison.Tip","Managed Industrial Areas only. Current Performance sorts first; stale results are advisory and do not affect gameplay.","管理中のIndustrial Areaだけを比較します。現在のPerformance順に表示し、古い観測値は助言として扱いゲーム動作には影響しません。");
             Add(P+"Comparison.Area","Industrial Area","産業エリア");
             Add(P+"Comparison.Trend","Performance: latest vs previous hour","Performance：前の時間との比較");

@@ -72,6 +72,33 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialCompanyAssignmentIndex Assignments { get; } = new IndustrialCompanyAssignmentIndex();
         private readonly List<IndustrialCompanyClaim> assignmentClaims = new List<IndustrialCompanyClaim>();
         public bool AssignmentsReady { get; private set; }
+        // Mirror bounded candidates from existing observation reads to all geometric Industrial relations.
+        // This lets a non-primary Area assign companies without a second company scan.
+        public void ObserveCompanyCandidate(in IndustrialBuildingRead read, in IndustrialCompanyRead company, long hourBucket)
+        {
+            var facts = IndustrialCompanyOwnership.ReadLive(company.Company, EntityManager, services.Semantics, out var currentBuilding, read.Traits);
+            if (currentBuilding != company.Building || !facts.Eligible) return;
+            var relations = Membership.GetAreas(currentBuilding);
+            var owner = IndustrialCompanyOwnership.Resolve(company.Company, currentBuilding, relations, Assignments, facts);
+            var names = World.GetExistingSystemManaged<Game.UI.NameSystem>();
+            string label = names?.GetRenderedLabelName(company.Company);
+            foreach (var relation in relations)
+            {
+                if (relation.TypeId != (int)AreaTypeId.Industrial) continue;
+                foreach (var area in areas) if (area.StableId == relation.AreaStableId)
+                {
+                    var candidates = Store.GetOrCreate(area.StableId, area.Area).OwnershipCandidates;
+                    candidates.Begin(area.StableId, LoadGeneration, hourBucket, Assignments.Revision);
+                    candidates.Record(company.Company, currentBuilding, owner, label);
+                    break;
+                }
+            }
+        }
+        public void AssignmentChanged()
+        {
+            Assignments.Clear(); RefreshAssignments();
+            foreach (var snapshot in Store.All) { snapshot.OwnershipCandidates.Clear(); snapshot.Paused = true; snapshot.ResetBaselines(); }
+        }
         private EntityQuery managedAreas, writtenAreas, changedAreas, timeData, rentersUpdated, damagedMembers;
         private List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>(), building = new List<IndustrialAreaRef>();
         private readonly List<(Entity Area, ManagedArea Managed, ulong StableId)> rows = new List<(Entity Area, ManagedArea Managed, ulong StableId)>();

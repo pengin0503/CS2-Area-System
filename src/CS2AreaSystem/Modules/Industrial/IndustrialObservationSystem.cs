@@ -325,6 +325,9 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (read.Failed) failures.Warn(read.Building, "Industrial.Read", "Unreadable", "Industrial observation skipped an entity it could not read: " + read.Building);
                 else failures.Recovered(read.Building, "Industrial.Read");
                 var semantics = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Semantics;
+                var cycle = scheduler.Cycle(read.AreaId);
+                if (cycle != null && cycle.CycleId == read.CycleId && cycle.StructureToken == runtime.CycleSource.StructureToken(read.AreaId))
+                    foreach (var company in companies) runtime.ObserveCompanyCandidate(read, company, cycle.HourBucket);
                 scheduler.Complete(request, IndustrialObservationMapper.ToOwnedObservation(read, companies, runtime.Membership, runtime.Assignments, company => {
                     var facts = IndustrialCompanyOwnership.ReadLive(company.Company, EntityManager, semantics, out var liveBuilding, read.Traits);
                     if (liveBuilding != company.Building) facts.Live = false;
