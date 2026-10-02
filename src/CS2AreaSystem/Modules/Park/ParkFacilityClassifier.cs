@@ -2,6 +2,7 @@ using Game.Agents;
 using Game.Buildings;
 using Game.Prefabs;
 using Unity.Entities;
+using CS2AreaSystem.Core.Semantics;
 namespace CS2AreaSystem.Modules.Park
 {
     // Typed facts about one member building, read from vanilla components/prefab data. Pure scoring code
@@ -23,23 +24,25 @@ namespace CS2AreaSystem.Modules.Park
     public enum ParkFacilityRoles : byte { None = 0, CoreParkFacility = 1, Leisure = 2, Attraction = 4, SupportingAmenity = 8 }
     public static class ParkFacilityClassifier
     {
-        public static bool IsHeadquartersEligible(in ParkFacilityTraits traits) => traits.IsBuilding && traits.HasParkMaintenance;
+        public static bool IsHeadquartersEligible(in ParkFacilityTraits traits,AreaAssetSemanticRegistry registry=null) => traits.IsBuilding &&
+            (registry?.Resolve(traits.Prefab,AreaAssetSemantic.ParkHeadquarters,traits.HasParkMaintenance)??traits.HasParkMaintenance);
         public static uint LeisureBit(LeisureType type) => 1u << (int)type;
         // Park-local roles; a building may hold several. Unrelated residential/industrial/office members get None.
-        public static ParkFacilityRoles Classify(in ParkFacilityTraits traits)
+        public static ParkFacilityRoles Classify(in ParkFacilityTraits traits,AreaAssetSemanticRegistry registry=null)
         {
             if (!traits.IsBuilding) return ParkFacilityRoles.None;
             var roles = ParkFacilityRoles.None;
             if (traits.HasPark) roles |= ParkFacilityRoles.CoreParkFacility;
-            if (traits.HasLeisureProvider || traits.HasLeisureData) roles |= ParkFacilityRoles.Leisure;
-            if (traits.HasAttractivenessProvider || traits.Attractiveness > 0) roles |= ParkFacilityRoles.Attraction;
+            bool leisure=traits.HasLeisureProvider||traits.HasLeisureData,attraction=traits.HasAttractivenessProvider||traits.Attractiveness>0;
+            if (registry?.Resolve(traits.Prefab,AreaAssetSemantic.ParkLeisure,leisure)??leisure) roles |= ParkFacilityRoles.Leisure;
+            if (registry?.Resolve(traits.Prefab,AreaAssetSemantic.ParkAttraction,attraction)??attraction) roles |= ParkFacilityRoles.Attraction;
             if (traits.CommercialLeisureMask != 0) roles |= ParkFacilityRoles.SupportingAmenity;
             return roles;
         }
         // A Park visit needs leisure at a Park, leisure or attraction building (design §8.4). Commercial spending
         // at supporting amenities is not a Park visit in v1 (deep commercial attribution is deferred).
-        public static bool IsVisitRelevant(in ParkFacilityTraits traits) =>
-            (Classify(traits) & (ParkFacilityRoles.CoreParkFacility | ParkFacilityRoles.Leisure | ParkFacilityRoles.Attraction)) != 0;
+        public static bool IsVisitRelevant(in ParkFacilityTraits traits,AreaAssetSemanticRegistry registry=null) =>
+            (Classify(traits,registry) & (ParkFacilityRoles.CoreParkFacility | ParkFacilityRoles.Leisure | ParkFacilityRoles.Attraction)) != 0;
         // Entrance baseline (design §5.3): a member building with road/path access that is recognizably a Park,
         // leisure provider or attraction. Display names are never consulted.
         public static bool IsPlausibleEntrance(in ParkFacilityTraits traits) =>
@@ -131,7 +134,7 @@ namespace CS2AreaSystem.Modules.Park
         public float AttractivenessSum, LeisureEfficiencySum, WeightedCategories;
         public int DistinctCategories;
         public ParkMetric VanillaCondition;
-        public static ParkFacilitySnapshot Build(System.Collections.Generic.IEnumerable<ParkFacilityTraits> members)
+        public static ParkFacilitySnapshot Build(System.Collections.Generic.IEnumerable<ParkFacilityTraits> members,AreaAssetSemanticRegistry registry=null)
         {
             var snapshot = new ParkFacilitySnapshot();
             uint leisureTypes = 0, commercial = 0;
@@ -139,7 +142,7 @@ namespace CS2AreaSystem.Modules.Park
             double condition = 0; int conditionCount = 0;
             foreach (var traits in members)
             {
-                var roles = ParkFacilityClassifier.Classify(traits);
+                var roles = ParkFacilityClassifier.Classify(traits,registry);
                 if (roles == ParkFacilityRoles.None) continue;
                 snapshot.RelevantFacilities++;
                 if ((roles & ParkFacilityRoles.CoreParkFacility) != 0)

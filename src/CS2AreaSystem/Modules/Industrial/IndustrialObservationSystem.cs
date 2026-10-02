@@ -309,7 +309,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 var request = new IndustrialReadRequest(read.Building, read.AreaId, read.CycleId);
                 if (read.Failed) failures.Warn(read.Building, "Industrial.Read", "Unreadable", "Industrial observation skipped an entity it could not read: " + read.Building);
                 else failures.Recovered(read.Building, "Industrial.Read");
-                scheduler.Complete(request, IndustrialObservationMapper.ToObservation(read, companies), read.Failed);
+                scheduler.Complete(request, IndustrialObservationMapper.ToObservation(read, companies,World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Semantics), read.Failed);
             }
             if (pendingRequests.IsCreated) pendingRequests.Dispose();
             buildingReads.Clear(); companyReads.Clear();
@@ -353,7 +353,7 @@ namespace CS2AreaSystem.Modules.Industrial
             Buildings = GetComponentLookup<Building>(true), Prefabs = GetComponentLookup<PrefabRef>(true),
             Abandoned = GetComponentLookup<Abandoned>(true), Destroyed = GetComponentLookup<Destroyed>(true),
             ExtractorProperties = GetComponentLookup<ExtractorProperty>(true), IndustrialProperties = GetComponentLookup<IndustrialProperty>(true),
-            OfficeProperties = GetComponentLookup<OfficeProperty>(true), StorageProperties = GetComponentLookup<StorageProperty>(true),
+            OfficeProperties = GetComponentLookup<OfficeProperty>(true), CommercialProperties = GetComponentLookup<CommercialProperty>(true), StorageProperties = GetComponentLookup<StorageProperty>(true),
             CargoStations = GetComponentLookup<Game.Buildings.CargoTransportStation>(true), ExtractorFacilities = GetComponentLookup<Game.Buildings.ExtractorFacility>(true),
             PropertyDatas = GetComponentLookup<BuildingPropertyData>(true), CargoStationDatas = GetComponentLookup<CargoTransportStationData>(true),
             ExtractorFacilityDatas = GetComponentLookup<ExtractorFacilityData>(true), SpawnableDatas = GetComponentLookup<SpawnableBuildingData>(true),

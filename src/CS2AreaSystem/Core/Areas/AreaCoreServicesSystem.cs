@@ -11,6 +11,7 @@ namespace CS2AreaSystem.Core.Areas
     public partial class AreaCoreServicesSystem : GameSystemBase
     {
         public AreaTypeRegistry Registry { get; } = new AreaTypeRegistry();
+        public Semantics.AreaAssetSemanticRegistry Semantics { get; } = new Semantics.AreaAssetSemanticRegistry();
         // Stable IDs and the quarantine of the current load generation (AreaLoadCoordinatorSystem drives the lifecycle).
         public AreaIdentityLifecycle Identity { get; } = new AreaIdentityLifecycle();
         public AreaStableIdAllocator StableIds => Identity.StableIds;
@@ -23,8 +24,8 @@ namespace CS2AreaSystem.Core.Areas
         {
             base.OnCreate();
             Anchors = new AreaAnchorService(new EntityAreaAnchorStore(EntityManager), IsValidEntity, IsEligibleAnchor, IsAcceptedExistingAnchor);
-            Registry.Register(new ParkAreaModule(Anchors).DescribeType());
-            Registry.Register(new IndustrialAreaModule(Anchors).DescribeType());
+            Registry.Register(new ParkAreaModule(Anchors, semantics: Semantics).DescribeType());
+            Registry.Register(new IndustrialAreaModule(Anchors, semantics: Semantics).DescribeType());
             Registry.Register(new TourismAreaModule().DescribeType());
         }
         public bool IsValidEntity(Entity entity) => EntityManager.Exists(entity) && entity != Entity.Null &&

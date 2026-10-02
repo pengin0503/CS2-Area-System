@@ -65,9 +65,9 @@ namespace CS2AreaSystem.Modules.Park
                 {
                     members.Add(ParkFacilityReader.Read(member, EntityManager));
                     foreach (var relation in index.GetAreas(member))
-                        if (relation.AreaStableId == park.StableId && !relation.IsPrimaryForType && ParkFacilityClassifier.IsVisitRelevant(members[members.Count - 1])) primaryForAll = false;
+                        if (relation.AreaStableId == park.StableId && !relation.IsPrimaryForType && ParkFacilityClassifier.IsVisitRelevant(members[members.Count - 1],services.Semantics)) primaryForAll = false;
                 }
-                snapshot.Facilities = ParkFacilitySnapshot.Build(members);
+                snapshot.Facilities = ParkFacilitySnapshot.Build(members,services.Semantics);
                 snapshot.EntranceCount = entrances.Count + (entranceEvidence?.Count ?? 0);
                 int level = EntityManager.HasComponent<ManagedAreaProgress>(park.Area) ? ParkProgressionModel.NormalizeLevel(EntityManager.GetComponentData<ManagedAreaProgress>(park.Area).Level) : 1;
                 float budget = EntityManager.HasComponent<ManagedAreaSettings>(park.Area) ? EntityManager.GetComponentData<ManagedAreaSettings>(park.Area).BudgetMultiplier : ParkFinanceModel.DefaultBudget;

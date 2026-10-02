@@ -11,10 +11,13 @@ namespace CS2AreaSystem.Core.Anchors
     {
         private AreaCoreServicesSystem services;
         private EntityQuery changedAnchors, changedAreas;
+        private EntityQuery allAreas;
+        private long semanticRevision=-1;
         protected override void OnCreate()
         {
             base.OnCreate();
             services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            allAreas=GetEntityQuery(ComponentType.ReadOnly<ManagedArea>());
             changedAnchors = GetEntityQuery(new EntityQueryDesc {
                 All = new[] {ComponentType.ReadOnly<Game.Buildings.Building>()},
                 Any = new[] {ComponentType.ReadOnly<Updated>(),ComponentType.ReadOnly<Deleted>(),ComponentType.ReadOnly<Destroyed>()},
@@ -29,6 +32,11 @@ namespace CS2AreaSystem.Core.Anchors
         protected override void OnUpdate()
         {
             if (!World.GetOrCreateSystemManaged<AreaLoadCoordinatorSystem>().Ready) return;
+            if(semanticRevision!=services.Semantics.Revision) {
+                semanticRevision=services.Semantics.Revision;
+                using var affected=allAreas.ToEntityArray(Allocator.Temp);
+                foreach(var area in affected)services.Anchors.InvalidateArea(area);
+            }
             using var anchors = changedAnchors.ToEntityArray(Allocator.Temp);
             foreach (var anchor in anchors) services.Anchors.InvalidateAnchor(anchor);
             using var areas = changedAreas.ToEntityArray(Allocator.Temp);

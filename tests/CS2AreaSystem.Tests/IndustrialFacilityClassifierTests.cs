@@ -59,7 +59,7 @@ public class IndustrialFacilityClassifierTests {
   // Traits carry only component/prefab facts; there is no asset name or origin to distinguish a modded building.
   var modded = Factory();
   Assert.That(IndustrialFacilityClassifier.Classify(modded), Is.EqualTo(IndustrialFacilityClassifier.Classify(Factory())));
-  Assert.That(typeof(IndustrialFacilityTraits).GetFields().Select(f => f.FieldType).Distinct(), Is.EqualTo(new[] { typeof(bool) }), "no names or strings");
+  Assert.That(typeof(IndustrialFacilityTraits).GetFields().Select(f => f.FieldType).Distinct(), Is.EquivalentTo(new[] { typeof(bool), typeof(Entity) }), "no names or strings");
  }
  [Test] public void ManufacturedGoodsExcludeOfficeAndRawExtractorResources() {
   Assert.That(IndustrialFacilityReader.ManufacturesGoods(Resource.Furniture | Resource.Paper), Is.True);

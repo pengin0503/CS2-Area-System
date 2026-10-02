@@ -171,11 +171,11 @@ namespace CS2AreaSystem.Modules.Park
     // Relevant member building -> the Park that owns visits there (primary, Active) and its facility experience.
     public static class ParkVisitTargets
     {
-        public static bool TryResolve(IReadOnlyList<AreaMembership> relations, int parkTypeId, Func<ulong, bool> isActive, in ParkFacilityTraits traits, out ParkVisitTarget target)
+        public static bool TryResolve(IReadOnlyList<AreaMembership> relations, int parkTypeId, Func<ulong, bool> isActive, in ParkFacilityTraits traits, out ParkVisitTarget target, Core.Semantics.AreaAssetSemanticRegistry registry=null)
         {
             target = default;
             ulong park = ParkVisitModel.PrimaryPark(relations, parkTypeId, isActive);
-            if (park == 0 || !ParkFacilityClassifier.IsVisitRelevant(traits)) return false;
+            if (park == 0 || !ParkFacilityClassifier.IsVisitRelevant(traits,registry)) return false;
             target = new ParkVisitTarget { ParkId = park, Facility = ParkVisitModel.FacilityExperience(traits.HasLeisureData, traits.LeisureEfficiency) };
             return true;
         }

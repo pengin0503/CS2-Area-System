@@ -4,6 +4,7 @@ using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Modules;
 using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
+using CS2AreaSystem.Core.Semantics;
 namespace CS2AreaSystem.Modules.Industrial
 {
     public sealed class IndustrialAreaModule : AnchorAreaModule, IAreaExistingAnchorPolicy, IAreaPolicyProvider, IAreaPolicyUpkeepProvider, Core.Persistence.IAreaSavedStateValidator
@@ -13,16 +14,17 @@ namespace CS2AreaSystem.Modules.Industrial
             if (entities.HasComponent<IndustrialAreaState>(area)) IndustrialSavedStateValidator.Validate(entities.GetComponentData<IndustrialAreaState>(area), report);
         }
         private readonly Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits;
+        private readonly AreaAssetSemanticRegistry semantics;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
         private readonly IndustrialPanelCache panels = new IndustrialPanelCache(250, () => clock.ElapsedMilliseconds);
-        public IndustrialAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits = null)
+        public IndustrialAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits = null,AreaAssetSemanticRegistry semantics=null)
             : base(AreaTypeId.Industrial, anchors, AreaAnchorRole.Headquarters)
-        { this.readTraits = readTraits ?? IndustrialFacilityReader.ReadAnchor; }
+        { this.readTraits = readTraits ?? IndustrialFacilityReader.ReadAnchor;this.semantics=semantics; }
         // Headquarters is an office member building; production/logistics observations remain separate.
         public override bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities)
         {
             if (role != AreaAnchorRole.Headquarters) return false;
-            try { return IndustrialFacilityClassifier.IsHeadquartersEligible(readTraits(anchor, entities)); }
+            try { return IndustrialFacilityClassifier.IsHeadquartersEligible(readTraits(anchor, entities),semantics); }
             catch (Exception) { return false; }
         }
         // Revalidate static office evidence, including legacy links; vacancy/health do not affect OfficeProperty.

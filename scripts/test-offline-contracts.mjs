@@ -111,7 +111,8 @@ check(panelActions.length === 1 && panelActions[0] === 'IndustrialGameplayFacade
 check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 1, 'Industrial panel may emit only the diagnostic focus button');
 const classifier = read(`${industrialDir}/IndustrialFacilityClassifier.cs`);
 const classify = classifier.slice(classifier.indexOf('public static IndustrialFacilityRole Classify'), classifier.indexOf('public static bool IsHeadquartersEligible'));
-check(classify.length > 0 && !/HasOffice/.test(classify), 'ordinary office properties/companies must never create an Industrial role');
+const positiveClassify = classify.replace(/if\s*\([^;]*HasOffice[^;]*\)\s*return\s+IndustrialFacilityRole\.None;/, '');
+check(classify.length > 0 && !/HasOffice/.test(positiveClassify), 'ordinary office properties/companies must never create an Industrial role (an exclusion guard is allowed)');
 const logisticsModel = read(`${industrialDir}/IndustrialLogisticsModel.cs`);
 check(!/\b(CargoFacilities|StorageFacilities|CargoOperational|StorageCapacity|StoredAmount)\b/.test(logisticsModel), 'Logistics scoring must have no warehouse/cargo presence path');
 check(/DailyXpCap\s*=\s*240/.test(read(`${industrialDir}/IndustrialProgressionModel.cs`)), 'Industrial daily XP cap must be 240');
