@@ -301,6 +301,17 @@ check(!/ISerializable|IBufferElementData|IComponentData/.test(entranceEvidence),
 check(!/Pathfind|Citizen|GetEntityQuery\([^;]*ReadOnly<Game.Net.Edge>/s.test(entranceSystem.split('private ParkNetPage ReadPage')[1]??''), 'entrance query must be spatial, with no citizen/pathfinding changes');
 check(/UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem,\s*CS2AreaSystem.Core.Anchors.AreaActivationSystem>/.test(mod), 'Park entrances must update before activation');
 
+// Foundation + Phase 1: derived network diagnostics cannot become authoritative save data.
+for (const module of ['Park', 'Industrial']) {
+  const history = code(`src/CS2AreaSystem/Modules/${module}/${module}HistoryEntry.cs`);
+  check(!/\bEntity\b|\bGame\.Net\b/.test(history), `${module} hourly history must not serialize runtime entity identities`);
+}
+for (const source of ['ParkPathEntranceDetector.cs', 'ParkEntranceEvidence.cs', 'ParkConnectivityModel.cs']) {
+  check(!/ISerializable|\bSerialize\s*\(/.test(code(`src/CS2AreaSystem/Modules/Park/${source}`)), `${source}: derived path evidence must remain runtime-only`);
+}
+const connectivity = code('src/CS2AreaSystem/Modules/Park/ParkConnectivitySystem.cs');
+check(!/SetComponentData|SetBuffer|AddComponent|RemoveComponent|DestroyEntity|EntityCommandBuffer/.test(connectivity), 'Park connectivity must only read the vanilla network');
+
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);
   for (const failure of failures) console.error(` - ${failure}`);

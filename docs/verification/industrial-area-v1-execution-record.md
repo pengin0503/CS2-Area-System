@@ -66,3 +66,9 @@ Branch `claude/pre-tourism-wave-a1-a5-l5pses`, base `c04ebf4cf586b4d46532662000d
 - Automated: `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -p:AreaApiCheck=true` 950/950; Release API-check build against the supplied 1.6.2f1 DLLs 0 warnings / 0 errors; Vitest 104/104; webpack production build; offline contracts, `verify-source.ps1`, `test-source-guards.ps1`; `pwsh scripts/verify.ps1 -ApiCheck` exit 0.
 - Runtime: **NOT RUN.** See the "Pre-Tourism Wave A1–A5" section of [the smoke checklist](../../scripts/runtime-smoke-checklist.md).
 - Not included: A6 (pedestrian connectivity), A7 (budget/fee what-if) and Waves B–D.
+
+## Foundation + Phase 1 — 2026-10-02
+
+This update supersedes the historical industrial-capability HQ eligibility and unchanged-HQ-validation statements above. Headquarters now uses stable office-building evidence; vacancy retains eligibility, while old extractor/factory/storage/cargo HQ links remain visible but invalid. Office/commercial observation exclusions remain enforced. B1 adds explicit registered asset roles, C1 persists 168 hourly buckets and seeds the newest 24 distinct hours after load, and C3 adds a read-only comparison of managed Industrial Areas with stale/unavailable data preserved.
+
+Final automated evidence and review decisions are in [the Foundation + Phase 1 execution record](foundation-phase1-execution-record.md). Runtime and official Unity postprocessing/deployment remain **NOT RUN**; use F01/F02 and P05–P08 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md). The original v1/Wave A records above describe their dated revisions rather than current prerequisites.
