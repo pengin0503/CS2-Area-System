@@ -282,7 +282,7 @@ namespace CS2AreaSystem.Core.UI
                 bool guard = AreaUIActionGuard.Matches(area, selection.selectedEntity, tools.selected, id, expectedId, true);
                 services.Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor);
                 if (Core.Modules.AreaModuleActionDispatcher.Dispatch(guard, descriptor?.Module?.PanelProvider, area, action, value,
-                        new Core.Modules.AreaPanelContext(World, EntityManager), error => Mod.Log.Error(error, "Area module action failed: " + action)))
+                        new Core.Modules.AreaPanelContext(World, EntityManager, selection.Focus), error => Mod.Log.Error(error, "Area module action failed: " + action)))
                 { presentation.Invalidate(); selection.SetDirty(); }
             }
             catch (Exception error) { Mod.Log.Error(error, "Area module action rejected"); }

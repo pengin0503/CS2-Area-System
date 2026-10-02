@@ -1,3 +1,4 @@
+using System;
 using Unity.Entities;
 namespace CS2AreaSystem.Core.Modules
 {
@@ -6,6 +7,8 @@ namespace CS2AreaSystem.Core.Modules
     {
         public World World { get; }
         public EntityManager Entities { get; }
-        public AreaPanelContext(World world, EntityManager entities) { World = world; Entities = entities; }
+        // Read-only camera focus on an entity (the vanilla selected-info focus); supplied only for guarded module actions.
+        public Action<Entity> Focus { get; }
+        public AreaPanelContext(World world, EntityManager entities, Action<Entity> focus = null) { World = world; Entities = entities; Focus = focus; }
     }
 }
