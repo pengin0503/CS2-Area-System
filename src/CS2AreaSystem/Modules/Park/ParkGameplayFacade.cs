@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Modules;
 using Unity.Entities;
@@ -63,6 +64,14 @@ namespace CS2AreaSystem.Modules.Park
             if (!entities.Exists(area) || !entities.HasComponent<ManagedAreaStableId>(area)) return false;
             var runtime = context.World.GetExistingSystemManaged<ParkRuntimeSystem>();
             if (runtime == null || !runtime.Store.TryGet(entities.GetComponentData<ManagedAreaStableId>(area).Value, out var snapshot)) return false;
+            var services=context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            ulong id=entities.GetComponentData<ManagedAreaStableId>(area).Value;
+            var connectivity=snapshot.Connectivity;
+            long entranceRevision=runtime.Entrances.TryGet(id,out var evidence)?evidence.Revision:-1;
+            if(services!=null && connectivity!=null && connectivity.MembershipRevision==runtime.Membership.GetAreaRevision(id) &&
+                connectivity.EntranceRevision==entranceRevision && connectivity.SemanticRevision==services.Semantics.Revision &&
+                ParkConnectivityFocus.TryFocus(connectivity,key,e=>services.IsValidEntity(e)&&runtime.Membership.GetMembers(id).Contains(e)&&
+                    ParkFacilityClassifier.IsVisitRelevant(ParkFacilityReader.ReadCore(e,entities,false),services.Semantics),context.Focus))return true;
             return TryFocus(snapshot.Landscape, key, e => StandalonePosition(entities, e), new ParkPolygon(ParkGeometry.Triangles(entities, area)), context.Focus);
         }
         // Landscape targets are standalone static objects (never Core building members): still alive, still standalone.

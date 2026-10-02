@@ -34,6 +34,8 @@ namespace CS2AreaSystem
             // Entrance evidence is an activation requirement, independently of finance/gameplay registration.
             try { updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Park entrance detection unavailable; no derived entrance is assumed."); }
+            try { updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkConnectivitySystem, CS2AreaSystem.Modules.Park.ParkEntranceSystem>(SystemUpdatePhase.ModificationEnd); }
+            catch (System.Exception error) { Log.Error(error, "Park connectivity diagnostics unavailable; no pathfinding is changed."); }
             try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicySystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Area policy runtime unavailable; Area Core and modules remain registered."); }
             var finance = RegisterAreaFinance(updateSystem);

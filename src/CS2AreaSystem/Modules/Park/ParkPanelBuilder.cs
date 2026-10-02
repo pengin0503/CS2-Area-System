@@ -35,6 +35,7 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
             foreach (var d in ParkLandscapeDiagnostics.Keys) if (d != ParkLandscapeDiagnostics.Cluttered) { yield return P + "Diagnostic." + d; yield return P + "Diagnostic." + d + ".Tip"; }
             yield return P + "FocusTarget"; yield return P + "FocusTarget.Tip";
+            foreach(var key in new[]{"Status","Unknown","Partial","Complete","Reachable","Unattached","Disconnected"}) yield return P+"Connectivity."+key;
         }
         private static AreaPanelItem Row(string id, string label, string value = null, string valueKey = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Row, Id = id, LabelKey = label, Value = value, ValueKey = valueKey, TooltipKey = tooltip };
@@ -135,6 +136,7 @@ namespace CS2AreaSystem.Modules.Park
         {
             var l = model.Runtime?.Landscape;
             var items = new List<AreaPanelItem>();
+            Connectivity(items, model.Runtime?.Connectivity);
             if (l == null || !l.Available) { items.Add(Row("landscape", P + "Landscape", valueKey: P + "Calculating")); return items; }
             // The breakdown Quality used: the scan with this Park's policy effects (Landscape Protection).
             var r = model.Runtime.Quality?.EffectiveLandscape ?? l.Result;
@@ -152,6 +154,22 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("transit", P + "TransitStops", Number(l.TransitPoints)));
             items.Add(Row("facilityCategories", P + "FacilityCategories", Number(model.Runtime?.Facilities?.DistinctCategories ?? 0)));
             return items;
+        }
+        private static void Connectivity(List<AreaPanelItem> items, ParkConnectivitySnapshot result)
+        {
+            var status=result?.Status??ParkConnectivityStatus.Unknown;
+            items.Add(Row("connectivity.status",P+"Connectivity.Status",valueKey:P+"Connectivity."+status));
+            if(status==ParkConnectivityStatus.Unknown)return;
+            items.Add(Row("connectivity.reachable",P+"Connectivity.Reachable",Number(result.Connected)+" / "+Number(result.Total)));
+            items.Add(Row("connectivity.unattached",P+"Connectivity.Unattached",Number(result.UnknownTargets)));
+            if(status!=ParkConnectivityStatus.Complete)return;
+            int count=0;
+            foreach(var target in result.DisconnectedTargets) {
+                if(count++>=20)break;
+                string suffix=AreaDiagnosticTargetKey.Format(target);
+                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Warning,Id="connectivity.disconnected."+suffix,LabelKey=P+"Connectivity.Disconnected"});
+                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Button,Id="focus.connectivity."+suffix,LabelKey=P+"FocusTarget",TooltipKey=P+"FocusTarget.Tip",Action=ParkGameplayFacade.FocusDiagnosticTarget,Value=suffix});
+            }
         }
         // Wave A5: advisory landscape findings of the last scan. A shortage the policy-adjusted breakdown no longer shows
         // is dropped; clutter keeps its existing warning row and only gains the focus button.

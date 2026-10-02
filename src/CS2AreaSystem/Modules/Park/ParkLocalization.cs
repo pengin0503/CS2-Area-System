@@ -111,6 +111,13 @@ namespace CS2AreaSystem.Modules.Park
             Add(P + "Diagnostic.SparseLighting", "Lighting is concentrated in a small part of the Park.", "照明が公園の一部に偏っています。");
             Add(P + "Diagnostic.SparseLighting.Tip", "Fewer than a quarter of the Park's landscaped sections have lighting. The button shows a busy section without any. Advisory only: the score is unchanged.", "景観要素のある区画のうち、照明がある区画が4分の1未満です。ボタンで照明のない区画の一つを表示します。助言のみでスコアは変わりません。");
             Add(P + "FocusTarget", "Show location", "場所を表示");
+            Add(P+"Connectivity.Status","Pedestrian connectivity (advisory)","歩行接続診断（助言）");
+            Add(P+"Connectivity.Unknown","Unknown / waiting for entrance evidence","不明・入口情報の待機中");
+            Add(P+"Connectivity.Partial","Partial scan — connectivity not yet determined","部分スキャン・接続は未確定");
+            Add(P+"Connectivity.Complete","Complete scan","スキャン完了");
+            Add(P+"Connectivity.Reachable","Facilities reached from entrances","入口から接続する施設");
+            Add(P+"Connectivity.Unattached","Facilities with unknown network attachment","歩行ネットワーク接続先が不明な施設");
+            Add(P+"Connectivity.Disconnected","Facility not connected to the entrance pedestrian network","入口の歩行ネットワークに接続していない施設");
             Add(P + "FocusTarget.Tip", "Moves the camera to a representative object for this finding. Nothing in the city is changed.", "この診断の代表的なオブジェクトにカメラを移動します。都市の状態は何も変更しません。");
             Add(P + "Vegetation", "Vegetation", "植栽");
             Add(P + "Amenities", "Rest & amenities", "休憩・設備");
