@@ -50,6 +50,8 @@
 - Modify: `src/CS2AreaSystem/Core/Areas/AreaCoreServicesSystem.cs`
 - Modify: `src/CS2AreaSystem/Modules/Tourism/TourismAreaModule.cs`
 - Test: `tests/CS2AreaSystem.Tests/AreaAnchorServiceTests.cs`
+- Test: `tests/CS2AreaSystem.Tests/AreaMemberClassifierTests.cs`
+- Test: `tests/CS2AreaSystem.Tests/TourismAreaModuleTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/TourismBoundaryContractTests.cs`
 - Test: `tests/CS2AreaSystem.Tests/ModSystemOrderTests.cs`
 
@@ -75,7 +77,7 @@
   - Tourism with no roles remains Active.
 
 - [ ] **Step 2: Run focused tests and confirm RED**
-  - `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -p:AreaApiCheck=true --filter "AreaAnchorServiceTests|TourismBoundaryContractTests|ModSystemOrderTests"`
+  - `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -p:AreaApiCheck=true --filter "AreaAnchorServiceTests|AreaMemberClassifierTests|TourismAreaModuleTests|TourismBoundaryContractTests|ModSystemOrderTests"`
 
 - [ ] **Step 3: Implement the context/interface migration**
 
