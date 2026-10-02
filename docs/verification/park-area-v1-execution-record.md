@@ -57,3 +57,9 @@ Branch `claude/pre-tourism-wave-a1-a5-l5pses`, base `c04ebf4cf586b4d46532662000d
 - Automated: `dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj -p:AreaApiCheck=true` 950/950; Release API-check build against the supplied 1.6.2f1 DLLs 0 warnings / 0 errors; Vitest 104/104; webpack production build; offline contracts, `verify-source.ps1`, `test-source-guards.ps1`; `pwsh scripts/verify.ps1 -ApiCheck` exit 0.
 - Runtime: **NOT RUN.** See the "Pre-Tourism Wave A1–A5" section of [the smoke checklist](../../scripts/runtime-smoke-checklist.md).
 - Not included: A6 (pedestrian connectivity), A7 (budget/fee what-if) and Waves B–D.
+
+## Foundation + Phase 1 — 2026-10-02
+
+This update supersedes the historical Park entrance-only activation and runtime-only trend assumptions above. Park now requires Park Maintenance Headquarters plus dedicated Path crossing or a registered explicit Entrance. Old leisure Entrance links remain invalid/removable. A6 adds read-only pedestrian connectivity; A7 adds transient budget/fee previews; B1 integrates registered asset semantics into anchors, visits and Quality; C1 persists 168 hourly buckets and seeds the latest 24 distinct hours after load.
+
+Final automated evidence and review decisions are in [the Foundation + Phase 1 execution record](foundation-phase1-execution-record.md). Runtime and official Unity postprocessing/deployment remain **NOT RUN**; use cases F02–F07 and P01–P08 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md). The original v1/Wave A records above describe their dated revisions rather than current prerequisites.

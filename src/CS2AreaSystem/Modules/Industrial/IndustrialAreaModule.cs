@@ -4,6 +4,7 @@ using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Modules;
 using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
+using CS2AreaSystem.Core.Semantics;
 namespace CS2AreaSystem.Modules.Industrial
 {
     public sealed class IndustrialAreaModule : AnchorAreaModule, IAreaExistingAnchorPolicy, IAreaPolicyProvider, IAreaPolicyUpkeepProvider, Core.Persistence.IAreaSavedStateValidator
@@ -13,23 +14,23 @@ namespace CS2AreaSystem.Modules.Industrial
             if (entities.HasComponent<IndustrialAreaState>(area)) IndustrialSavedStateValidator.Validate(entities.GetComponentData<IndustrialAreaState>(area), report);
         }
         private readonly Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits;
+        private readonly AreaAssetSemanticRegistry semantics;
         private static readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
         private readonly IndustrialPanelCache panels = new IndustrialPanelCache(250, () => clock.ElapsedMilliseconds);
-        public IndustrialAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits = null)
+        public IndustrialAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits = null,AreaAssetSemanticRegistry semantics=null)
             : base(AreaTypeId.Industrial, anchors, AreaAnchorRole.Headquarters)
-        { this.readTraits = readTraits ?? IndustrialFacilityReader.ReadAnchor; }
-        // Initial HQ assignment: an existing member building with supported industrial capability (design §5.1).
+        { this.readTraits = readTraits ?? IndustrialFacilityReader.ReadAnchor;this.semantics=semantics; }
+        // Headquarters is an office member building; production/logistics observations remain separate.
         public override bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities)
         {
             if (role != AreaAnchorRole.Headquarters) return false;
-            try { return IndustrialFacilityClassifier.IsHeadquartersEligible(readTraits(anchor, entities)); }
+            try { return IndustrialFacilityClassifier.IsHeadquartersEligible(readTraits(anchor, entities),semantics); }
             catch (Exception) { return false; }
         }
-        // Accepted HQ link: Core already checked that it is a valid, existing member building. Vacancy, bankruptcy or poor
-        // operating health never invalidate it, so the assignment classifier is deliberately not consulted again.
-        public bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => role == AreaAnchorRole.Headquarters;
+        // Revalidate static office evidence, including legacy links; vacancy/health do not affect OfficeProperty.
+        public bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => AcceptsAnchor(area, anchor, role, entities);
         public IndustrialHeadquartersState HeadquartersState(Entity area) =>
-            ValidateActivation(area) ? IndustrialHeadquartersState.Valid : Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
+            ValidateActivation(area, default) ? IndustrialHeadquartersState.Valid : Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
         public override string BuildSummary(Entity area, in AreaPanelContext context)
         {
             switch (HeadquartersState(area))

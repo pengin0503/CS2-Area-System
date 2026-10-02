@@ -3,7 +3,7 @@ import {bindValue} from 'cs2/api';
 export interface AreaSectionData {
  stableId:string;typeKey:string;state:string;level:number|null;experience:string|null;summary:string;
  anchorRole:'Entrance'|'Headquarters'|null;anchorName:string|null;pendingAnchor:boolean;confirmDelete:boolean;
- tabs:AreaPanelTab[];anchors?:AreaAnchor[];
+ tabs:AreaPanelTab[];anchors?:AreaAnchor[];anchorGroups?:AreaAnchorGroup[];
  // True when the module's tabs present level/experience themselves (Core rows are then omitted).
  moduleShowsProgress?:boolean;
 }
@@ -14,6 +14,7 @@ export interface AreaPanelItem {
 }
 export interface AreaPanelTab {id:string;labelKey:string;items?:AreaPanelItem[];}
 export interface AreaAnchor {key:string;name:string|null;valid?:boolean;}
+export interface AreaAnchorGroup {role:'Headquarters'|'Entrance';assignmentSupported:boolean;anchors:AreaAnchor[];derivedCount:number|null;derivedStatusKey:string|null;}
 // One policy of the selected Area, written by CS2AreaSystem.Core.UI.AreaPolicyView. Every flag is decided in C#.
 export interface AreaPolicyData {
  policyId:number;nameKey:string;descriptionKey:string;icon:string|null;minLevel:number;desiredEnabled:boolean;effective:boolean;

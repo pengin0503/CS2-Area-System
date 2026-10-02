@@ -42,6 +42,8 @@ namespace CS2AreaSystem.Core.Persistence
             nativeReadiness.BeginLoad(search.LastSystemVersion);
             // A new load generation: no stable ID or quarantine of the previous city survives (#62).
             services.Identity.BeginLoad();
+            // Prefab entity registrations belong to this load, never to the previous city.
+            services.Semantics.Clear();
             // ... and every failure is diagnosed again in the new city (#67).
             services.Failures.NewGeneration();
         }

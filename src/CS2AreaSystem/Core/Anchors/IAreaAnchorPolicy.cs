@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.Entities;
 namespace CS2AreaSystem.Core.Anchors
 {
@@ -6,7 +8,8 @@ namespace CS2AreaSystem.Core.Anchors
     // own stricter predicate (for example, Park rejects entrances that are not plausible leisure facilities).
     public interface IAreaAnchorPolicy
     {
-        AreaAnchorRole? RequiredAnchorRole { get; }
+        IReadOnlyList<AreaAnchorRole> AnchorRoles { get; }
+        bool CanAssignAnchor(Entity area, AreaAnchorRole role, EntityManager entities);
         bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities);
     }
     // Optional: a module whose assignment rule must not be re-applied to an already accepted link (for example,
@@ -16,8 +19,15 @@ namespace CS2AreaSystem.Core.Anchors
     {
         bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities);
     }
+    // Optional runtime evidence presentation; Core need not know which module or network creates it.
+    public interface IAreaDerivedAnchorPolicy
+    {
+        bool TryGetDerivedAnchor(Entity area, AreaAnchorRole role, in Modules.AreaActivationContext context, out int? count, out string statusKey);
+    }
     public static class AreaAnchorEligibility
     {
+        public static bool AllowsRole(IAreaAnchorPolicy policy, Entity area, AreaAnchorRole role, EntityManager entities, bool existing) =>
+            policy != null && policy.AnchorRoles.Contains(role) && (existing || policy.CanAssignAnchor(area, role, entities));
         // Order: valid area -> building anchor -> module/role -> current membership -> module predicate.
         // Later checks never run when an earlier one fails, so modules only see current member buildings.
         public static bool Evaluate(Func<bool> validArea, Func<bool> isBuilding, Func<bool> moduleRole, Func<bool> isMember, Func<bool> moduleAccepts) =>

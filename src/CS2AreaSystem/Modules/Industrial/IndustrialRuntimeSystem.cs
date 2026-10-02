@@ -87,6 +87,7 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             base.OnCreate();
             services = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>();
+            Store.Initialize=snapshot=>{try{IndustrialHistorySystem.Seed(EntityManager,snapshot);}catch(System.Exception error){services.Failures.Report(snapshot.Area,"Industrial.History.Seed",error,"Saved trends unavailable; current observations continue");}};
             managedAreas = GetEntityQuery(new EntityQueryDesc {
                 All = new[] { ComponentType.ReadOnly<ManagedArea>(), ComponentType.ReadOnly<ManagedAreaStableId>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() } });

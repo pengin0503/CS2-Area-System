@@ -31,6 +31,11 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicyBootstrapSystem, CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
+            // Entrance evidence is an activation requirement, independently of finance/gameplay registration.
+            try { updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
+            catch (System.Exception error) { Log.Error(error, "Park entrance detection unavailable; no derived entrance is assumed."); }
+            try { updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkConnectivitySystem, CS2AreaSystem.Modules.Park.ParkEntranceSystem>(SystemUpdatePhase.ModificationEnd); }
+            catch (System.Exception error) { Log.Error(error, "Park connectivity diagnostics unavailable; no pathfinding is changed."); }
             try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicySystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Area policy runtime unavailable; Area Core and modules remain registered."); }
             var finance = RegisterAreaFinance(updateSystem);
@@ -95,7 +100,7 @@ namespace CS2AreaSystem
         {
             if (!ModuleRegistration.Requires(finance, "Park gameplay", message => Log.Error(message))) return;
             var park = new ModuleRegistration("Park gameplay",
-                typeof(CS2AreaSystem.Modules.Park.ParkRuntimeSystem),
+                typeof(CS2AreaSystem.Modules.Park.ParkRuntimeSystem), typeof(CS2AreaSystem.Modules.Park.ParkHistorySystem), typeof(CS2AreaSystem.Modules.Park.ParkHistorySaveSystem),
                 typeof(CS2AreaSystem.Modules.Park.ParkLandscapeSystem), typeof(CS2AreaSystem.Modules.Park.ParkVisitSystem),
                 typeof(CS2AreaSystem.Modules.Park.ParkQualitySystem), typeof(CS2AreaSystem.Modules.Park.ParkFinanceSystem),
                 typeof(CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem), typeof(CS2AreaSystem.Modules.Park.ParkProgressionSystem));
@@ -104,6 +109,8 @@ namespace CS2AreaSystem
                 // The runtime owns the single preload generation for every Park consumer. Include it in the same
                 // registration unit so a partial Park failure disables the owner as well as its consumers.
                 updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkRuntimeSystem>(SystemUpdatePhase.ModificationEnd); park.Step();
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkHistorySystem, CS2AreaSystem.Modules.Park.ParkRuntimeSystem>(SystemUpdatePhase.ModificationEnd); park.Step();
+                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkHistorySaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize); park.Step();
                 updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkLandscapeSystem>(SystemUpdatePhase.ModificationEnd); park.Step();
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkVisitSystem>(SystemUpdatePhase.GameSimulation); park.Step();
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkQualitySystem>(SystemUpdatePhase.GameSimulation); park.Step();
@@ -120,11 +127,13 @@ namespace CS2AreaSystem
         private static void RegisterIndustrialSystems(UpdateSystem updateSystem)
         {
             var industrial = new ModuleRegistration("Industrial gameplay",
-                typeof(CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem),
+                typeof(CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySaveSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem),
                 typeof(CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialProgressionSystem));
             try
             {
                 updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem>(SystemUpdatePhase.ModificationEnd); industrial.Step();
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialHistorySystem, CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem>(SystemUpdatePhase.ModificationEnd); industrial.Step();
+                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Industrial.IndustrialHistorySaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize); industrial.Step();
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation); industrial.Step();
                 // Policy effects reach vanilla state before an observation cycle in the same frame reads it.
                 updateSystem.UpdateBefore<CS2AreaSystem.Modules.Industrial.IndustrialPolicyEffectSystem, CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem>(SystemUpdatePhase.GameSimulation); industrial.Step();

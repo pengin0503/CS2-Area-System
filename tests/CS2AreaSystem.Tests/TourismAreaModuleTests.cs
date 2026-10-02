@@ -14,7 +14,7 @@ public class TourismAreaModuleTests {
   var summary = module.BuildSummary(Entity.Null, context);
   Assert.That(entries[summary], Does.Contain(boundary).IgnoreCase.And.Contain(gameplay));
   Assert.That(entries["Assets.DESCRIPTION[CS2AS.TourismArea]"], Does.Contain(boundary).IgnoreCase.And.Contain(gameplay));
-  Assert.That(module.RequiredAnchorRole, Is.Null);
-  Assert.That(module.ValidateActivation(Entity.Null), Is.True, "existing boundary saves remain supported");
+  Assert.That(module.AnchorRoles, Is.Empty);
+  Assert.That(module.ValidateActivation(Entity.Null, default), Is.True, "existing boundary saves remain supported");
  }
 }

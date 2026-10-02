@@ -26,7 +26,7 @@ public class AreaMemberClassifierTests {
   public bool GetterFails; public IAreaMemberClassifier Classifier;
   public IAreaMemberClassifier MemberClassifier => GetterFails ? throw new InvalidOperationException("getter failure") : Classifier;
   public AreaTypeDescriptor DescribeType() => throw new NotSupportedException();
-  public bool ValidateActivation(Entity area) => true;
+  public bool ValidateActivation(Entity area, in CS2AreaSystem.Core.Modules.AreaActivationContext context) => true;
   public IAreaPanelProvider PanelProvider => null;
   public bool AllowsOverlapWith(int otherTypeId) => true;
   public void OnAreaCreated(Entity area) { } public void OnAreaActivated(Entity area) { }

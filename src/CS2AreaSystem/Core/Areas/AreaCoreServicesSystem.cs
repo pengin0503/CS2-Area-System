@@ -11,6 +11,7 @@ namespace CS2AreaSystem.Core.Areas
     public partial class AreaCoreServicesSystem : GameSystemBase
     {
         public AreaTypeRegistry Registry { get; } = new AreaTypeRegistry();
+        public Semantics.AreaAssetSemanticRegistry Semantics { get; } = new Semantics.AreaAssetSemanticRegistry();
         // Stable IDs and the quarantine of the current load generation (AreaLoadCoordinatorSystem drives the lifecycle).
         public AreaIdentityLifecycle Identity { get; } = new AreaIdentityLifecycle();
         public AreaStableIdAllocator StableIds => Identity.StableIds;
@@ -23,8 +24,8 @@ namespace CS2AreaSystem.Core.Areas
         {
             base.OnCreate();
             Anchors = new AreaAnchorService(new EntityAreaAnchorStore(EntityManager), IsValidEntity, IsEligibleAnchor, IsAcceptedExistingAnchor);
-            Registry.Register(new ParkAreaModule(Anchors).DescribeType());
-            Registry.Register(new IndustrialAreaModule(Anchors).DescribeType());
+            Registry.Register(new ParkAreaModule(Anchors, semantics: Semantics).DescribeType());
+            Registry.Register(new IndustrialAreaModule(Anchors, semantics: Semantics).DescribeType());
             Registry.Register(new TourismAreaModule().DescribeType());
         }
         public bool IsValidEntity(Entity entity) => EntityManager.Exists(entity) && entity != Entity.Null &&
@@ -40,9 +41,14 @@ namespace CS2AreaSystem.Core.Areas
                 () => IsValidEntity(area) && !IsQuarantined(area) && EntityManager.HasComponent<ManagedArea>(area) && EntityManager.HasComponent<ManagedAreaStableId>(area),
                 () => IsValidEntity(anchor) && EntityManager.HasComponent<Game.Buildings.Building>(anchor),
                 () => Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor) &&
-                      (policy = descriptor.Module as IAreaAnchorPolicy) != null && policy.RequiredAnchorRole == role,
+                      (policy = descriptor.Module as IAreaAnchorPolicy) != null && AllowsRoleSafely(policy, area, role, existing),
                 () => IsMember(area, anchor),
                 () => existing && policy is IAreaExistingAnchorPolicy accepted ? AcceptsExistingSafely(accepted, area, anchor, role) : AcceptsSafely(policy, area, anchor, role));
+        }
+        private bool AllowsRoleSafely(IAreaAnchorPolicy policy, Entity area, AreaAnchorRole role, bool existing)
+        {
+            try { return AreaAnchorEligibility.AllowsRole(policy, area, role, EntityManager, existing); }
+            catch (System.Exception error) { Failures.Report(area, "Anchors.Role", error, "Area anchor role failed; rejected"); return false; }
         }
         private bool IsMember(Entity area, Entity anchor)
         {

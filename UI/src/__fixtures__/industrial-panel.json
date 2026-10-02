@@ -1321,9 +1321,257 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.42.name",
+              "labelKey": "CS2AS.Industrial.Comparison.Area",
+              "value": "Riverside Industry",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.42.Production",
+              "labelKey": "CS2AS.Industrial.Metric.Production",
+              "value": "91.9",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.42.Logistics",
+              "labelKey": "CS2AS.Industrial.Metric.Logistics",
+              "value": "100.0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.42.Employment",
+              "labelKey": "CS2AS.Industrial.Metric.Employment",
+              "value": "92.6",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.42.Efficiency",
+              "labelKey": "CS2AS.Industrial.Metric.Efficiency",
+              "value": "90.8",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.42.Performance",
+              "labelKey": "CS2AS.Industrial.Metric.Performance",
+              "value": "93.8",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.42.trend",
+              "labelKey": "CS2AS.Industrial.Comparison.Trend",
+              "value": null,
+              "valueKey": "CS2AS.Industrial.Status.Unavailable",
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.43.name",
+              "labelKey": "CS2AS.Industrial.Comparison.Area",
+              "value": "Paused Industry",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "comparison.43.stale",
+              "labelKey": "CS2AS.Industrial.Status.Stale",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.43.Production",
+              "labelKey": "CS2AS.Industrial.Metric.Production",
+              "value": "91.9",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Status.Stale",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.43.Logistics",
+              "labelKey": "CS2AS.Industrial.Metric.Logistics",
+              "value": "100.0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Status.Stale",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.43.Employment",
+              "labelKey": "CS2AS.Industrial.Metric.Employment",
+              "value": "92.6",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Status.Stale",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.43.Efficiency",
+              "labelKey": "CS2AS.Industrial.Metric.Efficiency",
+              "value": "90.8",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Status.Stale",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.43.Performance",
+              "labelKey": "CS2AS.Industrial.Metric.Performance",
+              "value": "93.8",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Status.Stale",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.43.trend",
+              "labelKey": "CS2AS.Industrial.Comparison.Trend",
+              "value": null,
+              "valueKey": "CS2AS.Industrial.Status.Unavailable",
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -1784,9 +2032,47 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": []
     },
     "paused": {
@@ -2780,9 +3066,47 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -3813,9 +4137,47 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -5041,9 +5403,47 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -5984,9 +6384,47 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "comparison",
+          "labelKey": "CS2AS.Tab.Comparison",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "comparison.note",
+              "labelKey": "CS2AS.Industrial.Comparison.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "comparison.empty",
+              "labelKey": "CS2AS.Industrial.Comparison.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
+      "anchorGroups": [],
       "anchors": [
         {
           "__Type": "CS2AreaSystem.AreaAnchorView",
@@ -6028,6 +6466,10 @@
     "CS2AS.Industrial.Check.PrestigeOutputs": "Prestige: 3+ meaningful outputs",
     "CS2AS.Industrial.Check.PrestigeStreak": "Prestige: 7 consecutive high-activity days",
     "CS2AS.Industrial.Check.Production": "Production",
+    "CS2AS.Industrial.Comparison.Area": "Industrial Area",
+    "CS2AS.Industrial.Comparison.Empty": "No Industrial Areas to compare",
+    "CS2AS.Industrial.Comparison.Tip": "Managed Industrial Areas only. Current Performance sorts first; stale results are advisory and do not affect gameplay.",
+    "CS2AS.Industrial.Comparison.Trend": "Performance: latest vs previous hour",
     "CS2AS.Industrial.DailyXp": "XP today",
     "CS2AS.Industrial.DailyXp.Tip": "At most 240 XP per game day.",
     "CS2AS.Industrial.Day.InsufficientCoverage": "Not counted: fewer than 18 observed hours",
@@ -6127,7 +6569,7 @@
     "CS2AS.Industrial.Suggestion.WorkforceShortage": "Improve housing, education or transit access for workers.",
     "CS2AS.Industrial.Summary.Active": "Active. Metrics come from the real companies inside this area, observed once per game hour.",
     "CS2AS.Industrial.Summary.HeadquartersInvalid": "Suspended: the headquarters building was removed or is no longer inside this area. Assign a new headquarters; Level and XP are kept.",
-    "CS2AS.Industrial.Summary.HeadquartersRequired": "Assign an extractor, factory, warehouse or cargo building inside this area as the headquarters to activate it.",
+    "CS2AS.Industrial.Summary.HeadquartersRequired": "Assign an office building inside this area as the headquarters to activate it.",
     "CS2AS.Industrial.SupportJobs": "Logistics & support: employees / jobs",
     "CS2AS.Industrial.Vacancies": "Vacancies",
     "CS2AS.Industrial.Vacancy.0": "Vacant: uneducated jobs",
@@ -6173,6 +6615,13 @@
     "CS2AS.Park.Check.Satisfaction": "Recent satisfaction",
     "CS2AS.Park.Check.Variety": "Variety",
     "CS2AS.Park.Check.Visitors": "Total visits",
+    "CS2AS.Park.Connectivity.Complete": "Complete scan",
+    "CS2AS.Park.Connectivity.Disconnected": "Facility not connected to the entrance pedestrian network",
+    "CS2AS.Park.Connectivity.Partial": "Partial scan — connectivity not yet determined",
+    "CS2AS.Park.Connectivity.Reachable": "Facilities reached from entrances",
+    "CS2AS.Park.Connectivity.Status": "Pedestrian connectivity (advisory)",
+    "CS2AS.Park.Connectivity.Unattached": "Facilities with unknown network attachment",
+    "CS2AS.Park.Connectivity.Unknown": "Unknown / waiting for entrance evidence",
     "CS2AS.Park.Decoration": "Decoration",
     "CS2AS.Park.Diagnostic.LowAmenities": "Few rest amenities such as benches or tables.",
     "CS2AS.Park.Diagnostic.LowAmenities.Tip": "Rest & amenities score below half its weight.",
@@ -6235,6 +6684,14 @@
     "CS2AS.Park.PathLength": "Footpath length",
     "CS2AS.Park.Paths": "Footpaths",
     "CS2AS.Park.PeakOccupancy": "Peak visitors",
+    "CS2AS.Park.Preview.Budget": "Preview: candidate budget",
+    "CS2AS.Park.Preview.Cost": "Estimate: daily management cost",
+    "CS2AS.Park.Preview.Coverage": "Estimate: management coverage",
+    "CS2AS.Park.Preview.Fee": "Preview: candidate fee",
+    "CS2AS.Park.Preview.Maintenance": "Estimate: maintenance score",
+    "CS2AS.Park.Preview.Net": "Estimate: daily net",
+    "CS2AS.Park.Preview.Tip": "Estimate using current Quality and recent visitor volume, assuming full fee collection. Demand, household affordability and routing are not predicted. Preview controls do not apply settings.",
+    "CS2AS.Park.Preview.Value": "Estimate: value for money",
     "CS2AS.Park.Quality": "Park Quality",
     "CS2AS.Park.Quality.Tip": "Satisfaction 25%, Attractiveness 20%, Accessibility 15%, Variety 15%, Maintenance 15%, Comfort 10%.",
     "CS2AS.Park.Recent.Tip": "Last in-game day. Recent statistics restart after loading a save.",
@@ -6248,8 +6705,12 @@
     "CS2AS.Park.ResidentSatisfaction": "Resident satisfaction",
     "CS2AS.Park.ResidentVisitors": "Resident visits",
     "CS2AS.Park.Summary.Active": "Open. Visits are measured from real residents' and tourists' leisure trips.",
+    "CS2AS.Park.Summary.BothRequired": "Suspended: assign a Park Maintenance headquarters and connect a dedicated pedestrian path across the boundary.",
     "CS2AS.Park.Summary.EntranceInvalid": "Suspended: none of the assigned entrances qualifies any more. Remove the marked entrances and assign a park, leisure or attraction building inside this area.",
-    "CS2AS.Park.Summary.EntranceRequired": "Assign a park, leisure or attraction building inside this area as an entrance to open the Park.",
+    "CS2AS.Park.Summary.EntrancePending": "Headquarters ready; waiting for a dedicated-path entrance scan.",
+    "CS2AS.Park.Summary.EntranceRequired": "Connect a dedicated pedestrian path from outside into the Park, or assign an explicitly registered entrance asset.",
+    "CS2AS.Park.Summary.HeadquartersInvalid": "Suspended: the saved headquarters is invalid. Assign a Park Maintenance building; progress is preserved.",
+    "CS2AS.Park.Summary.HeadquartersRequired": "Suspended: assign a Park Maintenance building inside this area as headquarters.",
     "CS2AS.Park.TourismContribution": "Tourism contribution",
     "CS2AS.Park.TourismContribution.Tip": "Derived value for a future Tourism Area. It does not change vanilla tourism.",
     "CS2AS.Park.TouristSatisfaction": "Tourist satisfaction",
@@ -6259,6 +6720,8 @@
     "CS2AS.Park.Vegetation": "Vegetation",
     "CS2AS.Park.Warning.Cluttered": "Too many objects packed together: a clutter penalty applies.",
     "CS2AS.Park.Warning.Crowded": "Over comfortable capacity: visitors feel crowded.",
+    "CS2AS.Park.Warning.HeadquartersInvalid": "Saved headquarters is invalid; assign Park Maintenance inside this area.",
+    "CS2AS.Park.Warning.HeadquartersRequired": "Park Maintenance headquarters required; Level, XP and finance are kept.",
     "CS2AS.Park.Warning.LowConfidence": "Some quality data is not available yet; a neutral value is used.",
     "CS2AS.Park.Warning.LowMaintenance": "Poor maintenance: raise the Park budget or look after park buildings.",
     "CS2AS.Park.Warning.NoEntrance": "No valid entrance: the Park is suspended. Level, XP and statistics are kept.",
@@ -6296,6 +6759,7 @@
     "CS2AS.Summary.ModuleUnavailable": "This area's module is unavailable. Saved state is retained.",
     "CS2AS.Summary.Quarantined": "This area's saved data is inconsistent or its native search geometry is unavailable, so it is isolated for this session. Saved data and geometry are kept unchanged; membership, activation, policies and finance are disabled. Only Edit and Delete are available. Edit the geometry or delete the unwanted area, then reload.",
     "CS2AS.Summary.TourismBoundaryOnly": "Boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
+    "CS2AS.Tab.Comparison": "Comparison",
     "CS2AS.Tab.Employment": "Employment",
     "CS2AS.Tab.Finances": "Finances",
     "CS2AS.Tab.Landscape": "Landscape",
@@ -6336,10 +6800,13 @@
     "CS2AS.UI.NoAreas": "No managed areas yet.",
     "CS2AS.UI.NotAssigned": "Not assigned",
     "CS2AS.UI.NotMet": "Not met",
+    "CS2AS.UI.PathEntrances": "Detected path entrances",
+    "CS2AS.UI.PathEntrancesComplete": "Dedicated path boundary crossings checked",
+    "CS2AS.UI.PathEntrancesUnknown": "Path entrances pending scan",
     "CS2AS.UI.RemoveEntrance": "Remove",
     "CS2AS.UI.SelectAnchor": "Select an existing building inside this area.",
-    "CS2AS.UI.SelectEntrance": "Click a park, leisure or attraction building inside this area to add it as an entrance.",
-    "CS2AS.UI.SelectHeadquarters": "Click an extractor, factory, warehouse or cargo building inside this area to assign it as the headquarters.",
+    "CS2AS.UI.SelectEntrance": "Click an explicitly registered entrance building inside this area.",
+    "CS2AS.UI.SelectHeadquarters": "Click an eligible headquarters inside this area: Park Maintenance for a Park, or an office building for an Industrial Area.",
     "CS2AS.UI.Status": "Status",
     "CS2AS.UI.Type": "Type"
   }

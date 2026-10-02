@@ -35,6 +35,8 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
             foreach (var d in ParkLandscapeDiagnostics.Keys) if (d != ParkLandscapeDiagnostics.Cluttered) { yield return P + "Diagnostic." + d; yield return P + "Diagnostic." + d + ".Tip"; }
             yield return P + "FocusTarget"; yield return P + "FocusTarget.Tip";
+            foreach(var key in new[]{"Status","Unknown","Partial","Complete","Reachable","Unattached","Disconnected"}) yield return P+"Connectivity."+key;
+            foreach(var key in new[]{"Budget","Fee","Cost","Coverage","Maintenance","Value","Net","Tip"})yield return P+"Preview."+key;
         }
         private static AreaPanelItem Row(string id, string label, string value = null, string valueKey = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Row, Id = id, LabelKey = label, Value = value, ValueKey = valueKey, TooltipKey = tooltip };
@@ -74,8 +76,12 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("activeVisitors", P + "ActiveVisitors", Number(model.Runtime?.ActiveVisitors ?? 0)));
             items.Add(Row("recentVisitors", P + "RecentVisitors", Number(Recent(model.Runtime, r => r.RecentVisitors, model.Frame)), tooltip: P + "Recent.Tip"));
             items.Add(Row("entrances", P + "Entrances", Number(model.Runtime?.EntranceCount ?? 0)));
+            if(model.Lifecycle!=AreaLifecycleState.Active&&(model.Headquarters==ParkHeadquartersState.Missing||model.Headquarters==ParkHeadquartersState.Invalid))
+                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Warning,Id="warning.hq",LabelKey=P+"Warning.Headquarters"+(model.Headquarters==ParkHeadquartersState.Invalid?"Invalid":"Required")});
             var warnings = q?.Warnings ?? new List<string>();
-            if (q == null && model.Lifecycle != AreaLifecycleState.Active) warnings = new List<string> { P + "Warning.NoEntrance" };
+            if (q == null && model.Lifecycle != AreaLifecycleState.Active &&
+                model.Runtime?.EntranceEvidence?.Status == ParkEntranceEvidenceStatus.Complete && (model.Runtime?.EntranceCount ?? 0) == 0)
+                warnings = new List<string> { P + "Warning.NoEntrance" };
             foreach (var warning in warnings) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "warning." + warning, LabelKey = warning });
             if (q?.NextActionKey != null) items.Add(Row("nextAction", P + "NextAction", valueKey: q.NextActionKey));
             return items;
@@ -127,12 +133,27 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("lifetimeExpense", P + "LifetimeExpense", Money(s.LifetimeManagementExpense)));
             items.Add(Row("recentNet", P + "RecentNet", Money(income - expense), tooltip: P + "RecentNet.Tip"));
             items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "vanillaSeparate", LabelKey = P + "Note.VanillaSeparate" });
+            Preview(items,model);
             return items;
+        }
+        private static void Preview(List<AreaPanelItem> items,ParkPanelModel model)
+        {
+            var candidates=model.Preview??new ParkWhatIfCandidates(model.Budget,model.State.AdmissionFee);
+            items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Slider,Id="preview.budget",LabelKey=P+"Preview.Budget",Action=ParkGameplayFacade.PreviewBudget,NumericValue=candidates.Budget*100,Min=50,Max=150,Step=5,Value=Percent(candidates.Budget)});
+            items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Slider,Id="preview.fee",LabelKey=P+"Preview.Fee",Action=ParkGameplayFacade.PreviewFee,NumericValue=ParkFinanceModel.EffectiveFee(model.Level,candidates.Fee),Min=0,Max=ParkFinanceModel.MaxAdmissionFee,Step=1,Disabled=!ParkFinanceModel.IsAdmissionUnlocked(model.Level)});
+            var estimate=ParkWhatIfPreview.Evaluate(model,candidates.Budget,candidates.Fee);
+            void Estimate(string id,string value,bool available)=>items.Add(Row("preview."+id,P+"Preview."+id,available?value:null,available?null:P+"Unavailable",P+"Preview.Tip"));
+            Estimate("Cost",MoneyAmount(estimate.ManagementCost),estimate.ManagementAvailable);
+            Estimate("Coverage",Percent(estimate.Coverage),estimate.ManagementAvailable);
+            Estimate("Maintenance",Number(estimate.Maintenance),estimate.MaintenanceAvailable);
+            Estimate("Value",Number(estimate.ValueForMoney),estimate.ValueAvailable);
+            Estimate("Net",MoneyAmount(estimate.EstimatedNet),estimate.NetAvailable);
         }
         private static List<AreaPanelItem> Landscape(ParkPanelModel model)
         {
             var l = model.Runtime?.Landscape;
             var items = new List<AreaPanelItem>();
+            Connectivity(items, model.Runtime?.Connectivity);
             if (l == null || !l.Available) { items.Add(Row("landscape", P + "Landscape", valueKey: P + "Calculating")); return items; }
             // The breakdown Quality used: the scan with this Park's policy effects (Landscape Protection).
             var r = model.Runtime.Quality?.EffectiveLandscape ?? l.Result;
@@ -150,6 +171,22 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("transit", P + "TransitStops", Number(l.TransitPoints)));
             items.Add(Row("facilityCategories", P + "FacilityCategories", Number(model.Runtime?.Facilities?.DistinctCategories ?? 0)));
             return items;
+        }
+        private static void Connectivity(List<AreaPanelItem> items, ParkConnectivitySnapshot result)
+        {
+            var status=result?.Status??ParkConnectivityStatus.Unknown;
+            items.Add(Row("connectivity.status",P+"Connectivity.Status",valueKey:P+"Connectivity."+status));
+            if(status==ParkConnectivityStatus.Unknown)return;
+            items.Add(Row("connectivity.reachable",P+"Connectivity.Reachable",Number(result.Connected)+" / "+Number(result.Total)));
+            items.Add(Row("connectivity.unattached",P+"Connectivity.Unattached",Number(result.UnknownTargets)));
+            if(status!=ParkConnectivityStatus.Complete)return;
+            int count=0;
+            foreach(var target in result.DisconnectedTargets) {
+                if(count++>=20)break;
+                string suffix=AreaDiagnosticTargetKey.Format(target);
+                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Warning,Id="connectivity.disconnected."+suffix,LabelKey=P+"Connectivity.Disconnected"});
+                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Button,Id="focus.connectivity."+suffix,LabelKey=P+"FocusTarget",TooltipKey=P+"FocusTarget.Tip",Action=ParkGameplayFacade.FocusDiagnosticTarget,Value=suffix});
+            }
         }
         // Wave A5: advisory landscape findings of the last scan. A shortage the policy-adjusted breakdown no longer shows
         // is dropped; clutter keeps its existing warning row and only gains the focus button.

@@ -77,9 +77,9 @@ public class IndustrialPanelBuilderTests {
  private static AreaPanelTabData Tab(AreaPanelDocument d, string id) => d.Tabs.Single(t => t.Id == id);
  private static AreaPanelItem Item(AreaPanelTabData t, string id) => t.Items.Single(i => i.Id == id);
  private static bool Has(AreaPanelTabData t, string id) => t.Items.Any(i => i.Id == id);
- [Test] public void EmitsExactlyTheFiveApprovedTabsAndHidesCoreProgressRows() {
+ [Test] public void EmitsApprovedTabsIncludingComparisonAndHidesCoreProgressRows() {
   var d = IndustrialPanelBuilder.Build(Model("active"));
-  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "production", "logistics", "employment", "progress" }));
+  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "production", "logistics", "employment", "progress", "comparison" }));
   Assert.That(d.ShowsProgress, Is.True);
  }
  [Test] public void OverviewShowsLevelScoresFacilitiesJobsBottlenecksAndLastUpdate() {

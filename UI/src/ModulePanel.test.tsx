@@ -18,6 +18,12 @@ afterEach(()=>{env.trigger.mockClear();env.slider=true;resetVanillaCache();});
 const item=(over:Partial<AreaPanelItem>):AreaPanelItem=>({kind:'row',id:'x',labelKey:'M.Visitors',value:null,valueKey:null,numericValue:null,min:null,max:null,step:null,disabled:false,tooltipKey:null,action:null,...over});
 const row=(label:string)=>screen.getAllByRole('row').find(r=>r.firstElementChild?.textContent===label)!;
 describe('generic module panel items',()=>{
+ it('sends preview candidates without sending a settings commit action',()=>{
+  render(<ModulePanel stableId="7" items={[item({kind:'slider',id:'preview.budget',labelKey:'M.Budget',action:'previewBudget',numericValue:100,min:50,max:150,step:5})]}/>);
+  fireEvent.change(screen.getByLabelText('vanilla-slider'),{target:{value:'125'}});
+  expect(env.trigger).toHaveBeenCalledTimes(1);
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','moduleAction','7','previewBudget','125');
+ });
  it('renders rows with raw or localized values and tooltips',()=>{
   render(<ModulePanel stableId="7" items={[item({value:'42'}),item({id:'s',labelKey:'M.State',valueKey:'M.Free',tooltipKey:'M.Tip'})]}/>);
   expect(row('Visitors')).toHaveTextContent('42');

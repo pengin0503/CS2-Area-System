@@ -131,6 +131,7 @@ namespace CS2AreaSystem.Modules.Park
             runtime.CollectParks(parks);
             activeParks.Clear();
             var signature = new System.Text.StringBuilder();
+            signature.Append(World.GetOrCreateSystemManaged<AreaCoreServicesSystem>().Semantics.Revision).Append(':');
             foreach (var park in parks)
                 if (park.State == AreaLifecycleState.Active) { activeParks[park.StableId] = park; signature.Append(park.StableId).Append(','); }
             var current = signature.ToString();
@@ -147,7 +148,7 @@ namespace CS2AreaSystem.Modules.Park
                 {
                     if (targets.ContainsKey(member)) continue;
                     var traits = ParkFacilityReader.ReadCore(member, EntityManager, false);
-                    if (ParkVisitTargets.TryResolve(index.GetAreas(member), (int)AreaTypeId.Park, id => activeParks.ContainsKey(id), traits, out var target))
+                    if (ParkVisitTargets.TryResolve(index.GetAreas(member), (int)AreaTypeId.Park, id => activeParks.ContainsKey(id), traits, out var target, World.GetOrCreateSystemManaged<AreaCoreServicesSystem>().Semantics))
                         targets.TryAdd(member, target);
                 }
         }

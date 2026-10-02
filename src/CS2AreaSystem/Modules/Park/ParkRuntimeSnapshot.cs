@@ -76,6 +76,8 @@ namespace CS2AreaSystem.Modules.Park
         public ParkQualitySnapshot Quality;
         public uint QualityFrame;
         public int EntranceCount;
+        public ParkEntranceEvidence EntranceEvidence;
+        public ParkConnectivitySnapshot Connectivity=new ParkConnectivitySnapshot();
         // Visitors: "recent" = the last in-game day.
         public int PeakOccupancy;
         public readonly ParkRollingWindow RecentVisitors = new ParkRollingWindow(RecentBucketFrames, RecentBuckets);
@@ -113,13 +115,17 @@ namespace CS2AreaSystem.Modules.Park
     }
     public sealed class ParkRuntimeStore
     {
+        public Action<ParkRuntimeSnapshot> Initialize;
         private readonly System.Collections.Generic.Dictionary<ulong, ParkRuntimeSnapshot> parks = new System.Collections.Generic.Dictionary<ulong, ParkRuntimeSnapshot>();
         public System.Collections.Generic.IEnumerable<ParkRuntimeSnapshot> All => parks.Values;
         public int Count => parks.Count;
         public bool TryGet(ulong id, out ParkRuntimeSnapshot snapshot) => parks.TryGetValue(id, out snapshot);
         public ParkRuntimeSnapshot GetOrCreate(ulong id, Unity.Entities.Entity area)
         {
-            if (!parks.TryGetValue(id, out var snapshot)) parks[id] = snapshot = new ParkRuntimeSnapshot { StableId = id };
+            if (!parks.TryGetValue(id, out var snapshot)) {
+                parks[id] = snapshot = new ParkRuntimeSnapshot { StableId = id, Area = area };
+                Initialize?.Invoke(snapshot);
+            }
             snapshot.Area = area;
             return snapshot;
         }

@@ -55,6 +55,9 @@ namespace CS2AreaSystem.Modules.Park
                 positions.Clear();
                 foreach (var entrance in entrances)
                     if (EntityManager.HasComponent<Transform>(entrance)) { var p = EntityManager.GetComponentData<Transform>(entrance).m_Position; positions.Add((p.x, p.z)); }
+                runtime.Entrances.TryGet(park.StableId,out var entranceEvidence);
+                var access=ParkEntranceAccess.Positions(positions,entranceEvidence);positions.Clear();positions.AddRange(access);
+                snapshot.EntranceEvidence=entranceEvidence;
                 members.Clear();
                 bool primaryForAll = true;
                 var index = runtime.Membership;
@@ -62,15 +65,15 @@ namespace CS2AreaSystem.Modules.Park
                 {
                     members.Add(ParkFacilityReader.Read(member, EntityManager));
                     foreach (var relation in index.GetAreas(member))
-                        if (relation.AreaStableId == park.StableId && !relation.IsPrimaryForType && ParkFacilityClassifier.IsVisitRelevant(members[members.Count - 1])) primaryForAll = false;
+                        if (relation.AreaStableId == park.StableId && !relation.IsPrimaryForType && ParkFacilityClassifier.IsVisitRelevant(members[members.Count - 1],services.Semantics)) primaryForAll = false;
                 }
-                snapshot.Facilities = ParkFacilitySnapshot.Build(members);
-                snapshot.EntranceCount = entrances.Count;
+                snapshot.Facilities = ParkFacilitySnapshot.Build(members,services.Semantics);
+                snapshot.EntranceCount = entrances.Count + (entranceEvidence?.Count ?? 0);
                 int level = EntityManager.HasComponent<ManagedAreaProgress>(park.Area) ? ParkProgressionModel.NormalizeLevel(EntityManager.GetComponentData<ManagedAreaProgress>(park.Area).Level) : 1;
                 float budget = EntityManager.HasComponent<ManagedAreaSettings>(park.Area) ? EntityManager.GetComponentData<ManagedAreaSettings>(park.Area).BudgetMultiplier : ParkFinanceModel.DefaultBudget;
                 uint frame = runtime.SimulationFrame;
                 snapshot.Quality = ParkQualityEvaluator.Evaluate(new ParkQualityContext {
-                    AreaSquareMeters = area, Entrances = entrances.Count, EntranceSpread = ParkQualityModel.ComputeEntranceSpread(positions, area),
+                    AreaSquareMeters = area, Entrances = snapshot.EntranceCount, EntranceSpread = ParkQualityModel.ComputeEntranceSpread(positions, area),
                     EntrancePositions = positions.ToArray(),
                     Landscape = snapshot.Landscape, Facilities = snapshot.Facilities, Satisfaction = state.Satisfaction, TouristSatisfaction = state.TouristSatisfaction,
                     ActiveVisitors = snapshot.ActiveVisitors, Budget = budget, Level = level, AdmissionFee = state.AdmissionFee,

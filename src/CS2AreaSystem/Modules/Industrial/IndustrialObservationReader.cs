@@ -90,11 +90,11 @@ namespace CS2AreaSystem.Modules.Industrial
     // Converts raw reads of one building into the module-owned observation DTO. Pure.
     public static class IndustrialObservationMapper
     {
-        public static IndustrialEntityObservation ToObservation(in IndustrialBuildingRead building, IReadOnlyList<IndustrialCompanyRead> companies)
+        public static IndustrialEntityObservation ToObservation(in IndustrialBuildingRead building, IReadOnlyList<IndustrialCompanyRead> companies,Core.Semantics.AreaAssetSemanticRegistry registry=null)
         {
             var obs = new IndustrialEntityObservation { Facility = building.Building, Input = IndustrialFlowState.NotApplicable, Output = IndustrialFlowState.NotApplicable };
             if (!building.Exists || building.Failed) { obs.Input = obs.Output = IndustrialFlowState.Unavailable; return obs; }
-            obs.Roles = IndustrialFacilityClassifier.Classify(building.Traits);
+            obs.Roles = IndustrialFacilityClassifier.Classify(building.Traits,registry);
             obs.Available = building.Available;
             obs.IsProducer = (obs.Roles & IndustrialFacilityClassifier.ProducerRoles) != 0;
             if (obs.Roles == IndustrialFacilityRole.None) return obs;
@@ -157,6 +157,7 @@ namespace CS2AreaSystem.Modules.Industrial
         [ReadOnly] public ComponentLookup<ExtractorProperty> ExtractorProperties;
         [ReadOnly] public ComponentLookup<IndustrialProperty> IndustrialProperties;
         [ReadOnly] public ComponentLookup<OfficeProperty> OfficeProperties;
+        [ReadOnly] public ComponentLookup<CommercialProperty> CommercialProperties;
         [ReadOnly] public ComponentLookup<StorageProperty> StorageProperties;
         [ReadOnly] public ComponentLookup<Game.Buildings.CargoTransportStation> CargoStations;
         [ReadOnly] public ComponentLookup<Game.Buildings.ExtractorFacility> ExtractorFacilities;
@@ -213,7 +214,7 @@ namespace CS2AreaSystem.Modules.Industrial
             read.Available = !Abandoned.HasComponent(entity) && !Destroyed.HasComponent(entity) && !BuildingUtils.CheckOption(building, BuildingOption.Inactive);
             var prefab = Prefabs[entity].m_Prefab;
             ref var t = ref read.Traits;
-            t.IsBuilding = true;
+            t.IsBuilding = true;t.Prefab=prefab;t.HasCommercialProperty=CommercialProperties.HasComponent(entity);
             t.HasExtractorProperty = ExtractorProperties.HasComponent(entity);
             t.HasStorageProperty = StorageProperties.HasComponent(entity);
             t.HasOfficeProperty = OfficeProperties.HasComponent(entity);

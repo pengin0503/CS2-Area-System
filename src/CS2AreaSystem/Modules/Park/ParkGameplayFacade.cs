@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Modules;
 using Unity.Entities;
@@ -18,13 +19,18 @@ namespace CS2AreaSystem.Modules.Park
         public ParkRuntimeSnapshot Runtime;
         public ParkPromotionResult Promotion;
         public bool HasState;
+        public ParkHeadquartersState Headquarters;
+        public ParkPolicyEffects Policies;
+        public ParkWhatIfCandidates? Preview;
     }
+    public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid }
     // Boundary between the module UI and Park gameplay: selected-Park reads and the only validated setters.
     // Entrance add/remove stays in Core's guarded anchor actions. No policies, events or XP/level setters exist.
     // FocusDiagnosticTarget is read-only (camera focus on a landscape diagnostic target) and never reaches the setters.
     public static class ParkGameplayFacade
     {
         public const string SetBudget = "setBudget", SetFee = "setFee";
+        public const string PreviewBudget = "previewBudget", PreviewFee = "previewFee";
         public const string FocusDiagnosticTarget = "focusDiagnosticTarget";
         public static bool TryApplyAction(string action, string value, int level, ref ManagedAreaSettings settings, ref ParkAreaState state)
         {
@@ -44,6 +50,10 @@ namespace CS2AreaSystem.Modules.Park
         public static bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
         {
             if (action == FocusDiagnosticTarget) return HandleFocus(area, value, context);
+            if(action==PreviewBudget||action==PreviewFee) {
+                var runtime=context.World?.GetExistingSystemManaged<ParkRuntimeSystem>();
+                return runtime!=null&&runtime.Preview.TryApply(Read(area,context),action,value);
+            }
             var entities = context.Entities;
             if (!entities.Exists(area) || !entities.HasComponent<ParkAreaState>(area) || !entities.HasComponent<ManagedAreaSettings>(area)) return false;
             var settings = entities.GetComponentData<ManagedAreaSettings>(area);
@@ -61,6 +71,14 @@ namespace CS2AreaSystem.Modules.Park
             if (!entities.Exists(area) || !entities.HasComponent<ManagedAreaStableId>(area)) return false;
             var runtime = context.World.GetExistingSystemManaged<ParkRuntimeSystem>();
             if (runtime == null || !runtime.Store.TryGet(entities.GetComponentData<ManagedAreaStableId>(area).Value, out var snapshot)) return false;
+            var services=context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            ulong id=entities.GetComponentData<ManagedAreaStableId>(area).Value;
+            var connectivity=snapshot.Connectivity;
+            long entranceRevision=runtime.Entrances.TryGet(id,out var evidence)?evidence.Revision:-1;
+            if(services!=null && connectivity!=null && connectivity.MembershipRevision==runtime.Membership.GetAreaRevision(id) &&
+                connectivity.EntranceRevision==entranceRevision && connectivity.SemanticRevision==services.Semantics.Revision &&
+                ParkConnectivityFocus.TryFocus(connectivity,key,e=>services.IsValidEntity(e)&&runtime.Membership.GetMembers(id).Contains(e)&&
+                    ParkFacilityClassifier.IsVisitRelevant(ParkFacilityReader.ReadCore(e,entities,false),services.Semantics),context.Focus))return true;
             return TryFocus(snapshot.Landscape, key, e => StandalonePosition(entities, e), new ParkPolygon(ParkGeometry.Triangles(entities, area)), context.Focus);
         }
         // Landscape targets are standalone static objects (never Core building members): still alive, still standalone.
@@ -97,11 +115,17 @@ namespace CS2AreaSystem.Modules.Park
             model.HasState = entities.HasComponent<ParkAreaState>(area);
             model.State = model.HasState ? entities.GetComponentData<ParkAreaState>(area) : ParkAreaState.CreateDefault();
             var runtime = context.World?.GetExistingSystemManaged<ParkRuntimeSystem>();
+            var core=context.World?.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            if(core!=null)model.Headquarters=core.Anchors.HasValidAnchor(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Valid:
+                core.Anchors.HasLinks(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing;
             if (runtime != null)
             {
                 model.Frame = runtime.SimulationFrame;
                 if (runtime.Store.TryGet(model.StableId, out var snapshot)) model.Runtime = snapshot;
+                model.Preview=runtime.Preview.Read(model);
             }
+            var policies=context.World?.GetExistingSystemManaged<Core.Policies.AreaPolicySystem>();
+            if(policies!=null)model.Policies=new ParkPolicyEffectReader((a,id)=>policies.IsEffective(a,id),core?.Failures,"Park.Preview.PolicyEffects","Park preview policy inputs unavailable").Read(area);
             model.Promotion = ParkProgressionModel.EvaluatePromotion(model.Level, model.Experience, ParkProgressionSystem.BuildInputs(model.Runtime?.Quality, model.State));
             return model;
         }

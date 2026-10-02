@@ -13,6 +13,8 @@ namespace CS2AreaSystem.Modules.Industrial
     public struct IndustrialFacilityTraits
     {
         public bool IsBuilding;
+        public Entity Prefab;
+        public bool HasCommercialProperty;
         // Building/prefab capability (Game.Buildings.*Property components and BuildingPropertyData).
         public bool HasExtractorProperty, ManufacturesGoods, HasStorageProperty, HasOfficeProperty;
         // Cargo station building or prefab; extractor facility (extractor upgrade/sub-building).

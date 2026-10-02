@@ -5,7 +5,7 @@ namespace CS2AreaSystem.Core.Modules
     public interface IAreaModule
     {
         AreaTypeDescriptor DescribeType();
-        bool ValidateActivation(Entity area);
+        bool ValidateActivation(Entity area, in AreaActivationContext context);
         IAreaMemberClassifier MemberClassifier { get; }
         IAreaPanelProvider PanelProvider { get; }
         bool AllowsOverlapWith(int otherTypeId);

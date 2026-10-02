@@ -56,7 +56,9 @@ const facadeActions = [...facade.matchAll(/case\s+([^:]+?)\s*:/g)].map(m=>m[1].t
 check(facadeActions==='SetBudget,SetFee', `Park UI actions must be limited to budget and admission fee (found ${facadeActions})`);
 // Wave A5: the only other Park action is the read-only landscape diagnostic focus, routed before any setter runs.
 const parkActionConsts = [...facade.matchAll(/(\w+)\s*=\s*"[^"]*"/g)].map(m=>m[1]).sort().join(',');
-check(parkActionConsts==='FocusDiagnosticTarget,SetBudget,SetFee', `Park facade action constants must be budget, fee and diagnostic focus (found ${parkActionConsts})`);
+check(parkActionConsts==='FocusDiagnosticTarget,PreviewBudget,PreviewFee,SetBudget,SetFee', `Park facade actions must be budget, fee, read-only preview and diagnostic focus (found ${parkActionConsts})`);
+const preview = read('src/CS2AreaSystem/Modules/Park/ParkWhatIfPreview.cs');
+check(!/SetComponentData|AddComponent|RemoveComponent|EntityCommandBuffer|AreaFinanceHouseholdTransfer|ISerializable/.test(preview), 'Park what-if must be pure and never persist or transfer money');
 check(/if\s*\(action\s*==\s*FocusDiagnosticTarget\)\s*return\s+HandleFocus\(/.test(facade), 'Park diagnostic focus must be routed before the setters');
 const parkFocus = facade.slice(facade.indexOf('private static bool HandleFocus'), facade.indexOf('public static ParkPanelModel Read'));
 check(parkFocus.length > 0 && !/SetComponentData|AddComponent|RemoveComponent|SetBuffer|DestroyEntity/.test(parkFocus), 'Park diagnostic focus must not change any entity');
@@ -111,7 +113,8 @@ check(panelActions.length === 1 && panelActions[0] === 'IndustrialGameplayFacade
 check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 1, 'Industrial panel may emit only the diagnostic focus button');
 const classifier = read(`${industrialDir}/IndustrialFacilityClassifier.cs`);
 const classify = classifier.slice(classifier.indexOf('public static IndustrialFacilityRole Classify'), classifier.indexOf('public static bool IsHeadquartersEligible'));
-check(classify.length > 0 && !/HasOffice/.test(classify), 'ordinary office properties/companies must never create an Industrial role');
+const positiveClassify = classify.replace(/if\s*\([^;]*HasOffice[^;]*\)\s*return\s+IndustrialFacilityRole\.None;/, '');
+check(classify.length > 0 && !/HasOffice/.test(positiveClassify), 'ordinary office properties/companies must never create an Industrial role (an exclusion guard is allowed)');
 const logisticsModel = read(`${industrialDir}/IndustrialLogisticsModel.cs`);
 check(!/\b(CargoFacilities|StorageFacilities|CargoOperational|StorageCapacity|StoredAmount)\b/.test(logisticsModel), 'Logistics scoring must have no warehouse/cargo presence path');
 check(/DailyXpCap\s*=\s*240/.test(read(`${industrialDir}/IndustrialProgressionModel.cs`)), 'Industrial daily XP cap must be 240');
@@ -290,6 +293,24 @@ check(tryBlocks.length >= 3, 'policy and finance registrations must each be isol
 
 const requirements = read('docs/verification/area-core-requirements.md');
 check(!requirements.includes('Main is unchanged; all implementation commits are on feat/area-core'), 'verification docs must describe the current merged repository state');
+
+const entranceSystem = code('src/CS2AreaSystem/Modules/Park/ParkEntranceSystem.cs');
+const entranceEvidence = code('src/CS2AreaSystem/Modules/Park/ParkEntranceEvidence.cs');
+check(entranceSystem.includes('HasComponent<PathwayData>'), 'automatic Park entrance classification must use PathwayData');
+check(!/ISerializable|IBufferElementData|IComponentData/.test(entranceEvidence), 'path entrance evidence must remain runtime-only');
+check(!/Pathfind|Citizen|GetEntityQuery\([^;]*ReadOnly<Game.Net.Edge>/s.test(entranceSystem.split('private ParkNetPage ReadPage')[1]??''), 'entrance query must be spatial, with no citizen/pathfinding changes');
+check(/UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem,\s*CS2AreaSystem.Core.Anchors.AreaActivationSystem>/.test(mod), 'Park entrances must update before activation');
+
+// Foundation + Phase 1: derived network diagnostics cannot become authoritative save data.
+for (const module of ['Park', 'Industrial']) {
+  const history = code(`src/CS2AreaSystem/Modules/${module}/${module}HistoryEntry.cs`);
+  check(!/\bEntity\b|\bGame\.Net\b/.test(history), `${module} hourly history must not serialize runtime entity identities`);
+}
+for (const source of ['ParkPathEntranceDetector.cs', 'ParkEntranceEvidence.cs', 'ParkConnectivityModel.cs']) {
+  check(!/ISerializable|\bSerialize\s*\(/.test(code(`src/CS2AreaSystem/Modules/Park/${source}`)), `${source}: derived path evidence must remain runtime-only`);
+}
+const connectivity = code('src/CS2AreaSystem/Modules/Park/ParkConnectivitySystem.cs');
+check(!/SetComponentData|SetBuffer|AddComponent|RemoveComponent|DestroyEntity|EntityCommandBuffer/.test(connectivity), 'Park connectivity must only read the vanilla network');
 
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);
