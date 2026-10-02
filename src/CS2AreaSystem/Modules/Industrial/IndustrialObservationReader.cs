@@ -39,6 +39,7 @@ namespace CS2AreaSystem.Modules.Industrial
     // Blittable per-company read (only attributable industrial tenants; offices/commercial are never emitted).
     public struct IndustrialCompanyRead
     {
+        public Entity Company;
         public Entity Building;
         public bool Producer, Extractor, Storage;
         public bool HasJobs;
@@ -260,7 +261,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     // Offices and commercial tenants are never attributable industrial activity.
                     if (office || CommercialCompanies.HasComponent(company) || ServiceAvailables.HasComponent(company)) continue;
                     var companyPrefab = Prefabs[company].m_Prefab;
-                    var c = new IndustrialCompanyRead { Building = entity };
+                    var c = new IndustrialCompanyRead { Company = company, Building = entity };
                     c.Extractor = ExtractorCompanies.HasComponent(company);
                     bool processor = !c.Extractor && ProcessingCompanies.HasComponent(company) && IndustrialCompanies.HasComponent(company);
                     c.Storage = StorageCompanies.HasComponent(company);

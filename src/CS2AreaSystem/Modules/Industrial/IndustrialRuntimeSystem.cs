@@ -133,7 +133,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     PruneStore(areas);
                     statePending = true;
                     gate.Refreshed(generation, quarantine);
-                    RefreshAssignments();
+                    RefreshAssignments(true);
                 }
                 if (statePending) statePending = !EnsureIndustrialState(areas);
                 TrackStructureChanges();
@@ -152,19 +152,26 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         // Load/Area migration initializes empty buffers; existing saved claims are never overwritten.
         // Validation is performed over the explicit claims only, not over every company in the world.
-        public void RefreshAssignments()
+        public void RefreshAssignments(bool initialize = false)
         {
             AssignmentsReady = false;
             assignmentClaims.Clear();
             foreach (var area in areas)
             {
                 if (!EntityManager.Exists(area.Area)) continue;
-                if (!EntityManager.HasBuffer<IndustrialCompanyAssignment>(area.Area)) EntityManager.AddBuffer<IndustrialCompanyAssignment>(area.Area);
+                if (!EntityManager.HasBuffer<IndustrialCompanyAssignment>(area.Area))
+                {
+                    if (!initialize) continue;
+                    EntityManager.AddBuffer<IndustrialCompanyAssignment>(area.Area);
+                }
                 var buffer = EntityManager.GetBuffer<IndustrialCompanyAssignment>(area.Area);
                 for (int i = 0; i < buffer.Length; i++)
                     assignmentClaims.Add(new IndustrialCompanyClaim(area.StableId, buffer[i].Company, buffer[i].Building));
             }
-            Assignments.Rebuild(assignmentClaims);
+            Assignments.Rebuild(assignmentClaims, claim => {
+                var eligibility = IndustrialCompanyOwnership.ReadLive(claim.Company, EntityManager, services.Semantics, out var rentedBuilding);
+                return IndustrialCompanyOwnership.IsValidClaim(claim, rentedBuilding, Membership.GetAreas(rentedBuilding), eligibility);
+            });
             AssignmentsReady = true;
         }
         // Builds the new list aside and swaps it in, so a failed rebuild leaves the previous list and the gate open.
