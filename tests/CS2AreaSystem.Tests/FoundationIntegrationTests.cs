@@ -16,9 +16,18 @@ public class FoundationIntegrationTests
   Assert.That(ParkEntranceAccess.Positions(Array.Empty<(float,float)>(),new ParkEntranceEvidence(ParkEntranceEvidenceStatus.Unknown,3)).Count,Is.Zero);
  }
  [Test] public void PanelShowsMissingMaintenanceHeadquartersWithoutLosingProgressOrFinance() {
-  var m=ParkPanelBuilderTests.Model(level:4);m.Lifecycle=AreaLifecycleState.Suspended;m.Headquarters=ParkHeadquartersState.Invalid;
+  var m=ParkPanelBuilderTests.Model(level:4,quality:false);m.Lifecycle=AreaLifecycleState.Suspended;m.Headquarters=ParkHeadquartersState.Invalid;
+  m.Runtime!.EntranceCount=1;
+  m.Runtime.EntranceEvidence=new ParkEntranceEvidence(ParkEntranceEvidenceStatus.Complete,4,new[]{new ParkEntrancePoint(10,0,Entity.Null)});
   var document=ParkPanelBuilder.Build(m);var items=document.Tabs[0].Items;
   Assert.That(items.Any(i=>i.LabelKey=="CS2AS.Park.Warning.HeadquartersInvalid"),Is.True);
+  Assert.That(items.Any(i=>i.LabelKey=="CS2AS.Park.Warning.NoEntrance"),Is.False,"valid entrance evidence must not be blamed when only the HQ is invalid");
   Assert.That(m.Level,Is.EqualTo(4));Assert.That(m.State.LifetimeManagementExpense,Is.GreaterThanOrEqualTo(0));
+ }
+ [Test] public void PanelShowsNoEntranceOnlyAfterCompleteEvidenceFindsNone() {
+  var m=ParkPanelBuilderTests.Model(quality:false);m.Lifecycle=AreaLifecycleState.Suspended;m.Headquarters=ParkHeadquartersState.Valid;
+  m.Runtime!.EntranceCount=0;m.Runtime.EntranceEvidence=new ParkEntranceEvidence(ParkEntranceEvidenceStatus.Complete,5);
+  var items=ParkPanelBuilder.Build(m).Tabs[0].Items;
+  Assert.That(items.Any(i=>i.LabelKey=="CS2AS.Park.Warning.NoEntrance"),Is.True);
  }
 }
