@@ -6174,7 +6174,7 @@
     }
   },
   "enUS": {
-    "Assets.DESCRIPTION[CS2AS.IndustrialArea]": "Draw an Industrial Area boundary. It becomes active once an extractor, factory, warehouse or cargo building inside it is assigned as the headquarters.",
+    "Assets.DESCRIPTION[CS2AS.IndustrialArea]": "Draw an Industrial Area boundary. It becomes active once an office building inside it is assigned as the headquarters.",
     "Assets.DESCRIPTION[CS2AS.ParkArea]": "Draw a Park Area boundary. It becomes active once a park, leisure or attraction building inside it is assigned as an entrance. Several entrances are allowed.",
     "Assets.DESCRIPTION[CS2AS.TourismArea]": "Tourism is currently a boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
     "Assets.NAME[CS2AS Area Types]": "Area Types",
@@ -6312,7 +6312,7 @@
     "CS2AS.Industrial.Suggestion.WorkforceShortage": "Improve housing, education or transit access for workers.",
     "CS2AS.Industrial.Summary.Active": "Active. Metrics come from the real companies inside this area, observed once per game hour.",
     "CS2AS.Industrial.Summary.HeadquartersInvalid": "Suspended: the headquarters building was removed or is no longer inside this area. Assign a new headquarters; Level and XP are kept.",
-    "CS2AS.Industrial.Summary.HeadquartersRequired": "Assign an extractor, factory, warehouse or cargo building inside this area as the headquarters to activate it.",
+    "CS2AS.Industrial.Summary.HeadquartersRequired": "Assign an office building inside this area as the headquarters to activate it.",
     "CS2AS.Industrial.SupportJobs": "Logistics & support: employees / jobs",
     "CS2AS.Industrial.Vacancies": "Vacancies",
     "CS2AS.Industrial.Vacancy.0": "Vacant: uneducated jobs",
@@ -6527,7 +6527,7 @@
     "CS2AS.UI.RemoveEntrance": "Remove",
     "CS2AS.UI.SelectAnchor": "Select an existing building inside this area.",
     "CS2AS.UI.SelectEntrance": "Click a park, leisure or attraction building inside this area to add it as an entrance.",
-    "CS2AS.UI.SelectHeadquarters": "Click an extractor, factory, warehouse or cargo building inside this area to assign it as the headquarters.",
+    "CS2AS.UI.SelectHeadquarters": "Click an office building inside this area to assign it as the headquarters.",
     "CS2AS.UI.Status": "Status",
     "CS2AS.UI.Type": "Type",
     "EconomyPanel.BUDGET_SUB_ITEM[CS2AS.AreaManagement]": "Area Management",

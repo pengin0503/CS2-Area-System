@@ -18,16 +18,15 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits = null)
             : base(AreaTypeId.Industrial, anchors, AreaAnchorRole.Headquarters)
         { this.readTraits = readTraits ?? IndustrialFacilityReader.ReadAnchor; }
-        // Initial HQ assignment: an existing member building with supported industrial capability (design §5.1).
+        // Headquarters is an office member building; production/logistics observations remain separate.
         public override bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities)
         {
             if (role != AreaAnchorRole.Headquarters) return false;
             try { return IndustrialFacilityClassifier.IsHeadquartersEligible(readTraits(anchor, entities)); }
             catch (Exception) { return false; }
         }
-        // Accepted HQ link: Core already checked that it is a valid, existing member building. Vacancy, bankruptcy or poor
-        // operating health never invalidate it, so the assignment classifier is deliberately not consulted again.
-        public bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => role == AreaAnchorRole.Headquarters;
+        // Revalidate static office evidence, including legacy links; vacancy/health do not affect OfficeProperty.
+        public bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => AcceptsAnchor(area, anchor, role, entities);
         public IndustrialHeadquartersState HeadquartersState(Entity area) =>
             ValidateActivation(area, default) ? IndustrialHeadquartersState.Valid : Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
         public override string BuildSummary(Entity area, in AreaPanelContext context)

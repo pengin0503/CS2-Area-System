@@ -23,8 +23,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 roles |= IndustrialFacilityRole.SupportingWorkplace;
             return roles;
         }
-        // Initial HQ assignment only (design §5.1). An accepted HQ is not re-classified while it stays a valid member.
-        public static bool IsHeadquartersEligible(in IndustrialFacilityTraits traits) => (Classify(traits) & EligibleRoles) != 0;
+        // Stable building evidence survives tenant vacancy. Company presence alone never qualifies.
+        public static bool IsHeadquartersEligible(in IndustrialFacilityTraits traits) => traits.IsBuilding && traits.HasOfficeProperty;
     }
     public static class IndustrialFacilityReader
     {

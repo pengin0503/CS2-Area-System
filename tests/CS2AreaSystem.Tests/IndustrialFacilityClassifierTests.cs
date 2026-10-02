@@ -20,7 +20,7 @@ public class IndustrialFacilityClassifierTests {
  [Test] public void CargoCapabilityClassifiesEvenWhenTheStationIsDisabledOrUnstaffed() {
   var disabled = Building(); disabled.HasCargoStation = true;
   Assert.That(IndustrialFacilityClassifier.Classify(disabled), Is.EqualTo(IndustrialFacilityRole.Cargo), "operating status is a separate observation");
-  Assert.That(IndustrialFacilityClassifier.IsHeadquartersEligible(disabled), Is.True);
+  Assert.That(IndustrialFacilityClassifier.IsHeadquartersEligible(disabled), Is.False);
  }
  [Test] public void SupportingWorkplaceIsOnlyDescriptiveInsideEligibleFacilities() {
   Assert.That(IndustrialFacilityClassifier.Classify(Office()), Is.EqualTo(IndustrialFacilityRole.None), "ordinary office-only workplace");
@@ -35,7 +35,7 @@ public class IndustrialFacilityClassifierTests {
   Assert.That(IndustrialFacilityClassifier.Classify(vacantFactory), Is.EqualTo(IndustrialFacilityRole.Processor));
   Assert.That(IndustrialFacilityClassifier.Classify(vacantExtractor), Is.EqualTo(IndustrialFacilityRole.Extractor));
   Assert.That(IndustrialFacilityClassifier.Classify(vacantWarehouse), Is.EqualTo(IndustrialFacilityRole.Storage));
-  foreach (var t in new[] { vacantFactory, vacantExtractor, vacantWarehouse }) Assert.That(IndustrialFacilityClassifier.IsHeadquartersEligible(t), Is.True);
+  foreach (var t in new[] { vacantFactory, vacantExtractor, vacantWarehouse }) Assert.That(IndustrialFacilityClassifier.IsHeadquartersEligible(t), Is.False);
  }
  [Test] public void OneFacilityMayExposeSeveralRoles() {
   var t = CargoStation(); t.HasStorageCompany = true;
@@ -45,15 +45,15 @@ public class IndustrialFacilityClassifierTests {
  }
  [Test] public void UnrelatedBuildingsHaveNoRoleAndAreNotHeadquartersEligible() {
   var residential = Building(); var park = Building(); var civic = Building(); civic.HasWorkplaces = true;
-  foreach (var t in new[] { Office(), residential, park, civic, new IndustrialFacilityTraits() }) {
+  foreach (var t in new[] { residential, park, civic, new IndustrialFacilityTraits() }) {
    Assert.That(IndustrialFacilityClassifier.Classify(t), Is.EqualTo(IndustrialFacilityRole.None));
    Assert.That(IndustrialFacilityClassifier.IsHeadquartersEligible(t), Is.False);
   }
   var notBuilding = Extractor(); notBuilding.IsBuilding = false;
   Assert.That(IndustrialFacilityClassifier.Classify(notBuilding), Is.EqualTo(IndustrialFacilityRole.None), "unknown/non-building traits are safely None");
  }
- [Test] public void ProducerRolesAreHeadquartersEligible() {
-  foreach (var t in new[] { Extractor(), Factory(), Warehouse(), CargoStation() }) Assert.That(IndustrialFacilityClassifier.IsHeadquartersEligible(t), Is.True);
+ [Test] public void ProducerRolesAreNotHeadquartersEligible() {
+  foreach (var t in new[] { Extractor(), Factory(), Warehouse(), CargoStation() }) Assert.That(IndustrialFacilityClassifier.IsHeadquartersEligible(t), Is.False);
  }
  [Test] public void ModdedBuildingsWithTheSameTraitsAreTreatedIdentically() {
   // Traits carry only component/prefab facts; there is no asset name or origin to distinguish a modded building.
@@ -76,22 +76,23 @@ public class IndustrialHeadquartersPolicyTests {
   public void Write(Entity area, IReadOnlyList<AreaAnchorLink> links) => Values[area] = links.ToArray();
  }
  private static readonly Entity area = new() { Index = 10, Version = 1 }, factory = new() { Index = 30, Version = 1 }, office = new() { Index = 40, Version = 1 };
- [Test] public void InitialAssignmentRejectsOfficesAndReaderFailures() {
+ [Test] public void InitialAssignmentAcceptsOfficesAndRejectsLegacyIndustrialAndReaderFailures() {
   var traits = new Dictionary<Entity, IndustrialFacilityTraits> { [factory] = new IndustrialFacilityTraits { IsBuilding = true, ManufacturesGoods = true },
    [office] = new IndustrialFacilityTraits { IsBuilding = true, HasOfficeProperty = true, HasOfficeCompany = true, HasWorkplaces = true } };
   IAreaAnchorPolicy policy = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => traits[e]);
-  Assert.That(policy.AcceptsAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.True);
-  Assert.That(policy.AcceptsAnchor(area, office, AreaAnchorRole.Headquarters, default), Is.False, "ordinary office");
+  Assert.That(policy.AcceptsAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.False);
+  Assert.That(policy.AcceptsAnchor(area, office, AreaAnchorRole.Headquarters, default), Is.True, "ordinary office");
   Assert.That(policy.AcceptsAnchor(area, factory, AreaAnchorRole.Entrance, default), Is.False, "Industrial has no Entrance role");
   IAreaAnchorPolicy failing = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => throw new InvalidOperationException("reader"));
   Assert.That(failing.AcceptsAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.False);
  }
- [Test] public void AcceptedHeadquartersStaysValidWithoutConsultingCurrentTenantOrHealth() {
+ [Test] public void AcceptedOfficeStaysValidThroughVacancyButLegacyFactoryBecomesInvalid() {
   int reads = 0;
-  var module = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => { reads++; return new IndustrialFacilityTraits(); });
+  var module = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => { reads++; return new IndustrialFacilityTraits{IsBuilding=true,HasOfficeProperty=e==office}; });
   IAreaExistingAnchorPolicy existing = module;
-  Assert.That(existing.AcceptsExistingAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.True);
+  Assert.That(existing.AcceptsExistingAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.False);
   Assert.That(existing.AcceptsExistingAnchor(area, factory, AreaAnchorRole.Entrance, default), Is.False);
-  Assert.That(reads, Is.Zero, "the assignment classifier is not reapplied to an accepted HQ");
+  Assert.That(existing.AcceptsExistingAnchor(area, office, AreaAnchorRole.Headquarters, default), Is.True);
+  Assert.That(reads, Is.EqualTo(2), "static OfficeProperty is revalidated without requiring a tenant");
  }
 }

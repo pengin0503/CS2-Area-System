@@ -19,7 +19,7 @@ namespace CS2AreaSystem.Core.UI
                 ["SubServices.NAME[" + category + "]"] = ja ? "エリアの種類" : "Area Types",
                 ["Assets.SUB_SERVICE_DESCRIPTION[" + category + "]"] = ja ? "作成する管理エリアの種類を選びます。" : "Choose the kind of management area to draw.",
                 ["Assets.DESCRIPTION[CS2AS.ParkArea]"] = ja ? "公園エリアの境界を描きます。エリア内の公園・余暇施設・観光名所の建物を入口に割り当てると稼働します。入口は複数設定できます。" : "Draw a Park Area boundary. It becomes active once a park, leisure or attraction building inside it is assigned as an entrance. Several entrances are allowed.",
-                ["Assets.DESCRIPTION[CS2AS.IndustrialArea]"] = ja ? "産業エリアの境界を描きます。エリア内の採取施設・工場・倉庫・貨物施設の建物を本部に割り当てると稼働します。" : "Draw an Industrial Area boundary. It becomes active once an extractor, factory, warehouse or cargo building inside it is assigned as the headquarters.",
+                ["Assets.DESCRIPTION[CS2AS.IndustrialArea]"] = ja ? "産業エリアの境界を描きます。エリア内のオフィス建物を本部に割り当てると稼働します。" : "Draw an Industrial Area boundary. It becomes active once an office building inside it is assigned as the headquarters.",
                 ["Assets.DESCRIPTION[CS2AS.TourismArea]"] = ja ? "観光エリアは現在、境界のみです。観光のゲームプレイ機能（観測・評価・進行）は未実装で、今後の更新で追加予定です。" : "Tourism is currently a boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
                 ["Assets.NAME[CS2AS.ParkArea]"] = ja ? "公園エリア" : "Park Area",
                 ["Assets.NAME[CS2AS.IndustrialArea]"] = ja ? "産業エリア" : "Industrial Area",
@@ -66,7 +66,7 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.ChangeEntrance"] = ja ? "入口を変更" : "Change entrance",
                 ["CS2AS.UI.ChangeHeadquarters"] = ja ? "本部を変更" : "Change headquarters",
                 ["CS2AS.UI.SelectEntrance"] = ja ? "このエリア内の公園・余暇施設・観光名所の建物をクリックして入口に追加してください。" : "Click a park, leisure or attraction building inside this area to add it as an entrance.",
-                ["CS2AS.UI.SelectHeadquarters"] = ja ? "このエリア内の採取施設・工場・倉庫・貨物施設の建物をクリックして本部に割り当ててください。" : "Click an extractor, factory, warehouse or cargo building inside this area to assign it as the headquarters.",
+                ["CS2AS.UI.SelectHeadquarters"] = ja ? "このエリア内のオフィス建物をクリックして本部に割り当ててください。" : "Click an office building inside this area to assign it as the headquarters.",
                 ["CS2AS.UI.AreaList"] = ja ? "管理エリア一覧" : "Managed areas",
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };

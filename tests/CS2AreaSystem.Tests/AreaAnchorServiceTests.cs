@@ -113,10 +113,10 @@ public class AreaAnchorPolicyTests {
   var module=new ParkAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),(e,_)=>throw new InvalidOperationException("reader"));
   Assert.That(((IAreaAnchorPolicy)module).AcceptsAnchor(area,park,AreaAnchorRole.Entrance,default),Is.False);
  }
- [Test] public void IndustrialRejectsOrdinaryOfficesAtAssignment() {
+ [Test] public void IndustrialAcceptsOrdinaryOfficesAtAssignment() {
   IAreaAnchorPolicy industrial=new IndustrialAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),
    (e,_)=>new IndustrialFacilityTraits{IsBuilding=true,HasOfficeProperty=true,HasOfficeCompany=true,HasWorkplaces=true});
-  Assert.That(industrial.AcceptsAnchor(area,office,AreaAnchorRole.Headquarters,default),Is.False);
+  Assert.That(industrial.AcceptsAnchor(area,office,AreaAnchorRole.Headquarters,default),Is.True);
  }
  [Test] public void AssignmentAndExistingLinkUseSeparatePredicates() {
   var invalid=new HashSet<Entity>();
