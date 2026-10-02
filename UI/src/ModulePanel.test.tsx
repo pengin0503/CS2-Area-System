@@ -60,6 +60,13 @@ describe('generic module panel items',()=>{
   fireEvent.click(screen.getByRole('button',{name:'Reset fee'}));
   expect(env.trigger).not.toHaveBeenCalled();
  });
+ it('a diagnostic focus button sends the target key as the moduleAction value',()=>{
+  env.dict['M.Focus']='Show facility';
+  render(<ModulePanel stableId="12" items={[item({kind:'button',id:'focus.LowEfficiency',labelKey:'M.Focus',action:'focusDiagnosticTarget',value:'70.3'})]}/>);
+  fireEvent.click(screen.getByRole('button',{name:'Show facility'}));
+  expect(env.trigger).toHaveBeenCalledTimes(1);
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','moduleAction','12','focusDiagnosticTarget','70.3');
+ });
  it('ignores unknown item kinds from newer modules',()=>{
   expect(()=>render(<ModulePanel stableId="7" items={[item({kind:'chart',id:'c'})]}/>)).not.toThrow();
  });

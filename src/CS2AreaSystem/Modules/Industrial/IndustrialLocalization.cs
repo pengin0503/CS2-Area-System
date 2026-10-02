@@ -103,6 +103,8 @@ namespace CS2AreaSystem.Modules.Industrial
             Add(P + "RawActivity", "Activity incl. bonuses", "稼働率（ボーナス込み）");
             Add(P + "RawActivity.Tip", "Unclamped value; only scoring is limited to 100%.", "上限なしの値です。スコア計算のみ100%で頭打ちにします。");
             Add(P + "MeaningfulOutputs", "Meaningful outputs (now / six-hour average)", "有意な生産品目（現在 / 6時間平均）");
+            Add(P + "FocusTarget", "Show facility", "施設を表示");
+            Add(P + "FocusTarget.Tip", "Moves the camera to a representative facility behind this diagnostic. Nothing in the city is changed.", "この診断の代表的な施設にカメラを移動します。都市の状態は何も変更しません。");
             Add(P + "Process.Input", "Input", "原料");
             Add(P + "Process.Output", "Output", "製品");
             Add(P + "Process.Companies", "Companies with this process", "この工程の企業数");

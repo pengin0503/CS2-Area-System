@@ -28,8 +28,8 @@ namespace CS2AreaSystem.Modules.Industrial
         // Runtime-only trend samples of this Area (null when no runtime snapshot exists).
         public IndustrialTrendSnapshot Trends;
     }
-    // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only:
-    // no item carries an action, unavailable data is never rendered as zero.
+    // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
+    // item with an action is the diagnostic focus button (camera only); unavailable data is never rendered as zero.
     public static class IndustrialPanelBuilder
     {
         public const string P = "CS2AS.Industrial.";
@@ -73,7 +73,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 "CargoFacilities", "Jobs", "Employees", "Vacancies", "ProducerJobs", "SupportJobs", "NextLevel", "MaxLevel", "HourlyXp", "HourlyXp.Tip", "DailyXp", "DailyXp.Tip",
                 "StreakDays", "DayAverage", "DayHours", "LastDay", "LastDay.Tip", "Headquarters", "Hq.Valid", "Hq.Invalid", "Hq.Missing", "Resource.Tip", "Bottlenecks.None",
                 "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid",
-                "Process.Input", "Process.Output", "Process.Companies", "Process.ActualPerDay", "Process.Tip" })
+                "Process.Input", "Process.Output", "Process.Companies", "Process.ActualPerDay", "Process.Tip", "FocusTarget", "FocusTarget.Tip" })
                 yield return P + k;
             foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
         }
@@ -140,6 +140,10 @@ namespace CS2AreaSystem.Modules.Industrial
                 items.Add(Warning("bottleneck." + b.Key, P + "Bottleneck." + b.Key,
                     "(" + Percent(b.EvidenceValue) + " · ×" + Number(b.AffectedFacilities) + " · " + Hours(b.ObservedHours) + ")", P + "Bottleneck." + b.Key + ".Tip"));
                 items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "suggestion." + b.Key, LabelKey = P + "Suggestion." + b.Key });
+                // Read-only camera focus on the representative facility; the key is re-validated when clicked.
+                if (b.Target != Unity.Entities.Entity.Null)
+                    items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = "focus." + b.Key, LabelKey = P + "FocusTarget", TooltipKey = P + "FocusTarget.Tip",
+                        Action = IndustrialGameplayFacade.FocusDiagnosticTarget, Value = AreaDiagnosticTargetKey.Format(b.Target) });
             }
         }
         // ---- tabs

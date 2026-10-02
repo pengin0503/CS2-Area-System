@@ -4304,6 +4304,8 @@
     "CS2AS.Industrial.EmployeesJobs": "Employees / jobs",
     "CS2AS.Industrial.Experience": "Experience",
     "CS2AS.Industrial.Extractors": "Extractors",
+    "CS2AS.Industrial.FocusTarget": "Show facility",
+    "CS2AS.Industrial.FocusTarget.Tip": "Moves the camera to a representative facility behind this diagnostic. Nothing in the city is changed.",
     "CS2AS.Industrial.Headquarters": "Headquarters",
     "CS2AS.Industrial.HourlyXp": "XP this hour",
     "CS2AS.Industrial.HourlyXp.Tip": "Production 35%, Employment 25%, Logistics 20%, Performance 20% (three of four needed), divided by 10, at most 10 per game hour. No bonus for area size.",

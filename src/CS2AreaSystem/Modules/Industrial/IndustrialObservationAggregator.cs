@@ -39,6 +39,35 @@ namespace CS2AreaSystem.Modules.Industrial
         public double Stored, Capacity;
         public int StorageObserved;
         public int Understaffed, LowEfficiency, LowProfit, InputAffected, OutputAffected, IdleProducers, FailedReads;
+        public readonly IndustrialBottleneckTargets Targets = new IndustrialBottleneckTargets();
+    }
+    // Bounded per-cycle evidence: at most one representative facility per bottleneck key, chosen while the cycle's
+    // observations are applied (no extra scan). Ties keep the first observed facility.
+    public sealed class IndustrialBottleneckTargets
+    {
+        private Entity workforce, efficiency, profitability, input, output, cargo, idle;
+        private double workforceFill = double.MaxValue, efficiencyValue = double.MaxValue, profitabilityValue = double.MaxValue, inputWeight, outputWeight;
+        public Entity For(string key)
+        {
+            switch (key)
+            {
+                case "WorkforceShortage": return workforce;
+                case "LowEfficiency": return efficiency;
+                case "LowProfitability": return profitability;
+                case "InputStarvation": return input;
+                case "StorageSaturation": return output;
+                case "InsufficientCargo": return cargo != Entity.Null ? cargo : output;
+                case "LowActiveProducerShare": return idle;
+                default: return Entity.Null;
+            }
+        }
+        internal void Understaffed(Entity facility, double fill) { if (fill < workforceFill) { workforceFill = fill; workforce = facility; } }
+        internal void Efficiency(Entity facility, double value) { if (value < efficiencyValue) { efficiencyValue = value; efficiency = facility; } }
+        internal void Profitability(Entity facility, double value) { if (value < profitabilityValue) { profitabilityValue = value; profitability = facility; } }
+        internal void InputAffected(Entity facility, double weight) { if (input == Entity.Null || weight > inputWeight) { inputWeight = weight; input = facility; } }
+        internal void OutputAffected(Entity facility, double weight) { if (output == Entity.Null || weight > outputWeight) { outputWeight = weight; output = facility; } }
+        internal void CargoNotOperating(Entity facility) { if (cargo == Entity.Null) cargo = facility; }
+        internal void IdleProducer(Entity facility) { if (idle == Entity.Null) idle = facility; }
     }
     // Aggregates normalized observations into one coherent Area result through the pure Task 3 models.
     public static class IndustrialObservationAggregator
@@ -53,7 +82,7 @@ namespace CS2AreaSystem.Modules.Industrial
             if ((roles & IndustrialFacilityRole.Extractor) != 0) acc.Extractors++;
             if ((roles & IndustrialFacilityRole.Processor) != 0) acc.Processors++;
             if ((roles & IndustrialFacilityRole.Storage) != 0) acc.StorageFacilities++;
-            if ((roles & IndustrialFacilityRole.Cargo) != 0) { acc.CargoFacilities++; if (obs.CargoOperational == true) acc.CargoOperational++; }
+            if ((roles & IndustrialFacilityRole.Cargo) != 0) { acc.CargoFacilities++; if (obs.CargoOperational == true) acc.CargoOperational++; else acc.Targets.CargoNotOperating(obs.Facility); }
             double weight = IndustrialWeighting.Weight(obs.Jobs);
             // Jobs of a multi-role facility are counted once; producer and support jobs are split by facility.
             if (obs.Jobs.HasValue)
@@ -62,7 +91,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 acc.JobFacilities.Add(new IndustrialJobFacility { Jobs = jobs, Employees = employees });
                 if (obs.IsProducer) { acc.ProducerJobs += Math.Max(0, jobs); acc.ProducerEmployees += Math.Max(0, employees); }
                 else { acc.SupportJobs += Math.Max(0, jobs); acc.SupportEmployees += Math.Max(0, employees); }
-                if (jobs > 0 && employees < 0.75 * jobs) acc.Understaffed++;
+                if (jobs > 0 && employees < 0.75 * jobs) { acc.Understaffed++; acc.Targets.Understaffed(obs.Facility, (double)Math.Max(0, employees) / jobs); }
                 if (obs.VacanciesByLevel != null) for (int i = 0; i < 5 && i < obs.VacanciesByLevel.Length; i++) acc.VacanciesByLevel[i] += Math.Max(0, obs.VacanciesByLevel[i]);
             }
             if (obs.Efficiency.HasValue)
@@ -70,17 +99,19 @@ namespace CS2AreaSystem.Modules.Industrial
                 acc.Efficiency.Add(new IndustrialWeightedValue { Value = obs.Efficiency, Jobs = obs.Jobs });
                 acc.RawEfficiencySum += obs.Efficiency.Value * weight; acc.RawEfficiencyWeight += weight;
                 if (obs.Efficiency.Value < IndustrialPerformanceModel.EfficiencyThreshold) acc.LowEfficiency++;
+                acc.Targets.Efficiency(obs.Facility, obs.Efficiency.Value);
             }
             if (obs.Profitability.HasValue)
             {
                 acc.Profitability.Add(new IndustrialWeightedValue { Value = obs.Profitability, Jobs = obs.Jobs });
                 if (obs.Profitability.Value < IndustrialPerformanceModel.ProfitabilityThreshold) acc.LowProfit++;
+                acc.Targets.Profitability(obs.Facility, obs.Profitability.Value);
             }
             if (obs.StorageCapacity.HasValue && obs.StoredAmount.HasValue && obs.StorageCapacity.Value > 0 && (roles & (IndustrialFacilityRole.Storage | IndustrialFacilityRole.Cargo)) != 0)
             { acc.Stored += obs.StoredAmount.Value; acc.Capacity += obs.StorageCapacity.Value; acc.StorageObserved++; }
             if (!obs.IsProducer) return;
             acc.ProducerFacilities++;
-            if (obs.IsOperatingProducer && obs.Available) acc.OperatingProducers++; else acc.IdleProducers++;
+            if (obs.IsOperatingProducer && obs.Available) acc.OperatingProducers++; else { acc.IdleProducers++; acc.Targets.IdleProducer(obs.Facility); }
             IndustrialProcessDiagnostics.Add(acc.Processes, obs.Processes, obs.Available);
             if (obs.ProducerTenants > 0)
             {
@@ -101,6 +132,8 @@ namespace CS2AreaSystem.Modules.Industrial
             }
             AddFlow(ref acc.Input, obs.Input, weight, ref acc.InputAffected);
             AddFlow(ref acc.Output, obs.Output, weight, ref acc.OutputAffected);
+            if (obs.Input == IndustrialFlowState.Affected) acc.Targets.InputAffected(obs.Facility, weight);
+            if (obs.Output == IndustrialFlowState.Affected) acc.Targets.OutputAffected(obs.Facility, weight);
         }
         private static void AddFlow(ref IndustrialFlowSample sample, IndustrialFlowState state, double weight, ref int affectedFacilities)
         {
@@ -171,6 +204,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 LowProfitFacilities = acc.LowProfit, InputAffectedFacilities = acc.InputAffected, OutputAffectedFacilities = acc.OutputAffected,
                 IdleProducers = acc.IdleProducers, InputObservedHours = result.InputObservedHours, OutputObservedHours = result.OutputObservedHours,
                 SampleHours = Math.Max(0, info.EndHours - info.StartHours), CargoFacilities = acc.CargoFacilities, CargoNonOperational = acc.CargoFacilities - acc.CargoOperational });
+            // Only this cycle's candidate is attached (never a facility from an earlier generation).
+            foreach (var bottleneck in result.AllBottlenecks) bottleneck.Target = acc.Targets.For(bottleneck.Key);
             result.Bottlenecks = result.AllBottlenecks.Count > IndustrialPerformanceModel.MaxBottlenecks
                 ? result.AllBottlenecks.GetRange(0, IndustrialPerformanceModel.MaxBottlenecks) : result.AllBottlenecks;
             snapshot.Publish(result);

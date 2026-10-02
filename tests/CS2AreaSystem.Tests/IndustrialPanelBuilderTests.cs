@@ -189,7 +189,9 @@ public class IndustrialPanelBuilderTests {
  [Test] public void PanelIsReadOnlyAtEveryLevel() {
   foreach (var kind in Kinds) {
    var d = IndustrialPanelBuilder.Build(Model(kind));
-   Assert.That(d.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null || i.Kind == AreaPanelItemKind.Slider || i.Kind == AreaPanelItemKind.Button), Is.Empty, kind);
+   // Wave A3: the read-only diagnostic focus button is the only action the Industrial panel may emit.
+   var actions = d.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null || i.Kind == AreaPanelItemKind.Slider || i.Kind == AreaPanelItemKind.Button);
+   Assert.That(actions.All(i => i.Kind == AreaPanelItemKind.Button && i.Action == IndustrialGameplayFacade.FocusDiagnosticTarget), Is.True, kind);
   }
   var low = Tab(IndustrialPanelBuilder.Build(Model("suspended") is var s ? s : null), "production");
   Assert.That(low, Is.Not.Null, "all diagnostic tabs exist at Level 1");
@@ -279,6 +281,32 @@ public class IndustrialPanelBuilderTests {
   Assert.That(actual.Kind, Is.EqualTo(AreaPanelItemKind.Row));
   Assert.That(actual.TooltipKey, Is.EqualTo("CS2AS.Industrial.Status.Stale"));
   Assert.That(IndustrialPanelBuilder.Build(Model("suspended")).Tabs.SelectMany(t => t.Items).Any(i => i.Id.StartsWith("process.")), Is.False, "no observation, no process rows");
+ }
+ // ---- Wave A3 bottleneck focus
+ [Test] public void BottleneckFocusButtonFollowsOnlyTargetBearingBottlenecks() {
+  var m = Model("overlapping");
+  Assert.That(m.Current.AllBottlenecks.Count(b => b.Target != Entity.Null), Is.GreaterThanOrEqualTo(2), "fixture has targets");
+  var untargeted = m.Current.AllBottlenecks.First(b => b.Key != m.Current.Bottlenecks[0].Key);
+  untargeted.Target = Entity.Null;
+  var d = IndustrialPanelBuilder.Build(m);
+  foreach (var tab in d.Tabs) {
+   var items = tab.Items.ToList();
+   for (int i = 0; i < items.Count; i++) {
+    if (items[i].Kind != AreaPanelItemKind.Warning || !items[i].Id.StartsWith("bottleneck.")) continue;
+    var key = items[i].Id.Substring("bottleneck.".Length);
+    var bottleneck = m.Current.AllBottlenecks.Single(b => b.Key == key);
+    Assert.That(items[i + 1].Id, Is.EqualTo("suggestion." + key));
+    if (bottleneck.Target == Entity.Null) { Assert.That(i + 2 >= items.Count || items[i + 2].Kind != AreaPanelItemKind.Button, Is.True, key + " has no target"); continue; }
+    var button = items[i + 2];
+    Assert.That(button.Kind, Is.EqualTo(AreaPanelItemKind.Button), key);
+    Assert.That(button.Id, Is.EqualTo("focus." + key));
+    Assert.That(button.Action, Is.EqualTo("focusDiagnosticTarget"));
+    Assert.That(button.Value, Is.EqualTo(AreaDiagnosticTargetKey.Format(bottleneck.Target)));
+    Assert.That(button.LabelKey, Is.EqualTo("CS2AS.Industrial.FocusTarget"));
+    Assert.That(button.TooltipKey, Is.EqualTo("CS2AS.Industrial.FocusTarget.Tip"));
+   }
+  }
+  Assert.That(d.Tabs.SelectMany(t => t.Items).Any(i => i.Id == "focus." + untargeted.Key), Is.False);
  }
  [TestCase("en-US")] [TestCase("ja-JP")]
  public void EveryKeyTheIndustrialPanelCanEmitIsLocalized(string locale) {

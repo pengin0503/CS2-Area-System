@@ -91,11 +91,18 @@ check(/UpdateAt<CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialProgressionSystem,\s*CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialProgressionSystem must run after observation');
 check(/catch\s*\(System\.Exception error\)\s*\{\s*industrial\.Fail\(error,\s*type => Disable\(updateSystem,\s*type\),\s*ReportRegistrationFailure\);/.test(industrialRegistration), 'Industrial registration failure must be isolated, disable the whole module and be logged');
 const industrialFacade = read(`${industrialDir}/IndustrialGameplayFacade.cs`);
-check(!/SetComponentData|AddComponent|RemoveComponent|public static bool HandleAction/.test(industrialFacade), 'Industrial facade must stay read-only (no setters/actions)');
+// Wave A3: Industrial stays simulation-read-only. Its single whitelisted module action is the diagnostic camera focus.
+check(!/SetComponentData|AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity/.test(industrialFacade), 'Industrial facade must stay read-only (no setters)');
+const industrialFacadeActions = [...industrialFacade.matchAll(/public const string (\w+)\s*=\s*"([^"]*)"/g)].map(m => m[2]);
+check(industrialFacadeActions.length === 1 && industrialFacadeActions[0] === 'focusDiagnosticTarget', 'Industrial facade may accept only the focusDiagnosticTarget action');
+check(/if \(action != FocusDiagnosticTarget/.test(industrialFacade), 'Industrial facade must reject every action except focusDiagnosticTarget first');
 const industrialModule = read(`${industrialDir}/IndustrialAreaModule.cs`);
-check(/HandleAction\([^)]*\)\s*=>\s*false;/.test(industrialModule), 'Industrial module must not handle Industrial-specific UI actions');
+check(/HandleAction\([^)]*\)\s*=>\s*IndustrialGameplayFacade\.HandleAction\(area, action, value, context\);/.test(industrialModule), 'Industrial module must route actions only to the read-only facade');
 const panelBuilder = read(`${industrialDir}/IndustrialPanelBuilder.cs`);
-check(!/Action\s*=|AreaPanelItemKind\.(Slider|Button)/.test(panelBuilder), 'Industrial panel must not emit actions, sliders or buttons');
+check(!/AreaPanelItemKind\.Slider/.test(panelBuilder), 'Industrial panel must not emit sliders');
+const panelActions = [...panelBuilder.matchAll(/Action\s*=\s*([^,}]+)/g)].map(m => m[1].trim());
+check(panelActions.length === 1 && panelActions[0] === 'IndustrialGameplayFacade.FocusDiagnosticTarget', 'Industrial panel may emit only the focusDiagnosticTarget action');
+check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 1, 'Industrial panel may emit only the diagnostic focus button');
 const classifier = read(`${industrialDir}/IndustrialFacilityClassifier.cs`);
 const classify = classifier.slice(classifier.indexOf('public static IndustrialFacilityRole Classify'), classifier.indexOf('public static bool IsHeadquartersEligible'));
 check(classify.length > 0 && !/HasOffice/.test(classify), 'ordinary office properties/companies must never create an Industrial role');

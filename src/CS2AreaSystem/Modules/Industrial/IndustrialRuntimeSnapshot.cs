@@ -40,6 +40,8 @@ namespace CS2AreaSystem.Modules.Industrial
         public double ObservedHours;
         // Displayed evidence value (percent) behind the diagnostic.
         public double EvidenceValue;
+        // One representative facility from the same observation cycle (Wave A3); Entity.Null when none is reliable.
+        public Entity Target;
     }
     // Per-channel flow state of one completed observation (weights w = clamp(jobs, 1, 100)).
     public struct IndustrialFlowSample
