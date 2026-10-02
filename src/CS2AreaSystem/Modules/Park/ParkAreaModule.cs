@@ -20,7 +20,7 @@ namespace CS2AreaSystem.Modules.Park
         { this.readTraits = readTraits ?? ParkFacilityReader.ReadAnchor; }
         public override string BuildSummary(Entity area, in AreaPanelContext context)
         {
-            if (ValidateActivation(area)) return "CS2AS.Park.Summary.Active";
+            if (ValidateActivation(area, default)) return "CS2AS.Park.Summary.Active";
             // Links exist but none qualifies (e.g. a pre-v1 save with an arbitrary building, or a demolished entrance).
             return Anchors.HasLinks(area, AreaAnchorRole.Entrance) ? "CS2AS.Park.Summary.EntranceInvalid" : "CS2AS.Park.Summary.EntranceRequired";
         }

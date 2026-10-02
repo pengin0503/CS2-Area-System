@@ -29,7 +29,7 @@ namespace CS2AreaSystem.Modules.Industrial
         // operating health never invalidate it, so the assignment classifier is deliberately not consulted again.
         public bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => role == AreaAnchorRole.Headquarters;
         public IndustrialHeadquartersState HeadquartersState(Entity area) =>
-            ValidateActivation(area) ? IndustrialHeadquartersState.Valid : Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
+            ValidateActivation(area, default) ? IndustrialHeadquartersState.Valid : Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
         public override string BuildSummary(Entity area, in AreaPanelContext context)
         {
             switch (HeadquartersState(area))

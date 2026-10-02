@@ -6,7 +6,7 @@ namespace CS2AreaSystem.Modules.Tourism
 {
     public sealed class TourismAreaModule : AnchorAreaModule
     {
-        public TourismAreaModule() : base(AreaTypeId.Tourism, null, null) { }
+        public TourismAreaModule() : base(AreaTypeId.Tourism, null) { }
         public override string BuildSummary(Entity area, in AreaPanelContext context) => "CS2AS.Summary.TourismBoundaryOnly";
     }
 }

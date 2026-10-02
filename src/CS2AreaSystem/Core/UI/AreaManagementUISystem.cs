@@ -191,7 +191,8 @@ namespace CS2AreaSystem.Core.UI
             var area = EntityManager.GetComponentData<ManagedArea>(entity);
             if (services.IsQuarantined(entity)) return new CoreView { View = QuarantinedView(entity, area, key.ConfirmDelete) };
             bool known = services.Registry.TryGet(area.TypeId, out var descriptor);
-            var role = (descriptor?.Module as IAreaAnchorPolicy)?.RequiredAnchorRole;
+            var roles = (descriptor?.Module as IAreaAnchorPolicy)?.AnchorRoles;
+            AreaAnchorRole? role = roles != null && roles.Count > 0 ? roles[0] : (AreaAnchorRole?)null;
             var provider = descriptor?.Module?.PanelProvider;
             var anchors = role.HasValue ? services.Anchors.GetValidAnchors(entity, role.Value) : System.Array.Empty<Entity>();
             var links = role.HasValue ? services.Anchors.GetAnchorLinks(entity, role.Value) : System.Array.Empty<AreaAnchorLinkState>();
@@ -290,8 +291,8 @@ namespace CS2AreaSystem.Core.UI
         private void RemoveAnchor(Entity area, string key)
         {
             var type = EntityManager.GetComponentData<ManagedArea>(area).TypeId;
-            if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || !policy.RequiredAnchorRole.HasValue) return;
-            var role = policy.RequiredAnchorRole.Value;
+            if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.AnchorRoles.Count == 0) return;
+            var role = policy.AnchorRoles[0];
             var links = EntityManager.HasBuffer<AreaAnchorLink>(area) ? new EntityAreaAnchorStore(EntityManager).Read(area) : System.Array.Empty<AreaAnchorLink>();
             if (AreaAnchorLinkKey.TryResolve(links, role, key, out var anchor) && services.Anchors.Remove(area, anchor, role)) { presentation.Invalidate(); selection.SetDirty(); }
         }
@@ -418,7 +419,7 @@ namespace CS2AreaSystem.Core.UI
         private void BeginAssignment(Entity area, AreaAnchorRole role)
         {
             var type = EntityManager.GetComponentData<ManagedArea>(area).TypeId;
-            if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || policy.RequiredAnchorRole != role) return;
+            if (!services.Registry.TryGet(type, out var descriptor) || !(descriptor.Module is IAreaAnchorPolicy policy) || !AreaAnchorEligibility.AllowsRole(policy, area, role, EntityManager, false)) return;
             pendingArea = area; pendingRole = role; pendingId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
             presentation.Invalidate();
             tools.ActivatePrefabTool(null);

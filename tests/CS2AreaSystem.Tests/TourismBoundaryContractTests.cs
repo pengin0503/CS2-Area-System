@@ -34,8 +34,8 @@ public class TourismBoundaryContractTests {
   Assert.That(identity.StableId.Value, Is.Not.Zero);
   // No anchor requirement: a known Tourism Area activates on creation.
   var module = new TourismAreaModule();
-  Assert.That(module.RequiredAnchorRole, Is.Null);
-  Assert.That(AreaLifecyclePolicy.Resolve(true, module.ValidateActivation(E(1)), false), Is.EqualTo(AreaLifecycleState.Active));
+  Assert.That(module.AnchorRoles, Is.Empty);
+  Assert.That(AreaLifecyclePolicy.Resolve(true, module.ValidateActivation(E(1), default), false), Is.EqualTo(AreaLifecycleState.Active));
  }
  [Test] public void SaveAndLoadKeepTheTypeStateAndIdentity() {
   var managed = MemorySerializer.RoundTrip(new ManagedArea { SchemaVersion = ManagedArea.CurrentSchemaVersion, TypeId = Tourism, State = AreaLifecycleState.Active });
@@ -79,7 +79,7 @@ public class TourismBoundaryContractTests {
   public AreaTypeDescriptor DescribeType() => new(99, "Future", "Future", "icon", this);
   public IAreaMemberClassifier MemberClassifier => throw new InvalidOperationException("future module broken");
   public IAreaPanelProvider PanelProvider => throw new InvalidOperationException();
-  public bool ValidateActivation(Entity area) => throw new InvalidOperationException();
+  public bool ValidateActivation(Entity area, in CS2AreaSystem.Core.Modules.AreaActivationContext context) => throw new InvalidOperationException();
   public bool AllowsOverlapWith(int otherTypeId) => throw new InvalidOperationException();
   public void OnAreaCreated(Entity area) { } public void OnAreaActivated(Entity area) { } public void OnAreaSuspended(Entity area) { } public void OnAreaDeleted(Entity area) { }
  }

@@ -18,7 +18,7 @@ public class AreaAnchorServiceTests {
         var invalid=new HashSet<Entity>();
         var store=new Store(); var anchors=new AreaAnchorService(store,e=>!invalid.Contains(e),(a,e,r)=>true);
         var industrial=new IndustrialAreaModule(anchors); var tourism=new TourismAreaModule();
-        AreaLifecycleState State(Entity a)=>AreaLifecyclePolicy.Resolve(true,industrial.ValidateActivation(a),false);
+        AreaLifecycleState State(Entity a)=>AreaLifecyclePolicy.Resolve(true,industrial.ValidateActivation(a, default),false);
         var progress=new ManagedAreaProgress{Level=3,Experience=1000};
         Assert.That(State(area),Is.EqualTo(AreaLifecycleState.Suspended));
         Assert.That(anchors.Assign(area,hq,AreaAnchorRole.Headquarters),Is.True);
@@ -28,18 +28,18 @@ public class AreaAnchorServiceTests {
         anchors.Assign(area,replacement,AreaAnchorRole.Headquarters);
         Assert.That(State(area),Is.EqualTo(AreaLifecycleState.Active));
         Assert.That(store.Read(area).Count,Is.EqualTo(1)); Assert.That(progress.Level,Is.EqualTo(3)); Assert.That(progress.Experience,Is.EqualTo(1000));
-        Assert.That(tourism.ValidateActivation(area),Is.True);
+        Assert.That(tourism.ValidateActivation(area, default),Is.True);
     }
     [Test] public void ParkNeedsEntranceAndInvalidAssignmentCannotReplaceExistingLinks() {
         var store=new Store(); var anchors=new AreaAnchorService(store,e=>e!=Entity.Null,(a,e,r)=>r==AreaAnchorRole.Entrance);
         var park=new ParkAreaModule(anchors);
-        Assert.That(park.ValidateActivation(area),Is.False);
+        Assert.That(park.ValidateActivation(area, default),Is.False);
         Assert.That(anchors.Assign(area,hq,AreaAnchorRole.Entrance),Is.True);
-        Assert.That(park.ValidateActivation(area),Is.True);
+        Assert.That(park.ValidateActivation(area, default),Is.True);
         Assert.That(anchors.Assign(area,Entity.Null,AreaAnchorRole.Entrance),Is.False);
         Assert.That(anchors.Assign(area,replacement,AreaAnchorRole.Headquarters),Is.False);
         Assert.That(anchors.Remove(area,hq,AreaAnchorRole.Entrance),Is.True);
-        Assert.That(park.ValidateActivation(area),Is.False);
+        Assert.That(park.ValidateActivation(area, default),Is.False);
     }
     [Test] public void AnchorUsesSerializerEntityOverloadAndReaderRemapping() {
         var io=MemorySerializer.Create();

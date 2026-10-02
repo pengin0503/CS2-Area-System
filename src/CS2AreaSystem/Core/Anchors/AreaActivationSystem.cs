@@ -54,7 +54,7 @@ namespace CS2AreaSystem.Core.Anchors
             try
             {
                 if (known && previous == AreaLifecycleState.Created) descriptor.Module.OnAreaCreated(entity);
-                area.State = AreaLifecyclePolicy.Resolve(known, known && !deleted && descriptor.Module.ValidateActivation(entity), deleted);
+                area.State = AreaLifecyclePolicy.Resolve(known, known && !deleted && descriptor.Module.ValidateActivation(entity, new Modules.AreaActivationContext(World, EntityManager)), deleted);
                 if (known && previous != area.State)
                 {
                     if (area.State == AreaLifecycleState.Active) descriptor.Module.OnAreaActivated(entity);

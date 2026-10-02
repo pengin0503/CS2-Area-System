@@ -40,9 +40,14 @@ namespace CS2AreaSystem.Core.Areas
                 () => IsValidEntity(area) && !IsQuarantined(area) && EntityManager.HasComponent<ManagedArea>(area) && EntityManager.HasComponent<ManagedAreaStableId>(area),
                 () => IsValidEntity(anchor) && EntityManager.HasComponent<Game.Buildings.Building>(anchor),
                 () => Registry.TryGet(EntityManager.GetComponentData<ManagedArea>(area).TypeId, out var descriptor) &&
-                      (policy = descriptor.Module as IAreaAnchorPolicy) != null && policy.RequiredAnchorRole == role,
+                      (policy = descriptor.Module as IAreaAnchorPolicy) != null && AllowsRoleSafely(policy, area, role, existing),
                 () => IsMember(area, anchor),
                 () => existing && policy is IAreaExistingAnchorPolicy accepted ? AcceptsExistingSafely(accepted, area, anchor, role) : AcceptsSafely(policy, area, anchor, role));
+        }
+        private bool AllowsRoleSafely(IAreaAnchorPolicy policy, Entity area, AreaAnchorRole role, bool existing)
+        {
+            try { return AreaAnchorEligibility.AllowsRole(policy, area, role, EntityManager, existing); }
+            catch (System.Exception error) { Failures.Report(area, "Anchors.Role", error, "Area anchor role failed; rejected"); return false; }
         }
         private bool IsMember(Entity area, Entity anchor)
         {
