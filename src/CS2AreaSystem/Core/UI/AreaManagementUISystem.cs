@@ -101,9 +101,10 @@ namespace CS2AreaSystem.Core.UI
             AddBinding(new TriggerBinding<string>("cs2AreaSystem", "cancelAnchorAssignment", CancelAssignment));
             // Policy toggle: (expected stable ID, policy ID, "1"/"0"). Guarded like every other mutating action.
             AddBinding(new TriggerBinding<string, string, string>("cs2AreaSystem", "setPolicyEnabled", (id, policy, enabled) => Act(id, area => SetPolicy(area, policy, enabled))));
-            // Register themselves as middle sections of the vanilla selected-info panel, area first, policies below it.
-            World.GetOrCreateSystemManaged<AreaInfoSection>();
+            // Register themselves as middle sections of the vanilla selected-info panel: policies first, then the Area
+            // content, like the district panel (vanilla PoliciesSection precedes the statistics sections).
             World.GetOrCreateSystemManaged<AreaPolicyInfoSection>();
+            World.GetOrCreateSystemManaged<AreaInfoSection>();
         }
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
         {

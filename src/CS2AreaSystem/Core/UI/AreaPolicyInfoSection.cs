@@ -4,8 +4,8 @@ using UnityEngine.Scripting;
 namespace CS2AreaSystem.Core.UI
 {
     // The selected managed Area's policies as their own selected-info middle section, mirroring the vanilla District
-    // panel where policies are a separate section below the district section. The UI module maps this type's full name
-    // to AreaPoliciesSection, which renders the vanilla Policy components.
+    // panel where the policy row comes before the statistics (AreaManagementUISystem creates it before AreaInfoSection).
+    // The UI module maps this type's full name to AreaPoliciesSection, which renders the vanilla Policy components.
     public partial class AreaPolicyInfoSection : InfoSectionBase
     {
         private AreaManagementUISystem management;
