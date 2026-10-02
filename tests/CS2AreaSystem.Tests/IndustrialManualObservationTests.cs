@@ -26,6 +26,16 @@ public class IndustrialManualObservationTests {
   var auto=IndustrialObservationMapper.ToOwnedObservation(b,companies,m,a,Eligible);
   Assert.That(auto.Jobs,Is.EqualTo(20));Assert.That(auto.ProducerTenants,Is.EqualTo(1));Assert.That(auto.ProductiveActivity,Is.EqualTo(90));
  }
+ [Test] public void ManualOwnerGetsCompanyProfitAndActivityButBuildingEfficiencyStaysPrimary() {
+  var m=Membership();var assignments=new IndustrialCompanyAssignmentIndex();assignments.Rebuild(new[]{new IndustrialCompanyClaim(7,E(1),E(100))});
+  var building=new IndustrialBuildingRead{Building=E(100),AreaId=7,Exists=true,Available=true,HasEfficiency=true,Efficiency=0.25f,LackResourcesZero=true,Traits=new(){IsBuilding=true,ManufacturesGoods=true}};
+  var companies=new[]{new IndustrialCompanyRead{Company=E(1),Building=E(100),Producer=true,HasProfit=true,ProfitIndex=100,HasActivity=true,ActualPerDay=40,CapacityPerDay=100},new IndustrialCompanyRead{Company=E(2),Building=E(100),Producer=true}};
+  var manual=IndustrialObservationMapper.ToOwnedObservation(building,companies,m,assignments,Eligible);
+  Assert.That(manual.Efficiency,Is.Null);Assert.That(manual.LackResourcesFactor,Is.False);
+  Assert.That(manual.Profitability,Is.Not.Null);Assert.That(manual.ProductiveActivity,Is.EqualTo(40));
+  building.AreaId=2;var primary=IndustrialObservationMapper.ToOwnedObservation(building,companies,m,assignments,Eligible);
+  Assert.That(primary.Efficiency,Is.EqualTo(25));Assert.That(primary.LackResourcesFactor,Is.True);
+ }
  [Test] public void AssignmentRevisionRestartsInFlightAndAlreadyCompletedHour() {
   var m=Membership();var a=new IndustrialCompanyAssignmentIndex();var source=new IndustrialMembershipCycleSource(m,new IndustrialStructureTracker(),a);
   var scheduler=new IndustrialObservationScheduler();var areas=new[]{new IndustrialAreaRef(E(7),7,AreaLifecycleState.Active)};

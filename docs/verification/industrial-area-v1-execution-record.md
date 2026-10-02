@@ -125,3 +125,10 @@ Only focused verification follows the final-gate fixture correction. In-game B20
 6. Shared localization fixture regeneration requires complete entrance evidence in its existing suspended Park example. Only fixture setup changes; post-fix validation is focused to respect the one-full-suite gate.
 
 Post-gate fixture correction: `ParkPanelFixtureTests` **2/2 PASS** (regenerated fixture retains all existing Park payloads and adds only shared B2 localization); `cd UI && npm test -- --run src/ParkPanel.test.tsx` **13/13 PASS**. The other 95 UI tests passed in the single full run. Final `git diff --check` remains PASS.
+
+## B2 PR follow-up — 2026-10-02
+
+User requested remaining B2 work. Automated PR #83 review reported two P2 issues after initial completion; evaluated against actual code/spec, with no C4 work.
+
+- Building efficiency / LackResources factor leaked into a non-primary manual company owner. Regression `ManualOwnerGetsCompanyProfitAndActivityButBuildingEfficiencyStaysPrimary` failed at manual efficiency = 25 (expected null); cleared building-owned efficiency/factor in the non-primary mapping, retaining Company activity/profit and primary Building efficiency. Affected C# tests **45/45 PASS** through the temporary NUnitLite runner; API-check test compilation passed. Review: `discussion_r4166676441`.
+- Original full C# run remains 1039/1039 evidence for the initial branch; follow-up changes receive focused checks only, preserving the requested single full-suite run. Standard VSTest and game/deployment checks remain unverified / **NOT RUN** as recorded above.

@@ -125,6 +125,7 @@ namespace CS2AreaSystem.Modules.Industrial
             if (!primary)
             {
                 read.HasBuildingWorkplace = false;
+                read.HasEfficiency = false; read.Efficiency = 0; read.LackResourcesZero = false;
                 read.Traits.HasCargoStation = read.Traits.HasStorageProperty = read.Traits.HasWorkplaces = false;
                 read.HasStorage = false;
             }
