@@ -137,6 +137,17 @@ public class AreaPresentationCacheTests {
   Assert.That(source, Does.Contain("SetChangedVersionFilter(ComponentType.ReadOnly<AreaAnchorLink>())"));
   Assert.That(source, Does.Contain("ComponentType.ReadOnly<BatchesUpdated>()"), "renames mark the entity BatchesUpdated");
  }
+ [Test] public void AnchorPolicyPresentationCallbacksAreFailureIsolated() {
+  var source=UISource();
+  var roles=Method(source,"private System.Collections.Generic.IReadOnlyList<AreaAnchorRole> GetAnchorRoles(");
+  var assign=Method(source,"private bool CanAssignAnchorForUI(");
+  var derived=Method(source,"private bool TryDerivedAnchorForUI(");
+  Assert.That(roles,Does.Contain("try").And.Contain("catch (Exception error)").And.Contain("UI.AnchorRoles"));
+  Assert.That(assign,Does.Contain("try").And.Contain("catch (Exception error)").And.Contain("UI.AnchorAssign."));
+  Assert.That(derived,Does.Contain("try").And.Contain("catch (Exception error)").And.Contain("UI.DerivedAnchor."));
+  var groups=Method(source,"private System.Collections.Generic.IReadOnlyList<AreaAnchorGroupView> BuildAnchorGroups(");
+  Assert.That(groups,Does.Contain("CanAssignAnchorForUI(").And.Contain("TryDerivedAnchorForUI("));
+ }
  [TestCase("private void SetPolicy(")]
  [TestCase("private void ModuleAction(")]
  [TestCase("private void RemoveAnchor(")]
