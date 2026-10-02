@@ -55,16 +55,19 @@
 - [ ] Implement provider.
 - [ ] GREEN and commit: `feat(park): register optional gate entrance content`
 
-### Task 3: Asset authoring/import package
+### Task 3: Asset authoring/import handoff
 
 **Files:**
 - Create: `assets/park-gate/README.md`
-- Create/update actual asset source/import files according to the verified CS2 asset toolchain used by the project.
+- Modify: `docs/content/park-gate-asset-contract.md`
 
-- [ ] Build/import the Gate as a Building using the verified 1.6.2f1 pipeline.
+The code plan does not invent an FBX/material/package layout. Before authoring, inspect the actual verified 1.6.2f1 asset toolchain, record the exact source/import/output paths it requires in the contract, and only then create those files.
+
+- [ ] Record the verified toolchain's exact asset paths/formats in the contract.
+- [ ] Build/import the Gate as a Building using that verified pipeline.
 - [ ] Keep prop-replaceable scenery external.
 - [ ] Verify LOD/material/collision/footprint and placement.
-- [ ] Commit asset metadata/source allowed by repository policy.
+- [ ] Commit only asset metadata/source allowed by repository policy; generated/import cache files stay out unless the repository policy explicitly requires them.
 
 ### Task 4: UI/runtime compatibility and verification
 
