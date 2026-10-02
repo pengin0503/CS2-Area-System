@@ -47,8 +47,10 @@
 **Files:**
 - Create: `src/CS2AreaSystem/Modules/Industrial/IndustrialBuiltInContentProvider.cs`
 - Create: `assets/industrial-reference-factory/README.md`
-- Create/update actual asset source/import files according to the verified content pipeline.
+- Modify: `docs/verification/custom-factory-process-contract.md`
 - Test: `tests/CS2AreaSystem.Tests/IndustrialBuiltInContentProviderTests.cs`
+
+The process contract must first record the exact source/import/output paths and formats required by the verified 1.6.2f1 content toolchain. Do not guess a model/material/package format in advance.
 
 **Interfaces:**
 - Provider ID `CS2AreaSystem.BuiltInContent`.
@@ -56,7 +58,8 @@
 - Runtime prefab Entity is rediscovered per load; no saved prefab Entity.
 
 - [ ] RED absent/present/reload tests.
-- [ ] Author/import asset with pinned process.
+- [ ] Record verified content-toolchain paths/formats in the process contract.
+- [ ] Author/import the asset with the pinned process using those exact paths.
 - [ ] Implement semantic provider.
 - [ ] GREEN and commit: `feat(industrial): add reference factory content`
 
