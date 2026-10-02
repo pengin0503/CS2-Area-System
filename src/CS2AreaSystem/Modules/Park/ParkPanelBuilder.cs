@@ -36,6 +36,7 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var d in ParkLandscapeDiagnostics.Keys) if (d != ParkLandscapeDiagnostics.Cluttered) { yield return P + "Diagnostic." + d; yield return P + "Diagnostic." + d + ".Tip"; }
             yield return P + "FocusTarget"; yield return P + "FocusTarget.Tip";
             foreach(var key in new[]{"Status","Unknown","Partial","Complete","Reachable","Unattached","Disconnected"}) yield return P+"Connectivity."+key;
+            foreach(var key in new[]{"Budget","Fee","Cost","Coverage","Maintenance","Value","Net","Tip"})yield return P+"Preview."+key;
         }
         private static AreaPanelItem Row(string id, string label, string value = null, string valueKey = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Row, Id = id, LabelKey = label, Value = value, ValueKey = valueKey, TooltipKey = tooltip };
@@ -130,7 +131,21 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("lifetimeExpense", P + "LifetimeExpense", Money(s.LifetimeManagementExpense)));
             items.Add(Row("recentNet", P + "RecentNet", Money(income - expense), tooltip: P + "RecentNet.Tip"));
             items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "vanillaSeparate", LabelKey = P + "Note.VanillaSeparate" });
+            Preview(items,model);
             return items;
+        }
+        private static void Preview(List<AreaPanelItem> items,ParkPanelModel model)
+        {
+            var candidates=model.Preview??new ParkWhatIfCandidates(model.Budget,model.State.AdmissionFee);
+            items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Slider,Id="preview.budget",LabelKey=P+"Preview.Budget",Action=ParkGameplayFacade.PreviewBudget,NumericValue=candidates.Budget*100,Min=50,Max=150,Step=5,Value=Percent(candidates.Budget)});
+            items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Slider,Id="preview.fee",LabelKey=P+"Preview.Fee",Action=ParkGameplayFacade.PreviewFee,NumericValue=ParkFinanceModel.EffectiveFee(model.Level,candidates.Fee),Min=0,Max=ParkFinanceModel.MaxAdmissionFee,Step=1,Disabled=!ParkFinanceModel.IsAdmissionUnlocked(model.Level)});
+            var estimate=ParkWhatIfPreview.Evaluate(model,candidates.Budget,candidates.Fee);
+            void Estimate(string id,string value,bool available)=>items.Add(Row("preview."+id,P+"Preview."+id,available?value:null,available?null:P+"Unavailable",P+"Preview.Tip"));
+            Estimate("Cost",MoneyAmount(estimate.ManagementCost),estimate.ManagementAvailable);
+            Estimate("Coverage",Percent(estimate.Coverage),estimate.ManagementAvailable);
+            Estimate("Maintenance",Number(estimate.Maintenance),estimate.MaintenanceAvailable);
+            Estimate("Value",Number(estimate.ValueForMoney),estimate.ValueAvailable);
+            Estimate("Net",MoneyAmount(estimate.EstimatedNet),estimate.NetAvailable);
         }
         private static List<AreaPanelItem> Landscape(ParkPanelModel model)
         {

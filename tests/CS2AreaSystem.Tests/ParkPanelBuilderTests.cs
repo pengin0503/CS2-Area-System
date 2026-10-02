@@ -96,7 +96,7 @@ public class ParkPanelBuilderTests {
  [Test] public void NoPoliciesOrEventsAreOffered() {
   var d = ParkPanelBuilder.Build(Model(level: 5));
   var actions = d.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null).Select(i => i.Action).Distinct();
-  Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee" }));
+  Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee", "previewBudget", "previewFee" }));
  }
  // ---- Wave A5 landscape diagnostics
  internal static readonly Unity.Entities.Entity Prop = new() { Index = 41, Version = 3 };
@@ -138,7 +138,7 @@ public class ParkPanelBuilderTests {
  [Test] public void FocusIsTheOnlyActionDiagnosticsAdd() {
   var m = WithDiagnostics(false, new ParkLandscapeDiagnostic("SparseLighting", 0.5, Prop));
   var actions = ParkPanelBuilder.Build(m).Tabs.SelectMany(t => t.Items).Where(i => i.Action != null).Select(i => i.Action).Distinct();
-  Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee", "focusDiagnosticTarget" }));
+  Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee", "previewBudget", "previewFee", "focusDiagnosticTarget" }));
  }
  [Test] public void DiagnosticKeysAreLocalizationKeys() {
   var keys = ParkPanelBuilder.AllKeys().ToList();

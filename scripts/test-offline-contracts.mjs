@@ -56,7 +56,9 @@ const facadeActions = [...facade.matchAll(/case\s+([^:]+?)\s*:/g)].map(m=>m[1].t
 check(facadeActions==='SetBudget,SetFee', `Park UI actions must be limited to budget and admission fee (found ${facadeActions})`);
 // Wave A5: the only other Park action is the read-only landscape diagnostic focus, routed before any setter runs.
 const parkActionConsts = [...facade.matchAll(/(\w+)\s*=\s*"[^"]*"/g)].map(m=>m[1]).sort().join(',');
-check(parkActionConsts==='FocusDiagnosticTarget,SetBudget,SetFee', `Park facade action constants must be budget, fee and diagnostic focus (found ${parkActionConsts})`);
+check(parkActionConsts==='FocusDiagnosticTarget,PreviewBudget,PreviewFee,SetBudget,SetFee', `Park facade actions must be budget, fee, read-only preview and diagnostic focus (found ${parkActionConsts})`);
+const preview = read('src/CS2AreaSystem/Modules/Park/ParkWhatIfPreview.cs');
+check(!/SetComponentData|AddComponent|RemoveComponent|EntityCommandBuffer|AreaFinanceHouseholdTransfer|ISerializable/.test(preview), 'Park what-if must be pure and never persist or transfer money');
 check(/if\s*\(action\s*==\s*FocusDiagnosticTarget\)\s*return\s+HandleFocus\(/.test(facade), 'Park diagnostic focus must be routed before the setters');
 const parkFocus = facade.slice(facade.indexOf('private static bool HandleFocus'), facade.indexOf('public static ParkPanelModel Read'));
 check(parkFocus.length > 0 && !/SetComponentData|AddComponent|RemoveComponent|SetBuffer|DestroyEntity/.test(parkFocus), 'Park diagnostic focus must not change any entity');

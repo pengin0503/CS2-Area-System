@@ -111,6 +111,14 @@ namespace CS2AreaSystem.Modules.Park
             Add(P + "Diagnostic.SparseLighting", "Lighting is concentrated in a small part of the Park.", "照明が公園の一部に偏っています。");
             Add(P + "Diagnostic.SparseLighting.Tip", "Fewer than a quarter of the Park's landscaped sections have lighting. The button shows a busy section without any. Advisory only: the score is unchanged.", "景観要素のある区画のうち、照明がある区画が4分の1未満です。ボタンで照明のない区画の一つを表示します。助言のみでスコアは変わりません。");
             Add(P + "FocusTarget", "Show location", "場所を表示");
+            Add(P+"Preview.Budget","Preview: candidate budget","試算：予算候補");
+            Add(P+"Preview.Fee","Preview: candidate fee","試算：入場料候補");
+            Add(P+"Preview.Cost","Estimate: daily management cost","試算：1日の管理費");
+            Add(P+"Preview.Coverage","Estimate: management coverage","試算：管理充足率");
+            Add(P+"Preview.Maintenance","Estimate: maintenance score","試算：管理評価");
+            Add(P+"Preview.Value","Estimate: value for money","試算：料金満足度");
+            Add(P+"Preview.Net","Estimate: daily net","試算：1日の収支");
+            Add(P+"Preview.Tip","Estimate using current Quality and recent visitor volume, assuming full fee collection. Demand, household affordability and routing are not predicted. Preview controls do not apply settings.","現在のQualityと直近の来訪数を固定し、全額回収を仮定した試算です。需要・家計の支払能力・経路は予測しません。試算操作は設定を適用しません。");
             Add(P+"Connectivity.Status","Pedestrian connectivity (advisory)","歩行接続診断（助言）");
             Add(P+"Connectivity.Unknown","Unknown / waiting for entrance evidence","不明・入口情報の待機中");
             Add(P+"Connectivity.Partial","Partial scan — connectivity not yet determined","部分スキャン・接続は未確定");
