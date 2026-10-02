@@ -7,6 +7,12 @@ namespace CS2AreaSystem.Tests;
 // Generates the UI fixture from the real C# section payload so the React Park tests cannot drift from
 // ParkPanelBuilder. Set UPDATE_UI_FIXTURES=1 to rewrite it; otherwise a stale committed fixture fails.
 public class ParkPanelFixtureTests {
+ [Test] public void FoundationFixtureIncludesBothRolesAndAutomaticPathEvidence() {
+  using var json=System.Text.Json.JsonDocument.Parse(Generate());
+  var groups=json.RootElement.GetProperty("sections").GetProperty("foundation").GetProperty("anchorGroups");
+  Assert.That(groups.EnumerateArray().Select(g=>g.GetProperty("role").GetString()),Is.EqualTo(new[]{"Headquarters","Entrance"}));
+  Assert.That(groups[1].GetProperty("derivedCount").GetInt32(),Is.EqualTo(2));
+ }
  private static string FixturePath => Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../../UI/src/__fixtures__/park-panel.json"));
  private static void Section(RecordingJsonWriter writer, string name, ParkPanelModel model, bool entrances = true) {
   var view = new AreaManagementViewModel {
@@ -20,6 +26,13 @@ public class ParkPanelFixtureTests {
   var writer = new RecordingJsonWriter();
   writer.MapBegin(0);
   writer.PropertyName("sections"); writer.MapBegin(0);
+  var foundation=ParkPanelBuilderTests.Model();foundation.Headquarters=ParkHeadquartersState.Valid;
+  foundation.Runtime.Connectivity=new(){Status=ParkConnectivityStatus.Complete,Connected=1,Total=2,DisconnectedTargets=new[]{ParkPanelBuilderTests.Prop}};
+  var foundationView=new AreaManagementViewModel{StableId="42",TypeKey="CS2AS.Type.Park",State="CS2AS.State.Active",Summary="CS2AS.Park.Summary.Active",Panel=ParkPanelBuilder.Build(foundation),
+   AnchorGroups=new[]{
+    new AreaAnchorGroupView{Role="Headquarters",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="29.1",Name="Park Maintenance",Valid=true}}},
+    new AreaAnchorGroupView{Role="Entrance",AssignmentSupported=false,DerivedCount=2,DerivedStatusKey="CS2AS.Park.Entrance.Derived",Anchors=Array.Empty<AreaAnchorView>()}}};
+  writer.PropertyName("foundation");writer.MapBegin(0);foundationView.WriteProperties(writer);writer.MapEnd();
   Section(writer, "level1", ParkPanelBuilderTests.Model(level: 1));
   Section(writer, "level2", ParkPanelBuilderTests.Model(level: 2, primary: false));
   Section(writer, "level4", ParkPanelBuilderTests.Model(level: 4));
