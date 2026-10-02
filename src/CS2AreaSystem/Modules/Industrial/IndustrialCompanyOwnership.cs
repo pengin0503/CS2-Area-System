@@ -47,7 +47,7 @@ namespace CS2AreaSystem.Modules.Industrial
             return new IndustrialCompanyOwnerResolution(0, false, reason ?? "NoIndustrialArea");
         }
         // Exact live Entity/renter facts. Only referenced companies/buildings are read; no world query.
-        public static IndustrialCompanyEligibility ReadLive(Entity company, EntityManager entities, AreaAssetSemanticRegistry registry, out Entity building)
+        public static IndustrialCompanyEligibility ReadLive(Entity company, EntityManager entities, AreaAssetSemanticRegistry registry, out Entity building, IndustrialFacilityTraits? observedTraits = null)
         {
             building = Entity.Null;
             var facts = new IndustrialCompanyEligibility();
@@ -60,9 +60,12 @@ namespace CS2AreaSystem.Modules.Industrial
                 (entities.HasComponent<Game.Companies.ProcessingCompany>(company) && entities.HasComponent<IndustrialCompany>(company));
             facts.Live = entities.Exists(building) && !entities.HasComponent<Deleted>(building) && !entities.HasComponent<Temp>(building);
             if (!facts.Live || facts.Office || facts.Commercial || !facts.Industrial) return facts;
-            var traits = IndustrialFacilityReader.ReadAnchor(building, entities);
+            var traits = observedTraits ?? IndustrialFacilityReader.ReadAnchor(building, entities, false);
             // Another tenant must never disqualify this company's otherwise Industrial building.
             traits.HasOfficeCompany = false;
+            traits.HasExtractorCompany = entities.HasComponent<Game.Companies.ExtractorCompany>(company);
+            traits.HasProcessorCompany = entities.HasComponent<Game.Companies.ProcessingCompany>(company) && entities.HasComponent<IndustrialCompany>(company);
+            traits.HasStorageCompany = entities.HasComponent<Game.Companies.StorageCompany>(company);
             facts.BuildingEligible = IndustrialFacilityClassifier.Classify(traits, registry) != IndustrialFacilityRole.None;
             return facts;
         }

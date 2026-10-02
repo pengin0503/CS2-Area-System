@@ -45,7 +45,8 @@ namespace CS2AreaSystem.Modules.Industrial
             return false;
         }
         // Main-thread read used only for an explicit HQ assignment (a user action), never in steady-state sampling.
-        public static IndustrialFacilityTraits ReadAnchor(Entity entity, EntityManager entities)
+        public static IndustrialFacilityTraits ReadAnchor(Entity entity, EntityManager entities) => ReadAnchor(entity, entities, true);
+        public static IndustrialFacilityTraits ReadAnchor(Entity entity, EntityManager entities, bool includeTenants)
         {
             var traits = new IndustrialFacilityTraits();
             if (!entities.Exists(entity) || !entities.HasComponent<Building>(entity)) return traits;
@@ -73,7 +74,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     traits.HasExtractorFacility |= entities.HasComponent<ExtractorFacilityData>(prefab);
                 }
             }
-            if (entities.HasBuffer<Renter>(entity))
+            if (includeTenants && entities.HasBuffer<Renter>(entity))
             {
                 var renters = entities.GetBuffer<Renter>(entity, true);
                 for (int i = 0; i < renters.Length; i++) AddTenant(renters[i].m_Renter, entities, ref traits);

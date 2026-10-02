@@ -103,7 +103,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 All = new[] { ComponentType.ReadOnly<ManagedArea>() },
                 Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<Deleted>() },
                 None = new[] { ComponentType.ReadOnly<Temp>() } });
-            cycleSource = new IndustrialMembershipCycleSource(Membership, Structure);
+            cycleSource = new IndustrialMembershipCycleSource(Membership, Structure, Assignments);
             timeData = GetEntityQuery(ComponentType.ReadOnly<TimeData>());
             // Native change evidence for tenant/role structure (design §18.2): vanilla tenant events and member
             // destruction/abandonment. Ordinary economic changes carry no such evidence.

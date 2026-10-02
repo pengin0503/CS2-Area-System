@@ -16,6 +16,8 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         private Dictionary<Entity, IndustrialCompanyClaim> owners = new Dictionary<Entity, IndustrialCompanyClaim>();
         private Dictionary<Entity, IndustrialCompanyClaim> next = new Dictionary<Entity, IndustrialCompanyClaim>();
+        private readonly Dictionary<ulong, IReadOnlyList<Entity>> buildings = new Dictionary<ulong, IReadOnlyList<Entity>>();
+        public IReadOnlyList<Entity> GetBuildings(ulong areaId) => buildings.TryGetValue(areaId, out var list) ? list : Array.Empty<Entity>();
         public ulong Revision { get; private set; }
         public IEnumerable<IndustrialCompanyClaim> Claims => owners.Values;
         public bool TryGetOwner(Entity company, out ulong areaId)
@@ -35,9 +37,17 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (!owners.TryGetValue(pair.Key, out var old) || old.AreaId != pair.Value.AreaId || old.Building != pair.Value.Building) { changed = true; break; }
             if (!changed) return;
             (owners, next) = (next, owners);
+            buildings.Clear();
+            var grouped = new Dictionary<ulong, HashSet<Entity>>();
+            foreach (var claim in owners.Values)
+            {
+                if (!grouped.TryGetValue(claim.AreaId, out var set)) grouped[claim.AreaId] = set = new HashSet<Entity>();
+                set.Add(claim.Building);
+            }
+            foreach (var pair in grouped) { var list = new List<Entity>(pair.Value); list.Sort(Compare); buildings[pair.Key] = list.AsReadOnly(); }
             Revision = AreaMembershipIndex.NextRevision(Revision);
         }
         private static int Compare(Entity a, Entity b) => a.Index != b.Index ? a.Index.CompareTo(b.Index) : a.Version.CompareTo(b.Version);
-        public void Clear() { owners.Clear(); next.Clear(); Revision = AreaMembershipIndex.NextRevision(Revision); }
+        public void Clear() { owners.Clear(); next.Clear(); buildings.Clear(); Revision = AreaMembershipIndex.NextRevision(Revision); }
     }
 }

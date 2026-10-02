@@ -30,20 +30,23 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         private readonly AreaMembershipIndex index;
         private readonly IndustrialStructureTracker structure;
+        private readonly IndustrialCompanyAssignmentIndex assignments;
         private readonly Dictionary<ulong, PrimaryList> lists = new Dictionary<ulong, PrimaryList>();
         private readonly List<Entity> buffer = new List<Entity>();
+        private readonly HashSet<Entity> included = new HashSet<Entity>();
         private readonly HashSet<ulong> ids = new HashSet<ulong>();
         private readonly List<ulong> gone = new List<ulong>();
         private int epoch;
         public long Rebuilds { get; private set; }
         public int CachedAreas => lists.Count;
-        public IndustrialMembershipCycleSource(AreaMembershipIndex index, IndustrialStructureTracker structure) { this.index = index; this.structure = structure; epoch = index.Epoch; }
+        public IndustrialMembershipCycleSource(AreaMembershipIndex index, IndustrialStructureTracker structure, IndustrialCompanyAssignmentIndex assignments = null)
+        { this.index = index; this.structure = structure; this.assignments = assignments; epoch = index.Epoch; }
         public ulong MembershipToken(ulong areaId) => index.GetAreaRevision(areaId);
-        public ulong StructureToken(ulong areaId) => structure.Get(areaId);
+        public ulong StructureToken(ulong areaId) => assignments == null ? structure.Get(areaId) : IndustrialGenerations.Combine(structure.Get(areaId), assignments.Revision);
         public IReadOnlyList<Entity> PrimaryMembers(ulong areaId, out int nonPrimary)
         {
             if (epoch != index.Epoch) { lists.Clear(); epoch = index.Epoch; }
-            ulong revision = index.GetAreaRevision(areaId);
+            ulong revision = assignments == null ? index.GetAreaRevision(areaId) : IndustrialGenerations.Combine(index.GetAreaRevision(areaId), assignments.Revision);
             if (lists.TryGetValue(areaId, out var cached) && cached.Revision == revision) { nonPrimary = cached.NonPrimary; return cached.Members; }
             buffer.Clear(); nonPrimary = 0;
             foreach (var member in index.GetMembers(areaId))
@@ -52,6 +55,12 @@ namespace CS2AreaSystem.Modules.Industrial
                 foreach (var relation in index.GetAreas(member))
                     if (relation.AreaStableId == areaId) { owned = relation.IsPrimaryForType; break; }
                 if (owned) buffer.Add(member); else nonPrimary++;
+            }
+            if (assignments != null)
+            {
+                included.Clear(); foreach (var member in buffer) included.Add(member);
+                foreach (var member in assignments.GetBuildings(areaId))
+                    if (IndustrialCompanyOwnership.Related(areaId, index.GetAreas(member)) && included.Add(member)) { buffer.Add(member); nonPrimary--; }
             }
             buffer.Sort((a, b) => a.Index != b.Index ? a.Index.CompareTo(b.Index) : a.Version.CompareTo(b.Version));
             var members = System.Array.AsReadOnly(buffer.ToArray());
@@ -121,6 +130,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public int Budget { get; }
         private readonly Dictionary<ulong, IndustrialCycle> cycles = new Dictionary<ulong, IndustrialCycle>();
         private readonly Dictionary<ulong, long> lastBucket = new Dictionary<ulong, long>();
+        private readonly Dictionary<ulong, (ulong Membership, ulong Structure)> lastTokens = new Dictionary<ulong, (ulong, ulong)>();
         private readonly List<ulong> order = new List<ulong>();
         private long nextCycleId = 1;
         private int cursor;
@@ -128,7 +138,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialObservationScheduler(int budget = DefaultBudget) { Budget = budget > 0 ? budget : DefaultBudget; }
         public IndustrialCycle Cycle(ulong areaId) => cycles.TryGetValue(areaId, out var cycle) ? cycle : null;
         public int ActiveCycles => cycles.Count;
-        public void Clear() { cycles.Clear(); lastBucket.Clear(); order.Clear(); cursor = 0; }
+        public void Clear() { cycles.Clear(); lastBucket.Clear(); lastTokens.Clear(); order.Clear(); cursor = 0; }
         public void Sync(IReadOnlyList<IndustrialAreaRef> areas, long bucket, uint frame, double hours, IIndustrialCycleSource source)
         {
             var alive = new HashSet<ulong>();
@@ -138,7 +148,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (area.State != AreaLifecycleState.Active)
                 {
                     // Suspended/unavailable Areas keep authoritative state but are not observed.
-                    cycles.Remove(area.StableId); lastBucket.Remove(area.StableId);
+                    cycles.Remove(area.StableId); lastBucket.Remove(area.StableId); lastTokens.Remove(area.StableId);
                     continue;
                 }
                 if (cycles.TryGetValue(area.StableId, out var cycle))
@@ -146,12 +156,13 @@ namespace CS2AreaSystem.Modules.Industrial
                     if (cycle.MembershipToken != source.MembershipToken(area.StableId) || cycle.StructureToken != source.StructureToken(area.StableId))
                     { Start(area.StableId, bucket, frame, hours, source); RestartCount++; }
                 }
-                else if (!lastBucket.TryGetValue(area.StableId, out var last) || last != bucket) Start(area.StableId, bucket, frame, hours, source);
+                else if (!lastBucket.TryGetValue(area.StableId, out var last) || last != bucket || !lastTokens.TryGetValue(area.StableId, out var tokens) ||
+                    tokens.Membership != source.MembershipToken(area.StableId) || tokens.Structure != source.StructureToken(area.StableId)) Start(area.StableId, bucket, frame, hours, source);
             }
             var gone = new List<ulong>();
             foreach (var id in cycles.Keys) if (!alive.Contains(id)) gone.Add(id);
             foreach (var id in lastBucket.Keys) if (!alive.Contains(id) && !gone.Contains(id)) gone.Add(id);
-            foreach (var id in gone) { cycles.Remove(id); lastBucket.Remove(id); }
+            foreach (var id in gone) { cycles.Remove(id); lastBucket.Remove(id); lastTokens.Remove(id); }
             order.Clear(); order.AddRange(cycles.Keys); order.Sort();
         }
         private void Start(ulong areaId, long bucket, uint frame, double hours, IIndustrialCycleSource source)
@@ -160,6 +171,7 @@ namespace CS2AreaSystem.Modules.Industrial
             cycles[areaId] = new IndustrialCycle { AreaId = areaId, CycleId = nextCycleId++, HourBucket = bucket, StartFrame = frame, StartHours = hours,
                 MembershipToken = source.MembershipToken(areaId), StructureToken = source.StructureToken(areaId), Members = members, NonPrimaryMembers = nonPrimary };
             lastBucket[areaId] = bucket;
+            lastTokens[areaId] = (source.MembershipToken(areaId), source.StructureToken(areaId));
         }
         // Round-robin, one member at a time across Areas, up to the total budget.
         public void NextReads(List<IndustrialReadRequest> into)
@@ -271,6 +283,9 @@ namespace CS2AreaSystem.Modules.Industrial
                 double hours = clock.GameHours(frame);
                 long bucket = clock.HourBucket(frame);
                 var source = runtime.CycleSource;
+                // Validate explicit references before consuming any result or capturing a generation.
+                runtime.RefreshAssignments();
+                if (!runtime.AssignmentsReady) { DropPending(); return; }
                 if (hasPending) Consume();
                 runtime.CollectAreas(areas);
                 scheduler.Sync(areas, bucket, frame, hours, source);
@@ -305,11 +320,16 @@ namespace CS2AreaSystem.Modules.Industrial
             {
                 var read = buildingReads[i];
                 companies.Clear();
-                while (c < companyReads.Length && companyReads[c].Building == read.Building) companies.Add(companyReads[c++]);
+                while (c < companyReads.Length && IndustrialObservationMapper.Matches(companyReads[c], read)) companies.Add(companyReads[c++]);
                 var request = new IndustrialReadRequest(read.Building, read.AreaId, read.CycleId);
                 if (read.Failed) failures.Warn(read.Building, "Industrial.Read", "Unreadable", "Industrial observation skipped an entity it could not read: " + read.Building);
                 else failures.Recovered(read.Building, "Industrial.Read");
-                scheduler.Complete(request, IndustrialObservationMapper.ToObservation(read, companies,World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Semantics), read.Failed);
+                var semantics = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Semantics;
+                scheduler.Complete(request, IndustrialObservationMapper.ToOwnedObservation(read, companies, runtime.Membership, runtime.Assignments, company => {
+                    var facts = IndustrialCompanyOwnership.ReadLive(company.Company, EntityManager, semantics, out var liveBuilding, read.Traits);
+                    if (liveBuilding != company.Building) facts.Live = false;
+                    return facts;
+                }, semantics), read.Failed);
             }
             if (pendingRequests.IsCreated) pendingRequests.Dispose();
             buildingReads.Clear(); companyReads.Clear();
