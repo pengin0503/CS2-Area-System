@@ -6,7 +6,7 @@ using CS2AreaSystem.Core.Policies;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Park
 {
-    public sealed class ParkAreaModule : AnchorAreaModule, IAreaPolicyProvider, IAreaPolicyUpkeepProvider, Core.Persistence.IAreaSavedStateValidator
+    public sealed class ParkAreaModule : AnchorAreaModule, IAreaDerivedAnchorPolicy, IAreaPolicyProvider, IAreaPolicyUpkeepProvider, Core.Persistence.IAreaSavedStateValidator
     {
         public void ValidateSavedState(Entity area, EntityManager entities, Core.Persistence.AreaSavedStateReport report)
         {
@@ -35,9 +35,16 @@ namespace CS2AreaSystem.Modules.Park
         }
         public override string BuildSummary(Entity area, in AreaPanelContext context)
         {
-            if (ValidateActivation(area, new AreaActivationContext(context.World,context.Entities))) return "CS2AS.Park.Summary.Active";
-            // Links exist but none qualifies (e.g. a pre-v1 save with an arbitrary building, or a demolished entrance).
-            return Anchors.HasLinks(area, AreaAnchorRole.Entrance) ? "CS2AS.Park.Summary.EntranceInvalid" : "CS2AS.Park.Summary.EntranceRequired";
+            var evidence=readEntrances(area,new AreaActivationContext(context.World,context.Entities));
+            return ParkActivationSummary.Key(Anchors.HasValidAnchor(area,AreaAnchorRole.Headquarters),Anchors.HasLinks(area,AreaAnchorRole.Headquarters),
+                evidence!=null&&evidence.Status==ParkEntranceEvidenceStatus.Complete&&evidence.Count>0,evidence==null||evidence.Status==ParkEntranceEvidenceStatus.Unknown);
+        }
+        public bool TryGetDerivedAnchor(Entity area,AreaAnchorRole role,in AreaActivationContext context,out int? count,out string statusKey)
+        {
+            count=null;statusKey=null;if(role!=AreaAnchorRole.Entrance)return false;
+            var evidence=readEntrances(area,context);
+            bool complete=evidence!=null&&evidence.Status==ParkEntranceEvidenceStatus.Complete;
+            count=complete?(int?)evidence.Count:null;statusKey=complete?"CS2AS.UI.PathEntrancesComplete":"CS2AS.UI.PathEntrancesUnknown";return true;
         }
         public override AreaPanelDocument BuildPanel(Entity area, in AreaPanelContext context)
         {

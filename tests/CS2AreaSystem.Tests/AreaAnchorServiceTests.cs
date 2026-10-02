@@ -194,9 +194,9 @@ public class AreaAnchorLinkListTests {
   var store=new Store();
   var service=new AreaAnchorService(store,e=>true,(a,e,r)=>e==gate);
   var park=new ParkAreaModule(service,null,(a,c)=>new ParkEntranceEvidence(ParkEntranceEvidenceStatus.Complete,1,new[]{new ParkEntrancePoint(0,0,gate)}));
-  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.EntranceRequired"));
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.HeadquartersRequired"));
   store.Values[area]=new[]{ new AreaAnchorLink{Anchor=house,Role=AreaAnchorRole.Entrance} };
-  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.EntranceInvalid"));
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.HeadquartersRequired"));
   store.Values[area]=new[]{ new AreaAnchorLink{Anchor=house,Role=AreaAnchorRole.Entrance}, new AreaAnchorLink{Anchor=gate,Role=AreaAnchorRole.Headquarters} };
   Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.Active"));
  }

@@ -34,4 +34,23 @@ namespace CS2AreaSystem.Modules.Park
         public void Remove(ulong id) { if(entries.Remove(id))Revision++; }
         public void Clear() { entries.Clear();Revision++; }
     }
+    public static class ParkEntranceAccess
+    {
+        public static IReadOnlyList<(float X,float Z)> Positions(IEnumerable<(float X,float Z)> explicitPositions,ParkEntranceEvidence evidence)
+        {
+            var result=new List<(float X,float Z)>(explicitPositions);
+            if(evidence!=null&&evidence.Status==ParkEntranceEvidenceStatus.Complete)foreach(var point in evidence.Points)result.Add((point.X,point.Z));
+            return result;
+        }
+    }
+    public static class ParkActivationSummary
+    {
+        public static string Key(bool headquarters,bool invalidHeadquarters,bool entrance,bool pending)
+        {
+            if(headquarters&&entrance)return "CS2AS.Park.Summary.Active";
+            if(!headquarters&&!entrance)return "CS2AS.Park.Summary.BothRequired";
+            if(!headquarters)return "CS2AS.Park.Summary."+(invalidHeadquarters?"HeadquartersInvalid":"HeadquartersRequired");
+            return "CS2AS.Park.Summary."+(pending?"EntrancePending":"EntranceRequired");
+        }
+    }
 }

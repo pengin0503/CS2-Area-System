@@ -11,8 +11,14 @@ namespace CS2AreaSystem.Modules.Park
             Add("CS2AS.Tab.Finances", "Finances", "財政");
             Add("CS2AS.Tab.Landscape", "Landscape", "景観");
             Add("CS2AS.Tab.Progress", "Progress", "進捗");
+            Add(P + "Summary.BothRequired", "Suspended: assign a Park Maintenance headquarters and connect a dedicated pedestrian path across the boundary.", "停止中：公園整備施設を本部に指定し、専用歩道で境界の内外を接続してください。");
+            Add(P + "Summary.HeadquartersRequired", "Suspended: assign a Park Maintenance building inside this area as headquarters.", "停止中：エリア内の公園整備施設を本部に指定してください。");
+            Add(P + "Summary.HeadquartersInvalid", "Suspended: the saved headquarters is invalid. Assign a Park Maintenance building; progress is preserved.", "停止中：保存された本部は無効です。公園整備施設を指定してください。進行は保持されます。");
+            Add(P + "Summary.EntrancePending", "Headquarters ready; waiting for a dedicated-path entrance scan.", "本部は有効です。専用歩道の入口を調査中です。");
+            Add(P + "Warning.HeadquartersRequired", "Park Maintenance headquarters required; Level, XP and finance are kept.", "公園整備施設の本部が必要です。レベル・経験値・会計は保持されます。");
+            Add(P + "Warning.HeadquartersInvalid", "Saved headquarters is invalid; assign Park Maintenance inside this area.", "保存された本部が無効です。エリア内の公園整備施設を指定してください。");
             Add(P + "Summary.Active", "Open. Visits are measured from real residents' and tourists' leisure trips.", "開園中。来園者は住民と観光客の実際の余暇行動から計測されます。");
-            Add(P + "Summary.EntranceRequired", "Assign a park, leisure or attraction building inside this area as an entrance to open the Park.", "エリア内の公園・余暇施設・観光名所の建物を入口に割り当てると開園します。");
+            Add(P + "Summary.EntranceRequired", "Connect a dedicated pedestrian path from outside into the Park, or assign an explicitly registered entrance asset.", "専用歩道で公園の内外を接続するか、登録済みの入口アセットを指定してください。");
             Add(P + "Summary.EntranceInvalid", "Suspended: none of the assigned entrances qualifies any more. Remove the marked entrances and assign a park, leisure or attraction building inside this area.", "停止中：割り当て済みの入口がどれも条件を満たしていません。印の付いた入口を解除し、エリア内の公園・余暇施設・観光名所の建物を入口に割り当ててください。");
             Add(P + "LevelName.1", "Local Park", "地域公園");
             Add(P + "LevelName.2", "Neighborhood Park", "近隣公園");

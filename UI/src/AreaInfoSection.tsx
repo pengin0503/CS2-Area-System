@@ -40,6 +40,7 @@ export function AreaInfoSectionContent(area:AreaSectionData){
    return <React.Fragment key={group.role}>
     <InfoRow left={text(hq?'CS2AS.UI.Headquarters':'CS2AS.UI.Entrances')} right={hq?(valid[0]?.name??text('CS2AS.UI.NotAssigned')):String(valid.length)}/>
     {group.derivedCount!==null&&<InfoRow left={text('CS2AS.UI.PathEntrances')} right={String(group.derivedCount)} tooltip={group.derivedStatusKey?text(group.derivedStatusKey):undefined}/>}
+    {group.derivedCount===null&&group.derivedStatusKey&&<InfoRow left={text('CS2AS.UI.PathEntrances')} right={text(group.derivedStatusKey)}/>}
     {group.anchors.length>0&&<ul className={styles.anchors}>{group.anchors.map(anchor=><li key={anchor.key} className={anchor.valid===false?styles.invalidAnchor:undefined}>
      <span>{anchor.name??text('CS2AS.UI.AnchorRemoved')}{anchor.valid===false&&anchor.name!=null&&<small> · {text('CS2AS.UI.AnchorInvalid')}</small>}</span>
      <Button variant="flat" onSelect={()=>trigger('cs2AreaSystem','removeRoleAnchor',area.stableId,group.role,anchor.key)}>{text('CS2AS.UI.RemoveEntrance')}</Button>

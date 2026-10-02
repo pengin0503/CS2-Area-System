@@ -74,6 +74,8 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("activeVisitors", P + "ActiveVisitors", Number(model.Runtime?.ActiveVisitors ?? 0)));
             items.Add(Row("recentVisitors", P + "RecentVisitors", Number(Recent(model.Runtime, r => r.RecentVisitors, model.Frame)), tooltip: P + "Recent.Tip"));
             items.Add(Row("entrances", P + "Entrances", Number(model.Runtime?.EntranceCount ?? 0)));
+            if(model.Lifecycle!=AreaLifecycleState.Active&&(model.Headquarters==ParkHeadquartersState.Missing||model.Headquarters==ParkHeadquartersState.Invalid))
+                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Warning,Id="warning.hq",LabelKey=P+"Warning.Headquarters"+(model.Headquarters==ParkHeadquartersState.Invalid?"Invalid":"Required")});
             var warnings = q?.Warnings ?? new List<string>();
             if (q == null && model.Lifecycle != AreaLifecycleState.Active) warnings = new List<string> { P + "Warning.NoEntrance" };
             foreach (var warning in warnings) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "warning." + warning, LabelKey = warning });

@@ -298,8 +298,11 @@ namespace CS2AreaSystem.Core.UI
             var groups = new System.Collections.Generic.List<AreaAnchorGroupView>();
             foreach(var role in policy.AnchorRoles) {
                 var links = services.Anchors.GetAnchorLinks(area, role);
-                groups.Add(new AreaAnchorGroupView { Role = role.ToString(), AssignmentSupported = policy.CanAssignAnchor(area, role, EntityManager),
-                    Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link => new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })) });
+                var group=new AreaAnchorGroupView { Role = role.ToString(), AssignmentSupported = policy.CanAssignAnchor(area, role, EntityManager),
+                    Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link => new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })) };
+                if(policy is IAreaDerivedAnchorPolicy derived && derived.TryGetDerivedAnchor(area,role,new Core.Modules.AreaActivationContext(World,EntityManager),out var count,out var status))
+                {group.DerivedCount=count;group.DerivedStatusKey=status;}
+                groups.Add(group);
             }
             return groups;
         }

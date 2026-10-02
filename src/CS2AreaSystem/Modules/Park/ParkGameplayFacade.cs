@@ -18,7 +18,9 @@ namespace CS2AreaSystem.Modules.Park
         public ParkRuntimeSnapshot Runtime;
         public ParkPromotionResult Promotion;
         public bool HasState;
+        public ParkHeadquartersState Headquarters;
     }
+    public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid }
     // Boundary between the module UI and Park gameplay: selected-Park reads and the only validated setters.
     // Entrance add/remove stays in Core's guarded anchor actions. No policies, events or XP/level setters exist.
     // FocusDiagnosticTarget is read-only (camera focus on a landscape diagnostic target) and never reaches the setters.
@@ -97,6 +99,9 @@ namespace CS2AreaSystem.Modules.Park
             model.HasState = entities.HasComponent<ParkAreaState>(area);
             model.State = model.HasState ? entities.GetComponentData<ParkAreaState>(area) : ParkAreaState.CreateDefault();
             var runtime = context.World?.GetExistingSystemManaged<ParkRuntimeSystem>();
+            var core=context.World?.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            if(core!=null)model.Headquarters=core.Anchors.HasValidAnchor(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Valid:
+                core.Anchors.HasLinks(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing;
             if (runtime != null)
             {
                 model.Frame = runtime.SimulationFrame;
