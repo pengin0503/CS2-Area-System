@@ -5,6 +5,8 @@ Target: Cities: Skylines II 1.6.2f1
 Repository: `pengin0503/CS2-Area-System`  
 Source of truth at design start: `bbc22d74cbc570e74e0d4741869832b87ad71d60` (Wave A1-A5 merged to `main`).
 
+For Headquarters/Entrance semantics, C2 asset scope, and the implementation order after A1-A5, this document supersedes the corresponding parts of `docs/superpowers/specs/2026-10-02-pre-tourism-park-industrial-expansion-design.md`.
+
 ## Goal
 
 Replace the current single-anchor activation model with a safer multi-requirement model that matches the intended gameplay:
@@ -152,11 +154,11 @@ A candidate is accepted only when:
 
 The existence of generic `GateData` is insufficient.
 
-If such a candidate exists, it may be assigned as an explicit Entrance and persisted through the existing `AreaAnchorLink` mechanism.
+If such a candidate exists, the initial 1.6.2f1 implementation uses explicit gate assignment as its primary Entrance mode and persists that Entrance through the existing `AreaAnchorLink` mechanism.
 
 ### 4.2 Dedicated pedestrian-path fallback
 
-If no safe vanilla Park gate candidate is verified, Park entrance evidence is derived from a dedicated pedestrian Path crossing the Park boundary.
+If no safe vanilla Park gate candidate is verified during implementation research, the 1.6.2f1 baseline switches to dedicated-pedestrian-Path fallback mode: Park entrance evidence is derived from a dedicated pedestrian Path crossing the Park boundary.
 
 Only dedicated pedestrian Path networks count.
 
@@ -219,10 +221,12 @@ AND
 At least one valid Entrance evidence
 ```
 
-Entrance evidence may be:
+For the initial 1.6.2f1 implementation, the accepted Entrance source is selected by verified vanilla capability:
 
-- an explicit supported gate building; or
-- a detected dedicated pedestrian Path boundary crossing.
+- if a safe vanilla Park gate building is verified, explicit supported gate building(s) satisfy the requirement;
+- otherwise, detected dedicated pedestrian Path boundary crossing(s) satisfy the requirement.
+
+A later B1/C2 explicit custom gate may coexist with the path-crossing baseline for saves created under fallback mode; adding new content must never make an already valid fallback Park invalid.
 
 No visitor pathfinding is forced through the entrance.
 
