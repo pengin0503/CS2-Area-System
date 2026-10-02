@@ -215,13 +215,17 @@ namespace CS2AreaSystem.Modules.Industrial
     }
     public sealed class IndustrialRuntimeStore
     {
+        public Action<IndustrialRuntimeSnapshot> Initialize;
         private readonly Dictionary<ulong, IndustrialRuntimeSnapshot> areas = new Dictionary<ulong, IndustrialRuntimeSnapshot>();
         public IEnumerable<IndustrialRuntimeSnapshot> All => areas.Values;
         public int Count => areas.Count;
         public bool TryGet(ulong id, out IndustrialRuntimeSnapshot snapshot) => areas.TryGetValue(id, out snapshot);
         public IndustrialRuntimeSnapshot GetOrCreate(ulong id, Entity area)
         {
-            if (!areas.TryGetValue(id, out var snapshot)) areas[id] = snapshot = new IndustrialRuntimeSnapshot { StableId = id };
+            if (!areas.TryGetValue(id, out var snapshot)) {
+                areas[id] = snapshot = new IndustrialRuntimeSnapshot { StableId = id, Area = area };
+                Initialize?.Invoke(snapshot);
+            }
             snapshot.Area = area;
             return snapshot;
         }

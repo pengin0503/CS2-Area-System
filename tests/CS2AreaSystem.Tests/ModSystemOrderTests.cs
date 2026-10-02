@@ -10,6 +10,11 @@ namespace CS2AreaSystem.Tests;
 // destroyed by the Cleanup phase at the end of that frame. These tests read the compiled schedules (the supplied
 // 1.6.2f1 Game.SystemOrder and Mod.OnLoad) instead of trusting comments; they cannot run the game loop itself.
 public class ModSystemOrderTests {
+    [Test] public void BothModuleHistoriesFlushBeforeVanillaSerializer() {
+        var order=Schedule(SystemUpdatePhase.Serialize);
+        foreach(var history in new[]{typeof(CS2AreaSystem.Modules.Park.ParkHistorySaveSystem),typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySaveSystem)})
+            Assert.That(order.IndexOf(history),Is.LessThan(order.IndexOf(typeof(Game.Serialization.SerializerSystem))));
+    }
     [Test] public void ParkEntrancesRunBeforeActivationIndependentlyOfFinance() {
         var order=Schedule(SystemUpdatePhase.ModificationEnd);
         Assert.That(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkEntranceSystem)),Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem))));
@@ -130,9 +135,9 @@ public class ModSystemOrderTests {
     [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
     [TestCase(SystemUpdatePhase.ToolUpdate, "AreaLabelSystem")]
-    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,ParkEntranceSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkLandscapeSystem,IndustrialRuntimeSystem")]
+    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,ParkEntranceSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem")]
     [TestCase(SystemUpdatePhase.GameSimulation, "AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,AreaFinanceSystem")]
-    [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem")]
+    [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem,ParkHistorySaveSystem,IndustrialHistorySaveSystem")]
     [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]
     public void ModSystemOrderPerPhaseIsUnchanged(SystemUpdatePhase phase, string expected) {
         var ours = Schedule(phase).Where(t => t.Assembly == typeof(Mod).Assembly).Select(t => t.Name);
