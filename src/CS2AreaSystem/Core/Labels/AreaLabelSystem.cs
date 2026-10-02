@@ -159,18 +159,23 @@ namespace CS2AreaSystem.Core.Labels
             if (!defaultActive || !overWorld || rendering.hideOverlay || targets.Count == 0 || !cameras.TryGetViewer(out var viewer)) return;
             var ray = ToolRaycastSystem.CalculateRaycastLine(viewer.camera);
             bool labelHit = AreaLabelPicking.TryPick(ray, viewer.right, targets, out var label, out var labelDistance);
-            Hovered = label;
+            if (!labelHit) return;
+            bool vanillaHit = toolRaycast.GetRaycastResult(out var result) && !EntityManager.HasComponent<Deleted>(result.m_Owner);
+            float vanillaDistance = vanillaHit ? result.m_Hit.m_NormalizedDistance : 0f;
+            // Hover follows the same priority as the click, so a highlighted label is always the one a click selects.
+            Hovered = AreaLabelPicking.ResolveClick(true, overWorld, defaultActive, labelHit, label, labelDistance, vanillaHit, vanillaDistance);
             var mouse = UnityEngine.InputSystem.Mouse.current;
             bool pressed = mouse != null && mouse.leftButton.wasPressedThisFrame;
-            if (!pressed || !labelHit) return;
-            bool vanillaHit = toolRaycast.GetRaycastResult(out var result) && !EntityManager.HasComponent<Deleted>(result.m_Owner);
-            var target = AreaLabelPicking.ResolveClick(pressed, overWorld, defaultActive, labelHit, label, labelDistance,
-                vanillaHit, vanillaHit ? result.m_Hit.m_NormalizedDistance : 0f);
+            var target = AreaLabelPicking.ResolveClick(pressed, overWorld, defaultActive, labelHit, label, labelDistance, vanillaHit, vanillaDistance);
             if (target == Entity.Null) return;
+            // Vanilla already played its select sound when it selected something under the label this frame.
+            bool vanillaSelected = tools.selected != Entity.Null;
             // Written to ToolSystem directly: SelectedInfoUISystem.SetSelection compares with the panel's previous entity, which
             // may already be this Area while vanilla has just replaced tools.selected with the building under the label.
             tools.selected = target;
-            if (!soundSettings.IsEmptyIgnoreFilter) audio.PlayUISound(soundSettings.GetSingleton<ToolUXSoundSettingsData>().m_SelectEntitySound);
+            tools.selectedIndex = -1;
+            if (!vanillaSelected && !soundSettings.IsEmptyIgnoreFilter)
+                audio.PlayUISound(soundSettings.GetSingleton<ToolUXSoundSettingsData>().m_SelectEntitySound);
         }
         // AreaBufferSystem.UpdateLabelVertices: the shared overlay TextMeshPro, one name material per font atlas texture.
         private AreaLabelLayout Layout(string name)
@@ -215,6 +220,15 @@ namespace CS2AreaSystem.Core.Labels
         }
         private void Rebuild(List<AreaLabelEntry> entries)
         {
+            if (entries.Count == 0 || materials.Count == 0)
+            {
+                // Nothing to draw: skip the zero-submesh mesh setup entirely.
+                if (mesh != null) mesh.Clear();
+                drawSubMesh = new bool[0];
+                shown = entries;
+                materialsChanged = false;
+                return;
+            }
             var instances = new List<AreaLabelInstance>(entries.Count);
             var bounds = new Bounds3(new float3(float.MaxValue), new float3(float.MinValue));
             foreach (var entry in entries)

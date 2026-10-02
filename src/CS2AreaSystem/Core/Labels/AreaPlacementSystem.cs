@@ -12,7 +12,7 @@ using Unity.Entities;
 using UnityEngine.Scripting;
 namespace CS2AreaSystem.Core.Labels
 {
-    // Gives every newly identified Area a vanilla CustomName ("<type> <n>", saved by NameSystem and renamed through the
+    // Gives every newly identified Area (and, once per load, every unnamed saved Area) a vanilla CustomName ("<type> <n>", saved by NameSystem and renamed through the
     // vanilla title section) and selects the Area the player just drew, like a district after placement.
     public partial class AreaPlacementSystem : GameSystemBase
     {
@@ -23,6 +23,7 @@ namespace CS2AreaSystem.Core.Labels
         private AreaToolSystem areaTool;
         private SelectedInfoUISystem selection;
         private EntityQuery managedAreas;
+        private int namedGeneration = -1;
         [Preserve]
         protected override void OnCreate()
         {
@@ -41,27 +42,49 @@ namespace CS2AreaSystem.Core.Labels
         [Preserve]
         protected override void OnUpdate()
         {
-            var identified = lifecycle.Identified;
-            if (identified.Count == 0 || !GameManager.instance.gameMode.IsGame()) return;
+            if (!GameManager.instance.gameMode.IsGame()) return;
             try
             {
-                List<string> taken = null;
+                // Areas saved before auto-naming existed carry ManagedArea already and never reach Identified: name the
+                // unnamed ones once per load, in stable-ID order so the numbering does not depend on entity layout.
+                if (namedGeneration != services.Identity.LoadGeneration && services.Identity.Observed &&
+                    World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>().Ready)
+                {
+                    namedGeneration = services.Identity.LoadGeneration;
+                    NameUnnamed(LoadedAreas());
+                }
+                var identified = lifecycle.Identified;
+                if (identified.Count == 0) return;
                 var placed = new List<Entity>(identified.Count);
                 foreach (var area in identified)
-                {
-                    if (!services.IsValidEntity(area) || !EntityManager.HasComponent<ManagedArea>(area)) continue;
-                    placed.Add(area);
-                    if (names.TryGetCustomName(area, out _)) continue;
-                    taken ??= TakenNames();
-                    var name = AreaAutoName.Next(TypeName(EntityManager.GetComponentData<ManagedArea>(area).TypeId), taken);
-                    names.SetCustomName(area, name);
-                    taken.Add(name);
-                }
+                    if (services.IsValidEntity(area) && EntityManager.HasComponent<ManagedArea>(area)) placed.Add(area);
+                NameUnnamed(placed);
                 var selected = AreaAutoName.SelectionAfterPlacement(tools.activeTool == areaTool, placed);
                 if (selected != Entity.Null) selection.SetSelection(selected);
             }
-            catch (Exception error) { Mod.Log.Error(error, "Area naming after placement failed; the Area keeps its default name"); }
+            catch (Exception error) { Mod.Log.Error(error, "Area naming failed; the Area keeps its default name"); }
         }
+        private void NameUnnamed(IReadOnlyList<Entity> areas)
+        {
+            List<string> taken = null;
+            foreach (var area in areas)
+            {
+                if (names.TryGetCustomName(area, out _)) continue;
+                taken ??= TakenNames();
+                var name = AreaAutoName.Next(TypeName(EntityManager.GetComponentData<ManagedArea>(area).TypeId), taken);
+                names.SetCustomName(area, name);
+                taken.Add(name);
+            }
+        }
+        private List<Entity> LoadedAreas()
+        {
+            var areas = new List<Entity>();
+            using (var entities = managedAreas.ToEntityArray(Allocator.Temp)) areas.AddRange(entities);
+            areas.Sort((a, b) => StableId(a).CompareTo(StableId(b)));
+            return areas;
+        }
+        private ulong StableId(Entity area) =>
+            EntityManager.HasComponent<ManagedAreaStableId>(area) ? EntityManager.GetComponentData<ManagedAreaStableId>(area).Value : ulong.MaxValue;
         private List<string> TakenNames()
         {
             var taken = new List<string>();
