@@ -13,14 +13,17 @@ namespace CS2AreaSystem.Modules.Park
     // records of the batch are still written, and the transfer is never repeated (the money already moved in the job).
     public static class ParkAdmissionRecording
     {
-        public static int RecordAll(IReadOnlyList<ParkAdmissionOutcome> outcomes, IParkAdmissionRecordSink sink, Action<Exception, ParkAdmissionOutcome, string> report)
+        public static int RecordAll(IReadOnlyList<ParkAdmissionOutcome> outcomes, IParkAdmissionRecordSink sink, Action<Exception, ParkAdmissionOutcome, string> report,
+            bool loadBoundary = false)
         {
             int failures = 0;
             foreach (var outcome in outcomes)
             {
-                if (!Try(() => sink.RecordRecent(outcome), outcome, "recent admission statistics", report)) failures++;
+                // Preload runs before deserialization, so lifetime counters still belong to the old city. Runtime
+                // snapshots/accounts are being cleared by independently ordered preload subscribers: never refill them.
+                if (!loadBoundary && !Try(() => sink.RecordRecent(outcome), outcome, "recent admission statistics", report)) failures++;
                 if (outcome.Collected <= 0) continue;
-                if (!Try(() => sink.RecordServiceFee(outcome), outcome, "Area Service Fees", report)) failures++;
+                if (!loadBoundary && !Try(() => sink.RecordServiceFee(outcome), outcome, "Area Service Fees", report)) failures++;
                 if (!Try(() => sink.RecordLifetimeRevenue(outcome), outcome, "lifetime admission revenue", report)) failures++;
             }
             return failures;
