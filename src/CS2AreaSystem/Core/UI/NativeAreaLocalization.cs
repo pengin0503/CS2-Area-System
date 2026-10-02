@@ -66,7 +66,7 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.ChangeEntrance"] = ja ? "入口を変更" : "Change entrance",
                 ["CS2AS.UI.ChangeHeadquarters"] = ja ? "本部を変更" : "Change headquarters",
                 ["CS2AS.UI.SelectEntrance"] = ja ? "このエリア内の登録済み入口アセットをクリックしてください。" : "Click an explicitly registered entrance building inside this area.",
-                ["CS2AS.UI.SelectHeadquarters"] = ja ? "このエリア内のオフィス建物をクリックして本部に割り当ててください。" : "Click an office building inside this area to assign it as the headquarters.",
+                ["CS2AS.UI.SelectHeadquarters"] = ja ? "このエリア内の本部候補をクリックしてください。公園は公園整備施設、工業はオフィス建物を使用します。" : "Click an eligible headquarters inside this area: Park Maintenance for a Park, or an office building for an Industrial Area.",
                 ["CS2AS.UI.AreaList"] = ja ? "管理エリア一覧" : "Managed areas",
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };

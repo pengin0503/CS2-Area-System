@@ -42,4 +42,21 @@ public class ParkPathEntranceDetectorTests
   next.Step((b,l)=>new ParkNetPage(Array.Empty<Entity>(),false),e=>Array.Empty<ParkEntrancePoint>(),2048);
   Assert.That(c.TryPublish(next),Is.True);Assert.That(store.TryGet(7,out var replaced),Is.True);Assert.That(replaced.Count,Is.Zero);
  }
+ [Test] public void ContinuallyOverflowingBoundsTerminateWithoutPublishingAndReleaseNextPark() {
+  var store=new ParkEntranceEvidenceStore();var coordinator=new ParkEntranceScanCoordinator(store);
+  var scan=coordinator.Begin(7,new Bounds2(new float2(-100),new float2(100)));
+  int queries=0,maxQueued=0;
+  for(int update=0;update<1000&&!scan.Done;update++) {
+   scan.Step((b,limit)=>{queries++;return new ParkNetPage(Enumerable.Range(1,limit).Select(E).ToArray(),true);},_=>Array.Empty<ParkEntrancePoint>(),2048);
+   Assert.That(scan.LastWork,Is.LessThanOrEqualTo(2048));
+   var pending=(System.Collections.ICollection)typeof(ParkEntranceScan).GetField("tiles",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(scan)!;
+   maxQueued=Math.Max(maxQueued,pending.Count);
+  }
+  Assert.That(scan.Done,Is.True);Assert.That(scan.Complete,Is.False);
+  Assert.That(queries,Is.LessThanOrEqualTo(4096));Assert.That(maxQueued,Is.LessThanOrEqualTo(4096));
+  Assert.That(coordinator.TryPublish(scan),Is.False);
+  var next=coordinator.Begin(8,new Bounds2(new float2(0),new float2(10)));
+  next.Step((b,l)=>new ParkNetPage(new[]{E(1)},false),e=>new[]{new ParkEntrancePoint(0,0,e)},2048);
+  Assert.That(coordinator.TryPublish(next),Is.True);
+ }
 }

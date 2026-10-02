@@ -48,4 +48,30 @@ public class AreaHistorySerializationTests {
   Assert.That(entries[0].Availability,Is.EqualTo(1));Assert.That(entries[1].Availability,Is.EqualTo(2));
   var seeded=new ParkRuntimeSnapshot();ParkHistorySystem.Seed(entries,seeded);Assert.That(seeded.Trends.Satisfaction.Count,Is.Zero);
  }
+ [Test] public void DuplicateLoadedHoursMergeChannelsBeforeResumingTheSameHour() {
+  var park=new List<ParkHistoryEntry>{new(){HourBucket=4,Availability=1,Visitors=12},new(){HourBucket=3,Availability=2,Quality=30},new(){HourBucket=4,Availability=2,Quality=40}};
+  ParkHistorySystem.Record(park,new(){HourBucket=4,Availability=2,Quality=45});
+  Assert.Multiple(()=>{Assert.That(park.Select(r=>r.HourBucket),Is.EqualTo(new long[]{3,4}));
+  Assert.That(park.Last().Visitors,Is.EqualTo(12));Assert.That(park.Last().Quality,Is.EqualTo(45));Assert.That(park.Last().Availability,Is.EqualTo(3));});
+ }
+ [Test] public void IndustrialDuplicateLoadedHoursMergeChannelsBeforeResumingTheSameHour() {
+  var industry=new List<IndustrialHistoryEntry>{new(){HourBucket=4,Availability=1,Production=12},new(){HourBucket=3,Availability=16,Performance=30},new(){HourBucket=4,Availability=16,Performance=40}};
+  IndustrialHistorySystem.Record(industry,new(){HourBucket=4,Availability=16,Performance=45});
+  Assert.That(industry.Select(r=>r.HourBucket),Is.EqualTo(new long[]{3,4}));
+  Assert.That(industry[1].Production,Is.EqualTo(12));Assert.That(industry[1].Performance,Is.EqualTo(45));Assert.That(industry[1].Availability,Is.EqualTo(17));
+ }
+ [Test] public void LoadSeedsNewest24DistinctHoursRegardlessOfPhysicalOrderAndDuplicates() {
+  var parkRows=Enumerable.Range(0,30).Reverse().Select(i=>new ParkHistoryEntry{HourBucket=i,Availability=2,Quality=i}).Concat(Enumerable.Repeat(new ParkHistoryEntry{HourBucket=29,Availability=1,Visitors=5},10));
+  var park=new ParkRuntimeSnapshot();ParkHistorySystem.Seed(parkRows,park);
+  var samples=new List<CS2AreaSystem.Core.Diagnostics.RuntimeTrendSample>();park.Trends.Quality.CopyTo(samples);
+  Assert.That(samples.Select(s=>s.Bucket),Is.EqualTo(Enumerable.Range(6,24).Select(i=>(long)i)));
+  Assert.That(park.Trends.Visitors.TryLatest(out var visitors),Is.True);Assert.That(visitors.Value,Is.EqualTo(5));
+ }
+ [Test] public void IndustrialLoadSeedsNewest24DistinctHoursRegardlessOfPhysicalOrderAndDuplicates() {
+  var samples=new List<CS2AreaSystem.Core.Diagnostics.RuntimeTrendSample>();
+  var rows=Enumerable.Range(0,30).Reverse().Select(i=>new IndustrialHistoryEntry{HourBucket=i,Availability=16,Performance=i}).Concat(Enumerable.Repeat(new IndustrialHistoryEntry{HourBucket=29,Availability=1,Production=5},10));
+  var industry=new IndustrialRuntimeSnapshot();IndustrialHistorySystem.Seed(rows,industry);industry.Trends.Performance.CopyTo(samples);
+  Assert.That(samples.Select(s=>s.Bucket),Is.EqualTo(Enumerable.Range(6,24).Select(i=>(long)i)));
+  Assert.That(industry.Trends.Production.TryLatest(out var production),Is.True);Assert.That(production.Value,Is.EqualTo(5));
+ }
 }

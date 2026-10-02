@@ -23,28 +23,40 @@ namespace CS2AreaSystem.Modules.Park
             try {
                 var snapshot=runtime.Store.GetOrCreate(area.StableId,area.Area);
                 if(!EntityManager.HasBuffer<ParkHistoryEntry>(area.Area))EntityManager.AddBuffer<ParkHistoryEntry>(area.Area);
-                var buffer=EntityManager.GetBuffer<ParkHistoryEntry>(area.Area);var rows=new List<ParkHistoryEntry>(Math.Min(buffer.Length,Capacity));
-                for(int i=Math.Max(0,buffer.Length-Capacity);i<buffer.Length;i++){var row=buffer[i];ComponentSchema.RequireSupported(row.SchemaVersion);rows.Add(row);}
-                bool changed=buffer.Length>Capacity;
+                var buffer=EntityManager.GetBuffer<ParkHistoryEntry>(area.Area);
+                if(buffer.Length>Capacity)throw new System.IO.InvalidDataException("Oversized Area history buffer; not overwritten");
+                var loaded=new List<ParkHistoryEntry>(buffer.Length);
+                for(int i=0;i<buffer.Length;i++){var row=buffer[i];ComponentSchema.RequireSupported(row.SchemaVersion);loaded.Add(row);}
+                var rows=Normalize(loaded);bool changed=!loaded.SequenceEqual(rows);
                 foreach(var row in Capture(snapshot))changed|=Record(rows,row);
                 if(changed){buffer.Clear();foreach(var row in rows)buffer.Add(row);}
                 services.Failures.Recovered(area.Area,"Park.History");
             }catch(Exception error){services.Failures.Report(area.Area,"Park.History",error,"Area history unavailable; gameplay continues without overwriting unsupported history");}
         }
+        private static ParkHistoryEntry Merge(ParkHistoryEntry previous,ParkHistoryEntry next)
+        {
+            previous.SchemaVersion=1;previous.HourBucket=next.HourBucket;
+            if((next.Availability&1)!=0)previous.Visitors=next.Visitors;
+            if((next.Availability&2)!=0)previous.Quality=next.Quality;
+            if((next.Availability&4)!=0)previous.Satisfaction=next.Satisfaction;
+            if((next.Availability&8)!=0)previous.Occupancy=next.Occupancy;
+            if((next.Availability&16)!=0)previous.AdmissionIncome=next.AdmissionIncome;
+            if((next.Availability&32)!=0)previous.ManagementExpense=next.ManagementExpense;
+            previous.Availability|=next.Availability;return previous;
+        }
+        private static List<ParkHistoryEntry> Normalize(IEnumerable<ParkHistoryEntry> history) =>
+            AreaHourlyHistory.Normalize(history,row=>row.HourBucket,Merge,
+                row=>ComponentSchema.RequireSupported(row.SchemaVersion==0?ParkHistoryEntry.CurrentSchemaVersion:row.SchemaVersion),Capacity);
         public static bool Record(IList<ParkHistoryEntry> rows,ParkHistoryEntry next)
         {
             ComponentSchema.RequireSupported(next.SchemaVersion==0?ParkHistoryEntry.CurrentSchemaVersion:next.SchemaVersion);
-            next.SchemaVersion=1;
-            for(int i=rows.Count-1;i>=0;i--)if(rows[i].HourBucket==next.HourBucket){var merged=rows[i];
-                if((next.Availability&1)!=0)merged.Visitors=next.Visitors;
-                if((next.Availability&2)!=0)merged.Quality=next.Quality;
-                if((next.Availability&4)!=0)merged.Satisfaction=next.Satisfaction;
-                if((next.Availability&8)!=0)merged.Occupancy=next.Occupancy;
-                if((next.Availability&16)!=0)merged.AdmissionIncome=next.AdmissionIncome;
-                if((next.Availability&32)!=0)merged.ManagementExpense=next.ManagementExpense;
-                merged.SchemaVersion=1;merged.Availability|=next.Availability;if(rows[i].Equals(merged))return false;rows[i]=merged;return true;}
-            if(rows.Count>0&&next.HourBucket<rows[rows.Count-1].HourBucket)return false;
-            rows.Add(next);while(rows.Count>Capacity)rows.RemoveAt(0);return true;
+            var normalized=Normalize(rows);bool changed=!rows.SequenceEqual(normalized);
+            int index=normalized.FindIndex(row=>row.HourBucket==next.HourBucket);
+            if(index>=0){var merged=Merge(normalized[index],next);changed|=!normalized[index].Equals(merged);normalized[index]=merged;}
+            else if(normalized.Count==0||next.HourBucket>=normalized[normalized.Count-1].HourBucket){normalized.Add(Merge(default,next));changed=true;}
+            while(normalized.Count>Capacity)normalized.RemoveAt(0);
+            if(changed){rows.Clear();foreach(var row in normalized)rows.Add(row);}
+            return changed;
         }
         public static List<ParkHistoryEntry> Capture(ParkRuntimeSnapshot snapshot)
         {
@@ -66,17 +78,16 @@ namespace CS2AreaSystem.Modules.Park
         public static void Seed(EntityManager entities,ParkRuntimeSnapshot snapshot)
         {
             if(!entities.HasBuffer<ParkHistoryEntry>(snapshot.Area))return;
-            var buffer=entities.GetBuffer<ParkHistoryEntry>(snapshot.Area,true);var rows=new List<ParkHistoryEntry>(24);
-            for(int i=Math.Max(0,buffer.Length-24);i<buffer.Length;i++)rows.Add(buffer[i]);
+            var buffer=entities.GetBuffer<ParkHistoryEntry>(snapshot.Area,true);
+            if(buffer.Length>Capacity)throw new System.IO.InvalidDataException("Oversized Area history buffer");
+            var rows=new List<ParkHistoryEntry>(buffer.Length);
+            for(int i=0;i<buffer.Length;i++)rows.Add(buffer[i]);
             Seed(rows,snapshot);
         }
         public static void Seed(IEnumerable<ParkHistoryEntry> history,ParkRuntimeSnapshot snapshot)
         {
-            // Loaded buffers have a fixed writer bound. TakeLast prevents old buckets inflating runtime series.
-            var newest=new Queue<ParkHistoryEntry>();
-            foreach(var row in history){newest.Enqueue(row);if(newest.Count>24)newest.Dequeue();}
-            foreach(var row in newest) {
-                ComponentSchema.RequireSupported(row.SchemaVersion==0?ParkHistoryEntry.CurrentSchemaVersion:row.SchemaVersion);
+            var normalized=Normalize(history);
+            foreach(var row in normalized.Skip(Math.Max(0,normalized.Count-24))) {
                 if((row.Availability&1)!=0)snapshot.Trends.Visitors.Record(row.HourBucket,row.Visitors);
                 if((row.Availability&2)!=0)snapshot.Trends.Quality.Record(row.HourBucket,row.Quality);
                 if((row.Availability&4)!=0)snapshot.Trends.Satisfaction.Record(row.HourBucket,row.Satisfaction);

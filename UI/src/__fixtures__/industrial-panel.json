@@ -6806,7 +6806,7 @@
     "CS2AS.UI.RemoveEntrance": "Remove",
     "CS2AS.UI.SelectAnchor": "Select an existing building inside this area.",
     "CS2AS.UI.SelectEntrance": "Click an explicitly registered entrance building inside this area.",
-    "CS2AS.UI.SelectHeadquarters": "Click an office building inside this area to assign it as the headquarters.",
+    "CS2AS.UI.SelectHeadquarters": "Click an eligible headquarters inside this area: Park Maintenance for a Park, or an office building for an Industrial Area.",
     "CS2AS.UI.Status": "Status",
     "CS2AS.UI.Type": "Type"
   }

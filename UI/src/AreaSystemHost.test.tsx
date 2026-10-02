@@ -2,10 +2,11 @@ import React from 'react';
 import {render,screen,fireEvent,act} from '@testing-library/react';
 import {describe,it,expect,vi,afterEach} from 'vitest';
 import {AreaSystemHost} from './AreaSystemHost';
+import parkFixture from './__fixtures__/park-panel.json';
 import {PANEL_RETRY_BASE_MS,PANEL_RETRY_MAX_MS} from './boundary';
 const binding=vi.hoisted(()=>({fail:false,reads:0,listAvailable:false,listOpen:false,list:[] as unknown[],panelSide:'right',pending:null as unknown,trigger:vi.fn()}));
 const translations:Record<string,string>={'CS2AS.UI.AreaList':'Managed areas','CS2AS.UI.NoAreas':'No managed areas yet.','CS2AS.Type.Industrial':'Industrial Area','CS2AS.Type.Park':'Park Area',
- 'CS2AS.State.Suspended':'Suspended','CS2AS.State.Active':'Active','CS2AS.UI.SelectHeadquarters':'Select a building inside this area as headquarters.','CS2AS.UI.CancelAssignment':'Cancel assignment'};
+ 'CS2AS.State.Suspended':'Suspended','CS2AS.State.Active':'Active','CS2AS.UI.SelectHeadquarters':parkFixture.enUS['CS2AS.UI.SelectHeadquarters'],'CS2AS.UI.CancelAssignment':'Cancel assignment'};
 vi.mock('cs2/api',()=>({bindValue:(_group:string,name:string)=>({name}),useValue:(value:{name:string})=>{binding.reads++;if(binding.fail)throw new Error('binding unavailable');
  return ({areaListAvailable:binding.listAvailable,areaListOpen:binding.listOpen,areaList:binding.list,panelSide:binding.panelSide,pendingAssignment:binding.pending} as Record<string,unknown>)[value.name];},trigger:binding.trigger}));
 vi.mock('cs2/l10n',()=>({useLocalization:()=>({translate:(key:string)=>translations[key]??null})}));
@@ -25,9 +26,13 @@ describe('area system floating host',()=>{
  it('guides an anchor assignment while a building is selected and can cancel it',()=>{
   binding.pending={stableId:'7',name:'Harbor Industry',role:'Headquarters'};render(<AreaSystemHost/>);
   expect(screen.getByRole('status')).toHaveTextContent('Harbor Industry');
-  expect(screen.getByRole('status')).toHaveTextContent('Select a building inside this area as headquarters.');
+  expect(screen.getByRole('status')).toHaveTextContent('office');
   fireEvent.click(screen.getByRole('button',{name:'Cancel assignment'}));
   expect(binding.trigger).toHaveBeenCalledWith('cs2AreaSystem','cancelAnchorAssignment','7');
+ });
+ it('tells a Park user that its headquarters is Park Maintenance',()=>{
+  binding.pending={stableId:'8',name:'Central Park',role:'Headquarters'};render(<AreaSystemHost/>);
+  expect(screen.getByRole('status')).toHaveTextContent('Park Maintenance');
  });
  it('places the host on the side chosen in the options',()=>{binding.listAvailable=true;const view=render(<AreaSystemHost/>);expect(view.container.firstElementChild!.className).not.toMatch(/left/);binding.panelSide='left';view.rerender(<AreaSystemHost/>);expect(view.container.firstElementChild!.className).toMatch(/left/);});
  it('binding failure stays local without simulation mutations',()=>{const consoleError=vi.spyOn(console,'error').mockImplementation(()=>{});binding.fail=true;render(<AreaSystemHost/>);expect(screen.queryByRole('button')).toBeNull();expect(binding.trigger).not.toHaveBeenCalled();consoleError.mockRestore();});

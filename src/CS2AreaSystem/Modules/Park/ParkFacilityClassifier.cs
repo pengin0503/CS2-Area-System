@@ -80,10 +80,8 @@ namespace CS2AreaSystem.Modules.Park
         public static ParkFacilityTraits ReadAnchor(Entity entity, EntityManager entities) => ReadCore(entity, entities, true);
         public static ParkFacilityTraits Read(Entity entity, EntityManager entities)
         {
-            var traits = new ParkFacilityTraits();
-            if (!entities.Exists(entity) || !entities.HasComponent<Building>(entity)) return traits;
-            traits.IsBuilding = true;
-            traits.HasRoadAccess = entities.GetComponentData<Building>(entity).m_RoadEdge != Entity.Null;
+            var traits = ReadCore(entity, entities, true);
+            if (!traits.IsBuilding) return traits;
             if (entities.HasComponent<Game.Buildings.Park>(entity))
             {
                 traits.HasPark = true;

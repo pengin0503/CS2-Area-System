@@ -8,6 +8,20 @@ namespace CS2AreaSystem.Tests;
 public class AreaSemanticAdapterTests
 {
  private static Entity P=>new(){Index=9,Version=1};
+ [Test] public void FullQualityReaderUsesTheSamePrefabFactsAsVisitsAndAnchors() {
+  // EntityManager requires Unity native runtime; inspect the compiled integration seam and
+  // execute the semantic aggregator below. F07 covers the live ECS path in the game.
+  var calls=CS2AreaSystem.Tests.Support.IlCallScanner.Find(typeof(ParkFacilityReader).GetMethod(nameof(ParkFacilityReader.Read))!,m=>m.DeclaringType==typeof(ParkFacilityReader)&&m.Name==nameof(ParkFacilityReader.ReadCore));
+  Assert.That(calls,Has.Count.EqualTo(1),"quality must retain the prefab identity used by visits/anchors");
+ }
+ [Test] public void QualityAggregationHonorsRegisteredAllowDenyAndRemoval() {
+  var registry=new AreaAssetSemanticRegistry();var traits=new ParkFacilityTraits{IsBuilding=true,Prefab=P,Attractiveness=20};
+  registry.Register("a",P,new(AreaAssetSemantic.ParkAttraction,AreaAssetSemantic.None,0));
+  Assert.That(ParkFacilitySnapshot.Build(new[]{traits},registry).Attractions,Is.EqualTo(1));
+  registry.Register("a",P,new(AreaAssetSemantic.None,AreaAssetSemantic.ParkAttraction,0));
+  Assert.That(ParkFacilitySnapshot.Build(new[]{traits},registry).Attractions,Is.Zero);
+  registry.UnregisterProvider("a");Assert.That(ParkFacilitySnapshot.Build(new[]{traits},registry).Attractions,Is.EqualTo(1));
+ }
  [Test] public void HeadquartersOverridesAreExplicitAndRemovalImmediatelyFallsBackToTypedFacts() {
   var r=new AreaAssetSemanticRegistry();var park=new ParkFacilityTraits{IsBuilding=true,Prefab=P,HasParkMaintenance=true};
   Assert.That(ParkFacilityClassifier.IsHeadquartersEligible(park,r),Is.True);

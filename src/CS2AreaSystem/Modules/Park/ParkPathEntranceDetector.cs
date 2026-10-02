@@ -51,10 +51,11 @@ namespace CS2AreaSystem.Modules.Park
         public bool Complete { get; private set; }=true;
         private readonly Queue<(Bounds2 Bounds,int Depth)> tiles=new Queue<(Bounds2,int)>();
         private readonly HashSet<Entity> seen=new HashSet<Entity>();
-        private IReadOnlyList<Entity> pending=Array.Empty<Entity>();private int cursor;
+        private IReadOnlyList<Entity> pending=Array.Empty<Entity>();private int cursor,totalQueries;
         private readonly List<ParkEntrancePoint> points=new List<ParkEntrancePoint>();
         public IReadOnlyList<ParkEntrancePoint> Points=>ParkPathEntranceDetector.Merge(points);
         public const int MaxCandidates=32768;
+        public const int MaxTileQueries=4096,MaxPendingTiles=4096;
         public ParkEntranceScan(ulong id,long revision,Bounds2 bounds){StableId=id;Revision=revision;tiles.Enqueue((bounds,0));}
         public void Step(Func<Bounds2,int,ParkNetPage> read,Func<Entity,IReadOnlyList<ParkEntrancePoint>> detect,int budget)
         {
@@ -69,12 +70,13 @@ namespace CS2AreaSystem.Modules.Park
                     points.AddRange(found);continue;
                 }
                 if(tiles.Count==0||queries>=64||budget-LastWork<2)break;
+                if(totalQueries>=MaxTileQueries){Complete=false;tiles.Clear();break;}
                 var tile=tiles.Dequeue();int limit=Math.Max(1,(budget-LastWork)/2);
-                var page=read(tile.Bounds,limit);queries++;
+                var page=read(tile.Bounds,limit);queries++;totalQueries++;
                 if(page.Edges.Count>limit)throw new InvalidOperationException("Net enumeration exceeded its budget");
                 LastWork+=Math.Max(1,page.Edges.Count);
                 if(page.Overflow) {
-                    if(tile.Depth>=16){Complete=false;tiles.Clear();break;}
+                    if(tile.Depth>=16||tiles.Count+4>MaxPendingTiles){Complete=false;tiles.Clear();break;}
                     var mid=(tile.Bounds.min+tile.Bounds.max)*0.5f;
                     tiles.Enqueue((new Bounds2(tile.Bounds.min,mid),tile.Depth+1));
                     tiles.Enqueue((new Bounds2(new float2(mid.x,tile.Bounds.min.y),new float2(tile.Bounds.max.x,mid.y)),tile.Depth+1));
