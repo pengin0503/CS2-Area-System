@@ -91,6 +91,13 @@ public class IndustrialDiagnosticTargetTests {
   Assert.That(Resolve(world, current, AreaDiagnosticTargetKey.Format(E(1)), out var target), Is.True);
   Assert.That(target, Is.EqualTo(E(1)));
  }
+ [Test] public void ManualCompanyOwnerCanFocusItsCurrentNonPrimaryBottleneck() {
+  var (world,current)=Setup();world.Index.ReplaceMembership(E(1),new[]{new AreaMembership(10,Industrial,true),new AreaMembership(30,Industrial,false)});
+  var assignments=new IndustrialCompanyAssignmentIndex();assignments.Rebuild(new[]{new IndustrialCompanyClaim(30,E(200),E(1))});
+  Assert.That(IndustrialGameplayFacade.TryResolveFocusTarget(current,AreaDiagnosticTargetKey.Format(E(1)),30,world.Exists,world.Index,out var target,assignments),Is.True);
+  Assert.That(target,Is.EqualTo(E(1)));assignments.Clear();
+  Assert.That(IndustrialGameplayFacade.TryResolveFocusTarget(current,AreaDiagnosticTargetKey.Format(E(1)),30,world.Exists,world.Index,out _,assignments),Is.False);
+ }
  [Test] public void TargetMissingFromTheCurrentSnapshotIsRejected() {
   var (world, current) = Setup();
   Assert.That(Resolve(world, current, AreaDiagnosticTargetKey.Format(E(2)), out _), Is.False, "a member that is not a bottleneck target");

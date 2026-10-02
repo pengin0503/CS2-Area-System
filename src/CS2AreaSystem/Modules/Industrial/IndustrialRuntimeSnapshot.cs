@@ -212,6 +212,13 @@ namespace CS2AreaSystem.Modules.Industrial
         public int DelayedCycles;
         public readonly IndustrialTrendSnapshot Trends = new IndustrialTrendSnapshot();
         public void Publish(IndustrialObservationResult result) { Current = result; Trends.Record(result); }
+        public void InvalidateOwnership()
+        {
+            Paused = true; OwnershipCandidates.Clear(); ResetBaselines();
+            InputWindow.Clear(); OutputWindow.Clear(); ResourceHistory.Clear();
+            // The previous result remains visible as stale, but cannot be settled under the new ownership.
+            if (Current != null) LastConsumedCycle = Current.CycleId;
+        }
         public void ResetBaselines() { HasFlowBaseline = false; ActivityBaseline = null; }
     }
     public sealed class IndustrialRuntimeStore

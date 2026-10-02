@@ -37,6 +37,8 @@ namespace CS2AreaSystem.Modules.Industrial
     public struct IndustrialEntityObservation
     {
         public Entity Facility;
+        // Read for ownership UI only; contributes no member count or metrics.
+        public bool CandidateOnly;
         public IndustrialFacilityRole Roles;
         // Producer capability (extractor or processor) and confirmed current production (> 0 actual output).
         public bool IsProducer, IsOperatingProducer;

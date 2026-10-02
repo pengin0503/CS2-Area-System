@@ -97,7 +97,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public void AssignmentChanged()
         {
             Assignments.Clear(); RefreshAssignments();
-            foreach (var snapshot in Store.All) { snapshot.OwnershipCandidates.Clear(); snapshot.Paused = true; snapshot.ResetBaselines(); }
+            foreach (var snapshot in Store.All) snapshot.InvalidateOwnership();
         }
         private EntityQuery managedAreas, writtenAreas, changedAreas, timeData, rentersUpdated, damagedMembers;
         private List<IndustrialAreaRef> areas = new List<IndustrialAreaRef>(), building = new List<IndustrialAreaRef>();
@@ -130,7 +130,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 All = new[] { ComponentType.ReadOnly<ManagedArea>() },
                 Any = new[] { ComponentType.ReadOnly<Created>(), ComponentType.ReadOnly<Updated>(), ComponentType.ReadOnly<Deleted>() },
                 None = new[] { ComponentType.ReadOnly<Temp>() } });
-            cycleSource = new IndustrialMembershipCycleSource(Membership, Structure, Assignments);
+            cycleSource = new IndustrialMembershipCycleSource(Membership, Structure, Assignments, true);
             timeData = GetEntityQuery(ComponentType.ReadOnly<TimeData>());
             // Native change evidence for tenant/role structure (design §18.2): vanilla tenant events and member
             // destruction/abandonment. Ordinary economic changes carry no such evidence.
@@ -182,6 +182,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public void RefreshAssignments(bool initialize = false)
         {
             AssignmentsReady = false;
+            ulong previousRevision = Assignments.Revision;
             assignmentClaims.Clear();
             foreach (var area in areas)
             {
@@ -199,6 +200,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 var eligibility = IndustrialCompanyOwnership.ReadLive(claim.Company, EntityManager, services.Semantics, out var rentedBuilding);
                 return IndustrialCompanyOwnership.IsValidClaim(claim, rentedBuilding, Membership.GetAreas(rentedBuilding), eligibility);
             });
+            if (Assignments.Revision != previousRevision)
+                foreach (var snapshot in Store.All) snapshot.InvalidateOwnership();
             AssignmentsReady = true;
         }
         // Builds the new list aside and swaps it in, so a failed rebuild leaves the previous list and the gate open.

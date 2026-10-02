@@ -30,7 +30,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public IReadOnlyList<IndustrialComparisonRow> Comparison=Array.Empty<IndustrialComparisonRow>();
         public IReadOnlyList<IndustrialCompanyCandidate> Companies = Array.Empty<IndustrialCompanyCandidate>();
     }
-    // Builds the five Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
+    // Builds the seven Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
     // item with an action is the diagnostic focus button (camera only); unavailable data is never rendered as zero.
     public static class IndustrialPanelBuilder
     {

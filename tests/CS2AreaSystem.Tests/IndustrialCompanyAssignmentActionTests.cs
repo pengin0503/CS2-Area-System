@@ -68,4 +68,13 @@ public class IndustrialCompanyAssignmentActionTests {
   Assert.That(tab.Items.Where(i=>i.Action=="assignCompanyHere").Select(i=>i.Disabled),Is.EqualTo(new[]{false,true,true}));
   Assert.That(tab.Items.Count(i=>i.Action=="clearCompanyAssignment"),Is.EqualTo(2));
  }
+ [Test] public void ObservingAgainDoesNotEraseSavedClaimRemovalAndInvalidClaimsRemainVisibleAtCapacity() {
+  var set=new IndustrialCompanyCandidateSet();set.Begin(7,1,5,0);
+  set.Record(E(1),E(100),new IndustrialCompanyOwnerResolution(7,true),"Manual",true);
+  set.Record(E(1),E(100),new IndustrialCompanyOwnerResolution(7,true),"Manual");
+  Assert.That(set.Rows[0].HasClaimHere,Is.True);
+  for(int i=2;i<=64;i++)set.Record(E(i),E(100),new IndustrialCompanyOwnerResolution(2,false),"Auto");
+  set.Record(E(200),E(101),default,"Invalid",true,true);
+  Assert.That(set.Rows,Has.Count.EqualTo(64));Assert.That(set.Rows.Any(c=>c.Company==E(200)&&c.Invalid&&c.HasClaimHere),Is.True);
+ }
 }

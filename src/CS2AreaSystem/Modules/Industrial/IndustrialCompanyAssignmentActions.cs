@@ -37,13 +37,20 @@ namespace CS2AreaSystem.Modules.Industrial
             foreach (var existing in rows) if (existing.Company == company && existing.Building == building) { row = existing; break; }
             if (row == null)
             {
-                if (rows.Count >= Capacity) return;
+                if (rows.Count >= Capacity)
+                {
+                    if (!hasClaimHere) return;
+                    int replace = rows.FindLastIndex(candidate => !candidate.HasClaimHere);
+                    if (replace < 0) return;
+                    rows.RemoveAt(replace);
+                }
                 row = new IndustrialCompanyCandidate { Company = company, Building = building,
                     Key = string.Format(CultureInfo.InvariantCulture, "{0}:{1}:{2}:{3}.{4}:{5}.{6}", load, AreaId, generation, company.Index, company.Version, building.Index, building.Version) };
                 rows.Add(row);
             }
             row.Owner = owner.AreaStableId; row.Manual = owner.Manual; row.Label = label;
-            row.HasClaimHere = hasClaimHere; row.Invalid = invalid;
+            if (hasClaimHere || !row.HasClaimHere) row.Invalid = invalid;
+            row.HasClaimHere |= hasClaimHere;
         }
         public bool TryResolve(string key, out IndustrialCompanyCandidate row)
         {

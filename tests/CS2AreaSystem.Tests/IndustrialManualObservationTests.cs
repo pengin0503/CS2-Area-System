@@ -48,4 +48,24 @@ public class IndustrialManualObservationTests {
   Assert.That(IndustrialObservationMapper.Matches(row,new IndustrialBuildingRead{Building=E(100),AreaId=7,CycleId=5}),Is.False);
   Assert.That(IndustrialObservationMapper.Matches(row,new IndustrialBuildingRead{Building=E(100),AreaId=2,CycleId=4}),Is.True);
  }
+ [Test] public void OwnershipCandidateReadsExistEvenWhenPrimaryAreaIsSuspended() {
+  var m=Membership();var source=new IndustrialMembershipCycleSource(m,new IndustrialStructureTracker(),new IndustrialCompanyAssignmentIndex(),true);
+  var scheduler=new IndustrialObservationScheduler();scheduler.Sync(new[]{new IndustrialAreaRef(E(2),2,AreaLifecycleState.Suspended),new IndustrialAreaRef(E(7),7,AreaLifecycleState.Active)},1,0,1,source);
+  var reads=new List<IndustrialReadRequest>();scheduler.NextReads(reads);
+  Assert.That(reads.Select(r=>r.Building),Is.EqualTo(new[]{E(100)}));Assert.That(reads[0].AreaId,Is.EqualTo(7UL));
+ }
+ [Test] public void CandidateOnlyOverlapReadDoesNotInflateMemberCounts() {
+  var b=new IndustrialBuildingRead{Building=E(100),AreaId=7,Exists=true,Available=true};
+  var obs=IndustrialObservationMapper.ToOwnedObservation(b,Array.Empty<IndustrialCompanyRead>(),Membership(),new IndustrialCompanyAssignmentIndex(),Eligible);
+  var acc=new IndustrialCycleAccumulator();IndustrialObservationAggregator.Apply(acc,obs);
+  Assert.That(acc.Members,Is.Zero);Assert.That(acc.Ignored,Is.Zero);
+ }
+ [Test] public void OwnershipInvalidationSkipsUnconsumedOldCycleAndClearsOnlyDerivedCoverage() {
+  var snapshot=new IndustrialRuntimeSnapshot();snapshot.Publish(new IndustrialObservationResult{CycleId=17,HourBucket=5,Active=true});
+  snapshot.InputWindow.Add(0,4,0,1);snapshot.HasFlowBaseline=true;
+  snapshot.InvalidateOwnership();
+  Assert.That(snapshot.LastConsumedCycle,Is.EqualTo(17));Assert.That(snapshot.Paused,Is.True);
+  Assert.That(snapshot.HasFlowBaseline,Is.False);Assert.That(snapshot.InputWindow.CoveredHours(4),Is.Zero);
+  Assert.That(snapshot.Current.CycleId,Is.EqualTo(17),"last observation remains visible as stale");
+ }
 }

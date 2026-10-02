@@ -20,7 +20,7 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         ulong MembershipToken(ulong areaId);
         ulong StructureToken(ulong areaId);
-        // Members for which this Area is Core's primary Industrial owner; the rest are counted as overlap only.
+        // Primary and manually owned members, plus optional candidate-only overlap reads in the shared budget.
         IReadOnlyList<Entity> PrimaryMembers(ulong areaId, out int nonPrimary);
     }
     // Primary-member lists are cached per Area and reused while the membership index reports the same (Epoch, revision)
@@ -31,6 +31,7 @@ namespace CS2AreaSystem.Modules.Industrial
         private readonly AreaMembershipIndex index;
         private readonly IndustrialStructureTracker structure;
         private readonly IndustrialCompanyAssignmentIndex assignments;
+        private readonly bool includeOwnershipCandidates;
         private readonly Dictionary<ulong, PrimaryList> lists = new Dictionary<ulong, PrimaryList>();
         private readonly List<Entity> buffer = new List<Entity>();
         private readonly HashSet<Entity> included = new HashSet<Entity>();
@@ -39,8 +40,8 @@ namespace CS2AreaSystem.Modules.Industrial
         private int epoch;
         public long Rebuilds { get; private set; }
         public int CachedAreas => lists.Count;
-        public IndustrialMembershipCycleSource(AreaMembershipIndex index, IndustrialStructureTracker structure, IndustrialCompanyAssignmentIndex assignments = null)
-        { this.index = index; this.structure = structure; this.assignments = assignments; epoch = index.Epoch; }
+        public IndustrialMembershipCycleSource(AreaMembershipIndex index, IndustrialStructureTracker structure, IndustrialCompanyAssignmentIndex assignments = null, bool includeOwnershipCandidates = false)
+        { this.index = index; this.structure = structure; this.assignments = assignments; this.includeOwnershipCandidates = includeOwnershipCandidates; epoch = index.Epoch; }
         public ulong MembershipToken(ulong areaId) => index.GetAreaRevision(areaId);
         public ulong StructureToken(ulong areaId) => assignments == null ? structure.Get(areaId) : IndustrialGenerations.Combine(structure.Get(areaId), assignments.Revision);
         public IReadOnlyList<Entity> PrimaryMembers(ulong areaId, out int nonPrimary)
@@ -61,6 +62,12 @@ namespace CS2AreaSystem.Modules.Industrial
                 included.Clear(); foreach (var member in buffer) included.Add(member);
                 foreach (var member in assignments.GetBuildings(areaId))
                     if (IndustrialCompanyOwnership.Related(areaId, index.GetAreas(member)) && included.Add(member)) { buffer.Add(member); nonPrimary--; }
+            }
+            if (includeOwnershipCandidates)
+            {
+                included.Clear(); foreach (var member in buffer) included.Add(member);
+                // Existing indexed members only: candidate reads earn no metrics unless company ownership resolves here.
+                foreach (var member in index.GetMembers(areaId)) if (included.Add(member)) buffer.Add(member);
             }
             buffer.Sort((a, b) => a.Index != b.Index ? a.Index.CompareTo(b.Index) : a.Version.CompareTo(b.Version));
             var members = System.Array.AsReadOnly(buffer.ToArray());

@@ -138,7 +138,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (company.HasStorage) { read.HasStorage = true; read.Stored += company.Stored; read.Capacity += company.Capacity; }
             }
             // No non-primary facility facts are credited unless one of its companies resolves here.
-            if (!primary && selected.Count == 0) return new IndustrialEntityObservation { Facility = read.Building };
+            if (!primary && selected.Count == 0) return new IndustrialEntityObservation { Facility = read.Building, CandidateOnly = true };
             return ToObservation(read, selected, registry);
         }
         public static IndustrialEntityObservation ToObservation(in IndustrialBuildingRead building, IReadOnlyList<IndustrialCompanyRead> companies,Core.Semantics.AreaAssetSemanticRegistry registry=null)
