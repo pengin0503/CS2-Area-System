@@ -95,11 +95,15 @@ namespace CS2AreaSystem
         {
             if (!ModuleRegistration.Requires(finance, "Park gameplay", message => Log.Error(message))) return;
             var park = new ModuleRegistration("Park gameplay",
+                typeof(CS2AreaSystem.Modules.Park.ParkRuntimeSystem),
                 typeof(CS2AreaSystem.Modules.Park.ParkLandscapeSystem), typeof(CS2AreaSystem.Modules.Park.ParkVisitSystem),
                 typeof(CS2AreaSystem.Modules.Park.ParkQualitySystem), typeof(CS2AreaSystem.Modules.Park.ParkFinanceSystem),
                 typeof(CS2AreaSystem.Modules.Park.ParkFinanceSaveSystem), typeof(CS2AreaSystem.Modules.Park.ParkProgressionSystem));
             try
             {
+                // The runtime owns the single preload generation for every Park consumer. Include it in the same
+                // registration unit so a partial Park failure disables the owner as well as its consumers.
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkRuntimeSystem>(SystemUpdatePhase.ModificationEnd); park.Step();
                 updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkLandscapeSystem>(SystemUpdatePhase.ModificationEnd); park.Step();
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkVisitSystem>(SystemUpdatePhase.GameSimulation); park.Step();
                 updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkQualitySystem>(SystemUpdatePhase.GameSimulation); park.Step();
