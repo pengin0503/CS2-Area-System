@@ -127,7 +127,7 @@ check(!lifecycle.includes('ObserveExisting') && !lifecycle.includes('savedIds'),
 const observeStep = coordinatorSource.slice(coordinatorSource.indexOf('private void ObserveIdentities'), coordinatorSource.indexOf('private void ValidateSavedState'));
 check(/services\.Identity\.Observe\(records\)[\s\S]*ValidateSavedState\(managed\)/.test(observeStep),
   'identity and saved-state quarantine must both be decided in the first recovery step, before membership is rebuilt');
-check(/sequence\.TryRecover\(true, ObserveIdentities, membership\.RebuildNow, ValidateModules\)/.test(coordinatorSource), 'recovery order: identities, membership, activation');
+check(/sequence\.TryRecover\(allReady, ObserveIdentities, membership\.RebuildNow, ValidateModules\)/.test(coordinatorSource), 'per-Area readiness gates recovery in order: identities, membership, activation');
 for (const [file, what] of [
   ['src/CS2AreaSystem/Core/Membership/AreaMembershipSystem.cs', 'membership'],
   ['src/CS2AreaSystem/Core/Anchors/AreaActivationSystem.cs', 'activation'],
