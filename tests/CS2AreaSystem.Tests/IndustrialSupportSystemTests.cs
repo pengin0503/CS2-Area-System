@@ -141,6 +141,12 @@ public class IndustrialSupportSavedStateTests {
   state = IndustrialSupportState.CreateDefault(); state.LifetimeSettled = 10; state.LifetimeCredited = 4; state.LifetimeUnallocated = 5;
   Assert.That(Validate(state).IsInvalid, Is.True, "settled = credited + unallocated");
  }
+ [Test] public void SettledAboveRequestedIsInvalidUnlessSaturated() {
+  var state = IndustrialSupportState.CreateDefault(); state.LifetimeRequested = 5; state.LifetimeSettled = 10; state.LifetimeCredited = 10;
+  Assert.That(Validate(state).IsInvalid, Is.True, "the city never pays more than was requested");
+  state.LifetimeRequested = long.MaxValue;
+  Assert.That(Validate(state).IsInvalid, Is.False);
+ }
 }
 public class IndustrialSupportSourceGuardTests {
  internal static string Source(string path) => File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../../src/CS2AreaSystem/" + path));
@@ -151,6 +157,27 @@ public class IndustrialSupportSourceGuardTests {
   Assert.That(system, Does.Contain("Roster = snapshot?.Current"));
   Assert.That(system, Does.Contain("IndustrialSupportScheduling.TryRequest("), "the day is committed only through the accepted-enqueue path");
   Assert.That(system.Split("LastScheduledDay").Length - 1, Is.Zero, "the system never writes the scheduled day directly");
+ }
+ // Final review: a save right after load must not store a paid day whose request Area Finance's flush would skip
+ // (the flush applies nothing until finance has started this load generation).
+ [Test] public void DailySchedulingWaitsUntilAreaFinanceStartedThisGeneration() {
+  var system = Source("Modules/Industrial/IndustrialSupportSystem.cs");
+  Assert.That(system, Does.Contain("if (!runtime.AssignmentsReady || !finance.Started || !runtime.TryGetClock(out var clock)) return;"));
+  var finance = Source("Core/Finance/AreaFinanceSystem.cs");
+  Assert.That(finance, Does.Contain("public bool Started => Ready && startedGeneration == loadGeneration;"));
+  Assert.That(finance, Does.Contain("AreaFinanceSaveBoundary.Flush(Ready, startedGeneration, loadGeneration,"), "the same condition gates the save flush");
+ }
+ // Final review: once the credit job is scheduled, a later exception must complete and record it, never dispose its arrays.
+ [Test] public void AScheduledCreditJobIsCompletedAndRecordedIfSchedulingLaterThrows() {
+  var system = Source("Modules/Industrial/IndustrialSupportSystem.cs");
+  int start = system.IndexOf("private void ScheduleCredits()", StringComparison.Ordinal);
+  var body = system.Substring(start, system.IndexOf("private void RecordCredits()", start, StringComparison.Ordinal) - start);
+  int scheduled = body.IndexOf("pending = job.Schedule(Dependency);", StringComparison.Ordinal), flag = body.IndexOf("jobScheduled = true;", StringComparison.Ordinal),
+   dependency = body.IndexOf("Dependency = pending;", StringComparison.Ordinal);
+  Assert.That(scheduled, Is.GreaterThan(0));
+  Assert.That(flag, Is.GreaterThan(scheduled)); Assert.That(dependency, Is.GreaterThan(flag));
+  var handler = body.Substring(body.IndexOf("catch (System.Exception error)", StringComparison.Ordinal));
+  Assert.That(handler, Does.Contain("if (jobScheduled) { pending.Complete(); RecordCredits(); }"));
  }
  [Test] public void PanelSettingIsRoutedThroughTheEnabledSupportSystemOnly() {
   var facade = Source("Modules/Industrial/IndustrialGameplayFacade.cs");

@@ -29,6 +29,8 @@ namespace CS2AreaSystem.Core.Finance
         private int loadGeneration, startedGeneration = -1;
         private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         public bool Ready => !GameManager.instance.isGameLoading && load.Ready;
+        // Started this load generation: queued requests are applied by updates and by the save flush (same condition).
+        public bool Started => Ready && startedGeneration == loadGeneration;
         public int LoadGeneration => loadGeneration;
         public uint SimulationFrame => simulation.frameIndex;
         public bool HasPending => runtime.HasQueued || runtime.HasInFlight;

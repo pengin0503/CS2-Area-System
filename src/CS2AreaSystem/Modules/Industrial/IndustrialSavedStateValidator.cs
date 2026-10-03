@@ -27,6 +27,9 @@ namespace CS2AreaSystem.Modules.Industrial
             if (!saturated && state.LifetimeCredited >= 0 && state.LifetimeUnallocated >= 0 &&
                 state.LifetimeSettled != Core.Finance.AreaFinanceModel.SaturatingAdd(state.LifetimeCredited, state.LifetimeUnallocated))
                 report.Invalid("IndustrialSupportState.LifetimeSettled", state.LifetimeSettled);
+            // Area Finance never settles more than was requested.
+            if (state.LifetimeRequested != long.MaxValue && state.LifetimeSettled != long.MaxValue && state.LifetimeSettled > state.LifetimeRequested)
+                report.Invalid("IndustrialSupportState.LifetimeSettled", state.LifetimeSettled);
         }
     }
 }

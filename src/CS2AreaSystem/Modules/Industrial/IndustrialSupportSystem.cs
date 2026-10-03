@@ -72,7 +72,8 @@ namespace CS2AreaSystem.Modules.Industrial
             if (loadGeneration != runtime.LoadGeneration) { loadGeneration = runtime.LoadGeneration; DropPending(); }
             RecordCredits();
             if (HasSettled()) ScheduleCredits();
-            if (!runtime.AssignmentsReady || !runtime.TryGetClock(out var clock)) return;
+            // Until Area Finance has started this generation its save flush applies nothing, so a saved day would be unpaid.
+            if (!runtime.AssignmentsReady || !finance.Started || !runtime.TryGetClock(out var clock)) return;
             long day = clock.Day(runtime.SimulationFrame);
             runtime.CollectAreas(areas);
             foreach (var area in areas) Schedule(area, day);
@@ -142,6 +143,7 @@ namespace CS2AreaSystem.Modules.Industrial
             if (batch.IsEmpty) return;
             DisposeBuffers();
             crediting = batch;
+            bool jobScheduled = false;
             try
             {
                 receivers = new NativeArray<Entity>(batch.Receivers.Count, Allocator.Persistent);
@@ -150,18 +152,26 @@ namespace CS2AreaSystem.Modules.Industrial
                 for (int i = 0; i < batch.Receivers.Count; i++) { receivers[i] = batch.Receivers[i]; amounts[i] = batch.Amounts[i]; }
                 var job = new IndustrialSupportCreditJob { Receivers = receivers, Amounts = amounts, Credited = credited, Resources = GetBufferLookup<Resources>(false) };
                 pending = job.Schedule(Dependency);
+                jobScheduled = true;
                 Dependency = pending;
             }
             catch (System.Exception error)
             {
-                // Not scheduled: nothing reached company money. The settled amount is accounted unallocated, never re-queued.
-                pending = default;
-                var unscheduled = crediting; crediting = null;
-                DisposeBuffers();
-                finished.Clear();
-                finished.AddRange(IndustrialSupportSettlement.Finish(ledger, unscheduled, null));
-                RecordFinished();
-                services.Failures.Report(Entity.Null, "Industrial.Support.Credit", error, "Industrial support could not be credited to companies; the settled amount is recorded as unallocated");
+                // Scheduled before the failure: its arrays are in use, so complete it and record what it actually credited.
+                if (jobScheduled) { pending.Complete(); RecordCredits(); }
+                else
+                {
+                    // Not scheduled: nothing reached company money. The settled amount is accounted unallocated, never re-queued.
+                    pending = default;
+                    var unscheduled = crediting; crediting = null;
+                    DisposeBuffers();
+                    finished.Clear();
+                    finished.AddRange(IndustrialSupportSettlement.Finish(ledger, unscheduled, null));
+                    RecordFinished();
+                }
+                services.Failures.Report(Entity.Null, "Industrial.Support.Credit", error, jobScheduled
+                    ? "Industrial support credit scheduling failed after the job started; the credited amounts were recorded"
+                    : "Industrial support could not be credited to companies; the settled amount is recorded as unallocated");
             }
         }
         private void RecordCredits()
