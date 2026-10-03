@@ -179,6 +179,8 @@ git commit -m "docs: add progressive AI context maps"
 
 ### Task 2: Add reusable repository-local Claude Skills
 
+> **Required sub-skill for this task:** Use `superpowers:writing-skills` before creating or editing the repository-local Skills.
+
 **Files:**
 - Modify: `scripts/test-ai-context-contracts.mjs`
 - Create: `.claude/skills/issue-fix/SKILL.md`
