@@ -274,6 +274,14 @@ public class ParkEventPanelTests {
   Assert.That(history.Select(h => h.Value), Is.EqualTo(new[] { "¢450", "¢300" }), "newest first");
   Assert.That(history.All(h => h.LabelKey == "CS2AS.Park.Events.Name.1"), Is.True);
  }
+ [Test] public void SuspendedParkStillShowsItsPendingPayment() {
+  var m = Pending(); m.Lifecycle = AreaLifecycleState.Suspended; m.EventStart = ParkEventRequestOutcome.Inactive;
+  var tab = Tab(m);
+  Assert.That(Item(tab, "events.status").ValueKey, Is.EqualTo("CS2AS.Park.Events.Status.Pending"), "the charge is still outstanding");
+  Assert.That(Item(tab, "events.pendingCost").Value, Is.EqualTo("¢450"));
+  Assert.That(Find(tab, "events.cost"), Is.Null);
+  Assert.That(Item(tab, "events.start").Disabled, Is.True);
+ }
  [Test] public void SuspendedParkShowsTheFestivalAsPaused() {
   var m = Active(); m.Lifecycle = AreaLifecycleState.Suspended;
   Assert.That(Item(Tab(m), "events.status").ValueKey, Is.EqualTo("CS2AS.Park.Events.Status.Paused"), "time continues, effects are neutral");

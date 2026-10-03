@@ -237,8 +237,9 @@ namespace CS2AreaSystem.Modules.Park
             {
                 var state = model.Events;
                 bool running = ParkEventModel.IsActive(state, model.Frame);
-                string status = running ? (model.Lifecycle == AreaLifecycleState.Active ? "Active" : "Paused")
-                    : model.EventStart == ParkEventRequestOutcome.Pending ? "Pending" : "None";
+                // An outstanding request stays visible even when the start is now blocked (e.g. the Park was suspended).
+                bool pending = model.EventStart == ParkEventRequestOutcome.Pending || model.EventPendingCost > 0;
+                string status = running ? (model.Lifecycle == AreaLifecycleState.Active ? "Active" : "Paused") : pending ? "Pending" : "None";
                 items.Add(Row("events.status", E + "Status", valueKey: E + "Status." + status));
                 if (running)
                 {
@@ -246,7 +247,7 @@ namespace CS2AreaSystem.Modules.Park
                     items.Add(Row("events.remaining", E + "RemainingHours", Number(hours)));
                     items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "events.effects", LabelKey = E + "Effects" });
                 }
-                else if (model.EventStart == ParkEventRequestOutcome.Pending) items.Add(Row("events.pendingCost", E + "PendingCost", Money(model.EventPendingCost)));
+                else if (pending) items.Add(Row("events.pendingCost", E + "PendingCost", Money(model.EventPendingCost)));
                 else items.Add(model.EventStart == ParkEventRequestOutcome.Request ? Row("events.cost", E + "Cost", Money(model.EventCost), tooltip: E + "Cost.Tip")
                     : Row("events.cost", E + "Cost", valueKey: model.EventStart == ParkEventRequestOutcome.NoCost ? P + "Calculating" : P + "Unavailable", tooltip: E + "Cost.Tip"));
                 bool canStart = model.EventStart == ParkEventRequestOutcome.Request;

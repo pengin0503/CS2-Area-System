@@ -175,6 +175,12 @@ public class ParkEventSystemSourceGuardTests {
   Assert.That(system, Does.Contain("ParkEventFinance.OnCompleted(ledger, finance.LoadGeneration, requested, settled, paid)"));
   Assert.That(Source("Modules/Park/ParkFinanceSystem.cs"), Does.Contain("snapshot.ManagementCostKnown = true;"));
  }
+ [Test] public void AStartedFestivalRecomputesParkQualityImmediately() {
+  var system = Source("Modules/Park/ParkEventSystem.cs");
+  int started = system.IndexOf("if (outcome == ParkEventApplyOutcome.Started)");
+  Assert.That(started, Is.GreaterThan(0));
+  Assert.That(system.IndexOf("quality.Recompute(new ParkAreaRef(area, payment.AreaId,", started), Is.GreaterThan(started), "capacity/occupancy reflect the festival at once");
+ }
  [Test] public void EventStateIsAddedWithParkStateInTheModificationPhase() {
   var runtime = Source("Modules/Park/ParkRuntimeSystem.cs");
   Assert.That(runtime, Does.Contain("EntityManager.AddComponentData(park.Area, ParkEventState.CreateDefault())"));

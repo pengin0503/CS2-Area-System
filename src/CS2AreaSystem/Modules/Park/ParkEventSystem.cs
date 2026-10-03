@@ -134,6 +134,8 @@ namespace CS2AreaSystem.Modules.Park
                     var writable = EntityManager.GetBuffer<ParkEventHistoryEntry>(area);
                     writable.Clear();
                     foreach (var entry in history) writable.Add(entry);
+                    // Capacity/occupancy reflect the festival at once instead of at the next Quality poll.
+                    quality.Recompute(new ParkAreaRef(area, payment.AreaId, AreaLifecycleState.Active));
                 }
                 failures.Recovered(area, "Park.EventRecord");
             }
