@@ -47,6 +47,10 @@ namespace CS2AreaSystem.Modules.Park
             if (!parkActive || !IsActive(state, frame)) return ParkEventEffects.Neutral;
             return new ParkEventEffects(ParkEventCatalog.FestivalCapacityShare, ParkEventCatalog.FestivalSatisfactionBonus, ParkEventCatalog.FestivalVisitXpMultiplier);
         }
+        // Quality caches the event effects it was evaluated with; a different current reading (start, read-time expiry,
+        // suspension or reactivation) means the cached derived values must be recomputed, never kept.
+        public static bool QualityNeedsRefresh(ParkRuntimeSnapshot snapshot, in ParkEventState state, uint frame, bool parkActive) =>
+            snapshot != null && !snapshot.QualityEventEffects.Equals(Effects(state, frame, parkActive));
         public static ParkEventState Start(ParkEventState state, int eventId, uint frame, long paid)
         {
             if (state.SchemaVersion == 0) state.SchemaVersion = ParkEventState.CurrentSchemaVersion;

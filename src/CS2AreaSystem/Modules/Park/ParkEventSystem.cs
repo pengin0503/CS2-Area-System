@@ -61,7 +61,7 @@ namespace CS2AreaSystem.Modules.Park
                 var expired = ParkEventModel.Expire(state, frame);
                 if (expired.ActiveEventId != state.ActiveEventId) EntityManager.SetComponentData(park.Area, expired);
                 if (runtime.Store.TryGet(park.StableId, out var snapshot) && snapshot.Quality != null &&
-                    !snapshot.QualityEventEffects.Equals(ParkEventModel.Effects(expired, frame, park.State == AreaLifecycleState.Active)))
+                    ParkEventModel.QualityNeedsRefresh(snapshot, expired, frame, park.State == AreaLifecycleState.Active))
                     quality.Recompute(park);
                 failures.Recovered(park.Area, "Park.Event");
             }
@@ -69,6 +69,14 @@ namespace CS2AreaSystem.Modules.Park
             {
                 failures.Report(park.Area, "Park.Event", error, "Park event update failed for managed area " + park.Area);
             }
+        }
+        // Effects for the other Park systems: neutral unless the event module is registered and enabled (a failed event
+        // registration never leaves a saved festival applying effects without its expiry/refresh owner).
+        internal static ParkEventEffects ReadEffects(World world, EntityManager entities, Entity area, bool parkActive, uint frame)
+        {
+            var system = world?.GetExistingSystemManaged<ParkEventSystem>();
+            if (system == null || !system.Enabled || !entities.Exists(area) || !entities.HasComponent<ParkEventState>(area)) return ParkEventEffects.Neutral;
+            return ParkEventModel.Effects(entities.GetComponentData<ParkEventState>(area), frame, parkActive);
         }
         // Panel action (main thread, after Core validated the stable ID and live selection).
         internal ParkEventRequestOutcome RequestStart(Entity area, int eventId)

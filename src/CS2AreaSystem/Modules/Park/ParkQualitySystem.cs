@@ -72,13 +72,15 @@ namespace CS2AreaSystem.Modules.Park
                 int level = EntityManager.HasComponent<ManagedAreaProgress>(park.Area) ? ParkProgressionModel.NormalizeLevel(EntityManager.GetComponentData<ManagedAreaProgress>(park.Area).Level) : 1;
                 float budget = EntityManager.HasComponent<ManagedAreaSettings>(park.Area) ? EntityManager.GetComponentData<ManagedAreaSettings>(park.Area).BudgetMultiplier : ParkFinanceModel.DefaultBudget;
                 uint frame = runtime.SimulationFrame;
+                var eventEffects = ParkEventSystem.ReadEffects(World, EntityManager, park.Area, park.State == AreaLifecycleState.Active, frame);
                 snapshot.Quality = ParkQualityEvaluator.Evaluate(new ParkQualityContext {
                     AreaSquareMeters = area, Entrances = snapshot.EntranceCount, EntranceSpread = ParkQualityModel.ComputeEntranceSpread(positions, area),
                     EntrancePositions = positions.ToArray(),
                     Landscape = snapshot.Landscape, Facilities = snapshot.Facilities, Satisfaction = state.Satisfaction, TouristSatisfaction = state.TouristSatisfaction,
                     ActiveVisitors = snapshot.ActiveVisitors, Budget = budget, Level = level, AdmissionFee = state.AdmissionFee,
                     RecentTouristVisits = snapshot.RecentTouristVisitors.Sum(frame), IsPrimaryForAllMembers = primaryForAll,
-                    Active = park.State == AreaLifecycleState.Active, Policies = policyEffects.Read(park.Area) });
+                    Active = park.State == AreaLifecycleState.Active, Policies = policyEffects.Read(park.Area), Event = eventEffects });
+                snapshot.QualityEventEffects = eventEffects;
                 snapshot.Experience = snapshot.Quality.Experience;
                 snapshot.QualityFrame = frame;
                 snapshot.RecordTrends(frame);
