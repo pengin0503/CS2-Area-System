@@ -196,7 +196,8 @@ namespace CS2AreaSystem.Modules.Park
             {
                 if (EntityManager.Exists(park.Area) && EntityManager.HasComponent<ParkAreaState>(park.Area))
                     EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction, e.HasSatisfaction));
-            }, listeners.Items, error => failures.Report(Entity.Null, "Park.VisitListener", error, "Park visit listener failed"));
+            }, listeners.Items, error => failures.Report(Entity.Null, "Park.VisitListener", error, "Park visit listener failed"),
+            (park, e) => { e.Satisfaction = ParkEventSystem.ReadEffects(World, EntityManager, park.Area, park.State == AreaLifecycleState.Active, frame).AdjustSatisfaction(e.Satisfaction, e.HasSatisfaction); return e; });
             events.Clear();
             foreach (var park in parks)
                 if (runtime.Store.TryGet(park.StableId, out var snapshot)) snapshot.ActiveVisitors = tracker.ActiveCount(park.StableId);
@@ -270,10 +271,12 @@ namespace CS2AreaSystem.Modules.Park
     {
         public static void Dispatch(IReadOnlyList<ParkVisitEvent> events, IReadOnlyDictionary<ulong, ParkAreaRef> active, IReadOnlyList<ParkAreaRef> all,
             ParkRuntimeStore store, ParkVisitTracker tracker, uint frame, System.Action<ParkAreaRef, ParkVisitEvent> recordCompleted,
-            IReadOnlyList<IParkVisitListener> listeners, System.Action<System.Exception> report)
+            IReadOnlyList<IParkVisitListener> listeners, System.Action<System.Exception> report,
+            System.Func<ParkAreaRef, ParkVisitEvent, ParkVisitEvent> adjustCompleted = null)
         {
-            foreach (var e in events)
+            foreach (var source in events)
             {
+                var e = source;
                 if (!active.TryGetValue(e.ParkId, out var park))
                 {
                     if (e.Kind != ParkVisitEventKind.Completed) continue;
@@ -281,6 +284,8 @@ namespace CS2AreaSystem.Modules.Park
                     foreach (var p in all) if (p.StableId == e.ParkId) { park = p; found = true; break; }
                     if (!found || park.Area == Entity.Null) continue;
                 }
+                // Park event effects adjust a completed visit once, before statistics and every listener see it.
+                if (e.Kind == ParkVisitEventKind.Completed && adjustCompleted != null) e = adjustCompleted(park, e);
                 var snapshot = store.GetOrCreate(e.ParkId, park.Area);
                 if (e.Kind == ParkVisitEventKind.Started) ParkVisitRecorder.RecordOccupancy(snapshot, tracker.ActiveCount(e.ParkId));
                 else { ParkVisitRecorder.RecordRecent(snapshot, e.Tourist, frame); recordCompleted(park, e); }

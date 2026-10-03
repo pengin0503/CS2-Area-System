@@ -154,6 +154,8 @@ namespace CS2AreaSystem.Modules.Park
         public ParkSatisfactionState Satisfaction, TouristSatisfaction;
         // Park policies in effect for this Area; the default is the neutral baseline.
         public ParkPolicyEffects Policies;
+        // Park event effects in force (Phase 2 C5); null is neutral.
+        public ParkEventEffects? Event;
         // False when some member building's same-kind primary owner is another Park (exclusive stats go there).
         public bool IsPrimaryForAllMembers, Active;
     }
@@ -182,6 +184,7 @@ namespace CS2AreaSystem.Modules.Park
             var landscape = c.Landscape;
             bool hasLandscape = landscape != null && landscape.Available;
             var policies = c.Policies;
+            var events = c.Event ?? ParkEventEffects.Neutral;
             // Without a policy credit the scanned result is used as is.
             var scene = !hasLandscape ? default : policies.ScenicCredit == 1f ? landscape.Result : ParkLandscapeModel.ComputeLandscape(landscape.Inputs, policies.ScenicCredit);
             q.EffectiveLandscape = hasLandscape ? scene : (ParkLandscapeResult?)null;
@@ -198,7 +201,7 @@ namespace CS2AreaSystem.Modules.Park
             q.ComfortableCapacity = ParkQualityModel.ComputeComfortableCapacity(new ParkCapacityInputs {
                 AreaSquareMeters = c.AreaSquareMeters, LeisureEfficiencySum = facilities.LeisureEfficiencySum,
                 PathLength = hasLandscape ? landscape.Inputs.PathLength : 0f, AmenityCount = hasLandscape ? landscape.Inputs.Amenities.Count : 0 },
-                policies.CapacityShare);
+                events.ComposeCapacityShare(policies.CapacityShare));
             q.OccupancyRatio = q.ComfortableCapacity > 0 ? c.ActiveVisitors / q.ComfortableCapacity : 0f;
             q.Comfort = ParkMetric.Of(ParkQualityModel.ComputeComfort(c.ActiveVisitors, q.ComfortableCapacity));
             q.Result = ParkQualityModel.ComputeQuality(new ParkQualityInputs {
