@@ -122,4 +122,3 @@ public class ParkCoverageModifierSystemTests {
   Assert.That(save, Does.Contain("writer.RestoreTracked();"));
  }
 }
-
