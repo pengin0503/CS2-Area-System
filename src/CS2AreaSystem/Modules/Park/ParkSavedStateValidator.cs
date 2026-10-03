@@ -18,6 +18,17 @@ namespace CS2AreaSystem.Modules.Park
             Satisfaction("ParkAreaState.ResidentSatisfaction", state.ResidentSatisfaction, report);
             Satisfaction("ParkAreaState.TouristSatisfaction", state.TouristSatisfaction, report);
         }
+        // Phase 2 C5: counters are non-negative; a started event's interval is exactly one event duration. An unknown
+        // active id only warns: effects are neutral for it and it is cleared on the next event update.
+        public static void ValidateEvents(in ParkEventState state, AreaSavedStateReport report)
+        {
+            report.RequireNonNegative("ParkEventState.LifetimeEvents", state.LifetimeEvents);
+            report.RequireNonNegative("ParkEventState.LifetimeEventExpense", state.LifetimeEventExpense);
+            bool started = state.ActiveEventId != 0 || state.LifetimeEvents > 0;
+            if (started && unchecked(state.EndFrameExclusive - state.StartFrame) != ParkEventCatalog.DurationFrames)
+                report.Invalid("ParkEventState.EndFrameExclusive", state.EndFrameExclusive);
+            if (state.ActiveEventId != 0 && !ParkEventCatalog.IsKnown(state.ActiveEventId)) report.Warning("ParkEventState.ActiveEventId", state.ActiveEventId);
+        }
         // ParkSatisfactionState.Add keeps Mean in [0, 100] and Weight in [0, MaxWeight].
         private static void Satisfaction(string field, ParkSatisfactionState value, AreaSavedStateReport report)
         {
