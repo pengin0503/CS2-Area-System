@@ -43,6 +43,7 @@ namespace CS2AreaSystem
             var industrial = RegisterIndustrialSystems(updateSystem);
             RegisterIndustrialSupport(updateSystem, finance, industrial);
             RegisterParkEvents(updateSystem, finance, park);
+            RegisterParkCoverageModifier(updateSystem, park);
             RegisterLocalization();
             RegisterSettings();
             // After DefaultToolSystem in the same frame, so an accepted label click replaces the selection vanilla just made.
@@ -138,6 +139,22 @@ namespace CS2AreaSystem
                 events.Complete();
             }
             catch (System.Exception error) { events.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
+        }
+        // Phase 2 C6: the coverage writer runs directly after the native Park writer (same interval, so it inherits its
+        // offset) and its values are restored before the serializer. It ships disabled (ParkCoverageModifierGate); a
+        // registration failure disables only the modifier.
+        private static void RegisterParkCoverageModifier(UpdateSystem updateSystem, ModuleRegistration park)
+        {
+            if (!ModuleRegistration.Requires(park, "Park coverage modifier", message => Log.Error(message))) return;
+            var coverage = new ModuleRegistration("Park coverage modifier",
+                typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem), typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem));
+            try
+            {
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem, Game.Simulation.ParkAISystem>(SystemUpdatePhase.GameSimulation); coverage.Step();
+                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize); coverage.Step();
+                coverage.Complete();
+            }
+            catch (System.Exception error) { coverage.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
         // Industrial gameplay observes the city after Core (runtime state in ModificationEnd after membership/activation,
         // hourly observation and progression in GameSimulation), as a whole. A registration failure leaves Area Core, Park

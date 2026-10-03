@@ -39,6 +39,7 @@ namespace CS2AreaSystem.Modules.Park
             foreach(var key in new[]{"Status","Unknown","Partial","Complete","Reachable","Unattached","Disconnected"}) yield return P+"Connectivity."+key;
             foreach(var key in new[]{"Budget","Fee","Cost","Coverage","Maintenance","Value","Net","Tip"})yield return P+"Preview."+key;
             foreach (var key in EventKeys) yield return P + "Events." + key;
+            foreach (var key in CoverageKeys) yield return P + "Coverage." + key;
             foreach (var id in ParkEventCatalog.Ids) { yield return P + "Events.Name." + id; yield return P + "Events.Start." + id; }
             foreach (var outcome in Enum.GetNames(typeof(ParkEventRequestOutcome))) if (outcome != nameof(ParkEventRequestOutcome.Request)) yield return P + "Events.Blocked." + outcome;
         }
@@ -137,6 +138,7 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("lifetimeExpense", P + "LifetimeExpense", Money(s.LifetimeManagementExpense)));
             items.Add(Row("recentNet", P + "RecentNet", Money(income - expense), tooltip: P + "RecentNet.Tip"));
             items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "vanillaSeparate", LabelKey = P + "Note.VanillaSeparate" });
+            Coverage(items, model);
             Preview(items,model);
             return items;
         }
@@ -152,6 +154,14 @@ namespace CS2AreaSystem.Modules.Park
             Estimate("Maintenance",Number(estimate.Maintenance),estimate.MaintenanceAvailable);
             Estimate("Value",Number(estimate.ValueForMoney),estimate.ValueAvailable);
             Estimate("Net",MoneyAmount(estimate.EstimatedNet),estimate.NetAvailable);
+        }
+        private static readonly string[] CoverageKeys = { "Factor", "Factor.Tip", "Disabled", "Buildings" };
+        // Phase 2 C6: the factor this Park's budget would give its buildings' coverage, and whether it is applied at all.
+        private static void Coverage(List<AreaPanelItem> items, ParkPanelModel model)
+        {
+            items.Add(Row("coverage.factor", P + "Coverage.Factor", Percent(model.CoverageFactor), tooltip: P + "Coverage.Factor.Tip"));
+            if (model.CoverageActive) items.Add(Row("coverage.buildings", P + "Coverage.Buildings", Number(model.CoverageBuildings)));
+            else items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "coverage.disabled", LabelKey = P + "Coverage.Disabled" });
         }
         private static List<AreaPanelItem> Landscape(ParkPanelModel model)
         {

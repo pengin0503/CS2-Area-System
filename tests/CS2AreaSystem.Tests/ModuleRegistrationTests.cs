@@ -57,6 +57,9 @@ public class ModuleRegistrationTests {
         Assert.That(source, Does.Contain("ModuleRegistration.Requires(finance, \"Park events\""));
         Assert.That(source, Does.Contain("ModuleRegistration.Requires(park, \"Park events\""));
         Assert.That(source, Does.Contain("new ModuleRegistration(\"Park events\", typeof(CS2AreaSystem.Modules.Park.ParkEventSystem))"));
+        // The C6 coverage modifier needs Park gameplay (membership, budgets); a failure disables only the modifier and its save hook.
+        Assert.That(source, Does.Contain("ModuleRegistration.Requires(park, \"Park coverage modifier\""));
+        Assert.That(source, Does.Contain("new ModuleRegistration(\"Park coverage modifier\",\n                typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem), typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem))"));
     }
 }
 // #49: a non-native tool blocks only its Area type, the native tool restores it, and a new load forgets every block.

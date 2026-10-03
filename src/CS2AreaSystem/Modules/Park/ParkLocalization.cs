@@ -11,6 +11,11 @@ namespace CS2AreaSystem.Modules.Park
             Add("CS2AS.Tab.Finances", "Finances", "財政");
             Add("CS2AS.Tab.Landscape", "Landscape", "景観");
             Add("CS2AS.Tab.Events", "Events", "イベント");
+            Add(P + "Coverage.Factor", "Coverage operating factor", "サービス範囲の運営係数");
+            Add(P + "Coverage.Factor.Tip", "How strongly this Park's budget would scale the coverage capacity and strength of the park buildings it owns: 50% budget = 90%, 100% = 100%, 150% = 110% (Enhanced Maintenance raises the budget input; at most 110%). Coverage range is never changed. 100% while the Park is not active.",
+                "このパークの予算が、所有するパーク建物のサービス範囲の容量と強さをどれだけ変えるか：予算50%で90%、100%で100%、150%で110%（強化メンテナンスは予算側を引き上げます。最大110%）。範囲（距離）は変えません。パークが稼働中でないときは100%です。");
+            Add(P + "Coverage.Disabled", "Not applied yet: this modifier stays off until it has been verified in game.", "まだ適用されていません：ゲーム内での検証が済むまでこの補正は無効です。");
+            Add(P + "Coverage.Buildings", "Buildings with modified coverage", "範囲を補正中の建物");
             Add(P + "Events.Tip", "Park events are paid from city money as Area Management and change only this Park: during a Park Festival 15% of the comfortable visitor capacity is used by the festival, known visit satisfaction gets +5 and visit XP ×1.25. Vanilla attractiveness and where citizens go are not changed.",
                 "パークイベントは市の資金からエリア管理費として支払われ、このパークの中だけに作用します。パークフェスティバル中は快適に受け入れられる来園者数の15%をフェスティバルが使い、記録された来園満足度に+5、来園XPが1.25倍になります。バニラの魅力度や市民の行き先は変わりません。");
             Add(P + "Events.Unavailable", "Park events are unavailable (Area finance or Park gameplay failed to load). No event can be started and no event effect applies.",
