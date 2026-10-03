@@ -33,60 +33,60 @@
 
 **Files:** `IndustrialCompanyAssignmentActions.cs`, `IndustrialCompanyAssignmentActionTests.cs`.
 **Interfaces:** Existing `Record` and `TryApply` unchanged.
-- [ ] Import PR #86 Null-company regression only; verify both cases fail with zero rows.
-- [ ] Port only saved-claim exception and force invalid state.
-- [ ] Run assignment/manual ownership/panel tests, preserving exact cleanup and stale guards; commit #84.
+- [x] Import PR #86 Null-company regression only; verify both cases fail with zero rows.
+- [x] Port only saved-claim exception and force invalid state.
+- [x] Run assignment/manual ownership/panel tests, preserving exact cleanup and stale guards; commit #84.
 
 ### Task 2: #85 consumption-hour publication
 
 **Files:** `IndustrialObservationSystem.cs`, `scripts/test-offline-contracts.mjs`.
 **Interfaces:** `Consume(long currentHourBucket)` receives current OnUpdate bucket; aggregate cycle stamps unchanged.
-- [ ] Port PR #86 Native wiring regression; verify old cycle-hour publication fails.
-- [ ] Pass current bucket only to candidate publication.
-- [ ] Run wiring and ownership/observation focused tests; commit #85.
+- [x] Port PR #86 Native wiring regression; verify old cycle-hour publication fails.
+- [x] Pass current bucket only to candidate publication.
+- [x] Run wiring and ownership/observation focused tests; commit #85.
 
 ### Task 3: #91 delayed roster
 
 **Files:** `IndustrialSupportScheduling.cs`, `IndustrialSupportSystemTests.cs`.
 **Interfaces:** Existing `Decide` result becomes Stale for complete delayed roster.
-- [ ] Add complete-but-delayed regression expecting Stale and no receivers/request; observe RED.
-- [ ] Add Delayed to stale predicate.
-- [ ] Run all Industrial support tests; commit #91.
+- [x] Add complete-but-delayed regression expecting Stale and no receivers/request; observe RED.
+- [x] Add Delayed to stale predicate.
+- [x] Run all Industrial support tests; commit #91.
 
 ### Task 4: #92 current Festival cost
 
 **Files:** `ParkFinanceSystem.cs`, `ParkEventSystem.cs`, `ParkFinanceModel.cs`, Park finance/event tests.
 **Interfaces:** Shared live Park management calculation consumed by settlement and `StartInputs`; no money writes during reads.
-- [ ] Add budget/policy-change regressions after settlement before next settlement; expect current half-cost despite known stale snapshot. Verify RED.
-- [ ] Share current runtime management inputs and calculation between finance and event UI/action.
-- [ ] Run Park finance/event/policy tests; commit #92.
+- [x] Add budget/policy-change regressions after settlement before next settlement; expect current half-cost despite known stale snapshot. Verify RED.
+- [x] Share current runtime management inputs and calculation between finance and event UI/action.
+- [x] Run Park finance/event/policy tests; commit #92.
 
 ### Task 5: #93 settlement processing frame
 
 **Files:** `ParkEventSystem.cs`, Park event finance tests.
 **Interfaces:** Finance callback batch frame retains accounting identity; start uses current runtime simulation frame.
-- [ ] Add delayed settlement regression expecting full 262144-frame duration from completion and unchanged accounting frame; observe RED.
-- [ ] Record start at current simulation frame, keeping expense records tied to finance frame.
-- [ ] Run event finance/save tests; commit #93.
+- [x] Add delayed settlement regression expecting full 262144-frame duration from completion and unchanged accounting frame; observe RED.
+- [x] Record start at current simulation frame, keeping expense records tied to finance frame.
+- [x] Run event finance/save tests; commit #93.
 
 ### Task 6: #94 visit event frame
 
 **Files:** `ParkVisitModel.cs`, `ParkVisitSystem.cs`, `ParkProgressionSystem.cs`, event/visit tests.
 **Interfaces:** Runtime-only `ParkVisitEvent` observation/completion frame; both satisfaction and visit XP consume it.
-- [ ] Add Festival start/expiry between observation and dispatch regressions and tracker timestamp cases; verify RED.
-- [ ] Carry event frame through all tracker emission paths and effects, retaining historic Festival interval after expiration.
-- [ ] Run visit/progression/event focused tests; commit #94.
+- [x] Add Festival start/expiry between observation and dispatch regressions and tracker timestamp cases; verify RED.
+- [x] Carry event frame through all tracker emission paths and effects, retaining historic Festival interval after expiration.
+- [x] Run visit/progression/event focused tests; commit #94.
 
 ### Task 7: #95 readiness before toolbar publication
 
 **Files:** `AreaPrefabRegistrationSystem.cs`, Core prefab tests.
 **Interfaces:** Relationships prepared before AddPrefab; publication after `IsPrefabReady` succeeds.
-- [ ] Add registered-not-ready regression checking no publication/version bump; observe RED.
-- [ ] Move publish to readiness-gated path, preserving fallback registration.
-- [ ] Run prefab/toolbar/readiness tests; commit #95.
+- [x] Add registered-not-ready regression checking no publication/version bump; observe RED.
+- [x] Move publish to readiness-gated path, preserving fallback registration.
+- [x] Run prefab/toolbar/readiness tests; commit #95.
 
 ### Final gate
 
-- [ ] One fresh whole-branch review; Critical/Important findings only enter one RED→GREEN fix pass. Minor findings deferred.
-- [ ] Attempt requested dotnet test, Release API build, npm.cmd test/build, pwsh verify.ps1 -ApiCheck and git diff --check. Record exact results and any NUnitLite fallback.
-- [ ] Commit execution record; publish one PR with issue/commit/test mapping, leaving it unmerged.
+- [x] One fresh whole-branch review; Critical/Important findings only enter one RED→GREEN fix pass. Minor findings deferred.
+- [x] Attempt requested dotnet test, Release API build, npm.cmd test/build, pwsh verify.ps1 -ApiCheck and git diff --check. Record exact results and any NUnitLite fallback.
+- [x] Commit execution record and prepare one PR with issue/commit/test mapping; publish after the record commit and leave it unmerged.
