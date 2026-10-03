@@ -50,6 +50,22 @@ public class ParkEventFinanceTests {
   Assert.That(h.History.Single().SettledExpense, Is.EqualTo(500));
   Assert.That(h.Ledger.HasPending(9), Is.False);
  }
+ [Test] public void DelayedSettlementStartsAFullDayAtProcessingFrameAndKeepsFinanceFrame() {
+  var h = new Harness(); h.Request();
+  h.Finance.BeginApply(10_000);
+  h.Frame = 20_000;
+  h.Finance.CompleteApply(500, 0);
+  Assert.That((h.State.StartFrame, h.State.EndFrameExclusive), Is.EqualTo((20_000u, 282_144u)));
+  Assert.That(ParkEventModel.IsActive(h.State, 282_143), Is.True);
+  Assert.That(ParkEventModel.IsActive(h.State, 282_144), Is.False);
+  Assert.That(h.History.Single().StartFrame, Is.EqualTo(20_000));
+  Assert.That(h.State.LifetimeEventExpense, Is.EqualTo(500));
+  // The pure harness uses its live Frame. Pin the native callback to the same clock while accounting keeps batch identity.
+  var source = IndustrialSupportSourceGuardTests.Source("Modules/Park/ParkEventSystem.cs");
+  Assert.That(source.Contains("Record(payment, frame, runtime.SimulationFrame)"), Is.True,
+   "native completion must use processing frame for start, preserving its finance frame separately");
+  Assert.That(source.Contains("snapshot.RecentExpense.Add(accountingFrame, payment.Paid)"), Is.True);
+ }
  [Test] public void PartialPositiveSettlementStartsAndRecordsTheActualPaidCost() {
   var h = new Harness();
   h.Request();
@@ -167,7 +183,9 @@ public class ParkEventSystemSourceGuardTests {
   Assert.That(system, Does.Contain("ParkEventFinance.TryRequest("));
   Assert.That(system, Does.Contain("finance.EnqueueExpense(parkId, AreaFinanceKind.ParkEvent, amount)"));
   Assert.That(system, Does.Contain("Available = Enabled && finance.Started && runtime.Ready"));
-  Assert.That(system, Does.Contain("CostKnown = snapshot != null && snapshot.ManagementCostKnown"));
+  Assert.That(system, Does.Not.Contain("snapshot.ManagementCostKnown"), "a settled snapshot does not prove current budget/policy inputs");
+  Assert.That(system, Does.Contain("parkFinance.ReadManagementCost(area, snapshot, frame)"));
+  Assert.That(system, Does.Contain("CostKnown = estimate.Known, DailyManagementCost = estimate.CostPerDay"));
  }
  [Test] public void CompletionRecordsTheEventExpenseInParkRecentExpenseOnce() {
   var system = Source("Modules/Park/ParkEventSystem.cs");

@@ -10,6 +10,12 @@ namespace CS2AreaSystem.Modules.Park
         public float AreaSquareMeters, VisitorsPerDay;
         public int LandscapeObjects, ManagedFacilities;
     }
+    public readonly struct ParkManagementEstimate
+    {
+        public readonly bool Known;
+        public readonly float NeedPerDay, CostPerDay;
+        public ParkManagementEstimate(float need, float cost) { Known = true; NeedPerDay = need; CostPerDay = cost; }
+    }
     // The household-payable plan. The amount actually collected is what AreaFinanceHouseholdTransfer returns; it can be
     // lower only when the city balance is at its native upper bound.
     public struct ParkAdmissionPlan
@@ -81,6 +87,18 @@ namespace CS2AreaSystem.Modules.Park
         // 100% coverage funds the estimated need exactly, so every point of coverage is paid for.
         public static float ComputeManagementCostPerDay(float needPerDay, float budget, double fundingMultiplier) =>
             Math.Max(0, needPerDay) * ComputeManagementCoverage(budget, fundingMultiplier);
+        // Read-only estimate from the latest available runtime inputs, independent of the previous settlement.
+        // Both settlement and Festival UI/actions use this path; missing landscape/facilities keep the existing defaults.
+        public static ParkManagementEstimate ComputeLiveManagementCost(ParkRuntimeSnapshot snapshot, uint frame, float budget, ParkPolicyEffects effects)
+        {
+            if (snapshot == null) return default;
+            var landscape = snapshot.Landscape;
+            float need = ComputeManagementNeedPerDay(new ParkManagementInputs {
+                AreaSquareMeters = snapshot.AreaSquareMeters, VisitorsPerDay = snapshot.RecentVisitors.Sum(frame),
+                LandscapeObjects = landscape != null && landscape.Available ? landscape.Result.ObjectCount : 0,
+                ManagedFacilities = snapshot.Facilities?.RelevantFacilities ?? 0 });
+            return new ParkManagementEstimate(need, ComputeManagementCostPerDay(need, budget, effects.ManagementFundingMultiplier));
+        }
         private static double ValidMultiplier(double multiplier) =>
             double.IsNaN(multiplier) || double.IsInfinity(multiplier) || multiplier <= 0 ? 1.0 : multiplier;
         // Money for an interval of frames, with the shared Area rounding rule (floor, fraction carried).

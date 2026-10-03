@@ -78,7 +78,7 @@ public class ParkEventEffectTests {
   Assert.That(events, Does.Contain("if (system == null || !system.Enabled || !entities.Exists(area) || !entities.HasComponent<ParkEventState>(area)) return ParkEventEffects.Neutral;"));
   var quality = IndustrialSupportSourceGuardTests.Source("Modules/Park/ParkQualitySystem.cs");
   Assert.That(quality, Does.Contain("snapshot.QualityEventEffects = eventEffects;"));
-  Assert.That(IndustrialSupportSourceGuardTests.Source("Modules/Park/ParkVisitSystem.cs"), Does.Contain("ParkEventSystem.ReadEffects("));
+  Assert.That(IndustrialSupportSourceGuardTests.Source("Modules/Park/ParkVisitSystem.cs"), Does.Contain("ParkEventSystem.ReadVisitEffects("));
  }
  private sealed class Listener : IParkVisitListener {
   public readonly List<ParkVisitEvent> Completed = new();

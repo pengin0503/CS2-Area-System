@@ -77,4 +77,18 @@ public class IndustrialCompanyAssignmentActionTests {
   set.Record(E(200),E(101),default,"Invalid",true,true);
   Assert.That(set.Rows,Has.Count.EqualTo(64));Assert.That(set.Rows.Any(c=>c.Company==E(200)&&c.Invalid&&c.HasClaimHere),Is.True);
  }
+ [TestCase(false)] [TestCase(true)] public void NullCompanySavedClaimIsVisibleRemovableAndNeverAssignable(bool missingBuilding) {
+  var building=missingBuilding?Entity.Null:E(100);var store=new Store();store.Claims.Add(new(7,Entity.Null,building));store.Claims.Add(new(2,Entity.Null,building));
+  var index=new IndustrialCompanyAssignmentIndex();index.Rebuild(store.Claims);var set=new IndustrialCompanyCandidateSet();set.Begin(7,1,5,index.Revision);
+  set.Record(Entity.Null,building,default,null);Assert.That(set.Rows,Is.Empty,"ordinary Null observations are not candidates");
+  set.Record(Entity.Null,building,default,null,hasClaimHere:true);
+  Assert.That(set.Rows,Has.Count.EqualTo(1),"saved missing reference must remain cleanable");var row=set.Rows.Single();
+  Assert.That(row.Invalid,Is.True);Assert.That(row.CanAssign(7),Is.False);
+  IndustrialCompanyLive Missing(Entity company)=>new(company,Entity.Null,default);
+  Assert.That(IndustrialCompanyAssignmentActions.TryApply("assignCompanyHere",row.Key,7,set,index,Missing,Membership(),store),Is.False);
+  Assert.That(IndustrialCompanyAssignmentActions.TryApply("clearCompanyAssignment",row.Key,2,set,index,Missing,Membership(),store),Is.False);
+  Assert.That(IndustrialCompanyAssignmentActions.TryApply("clearCompanyAssignment",row.Key,7,set,index,Missing,Membership(),store),Is.True);
+  Assert.That(store.HasClaim(7,Entity.Null,building),Is.False);Assert.That(store.HasClaim(2,Entity.Null,building),Is.True);Assert.That(store.Claims.Count(c=>c.Company!=Entity.Null),Is.EqualTo(2));
+ }
+
 }

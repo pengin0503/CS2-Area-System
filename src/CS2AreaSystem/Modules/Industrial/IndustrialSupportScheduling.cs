@@ -40,7 +40,7 @@ namespace CS2AreaSystem.Modules.Industrial
             var roster = inputs.Roster;
             if (roster == null) return new IndustrialSupportScheduleDecision(IndustrialSupportScheduleOutcome.NoEvidence);
             if (!roster.SupportRosterComplete || roster.FailedReads > 0) return new IndustrialSupportScheduleDecision(IndustrialSupportScheduleOutcome.Partial);
-            if (inputs.SnapshotPaused || !roster.Active || roster.MembershipToken != inputs.MembershipToken || roster.StructureToken != inputs.StructureToken)
+            if (roster.Delayed || inputs.SnapshotPaused || !roster.Active || roster.MembershipToken != inputs.MembershipToken || roster.StructureToken != inputs.StructureToken)
                 return new IndustrialSupportScheduleDecision(IndustrialSupportScheduleOutcome.Stale);
             if (roster.SupportRoster.Count == 0) return new IndustrialSupportScheduleDecision(IndustrialSupportScheduleOutcome.NoReceivers);
             foreach (var company in roster.SupportRoster)

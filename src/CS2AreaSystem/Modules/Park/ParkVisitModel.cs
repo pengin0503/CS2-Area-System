@@ -15,6 +15,8 @@ namespace CS2AreaSystem.Modules.Park
         public ParkVisitEventKind Kind;
         public Entity Citizen;
         public ulong ParkId;
+        // Runtime-only frame at which this start/completion was observed; deferred dispatch must not retime effects.
+        public uint EventFrame;
         public bool Tourist;
         public bool FeeSatisfied;
         public float Satisfaction;
@@ -91,13 +93,13 @@ namespace CS2AreaSystem.Modules.Park
         {
             sessions.TryGetValue(citizen, out var session);
             if (parkId == 0) return; // not at a relevant building of an Active Park: an existing session only ages
-            if (session != null && session.ParkId != parkId) { Complete(citizen, session, events); sessions.Remove(citizen); session = null; }
+            if (session != null && session.ParkId != parkId) { Complete(citizen, session, frame, events); sessions.Remove(citizen); session = null; }
             if (session == null)
             {
                 session = new Session { ParkId = parkId, Tourist = tourist, FeeSatisfied = seeding && frame < seedUntil };
                 sessions.Add(citizen, session);
                 active[parkId] = ActiveCount(parkId) + 1;
-                events.Add(new ParkVisitEvent { Kind = ParkVisitEventKind.Started, Citizen = citizen, ParkId = parkId, Tourist = tourist, FeeSatisfied = session.FeeSatisfied });
+                events.Add(new ParkVisitEvent { Kind = ParkVisitEventKind.Started, Citizen = citizen, ParkId = parkId, EventFrame = frame, Tourist = tourist, FeeSatisfied = session.FeeSatisfied });
             }
             session.Tourist = tourist;
             session.LastSeen = frame;
@@ -109,7 +111,7 @@ namespace CS2AreaSystem.Modules.Park
             expired.Clear();
             foreach (var pair in sessions)
                 if (frame > pair.Value.LastSeen && frame - pair.Value.LastSeen > graceFrames) expired.Add(pair.Key);
-            foreach (var citizen in expired) { Complete(citizen, sessions[citizen], events); sessions.Remove(citizen); }
+            foreach (var citizen in expired) { Complete(citizen, sessions[citizen], frame, events); sessions.Remove(citizen); }
         }
         // Admission is attempted at most once per session, whatever the outcome of the transaction.
         public bool TryBeginAdmission(Entity citizen, ulong parkId)
@@ -118,13 +120,13 @@ namespace CS2AreaSystem.Modules.Park
             session.FeeSatisfied = true;
             return true;
         }
-        private void Complete(Entity citizen, Session session, List<ParkVisitEvent> events)
+        private void Complete(Entity citizen, Session session, uint frame, List<ParkVisitEvent> events)
         {
             int count = ActiveCount(session.ParkId) - 1;
             if (count > 0) active[session.ParkId] = count; else active.Remove(session.ParkId);
             bool sampled = session.ExperienceCount > 0;
             float satisfaction = sampled ? (float)(session.ExperienceSum / session.ExperienceCount) : ParkSatisfactionState.Prior;
-            events.Add(new ParkVisitEvent { Kind = ParkVisitEventKind.Completed, Citizen = citizen, ParkId = session.ParkId, Tourist = session.Tourist,
+            events.Add(new ParkVisitEvent { Kind = ParkVisitEventKind.Completed, Citizen = citizen, ParkId = session.ParkId, EventFrame = frame, Tourist = session.Tourist,
                 FeeSatisfied = session.FeeSatisfied, Satisfaction = satisfaction, HasSatisfaction = sampled });
         }
     }

@@ -197,7 +197,7 @@ namespace CS2AreaSystem.Modules.Park
                 if (EntityManager.Exists(park.Area) && EntityManager.HasComponent<ParkAreaState>(park.Area))
                     EntityManager.SetComponentData(park.Area, ParkVisitModel.RecordCompletedVisit(EntityManager.GetComponentData<ParkAreaState>(park.Area), e.Tourist, e.Satisfaction, e.HasSatisfaction));
             }, listeners.Items, error => failures.Report(Entity.Null, "Park.VisitListener", error, "Park visit listener failed"),
-            (park, e) => { e.Satisfaction = ParkEventSystem.ReadEffects(World, EntityManager, park.Area, park.State == AreaLifecycleState.Active, frame).AdjustSatisfaction(e.Satisfaction, e.HasSatisfaction); return e; });
+            (park, e) => { e.Satisfaction = ParkEventSystem.ReadVisitEffects(World, EntityManager, park.Area, park.State == AreaLifecycleState.Active, e.EventFrame).AdjustSatisfaction(e.Satisfaction, e.HasSatisfaction); return e; });
             events.Clear();
             foreach (var park in parks)
                 if (runtime.Store.TryGet(park.StableId, out var snapshot)) snapshot.ActiveVisitors = tracker.ActiveCount(park.StableId);

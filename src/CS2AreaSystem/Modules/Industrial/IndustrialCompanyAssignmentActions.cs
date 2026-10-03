@@ -32,7 +32,12 @@ namespace CS2AreaSystem.Modules.Industrial
         public void Clear() { rows.Clear(); generation = AreaMembershipIndex.NextRevision(generation); hour = long.MinValue; }
         public void Record(Entity company, Entity building, IndustrialCompanyOwnerResolution owner, string label, bool hasClaimHere = false, bool invalid = false)
         {
-            if (company == Entity.Null) return;
+            if (company == Entity.Null)
+            {
+                if (!hasClaimHere) return;
+                // Saved missing references remain removable; they can never become assignable candidates.
+                invalid = true;
+            }
             IndustrialCompanyCandidate row = null;
             foreach (var existing in rows) if (existing.Company == company && existing.Building == building) { row = existing; break; }
             if (row == null)

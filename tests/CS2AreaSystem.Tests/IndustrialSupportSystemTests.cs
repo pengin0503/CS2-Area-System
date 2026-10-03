@@ -72,6 +72,18 @@ public class IndustrialSupportSystemTests {
   Assert.That(decision.PerCompany, Is.EqualTo(1000));
   Assert.That(decision.Requested, Is.EqualTo(3000));
  }
+ [Test] public void CompleteButDelayedRosterIsStaleAndCannotScheduleSupport() {
+  var roster = Roster(1, 2); roster.Delayed = true;
+  Assert.That(roster.SupportRosterComplete, Is.True);
+  var inputs = Inputs(roster);
+  var decision = IndustrialSupportScheduling.Decide(inputs);
+  Assert.That(decision.Outcome, Is.EqualTo(IndustrialSupportScheduleOutcome.Stale));
+  Assert.That(decision.Requested, Is.Zero); Assert.That(decision.Receivers, Is.Empty);
+  bool enqueued = false; var ledger = new IndustrialSupportLedger(); var state = inputs.State;
+  Assert.That(IndustrialSupportScheduling.TryRequest(decision, 1, 9, E(9), 5, _ => { enqueued = true; return true; }, ref state, ledger), Is.False);
+  Assert.That(enqueued, Is.False); Assert.That(ledger.Count, Is.Zero);
+  Assert.That(IndustrialSupportModel.AlreadyScheduled(state, 5), Is.False);
+ }
  [Test] public void NothingIsQueuedWithoutAPositiveSettingAnActiveAreaOrBeforeTheNextDay() {
   Assert.That(IndustrialSupportScheduling.Decide(Inputs(Roster(1), setting: 0)).Outcome, Is.EqualTo(IndustrialSupportScheduleOutcome.Disabled));
   Assert.That(IndustrialSupportScheduling.Decide(Inputs(Roster(1), active: false)).Outcome, Is.EqualTo(IndustrialSupportScheduleOutcome.Inactive));

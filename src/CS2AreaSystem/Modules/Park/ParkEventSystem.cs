@@ -17,6 +17,7 @@ namespace CS2AreaSystem.Modules.Park
         public const uint UpdateFrames = ParkQualitySystem.UpdateFrames;
         private ParkRuntimeSystem runtime;
         private AreaFinanceSystem finance;
+        private ParkFinanceSystem parkFinance;
         private ParkQualitySystem quality;
         private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         private readonly ParkEventLedger ledger = new ParkEventLedger();
@@ -31,6 +32,7 @@ namespace CS2AreaSystem.Modules.Park
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
             finance = World.GetOrCreateSystemManaged<AreaFinanceSystem>();
+            parkFinance = World.GetOrCreateSystemManaged<ParkFinanceSystem>();
             quality = World.GetOrCreateSystemManaged<ParkQualitySystem>();
             failures = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>().Failures;
             finance.AddRequestListener(this);
@@ -78,6 +80,23 @@ namespace CS2AreaSystem.Modules.Park
             if (system == null || !system.Enabled || !entities.Exists(area) || !entities.HasComponent<ParkEventState>(area)) return ParkEventEffects.Neutral;
             return ParkEventModel.Effects(entities.GetComponentData<ParkEventState>(area), frame, parkActive);
         }
+        // Completed visits use their event frame, including an interval that expired before dispatch. No save changes:
+        // the existing bounded history already holds the settled Festival intervals.
+        internal static ParkEventEffects ReadVisitEffects(World world, EntityManager entities, Entity area, bool parkActive, uint frame)
+        {
+            var current = ReadEffects(world, entities, area, parkActive, frame);
+            if (!current.IsNeutral || !parkActive) return current;
+            var system = world?.GetExistingSystemManaged<ParkEventSystem>();
+            if (system == null || !system.Enabled || !entities.Exists(area) || !entities.HasComponent<ParkEventState>(area) ||
+                !entities.HasBuffer<ParkEventHistoryEntry>(area)) return ParkEventEffects.Neutral;
+            var entries = entities.GetBuffer<ParkEventHistoryEntry>(area, true);
+            for (int i = entries.Length - 1; i >= 0; i--)
+            {
+                var effects = ParkEventModel.HistoricalEffects(entries[i], frame, parkActive);
+                if (!effects.IsNeutral) return effects;
+            }
+            return ParkEventEffects.Neutral;
+        }
         // Panel action (main thread, after Core validated the stable ID and live selection).
         internal ParkEventRequestOutcome RequestStart(Entity area, int eventId)
         {
@@ -97,26 +116,28 @@ namespace CS2AreaSystem.Modules.Park
             parkId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
             bool hasState = EntityManager.HasComponent<ParkEventState>(area);
             runtime.Store.TryGet(parkId, out var snapshot);
+            uint frame = runtime.SimulationFrame;
+            var estimate = parkFinance.ReadManagementCost(area, snapshot, frame);
             return new ParkEventRequestInputs {
                 Available = Enabled && finance.Started && runtime.Ready, ParkActive = managed.State == AreaLifecycleState.Active, HasState = hasState,
-                State = hasState ? EntityManager.GetComponentData<ParkEventState>(area) : default, Frame = runtime.SimulationFrame, EventId = eventId,
+                State = hasState ? EntityManager.GetComponentData<ParkEventState>(area) : default, Frame = frame, EventId = eventId,
                 HasPending = ledger.HasPending(parkId),
-                CostKnown = snapshot != null && snapshot.ManagementCostKnown, DailyManagementCost = snapshot?.ManagementCostPerDay ?? double.NaN };
+                CostKnown = estimate.Known, DailyManagementCost = estimate.CostPerDay };
         }
         // Called from AreaFinanceSystem on the main thread, once per request batch (also zero/aborted/cancelled ones).
         public void OnAreaFinanceCompleted(AreaFinanceBatch requested, AreaFinanceBatch settled, uint frame)
         {
             paid.Clear();
             ParkEventFinance.OnCompleted(ledger, finance.LoadGeneration, requested, settled, paid);
-            foreach (var payment in paid) Record(payment, frame);
+            foreach (var payment in paid) Record(payment, frame, runtime.SimulationFrame);
             paid.Clear();
         }
         // One paid start: starts a still-eligible Park or only accounts the expense; one failure never skips the others.
-        private void Record(in ParkEventSettlement payment, uint frame)
+        private void Record(in ParkEventSettlement payment, uint accountingFrame, uint frame)
         {
             try
             {
-                if (runtime.Store.TryGet(payment.AreaId, out var snapshot)) snapshot.RecentExpense.Add(frame, payment.Paid);
+                if (runtime.Store.TryGet(payment.AreaId, out var snapshot)) snapshot.RecentExpense.Add(accountingFrame, payment.Paid);
                 var area = payment.Area;
                 bool exists = EntityManager.Exists(area) && !EntityManager.HasComponent<Game.Common.Deleted>(area) &&
                     EntityManager.HasComponent<ManagedAreaStableId>(area) && EntityManager.GetComponentData<ManagedAreaStableId>(area).Value == payment.AreaId;
