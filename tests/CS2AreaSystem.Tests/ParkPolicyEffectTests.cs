@@ -14,7 +14,7 @@ public class ParkPolicyEffectTests {
   AreaSquareMeters = 10_000, PathLength = 300, UnknownCount = 4,
   Vegetation = Support.LandscapeInputs.Balanced(30, 6), Amenities = Support.LandscapeInputs.Balanced(5, 2),
   Decoration = Support.LandscapeInputs.Balanced(4, 2), Lighting = Support.LandscapeInputs.Balanced(5, 1) };
- private static ParkQualityContext Context(ParkPolicyEffects policies, int fee = 20, int visitors = 30) {
+ internal static ParkQualityContext Context(ParkPolicyEffects policies, int fee = 20, int visitors = 30) {
   var inputs = Landscape();
   return new ParkQualityContext {
    AreaSquareMeters = 10_000, Entrances = 2, EntranceSpread = 0.5f, Budget = 1f, Level = 4, AdmissionFee = fee, ActiveVisitors = visitors,

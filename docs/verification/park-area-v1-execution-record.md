@@ -63,3 +63,26 @@ Branch `claude/pre-tourism-wave-a1-a5-l5pses`, base `c04ebf4cf586b4d46532662000d
 This update supersedes the historical Park entrance-only activation and runtime-only trend assumptions above. Park now requires Park Maintenance Headquarters plus dedicated Path crossing or a registered explicit Entrance. Old leisure Entrance links remain invalid/removable. A6 adds read-only pedestrian connectivity; A7 adds transient budget/fee previews; B1 integrates registered asset semantics into anchors, visits and Quality; C1 persists 168 hourly buckets and seeds the latest 24 distinct hours after load.
 
 Final automated evidence and review decisions are in [the Foundation + Phase 1 execution record](foundation-phase1-execution-record.md). Runtime and official Unity postprocessing/deployment remain **NOT RUN**; use cases F02–F07 and P01–P08 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md). The original v1/Wave A records above describe their dated revisions rather than current prerequisites.
+
+## Phase 2 C5 Park festival — 2026-10-03
+
+Branch `claude/phase2-c5-se4lwg`, stacked on the verified C4 head `c59f063` (PR #87). Plan: `docs/superpowers/plans/2026-10-02-phase2-park-events-implementation.md`.
+
+Adds one internal Park event, the Park festival, started from a new **Events** tab in the Park panel:
+
+- Cost: half a day of the Park's current management cost (rounded, minimum ¢1), charged once through Area Finance as `AreaFinanceKind.ParkEvent` (Area management account). Only one request per Park can be pending; the festival starts only when the payment settles, and starts at the amount actually paid. A zero or cancelled settlement clears the request without starting anything.
+- Duration: one in-game day (262,144 frames). Saved in `ParkEventState` (schema 1) with a 16-entry history buffer; the saved end frame is never extended or replayed after load.
+- Effects while the Park is Active: comfortable-capacity share ×0.85, completed-visit satisfaction +5 (clamped), visit XP ×1.25 (composed with policy XP). A suspended Park keeps the calendar running but gets neutral effects. No vanilla attraction, leisure, pathfinding or citizen data is written.
+- The module registers only when Area Finance and Park gameplay registered; a failure disables it and its effects.
+
+Commits after `c59f063`: `4440978` events model/serialization, `06cca7a` finance settlement, `961a2b9` effects, `dea9cbb` panel, `be602dd` warning-count fix, `ff750be` review fixes, then this record.
+
+Automated verification (final, after the review fixes):
+
+- `pwsh -NoProfile -File scripts/verify.ps1 -ApiCheck`: exit 0 — NUnit 1197/1197, Vitest 113/113, source guards and offline contracts.
+- `dotnet build src/CS2AreaSystem/CS2AreaSystem.csproj -p:AreaApiCheck=true -c Release`: 0 warnings / 0 errors.
+- `node scripts/test-offline-contracts.mjs`: passed. `git diff --check`: clean.
+
+Final whole-branch review (fresh reviewer): no Critical/Important findings as labelled. Two Minor findings were re-graded and fixed test-first in `ff750be`: a suspended Park now still shows its outstanding festival payment, and a started festival recomputes Park Quality at once. Deferred minors: the "unavailable" warning can show for a brand-new Park until its event state is added on the next ModificationEnd; the XP tooltip does not mention that the +5 satisfaction also raises visit XP; the satisfaction adjustment is outside the per-listener `try`; a history write failure after the state write would leave a festival without a history row; the panel's start decision does not check quarantine (the action does).
+
+Runtime: **NOT RUN.** In-game checks C501–C507 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md) have not been performed.

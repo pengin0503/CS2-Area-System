@@ -76,6 +76,9 @@ namespace CS2AreaSystem.Modules.Park
                 if (!EntityManager.HasComponent<ParkAreaState>(park.Area)) EntityManager.AddComponentData(park.Area, ParkAreaState.CreateDefault());
                 if (!EntityManager.HasComponent<ManagedAreaProgress>(park.Area)) EntityManager.AddComponentData(park.Area, ParkStateDefaults.Progress());
                 if (!EntityManager.HasComponent<ManagedAreaSettings>(park.Area)) EntityManager.AddComponentData(park.Area, ParkStateDefaults.Settings());
+                // Phase 2 C5: neutral event state and empty history (effects stay neutral if the event module is unavailable).
+                if (!EntityManager.HasComponent<ParkEventState>(park.Area)) EntityManager.AddComponentData(park.Area, ParkEventState.CreateDefault());
+                if (!EntityManager.HasBuffer<ParkEventHistoryEntry>(park.Area)) EntityManager.AddBuffer<ParkEventHistoryEntry>(park.Area);
             }
         }
         public AreaMembershipIndex Membership => World.GetOrCreateSystemManaged<AreaMembershipSystem>().Index;

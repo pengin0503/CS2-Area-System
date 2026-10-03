@@ -63,11 +63,12 @@ public class AreaFinanceModelTests {
   Assert.That(AreaFinanceModel.SaturatingAdd(7, 8), Is.EqualTo(15));
  }
  [Test] public void KindsHaveOneFixedDirectionAndBudgetGroup() {
-  Assert.That(Enum.GetNames(typeof(AreaFinanceKind)), Is.EqualTo(new[] { "PolicyUpkeep", "ParkManagement", "ParkAdmission", "IndustrialSupport" }));
-  // Existing numeric values are persisted nowhere but stay fixed; 4 is reserved for the C5 Park event expense.
-  Assert.That(new[] { (byte)AreaFinanceKind.PolicyUpkeep, (byte)AreaFinanceKind.ParkManagement, (byte)AreaFinanceKind.ParkAdmission, (byte)AreaFinanceKind.IndustrialSupport },
-   Is.EqualTo(new byte[] { 0, 1, 2, 3 }));
-  Assert.That(Enum.IsDefined(typeof(AreaFinanceKind), (byte)4), Is.False);
+  Assert.That(Enum.GetNames(typeof(AreaFinanceKind)), Is.EqualTo(new[] { "PolicyUpkeep", "ParkManagement", "ParkAdmission", "IndustrialSupport", "ParkEvent" }));
+  // Existing numeric values are persisted nowhere but stay fixed.
+  Assert.That(new[] { (byte)AreaFinanceKind.PolicyUpkeep, (byte)AreaFinanceKind.ParkManagement, (byte)AreaFinanceKind.ParkAdmission, (byte)AreaFinanceKind.IndustrialSupport, (byte)AreaFinanceKind.ParkEvent },
+   Is.EqualTo(new byte[] { 0, 1, 2, 3, 4 }));
+  Assert.That(AreaFinanceKinds.IsExpense(AreaFinanceKind.ParkEvent), Is.True);
+  Assert.That(AreaFinanceKinds.IsIncome(AreaFinanceKind.ParkEvent), Is.False);
   Assert.That(Enum.GetUnderlyingType(typeof(AreaFinanceKind)), Is.EqualTo(typeof(byte)));
   Assert.That(AreaFinanceKinds.IsExpense(AreaFinanceKind.PolicyUpkeep), Is.True);
   Assert.That(AreaFinanceKinds.IsExpense(AreaFinanceKind.ParkManagement), Is.True);

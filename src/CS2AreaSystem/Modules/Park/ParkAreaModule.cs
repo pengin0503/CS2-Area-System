@@ -12,6 +12,7 @@ namespace CS2AreaSystem.Modules.Park
         public void ValidateSavedState(Entity area, EntityManager entities, Core.Persistence.AreaSavedStateReport report)
         {
             if (entities.HasComponent<ParkAreaState>(area)) ParkSavedStateValidator.Validate(entities.GetComponentData<ParkAreaState>(area), report);
+            if (entities.HasComponent<ParkEventState>(area)) ParkSavedStateValidator.ValidateEvents(entities.GetComponentData<ParkEventState>(area), report);
         }
         private readonly Func<Entity, EntityManager, ParkFacilityTraits> readTraits;
         private readonly Func<Entity, AreaActivationContext, ParkEntranceEvidence> readEntrances;
