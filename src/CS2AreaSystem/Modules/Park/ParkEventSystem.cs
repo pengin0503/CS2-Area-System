@@ -80,6 +80,23 @@ namespace CS2AreaSystem.Modules.Park
             if (system == null || !system.Enabled || !entities.Exists(area) || !entities.HasComponent<ParkEventState>(area)) return ParkEventEffects.Neutral;
             return ParkEventModel.Effects(entities.GetComponentData<ParkEventState>(area), frame, parkActive);
         }
+        // Completed visits use their event frame, including an interval that expired before dispatch. No save changes:
+        // the existing bounded history already holds the settled Festival intervals.
+        internal static ParkEventEffects ReadVisitEffects(World world, EntityManager entities, Entity area, bool parkActive, uint frame)
+        {
+            var current = ReadEffects(world, entities, area, parkActive, frame);
+            if (!current.IsNeutral || !parkActive) return current;
+            var system = world?.GetExistingSystemManaged<ParkEventSystem>();
+            if (system == null || !system.Enabled || !entities.Exists(area) || !entities.HasComponent<ParkEventState>(area) ||
+                !entities.HasBuffer<ParkEventHistoryEntry>(area)) return ParkEventEffects.Neutral;
+            var entries = entities.GetBuffer<ParkEventHistoryEntry>(area, true);
+            for (int i = entries.Length - 1; i >= 0; i--)
+            {
+                var effects = ParkEventModel.HistoricalEffects(entries[i], frame, parkActive);
+                if (!effects.IsNeutral) return effects;
+            }
+            return ParkEventEffects.Neutral;
+        }
         // Panel action (main thread, after Core validated the stable ID and live selection).
         internal ParkEventRequestOutcome RequestStart(Entity area, int eventId)
         {
