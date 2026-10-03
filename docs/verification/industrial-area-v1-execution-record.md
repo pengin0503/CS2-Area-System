@@ -136,3 +136,59 @@ User requested remaining B2 work. Automated PR #83 review reported two P2 issues
 - Assignment invalidation was global: `AssignmentChangeLeavesUnrelatedCycleAndCachedMembersUntouched` reproduced unrelated cycle ID changing 2 → 4. Added runtime-only per-Area assignment revisions and effective-owner deltas; compare old/new claims without clearing the index first. Only former/new resolved owners lose baselines/coverage and restart; add/remove uses the live geometric fallback, including moved/ineligible/deleted companies. A losing duplicate removal or unchanged rebuild leaves generations intact. Scoped store invalidation preserves unrelated flow coverage and progression endpoint. Regression/API contracts were RED before implementation; assignment/manual/runtime/performance/observation/action/progression focused checks **97/97 PASS**. Review: `discussion_r4166676432`.
 - Follow-up Release API build **PASS**, 0 warnings/errors (includes production UI webpack build); offline contracts, source guards and guard regression checks **PASS**. `git diff --check` **PASS**. Added source guards for per-Area generations and scoped snapshot invalidation. No additional whole-world query, Core ownership change, UI feature, economy/path/tax/resource-enum change or full-suite rerun.
 - Ruling: keep the global assignment revision for stale UI key rejection, but use per-Area revisions for metrics/cycle invalidation. Native refresh supplies the current live fallback owner over changed explicit claims only. Risk: live fallback/ownership churn behavior still needs the B201/B206 game checks, **NOT RUN**.
+
+## Phase 2 C4 execution record — 2026-10-03
+
+The execution-time latest `main` was `75e03c2`; this is the source of truth. The native branch is `claude/phase2-c4-se4lwg`.
+- Plan: `2026-10-02-phase2-industrial-subsidies-implementation.md`, spec §C4 plus the 2026-10-03 clarifications. Followed with Superpowers executing-plans, inline, with one fresh-context whole-branch reviewer at the end.
+- Scope: C4 only. B2 and its PR #83 fixes are kept unchanged. C5, C6, Phase 3, dedicated HQ/Gate assets and Tourism are excluded.
+- Game API: every 1.6.2f1 member used was read in the supplied `CS2-All-Managed-1.6.2f1-fix.zip` decompile, not guessed. These are `EconomyUtils.AddResources`/`GetResources` and the `PayWageSystem.PayJob` company-money pattern; see `area-finance-contracts.md`.
+
+### Task evidence
+
+| Task | Commit | Evidence |
+| --- | --- | --- |
+| 0 Completion contract | `46d1443` | RED: missing request listener. GREEN: `AreaFinanceCompletionTests` covers zero, abort, partial mixed kind, once only, isolation, reset cancel, and preload record before reset. |
+| 1 State, kind, allocation | `2779c8a` | `AreaFinanceKind.IndustrialSupport = 3` (4 reserved for C5); `IndustrialSupportState` schema 1; equal split with remainders to the earliest receivers, capped per company. The fixed-kind and budget guards were updated. |
+| 2 Daily scheduling | `ae15654` | The complete roster comes from the bounded observation path (no new query). Partial, stale or inactive Areas and outstanding requests schedule nothing. The day is saved only after the enqueue is accepted. Saved-state validation added. |
+| 3 Credit and save boundary | `02ac064` | The settled amount is credited after a live B2 revalidation. `IndustrialSupportCreditJob` is the only `AddResources(Resource.Money)` call, and the offline guard was narrowed to it. Credit is measured from the actual increase. The save flush runs after `AreaFinanceSaveSystem`. NUnit 1109/1109. |
+| 4 UI and verification | `df581b8` | Support tab: a 0–5,000 / 250-step slider routed through the enabled `IndustrialSupportSystem`, plus receiver, request, stage and lifetime rows in en-US and ja-JP. Offline guards whitelist exactly one support slider/action. UI fixtures were regenerated (Park fixture: new localization keys only). |
+| Docs | `7c08aa5` | `area-finance-contracts.md`: completion contract, company-money path, preload order. |
+| Review fixes | `40b0ce2` | Found by the fresh reviewer; each fix went RED → GREEN. |
+
+The review fixes in `40b0ce2`:
+- Scheduling waits for `AreaFinanceSystem.Started`, so a save right after load cannot store a day it never paid.
+- A credit job that was already scheduled when a later exception hit is completed and recorded.
+- A saved state with settled above requested is invalid.
+
+### Final verification (head `40b0ce2`)
+
+Tools: .NET SDK 8.0.131, PowerShell 7.4.6, Node 22.22.0, and the supplied 1.6.2f1 managed and toolchain references.
+
+| Command | Result |
+| --- | --- |
+| `pwsh -NoProfile -File scripts/verify.ps1 -ApiCheck` | **PASS**, exit 0. Source, policy and target guards; offline contracts; NUnit **1129/1129**; Vitest **110/110**; UI build. The six existing test-side CS8632 warnings are unchanged. |
+| `dotnet build src/CS2AreaSystem/CS2AreaSystem.csproj -p:AreaApiCheck=true -c Release` | **PASS**, exit 0, 0 warnings / 0 errors. |
+| `node scripts/test-offline-contracts.mjs` | **PASS**. Negative checks failed as expected for: a second `AddResources(Resource.Money)` writer, the support setter without `Enabled`, and the facade without routing. |
+| `git diff --check 75e03c2..HEAD` | **PASS**. |
+
+### Runtime
+
+The following are **NOT RUN**:
+- In-game cases C401–C407 (`scripts/runtime-smoke-checklist.md`);
+- official ModPostProcessor/deployment;
+- a real save/load;
+- live frame profiling.
+
+API compilation and unit tests do not show that the mod is ready to play.
+
+### Rulings and limits
+
+- **A roster entry no longer owned makes the whole roster Stale.** Payment waits for the next complete cycle the same day.
+- **The setting snaps to the 250 step,** with midpoints rounding away from zero.
+- **The setting write lives in `IndustrialSupportSystem.TrySetPerCompany`,** so the facade itself never writes.
+- **Failures are not retried.** A credit job that fails to schedule is recorded as fully unallocated. Preload drops settled but uncredited old-city work. Neither case is retried.
+- **At the native lower money bound, the batch's queue order decides which Area/kind is shortened.** The accounting remains exact.
+- **Deferred minors:**
+  - No single end-to-end test covers an owner change between days; it is covered piecewise.
+  - Counters are still written onto an Area quarantined mid-session. Quarantine is load-time only today.

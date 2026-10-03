@@ -21,6 +21,13 @@ public class IndustrialPanelFixtureTests {
    companies.Record(new Unity.Entities.Entity { Index = 501, Version = 1 }, new Unity.Entities.Entity { Index = 101, Version = 1 }, new IndustrialCompanyOwnerResolution(42, false), "Automatic Steelworks");
    companies.Record(new Unity.Entities.Entity { Index = 502, Version = 1 }, new Unity.Entities.Entity { Index = 102, Version = 1 }, new IndustrialCompanyOwnerResolution(42, true), "Manual Steelworks", true);
    model.Companies = companies.Rows;
+   // C4 support: a registered module with a 750 setting, one finished half-settled day and a complete 3-company roster.
+   model.SupportAvailable = true; model.HasSupport = true;
+   model.Support = IndustrialSupportState.CreateDefault(); model.Support.DailySupportPerCompany = 750;
+   model.Support = IndustrialSupportModel.RecordCompletion(model.Support, 2250, 1125, 1125);
+   model.Current.SupportRoster = new[] { new Unity.Entities.Entity { Index = 501, Version = 1 }, new Unity.Entities.Entity { Index = 503, Version = 1 }, new Unity.Entities.Entity { Index = 504, Version = 1 } };
+   model.Current.SupportRosterComplete = true;
+   model.SupportPending = IndustrialSupportStage.Requested;
    var current=new IndustrialRuntimeSnapshot();current.Publish(model.Current);
    var stale=new IndustrialRuntimeSnapshot();stale.Publish(model.Current);
    model.Comparison=IndustrialAreaComparison.Build(new[]{

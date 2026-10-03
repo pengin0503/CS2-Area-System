@@ -40,7 +40,8 @@ namespace CS2AreaSystem
             catch (System.Exception error) { Log.Error(error, "Area policy runtime unavailable; Area Core and modules remain registered."); }
             var finance = RegisterAreaFinance(updateSystem);
             RegisterParkSystems(updateSystem, finance);
-            RegisterIndustrialSystems(updateSystem);
+            var industrial = RegisterIndustrialSystems(updateSystem);
+            RegisterIndustrialSupport(updateSystem, finance, industrial);
             RegisterLocalization();
             RegisterSettings();
             // After DefaultToolSystem in the same frame, so an accepted label click replaces the selection vanilla just made.
@@ -124,7 +125,7 @@ namespace CS2AreaSystem
         // Industrial gameplay observes the city after Core (runtime state in ModificationEnd after membership/activation,
         // hourly observation and progression in GameSimulation), as a whole. A registration failure leaves Area Core, Park
         // and Tourism running.
-        private static void RegisterIndustrialSystems(UpdateSystem updateSystem)
+        private static ModuleRegistration RegisterIndustrialSystems(UpdateSystem updateSystem)
         {
             var industrial = new ModuleRegistration("Industrial gameplay",
                 typeof(CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySaveSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem),
@@ -141,6 +142,25 @@ namespace CS2AreaSystem
                 industrial.Complete();
             }
             catch (System.Exception error) { industrial.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
+            return industrial;
+        }
+        // Industrial support payments (Phase 2 C4) charge city money through Area finance and credit companies resolved by
+        // Industrial gameplay, so they need both modules complete. The scheduler (a GameSimulation producer, applied by
+        // AreaFinanceSystem in the same frame) and its save flush (after Area finance's flush, before the serializer) are
+        // one unit. A failure leaves Industrial observation, Core and Park running and the support controls unavailable.
+        private static void RegisterIndustrialSupport(UpdateSystem updateSystem, ModuleRegistration finance, ModuleRegistration industrial)
+        {
+            if (!ModuleRegistration.Requires(finance, "Industrial support", message => Log.Error(message))) return;
+            if (!ModuleRegistration.Requires(industrial, "Industrial support", message => Log.Error(message))) return;
+            var support = new ModuleRegistration("Industrial support",
+                typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem));
+            try
+            {
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem>(SystemUpdatePhase.GameSimulation); support.Step();
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem, CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem>(SystemUpdatePhase.Serialize); support.Step();
+                support.Complete();
+            }
+            catch (System.Exception error) { support.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
         // Registered systems cannot be removed from UpdateSystem; a disabled system is skipped by ComponentSystemBase.Update.
         private static void Disable(UpdateSystem updateSystem, System.Type type)

@@ -23,6 +23,8 @@ namespace CS2AreaSystem.Core.Finance
         public long TotalExpense { get; }
         public long TotalIncome { get; }
         public bool IsEmpty => expenses.Count == 0 && incomes.Count == 0;
+        // Nothing settled (an abort or cancellation). Shared and never mutated.
+        public static AreaFinanceBatch Empty { get; } = new AreaFinanceBatch(new List<AreaFinanceEntry>(), new List<AreaFinanceEntry>());
         internal AreaFinanceBatch(List<AreaFinanceEntry> expenses, List<AreaFinanceEntry> incomes)
         {
             this.expenses = expenses; this.incomes = incomes;

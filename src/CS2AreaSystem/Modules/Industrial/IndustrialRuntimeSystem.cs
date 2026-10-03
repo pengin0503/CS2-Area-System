@@ -35,6 +35,8 @@ namespace CS2AreaSystem.Modules.Industrial
         void AddState(Entity area, IndustrialAreaState state);
         bool HasProgress(Entity area);
         void AddProgress(Entity area, ManagedAreaProgress progress);
+        bool HasSupport(Entity area);
+        void AddSupport(Entity area, IndustrialSupportState state);
     }
     public static class IndustrialStateInitializer
     {
@@ -50,6 +52,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 if (!target.HasState(area.Area)) { target.AddState(area.Area, IndustrialAreaState.CreateDefault(currentDay)); added++; }
                 if (!target.HasProgress(area.Area))
                     target.AddProgress(area.Area, new ManagedAreaProgress { SchemaVersion = ManagedAreaProgress.CurrentSchemaVersion, Level = IndustrialProgressionLevels.MinLevel });
+                // Phase 2 C4: support starts disabled; a saved setting/day is never replaced.
+                if (!target.HasSupport(area.Area)) target.AddSupport(area.Area, IndustrialSupportState.CreateDefault());
             }
             return added;
         }
@@ -259,6 +263,8 @@ namespace CS2AreaSystem.Modules.Industrial
             public void AddState(Entity area, IndustrialAreaState state) => entities.AddComponentData(area, state);
             public bool HasProgress(Entity area) => entities.HasComponent<ManagedAreaProgress>(area);
             public void AddProgress(Entity area, ManagedAreaProgress progress) => entities.AddComponentData(area, progress);
+            public bool HasSupport(Entity area) => entities.HasComponent<IndustrialSupportState>(area);
+            public void AddSupport(Entity area, IndustrialSupportState state) => entities.AddComponentData(area, state);
         }
     }
 }

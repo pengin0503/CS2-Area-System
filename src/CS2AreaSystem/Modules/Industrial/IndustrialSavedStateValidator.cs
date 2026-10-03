@@ -15,5 +15,21 @@ namespace CS2AreaSystem.Modules.Industrial
             report.RequireFiniteNonNegative("IndustrialAreaState.ActivityWeightedSum", state.ActivityWeightedSum);
             report.RequireFiniteNonNegative("IndustrialAreaState.ActivityObservedHours", state.ActivityObservedHours);
         }
+        // Phase 2 C4: lifetime money counters and the scheduled-day dedupe. The setting itself is normalized on load.
+        public static void ValidateSupport(in IndustrialSupportState state, AreaSavedStateReport report)
+        {
+            if (state.LastScheduledDay < IndustrialSupportState.NoDay) report.Invalid("IndustrialSupportState.LastScheduledDay", state.LastScheduledDay);
+            report.RequireNonNegative("IndustrialSupportState.LifetimeRequested", state.LifetimeRequested);
+            report.RequireNonNegative("IndustrialSupportState.LifetimeSettled", state.LifetimeSettled);
+            report.RequireNonNegative("IndustrialSupportState.LifetimeCredited", state.LifetimeCredited);
+            report.RequireNonNegative("IndustrialSupportState.LifetimeUnallocated", state.LifetimeUnallocated);
+            bool saturated = state.LifetimeSettled == long.MaxValue || state.LifetimeCredited == long.MaxValue || state.LifetimeUnallocated == long.MaxValue;
+            if (!saturated && state.LifetimeCredited >= 0 && state.LifetimeUnallocated >= 0 &&
+                state.LifetimeSettled != Core.Finance.AreaFinanceModel.SaturatingAdd(state.LifetimeCredited, state.LifetimeUnallocated))
+                report.Invalid("IndustrialSupportState.LifetimeSettled", state.LifetimeSettled);
+            // Area Finance never settles more than was requested.
+            if (state.LifetimeRequested != long.MaxValue && state.LifetimeSettled != long.MaxValue && state.LifetimeSettled > state.LifetimeRequested)
+                report.Invalid("IndustrialSupportState.LifetimeSettled", state.LifetimeSettled);
+        }
     }
 }

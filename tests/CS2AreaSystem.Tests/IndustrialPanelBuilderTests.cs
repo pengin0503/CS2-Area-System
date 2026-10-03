@@ -79,7 +79,7 @@ public class IndustrialPanelBuilderTests {
  private static bool Has(AreaPanelTabData t, string id) => t.Items.Any(i => i.Id == id);
  [Test] public void EmitsApprovedTabsIncludingComparisonAndHidesCoreProgressRows() {
   var d = IndustrialPanelBuilder.Build(Model("active"));
-  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "production", "logistics", "employment", "progress", "comparison", "companies" }));
+  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "production", "logistics", "employment", "progress", "comparison", "companies", "support" }));
   Assert.That(d.ShowsProgress, Is.True);
  }
  [Test] public void OverviewShowsLevelScoresFacilitiesJobsBottlenecksAndLastUpdate() {
@@ -198,6 +198,10 @@ public class IndustrialPanelBuilderTests {
    var actions = d.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null || i.Kind == AreaPanelItemKind.Slider || i.Kind == AreaPanelItemKind.Button);
    Assert.That(actions.All(i => i.Kind == AreaPanelItemKind.Button && i.Action == IndustrialGameplayFacade.FocusDiagnosticTarget), Is.True, kind);
   }
+  // Phase 2 C4: the only simulation-changing control is the support setting, and only when the support module is registered.
+  var supported = Model("active"); supported.SupportAvailable = true; supported.HasSupport = true; supported.Support = IndustrialSupportState.CreateDefault();
+  var controls = IndustrialPanelBuilder.Build(supported).Tabs.SelectMany(t => t.Items).Where(i => i.Kind == AreaPanelItemKind.Slider).ToList();
+  Assert.That(controls.Select(i => i.Action), Is.EqualTo(new[] { IndustrialGameplayFacade.SetSupportPerCompany }));
   var low = Tab(IndustrialPanelBuilder.Build(Model("suspended") is var s ? s : null), "production");
   Assert.That(low, Is.Not.Null, "all diagnostic tabs exist at Level 1");
   var module = new IndustrialAreaModule(new AreaAnchorService(new NoStore(), e => true, (a, e, r) => true), (e, _) => default);
@@ -338,5 +342,84 @@ public class IndustrialPanelBuilderTests {
   public readonly Dictionary<Entity, IReadOnlyList<AreaAnchorLink>> Links = new();
   public IReadOnlyList<AreaAnchorLink> Read(Entity area) => Links.TryGetValue(area, out var l) ? l : Array.Empty<AreaAnchorLink>();
   public void Write(Entity area, IReadOnlyList<AreaAnchorLink> links) => Links[area] = links.ToArray();
+ }
+}
+public class IndustrialSupportPanelTests {
+ static IndustrialPanelModel Supported(int setting = 750) {
+  var m = IndustrialPanelBuilderTests.Model("active");
+  m.SupportAvailable = true; m.HasSupport = true;
+  m.Support = IndustrialSupportState.CreateDefault(); m.Support.DailySupportPerCompany = setting;
+  m.Support = IndustrialSupportModel.RecordCompletion(m.Support, 3000, 2000, 1500);
+  m.Current.SupportRoster = new[] { new Unity.Entities.Entity { Index = 1, Version = 1 }, new Unity.Entities.Entity { Index = 2, Version = 1 }, new Unity.Entities.Entity { Index = 3, Version = 1 } };
+  m.Current.SupportRosterComplete = true;
+  return m;
+ }
+ static AreaPanelTabData Tab(IndustrialPanelModel m) => IndustrialPanelBuilder.Build(m).Tabs.Single(t => t.Id == "support");
+ static AreaPanelItem Item(AreaPanelTabData tab, string id) => tab.Items.Single(i => i.Id == id);
+ [Test] public void SupportTabOffersTheStepSliderAndAuditableAccounting() {
+  var tab = Tab(Supported());
+  var slider = Item(tab, "support.perCompany");
+  Assert.That((slider.Kind, slider.Action, slider.NumericValue, slider.Min, slider.Max, slider.Step, slider.Disabled),
+   Is.EqualTo((AreaPanelItemKind.Slider, IndustrialGameplayFacade.SetSupportPerCompany, 750d, 0d, 5000d, 250d, false)));
+  Assert.That(Item(tab, "support.receivers").Value, Is.EqualTo("3"));
+  Assert.That(Item(tab, "support.dailyRequest").Value, Is.EqualTo("¢2,250"));
+  Assert.That(Item(tab, "support.lifetimeRequested").Value, Is.EqualTo("¢3,000"));
+  Assert.That(Item(tab, "support.lifetimeSettled").Value, Is.EqualTo("¢2,000"));
+  Assert.That(Item(tab, "support.lifetimeCredited").Value, Is.EqualTo("¢1,500"));
+  Assert.That(Item(tab, "support.lifetimeUnallocated").Value, Is.EqualTo("¢500"));
+  Assert.That(slider.Value, Is.EqualTo("¢750"));
+  Assert.That(tab.Items.Any(i => i.Kind == AreaPanelItemKind.Note && i.LabelKey == "CS2AS.Industrial.Support.Tip"), Is.True);
+ }
+ [Test] public void ZeroSettingIsShownAsOff() {
+  var slider = Item(Tab(Supported(0)), "support.perCompany");
+  Assert.That(slider.ValueKey, Is.EqualTo("CS2AS.Industrial.Support.Off"));
+  Assert.That(slider.Value, Is.Null);
+ }
+ [Test] public void UnregisteredSupportShowsAWarningAndNoControl() {
+  var m = Supported(); m.SupportAvailable = false;
+  var tab = Tab(m);
+  Assert.That(tab.Items.Any(i => i.Kind == AreaPanelItemKind.Slider), Is.False, "never silently accept unsupported requests");
+  Assert.That(tab.Items.Any(i => i.Kind == AreaPanelItemKind.Warning && i.LabelKey == "CS2AS.Industrial.Support.Unavailable"), Is.True);
+ }
+ [Test] public void IncompleteOrMissingRosterIsNotShownAsZeroReceivers() {
+  var m = Supported(); m.Current.SupportRosterComplete = false;
+  Assert.That(Item(Tab(m), "support.receivers").ValueKey, Is.EqualTo("CS2AS.Industrial.Status.Unavailable"));
+  m.Current = null;
+  Assert.That(Item(Tab(m), "support.receivers").ValueKey, Is.EqualTo("CS2AS.Industrial.Calculating"));
+  Assert.That(Tab(m).Items.Any(i => i.Id == "support.dailyRequest"), Is.False);
+ }
+ [Test] public void APendingRequestIsShownByStage() {
+  var m = Supported(); m.SupportPending = IndustrialSupportStage.Settled;
+  Assert.That(Item(Tab(m), "support.pending").ValueKey, Is.EqualTo("CS2AS.Industrial.Support.Stage.Settled"));
+  m.SupportPending = null;
+  Assert.That(Item(Tab(m), "support.pending").ValueKey, Is.EqualTo("CS2AS.Industrial.Support.Stage.None"));
+ }
+ [TestCase("750", true, 750)] [TestCase("374", true, 250)] [TestCase("9000", true, 5000)] [TestCase("-1", true, 0)]
+ [TestCase("abc", false, 0)] [TestCase("NaN", false, 0)] [TestCase("Infinity", false, 0)] [TestCase(null, false, 0)]
+ public void SettingActionValuesAreParsedInvariantlyAndNormalized(string value, bool ok, int expected) {
+  Assert.That(IndustrialSupportActions.TryParseSetting(value, out var setting), Is.EqualTo(ok));
+  Assert.That(setting, Is.EqualTo(expected));
+ }
+ [Test] public void SettingActionRequiresTheRegisteredModuleAndExistingState() {
+  var state = IndustrialSupportState.CreateDefault();
+  Assert.That(IndustrialSupportActions.TryApply(false, true, "500", ref state), Is.False);
+  Assert.That(IndustrialSupportActions.TryApply(true, false, "500", ref state), Is.False);
+  Assert.That(state.DailySupportPerCompany, Is.Zero);
+  Assert.That(IndustrialSupportActions.TryApply(true, true, "500", ref state), Is.True);
+  Assert.That(state.DailySupportPerCompany, Is.EqualTo(500));
+  Assert.That(state.LastScheduledDay, Is.EqualTo(IndustrialSupportState.NoDay), "a setting change never touches the paid-day dedupe");
+ }
+ [TestCase("en-US")] [TestCase("ja-JP")]
+ public void EverySupportKeyIsLocalized(string locale) {
+  var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);
+  foreach (var m in new[] { Supported(), Supported(0) }) {
+   m.SupportPending = IndustrialSupportStage.Crediting;
+   foreach (var i in Tab(m).Items) foreach (var key in new[] { i.LabelKey, i.ValueKey, i.TooltipKey }.Where(k => k != null))
+    Assert.That(entries.ContainsKey(key), Is.True, locale + " is missing " + key);
+  }
+  var unavailable = Supported(); unavailable.SupportAvailable = false;
+  foreach (var i in Tab(unavailable).Items) Assert.That(entries.ContainsKey(i.LabelKey), Is.True, i.LabelKey);
+  Assert.That(entries.ContainsKey("CS2AS.Tab.Support"), Is.True);
+  foreach (var stage in new[] { "None", "Requested", "Settled", "Crediting" }) Assert.That(entries.ContainsKey("CS2AS.Industrial.Support.Stage." + stage), Is.True);
  }
 }

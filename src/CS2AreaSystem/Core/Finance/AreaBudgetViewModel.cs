@@ -3,7 +3,7 @@ using Colossal.UI.Binding;
 namespace CS2AreaSystem.Core.Finance
 {
     // What the vanilla Budget page shows for Areas (design §15): the Area amounts actually applied to city money over the
-    // trailing in-game day. Area Management = policy upkeep + Park management (Service Upkeep group); Area Service Fees =
+    // trailing in-game day. Area Management = policy upkeep + Park management + Industrial support (Service Upkeep group); Area Service Fees =
     // Park admission (Service Fees group). Queued or in-flight requests are never shown.
     public readonly struct AreaBudgetViewModel : IEquatable<AreaBudgetViewModel>
     {
