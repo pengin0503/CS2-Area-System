@@ -239,7 +239,7 @@ public class ParkEventPanelTests {
  }
  static AreaPanelTabData Tab(ParkPanelModel m) => ParkPanelBuilder.Build(m).Tabs.Single(t => t.Id == "events");
  static AreaPanelItem Item(AreaPanelTabData t, string id) => t.Items.Single(i => i.Id == id);
- static AreaPanelItem? Find(AreaPanelTabData t, string id) => t.Items.SingleOrDefault(i => i.Id == id);
+ static AreaPanelItem Find(AreaPanelTabData t, string id) => t.Items.SingleOrDefault(i => i.Id == id);
  [Test] public void IdleParkOffersTheFestivalAtItsCost() {
   var tab = Tab(WithEvents(ParkPanelBuilderTests.Model()));
   Assert.That(Item(tab, "events.status").ValueKey, Is.EqualTo("CS2AS.Park.Events.Status.None"));
