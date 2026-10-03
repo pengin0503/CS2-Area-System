@@ -13,11 +13,11 @@
 ## Global Constraints
 
 - Required authored prefab identifiers are exactly:
-  - `AS_ParkAreaHQ01_4x3`
-  - `AS_IndustrialAreaHQ01_5x4`
-  - `AS_ParkGate01_2x1`
+  - `AS_ParkHeadquarters`
+  - `AS_IndustrialHeadquarters`
+  - `AS_ParkGate`
 - All future Area System-owned building/model identifiers introduced by this content pack must begin with `AS_`.
-- After C2, only registered `AS_ParkAreaHQ01_4x3` satisfies Park Headquarters, only registered `AS_IndustrialAreaHQ01_5x4` satisfies Industrial Headquarters, and only registered `AS_ParkGate01_2x1` satisfies Park Entrance.
+- After C2, only registered `AS_ParkHeadquarters` satisfies Park Headquarters, only registered `AS_IndustrialHeadquarters` satisfies Industrial Headquarters, and only registered `AS_ParkGate` satisfies Park Entrance.
 - Ordinary office HQ, Park Maintenance HQ and automatic dedicated-Path Entrance are Foundation-era compatibility mechanisms only and are retired by C2; they do not remain activation fallbacks.
 - Do not identify assets by localized/display names, substring matching, or DLC-like names. Resolve only the exact internal identifiers owned by the Area System content package.
 - Runtime prefab `Entity` values are never serialized as authoritative IDs; rediscover and re-register the authored prefabs each load generation.
@@ -47,9 +47,9 @@
 **Interfaces:**
 - Content package logical ID: `AS_AreaSystemAssets`.
 - Exact prefab IDs:
-  - `AS_ParkAreaHQ01_4x3` => `AreaAssetSemantic.ParkHeadquarters`
-  - `AS_IndustrialAreaHQ01_5x4` => `AreaAssetSemantic.IndustrialHeadquarters`
-  - `AS_ParkGate01_2x1` => `AreaAssetSemantic.ParkEntrance`
+  - `AS_ParkHeadquarters` => `AreaAssetSemantic.ParkHeadquarters`
+  - `AS_IndustrialHeadquarters` => `AreaAssetSemantic.IndustrialHeadquarters`
+  - `AS_ParkGate` => `AreaAssetSemantic.ParkEntrance`
 - Provider ID remains `CS2AreaSystem.BuiltInContent`.
 
 - [ ] **Step 1: Write failing contract tests**
@@ -78,16 +78,16 @@
 Before authoring, inspect the supplied/installed 1.6.2f1 asset toolchain and record the exact verified source, import and output paths/formats. Do not invent an FBX/material/package layout not supported by that toolchain.
 
 - [ ] **Step 1: Rename authored internal prefab/model identifiers before final import**
-  - Park HQ => `AS_ParkAreaHQ01_4x3`
-  - Industrial HQ => `AS_IndustrialAreaHQ01_5x4`
-  - Park Gate => `AS_ParkGate01_2x1`
+  - Park HQ => `AS_ParkHeadquarters`
+  - Industrial HQ => `AS_IndustrialHeadquarters`
+  - Park Gate => `AS_ParkGate`
   - update any Park Gate -> Park HQ shared texture/material references to the renamed paths without duplicating the atlas unnecessarily.
 
 - [ ] **Step 2: Import all three as normal placeable Building prefabs**
   - use one Area System-owned asset/content package;
   - keep generated/editor cache artifacts out of git unless repository policy explicitly requires them.
 
-- [ ] **Step 3: Author pedestrian connectivity for `AS_ParkGate01_2x1`**
+- [ ] **Step 3: Author pedestrian connectivity for `AS_ParkGate`**
   - place the verified editor-supported invisible pedestrian path/subnetwork through the model's central passage;
   - configure front and rear endpoints as connectable/snap-compatible with external pedestrian paths;
   - keep the path aligned inside the gate opening and collision-free;
@@ -206,8 +206,8 @@ Before authoring, inspect the supplied/installed 1.6.2f1 asset toolchain and rec
 - [ ] **Step 2: Add clear missing-required-content / missing-HQ / missing-Gate UI states**
 
 - [ ] **Step 3: In-game verify all three asset assignments**
-  - Park activates only with `AS_ParkAreaHQ01_4x3` + `AS_ParkGate01_2x1`;
-  - Industrial activates only with `AS_IndustrialAreaHQ01_5x4`;
+  - Park activates only with `AS_ParkHeadquarters` + `AS_ParkGate`;
+  - Industrial activates only with `AS_IndustrialHeadquarters`;
   - deleting/moving/replacing the required anchor suspends the Area as expected.
 
 - [ ] **Step 4: In-game verify gate path behavior**

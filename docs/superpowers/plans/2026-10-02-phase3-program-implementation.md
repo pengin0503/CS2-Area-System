@@ -13,11 +13,11 @@
 ## Global Constraints
 
 - Start only from latest `main` containing completed Phase 2.
-- C2 introduces three authoritative built-in assets: `AS_ParkAreaHQ01_4x3`, `AS_IndustrialAreaHQ01_5x4`, and `AS_ParkGate01_2x1`.
+- C2 introduces three authoritative built-in assets: `AS_ParkHeadquarters`, `AS_IndustrialHeadquarters`, and `AS_ParkGate`.
 - Every Area System-owned model/prefab identifier added by C2 starts with `AS_` to avoid collisions with future base-game/DLC assets.
 - After C2, ordinary office buildings no longer satisfy Industrial Headquarters, Park Maintenance buildings no longer satisfy Park Headquarters, and derived dedicated-Path crossings no longer satisfy Park Entrance activation.
 - Existing Area StableId, Level/XP, finance, history and ownership state are preserved; old Headquarters/Entrance links are not auto-converted and do not satisfy activation after C2.
-- `AS_ParkGate01_2x1` must contain an editor-authored pedestrian connection through the gate with connectable/snap-compatible ends for external pedestrian paths; do not patch citizen pathfinding.
+- `AS_ParkGate` must contain an editor-authored pedestrian connection through the gate with connectable/snap-compatible ends for external pedestrian paths; do not patch citizen pathfinding.
 - D1 does not intercept routing, transfer requests, pathfinding or market prices.
 - D2 uses only existing vanilla `Resource` enum values and valid native process data.
 - Custom content must participate through generic semantic/process observation, not hard-coded score exceptions.
@@ -27,7 +27,7 @@
 
 - Existing save using office/Park Maintenance/path fallback reaches C2: Area state remains intact but the Area is Suspended until the dedicated AS-prefixed asset is assigned.
 - Required C2 content missing or removed: no fallback asset/path is silently accepted and unrelated Areas/state still load safely.
-- `AS_ParkGate01_2x1` connects to external pedestrian paths and allows pedestrian traversal without any runtime pathfinding hook.
+- `AS_ParkGate` connects to external pedestrian paths and allows pedestrian traversal without any runtime pathfinding hook.
 - Asset upgrade changes runtime prefab Entity: the built-in provider rediscovers exact AS-prefixed authored content and re-registers semantics for the new load generation.
 - Future DLC introduces similarly named Headquarters/Gate assets: exact `AS_` identifiers prevent them from being mistaken for Area System content.
 
@@ -46,7 +46,7 @@ Each is a separate PR/release-risk boundary.
 
 ## Phase 3 completion gate
 
-- [ ] `AS_ParkAreaHQ01_4x3`, `AS_IndustrialAreaHQ01_5x4`, and `AS_ParkGate01_2x1` pass the verified 1.6.2f1 asset import/content pipeline.
+- [ ] `AS_ParkHeadquarters`, `AS_IndustrialHeadquarters`, and `AS_ParkGate` pass the verified 1.6.2f1 asset import/content pipeline.
 - [ ] C2 semantic registration makes those three prefabs the only valid Park HQ, Industrial HQ, and Park Entrance sources.
 - [ ] Gate pedestrian-path connection and external path snapping are verified in game.
 - [ ] Old office/Park Maintenance/path Entrance fallback no longer activates Areas after C2, while existing Level/XP/finance/history remain intact.

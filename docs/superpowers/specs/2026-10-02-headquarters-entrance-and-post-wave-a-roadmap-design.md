@@ -13,9 +13,9 @@ Replace the current single-anchor activation model with a safer multi-requiremen
 
 - Foundation initially uses an ordinary office building as Industrial Headquarters, Park Maintenance as Park Headquarters, and typed path/gate evidence for Park Entrance so the core mechanics can be implemented without custom content.
 - Phase 3 C2 intentionally replaces those temporary sources with three required Area System-owned assets:
-  - `AS_IndustrialAreaHQ01_5x4` for Industrial Headquarters;
-  - `AS_ParkAreaHQ01_4x3` for Park Headquarters;
-  - `AS_ParkGate01_2x1` for Park Entrance.
+  - `AS_IndustrialHeadquarters` for Industrial Headquarters;
+  - `AS_ParkHeadquarters` for Park Headquarters;
+  - `AS_ParkGate` for Park Entrance.
 - All Area System-owned model/prefab identifiers introduced by C2 start with `AS_` to avoid future base-game/DLC naming collisions.
 - After C2, the Foundation-era office, Park Maintenance and path-derived Entrance sources do not remain activation fallbacks.
 - A1-A5 are complete. The previously agreed Phase 1-3 program is now part of the formal implementation roadmap.
@@ -121,7 +121,7 @@ Do not silently convert an arbitrary old industrial facility into an office Head
 
 ### 2.4 Phase 3 C2 dedicated Headquarters cutover
 
-At C2, `AS_IndustrialAreaHQ01_5x4` becomes the sole valid Industrial Headquarters prefab.
+At C2, `AS_IndustrialHeadquarters` becomes the sole valid Industrial Headquarters prefab.
 
 Ordinary office buildings are no longer Headquarters-eligible after this cutover. Existing office Headquarters links are not auto-converted; the Area becomes Suspended until the player assigns the dedicated AS-prefixed Headquarters. StableId, Level/XP, finance, history, policies and company-ownership state are preserved.
 
@@ -145,7 +145,7 @@ The Headquarters' temporary operating health does not need to invalidate the lin
 
 ### 3.3 Phase 3 C2 dedicated Headquarters cutover
 
-At C2, `AS_ParkAreaHQ01_4x3` becomes the sole valid Park Headquarters prefab.
+At C2, `AS_ParkHeadquarters` becomes the sole valid Park Headquarters prefab.
 
 Park Maintenance buildings no longer satisfy the Headquarters role after this cutover. Existing Park Maintenance Headquarters links are not auto-converted; the Park remains Suspended until the dedicated AS-prefixed Headquarters is assigned.
 
@@ -221,7 +221,7 @@ If a scan is incomplete, activation must not fabricate an entrance. Keep the pre
 
 The Foundation dedicated pedestrian-Path crossing behavior is temporary and exists so Park activation can be implemented before custom content is available.
 
-At C2, `AS_ParkGate01_2x1` becomes the sole valid Park Entrance prefab. Path-derived Entrance evidence no longer satisfies activation and does not remain as a fallback.
+At C2, `AS_ParkGate` becomes the sole valid Park Entrance prefab. Path-derived Entrance evidence no longer satisfies activation and does not remain as a fallback.
 
 The Gate must contain an editor-authored pedestrian passage/subnetwork through its opening with both ends configured to connect/snap to external pedestrian paths using the verified 1.6.2f1 asset workflow. This is asset-authored network connectivity, not a citizen/pathfinding interception.
 
@@ -240,9 +240,9 @@ At least one valid Foundation Entrance evidence
 At Phase 3 C2 the authoritative activation model changes to:
 
 ```
-Valid AS_ParkAreaHQ01_4x3 Headquarters
+Valid AS_ParkHeadquarters Headquarters
 AND
-Valid AS_ParkGate01_2x1 Entrance
+Valid AS_ParkGate Entrance
 ```
 
 Park Maintenance and path-derived Entrance evidence no longer satisfy activation after C2.
@@ -254,14 +254,14 @@ The dedicated Gate's authored pedestrian path may be used naturally by citizens 
 Industrial Area:
 
 - before C2, Assign/Change Headquarters follows the Foundation office-HQ behavior;
-- after C2, assignment accepts only `AS_IndustrialAreaHQ01_5x4`;
+- after C2, assignment accepts only `AS_IndustrialHeadquarters`;
 - an old office Headquarters may remain visible as invalid/removable state but does not activate the Area.
 
 Park Area:
 
 - show Headquarters separately from Entrance;
 - before C2, Foundation Park Maintenance/path behavior remains available;
-- after C2, Headquarters assignment accepts only `AS_ParkAreaHQ01_4x3` and Entrance assignment accepts only `AS_ParkGate01_2x1`;
+- after C2, Headquarters assignment accepts only `AS_ParkHeadquarters` and Entrance assignment accepts only `AS_ParkGate`;
 - path-derived entrance status is retired from activation/UI once C2 removes the fallback;
 - clearly explain which required dedicated asset is missing when the Area is Suspended.
 
@@ -309,7 +309,7 @@ Minimum tests:
 - explicit gate assignment, if enabled, uses typed evidence rather than display names;
 - C2 exact `AS_` prefab identifiers are unique and collision-resistant against future DLC names;
 - after C2, office Industrial HQ, Park Maintenance HQ and path-only Park Entrance are rejected;
-- after C2, `AS_IndustrialAreaHQ01_5x4`, `AS_ParkAreaHQ01_4x3` and `AS_ParkGate01_2x1` are accepted for their exact roles;
+- after C2, `AS_IndustrialHeadquarters`, `AS_ParkHeadquarters` and `AS_ParkGate` are accepted for their exact roles;
 - old saves preserve Area state while becoming Suspended until dedicated anchors are reassigned;
 - the dedicated Gate's authored pedestrian passage connects to external pedestrian paths without a runtime pathfinding hook.
 
@@ -376,9 +376,9 @@ Relative implementation size: approximately **125 points plus 3D/content work**.
 
 C2 is revised by this design:
 
-- import the completed Industrial HQ as `AS_IndustrialAreaHQ01_5x4` and register it as the sole `IndustrialHeadquarters` source after C2;
-- import the completed Park HQ as `AS_ParkAreaHQ01_4x3` and register it as the sole `ParkHeadquarters` source after C2;
-- import the completed Park Gate as `AS_ParkGate01_2x1` and register it as the sole `ParkEntrance` source after C2;
+- import the completed Industrial HQ as `AS_IndustrialHeadquarters` and register it as the sole `IndustrialHeadquarters` source after C2;
+- import the completed Park HQ as `AS_ParkHeadquarters` and register it as the sole `ParkHeadquarters` source after C2;
+- import the completed Park Gate as `AS_ParkGate` and register it as the sole `ParkEntrance` source after C2;
 - author a pedestrian passage/subnetwork through the Gate with endpoints that connect/snap to external pedestrian paths using the verified 1.6.2f1 asset workflow;
 - retire the Foundation office/Park Maintenance/path-Entrance activation fallbacks at this cutover;
 - preserve authoritative Area state when old anchors become invalid; do not auto-convert old anchors;
