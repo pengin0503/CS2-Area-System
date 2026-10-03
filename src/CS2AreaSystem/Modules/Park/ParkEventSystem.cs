@@ -112,15 +112,15 @@ namespace CS2AreaSystem.Modules.Park
         {
             paid.Clear();
             ParkEventFinance.OnCompleted(ledger, finance.LoadGeneration, requested, settled, paid);
-            foreach (var payment in paid) Record(payment, frame);
+            foreach (var payment in paid) Record(payment, frame, runtime.SimulationFrame);
             paid.Clear();
         }
         // One paid start: starts a still-eligible Park or only accounts the expense; one failure never skips the others.
-        private void Record(in ParkEventSettlement payment, uint frame)
+        private void Record(in ParkEventSettlement payment, uint accountingFrame, uint frame)
         {
             try
             {
-                if (runtime.Store.TryGet(payment.AreaId, out var snapshot)) snapshot.RecentExpense.Add(frame, payment.Paid);
+                if (runtime.Store.TryGet(payment.AreaId, out var snapshot)) snapshot.RecentExpense.Add(accountingFrame, payment.Paid);
                 var area = payment.Area;
                 bool exists = EntityManager.Exists(area) && !EntityManager.HasComponent<Game.Common.Deleted>(area) &&
                     EntityManager.HasComponent<ManagedAreaStableId>(area) && EntityManager.GetComponentData<ManagedAreaStableId>(area).Value == payment.AreaId;
