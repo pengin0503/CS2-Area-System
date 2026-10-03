@@ -11,13 +11,13 @@ For Headquarters/Entrance semantics, C2 asset scope, and the implementation orde
 
 Replace the current single-anchor activation model with a safer multi-requirement model that matches the intended gameplay:
 
-- Industrial Area uses an ordinary office building as its Headquarters.
-- Park Area requires both:
-  - one Park Maintenance headquarters; and
-  - at least one valid entrance.
-- Park entrance prefers a verified gate / gate-like building when a safe typed vanilla candidate exists.
-- If no safe vanilla park-gate candidate exists for 1.6.2f1, a dedicated pedestrian Path crossing the Park boundary becomes the entrance evidence.
-- Ordinary road sidewalks do not count as automatic Park entrances.
+- Foundation initially uses an ordinary office building as Industrial Headquarters, Park Maintenance as Park Headquarters, and typed path/gate evidence for Park Entrance so the core mechanics can be implemented without custom content.
+- Phase 3 C2 intentionally replaces those temporary sources with three required Area System-owned assets:
+  - `AS_IndustrialAreaHQ01_5x4` for Industrial Headquarters;
+  - `AS_ParkAreaHQ01_4x3` for Park Headquarters;
+  - `AS_ParkGate01_2x1` for Park Entrance.
+- All Area System-owned model/prefab identifiers introduced by C2 start with `AS_` to avoid future base-game/DLC naming collisions.
+- After C2, the Foundation-era office, Park Maintenance and path-derived Entrance sources do not remain activation fallbacks.
 - A1-A5 are complete. The previously agreed Phase 1-3 program is now part of the formal implementation roadmap.
 
 This design does not require visitors to physically traverse an entrance. Entrance evidence is an activation/access-management concept, not a pathfinding interception.
@@ -111,13 +111,19 @@ Deletion/destruction, movement outside the Area, anchor removal, or replacement 
 
 ### 2.3 Existing saves
 
-Existing Industrial Headquarters links that point to the old extractor/factory/storage/cargo classes are retained as saved links for visibility but no longer satisfy the new activation rule.
+Existing Industrial Headquarters links that point to the old extractor/factory/storage/cargo classes are retained as saved links for visibility but no longer satisfy the Foundation activation rule.
 
-The Area becomes Suspended until the player assigns a valid office Headquarters.
+The Area becomes Suspended until the player assigns a valid Foundation office Headquarters.
 
 Level, XP, finance and historical state are preserved.
 
 Do not silently convert an arbitrary old industrial facility into an office Headquarters.
+
+### 2.4 Phase 3 C2 dedicated Headquarters cutover
+
+At C2, `AS_IndustrialAreaHQ01_5x4` becomes the sole valid Industrial Headquarters prefab.
+
+Ordinary office buildings are no longer Headquarters-eligible after this cutover. Existing office Headquarters links are not auto-converted; the Area becomes Suspended until the player assigns the dedicated AS-prefixed Headquarters. StableId, Level/XP, finance, history, policies and company-ownership state are preserved.
 
 ## 3. Park Headquarters
 
@@ -131,11 +137,17 @@ Exactly one Park Headquarters is authoritative.
 
 ### 3.2 Lifecycle
 
-Park is not Active unless its Park Maintenance Headquarters is valid.
+Before C2, Park is not Active unless its Park Maintenance Headquarters is valid.
 
 Deleting or moving the Headquarters outside the Park suspends the Park even if entrance evidence still exists.
 
 The Headquarters' temporary operating health does not need to invalidate the link unless runtime evidence proves the building itself is no longer a valid Park Maintenance facility.
+
+### 3.3 Phase 3 C2 dedicated Headquarters cutover
+
+At C2, `AS_ParkAreaHQ01_4x3` becomes the sole valid Park Headquarters prefab.
+
+Park Maintenance buildings no longer satisfy the Headquarters role after this cutover. Existing Park Maintenance Headquarters links are not auto-converted; the Park remains Suspended until the dedicated AS-prefixed Headquarters is assigned.
 
 ## 4. Park Entrance
 
@@ -205,48 +217,53 @@ Entrance detection must be:
 
 If a scan is incomplete, activation must not fabricate an entrance. Keep the previous known-good snapshot or an explicit pending/unknown state according to the implementation plan.
 
-### 4.5 Future explicit gate assets
+### 4.5 Phase 3 C2 dedicated Gate cutover
 
-If the current 1.6.2f1 base game has no safe gate candidate, dedicated pedestrian-path crossing becomes the baseline compatible behavior.
+The Foundation dedicated pedestrian-Path crossing behavior is temporary and exists so Park activation can be implemented before custom content is available.
 
-A future custom gate asset added in Phase 3 is an additional explicit entrance option and must **not** retroactively invalidate old Parks that rely on path-crossing entrance evidence.
+At C2, `AS_ParkGate01_2x1` becomes the sole valid Park Entrance prefab. Path-derived Entrance evidence no longer satisfies activation and does not remain as a fallback.
+
+The Gate must contain an editor-authored pedestrian passage/subnetwork through its opening with both ends configured to connect/snap to external pedestrian paths using the verified 1.6.2f1 asset workflow. This is asset-authored network connectivity, not a citizen/pathfinding interception.
+
+Existing Parks that used path-derived Entrance evidence are not auto-converted. Their authoritative Area state is preserved, but they remain Suspended until the dedicated AS-prefixed Gate is assigned.
 
 ## 5. Park activation
 
-Park activation requires both conditions:
+Before C2, the Foundation activation model remains:
 
 ```
 Valid Park Maintenance Headquarters
 AND
-At least one valid Entrance evidence
+At least one valid Foundation Entrance evidence
 ```
 
-For the initial 1.6.2f1 implementation, the accepted Entrance source is selected by verified vanilla capability:
+At Phase 3 C2 the authoritative activation model changes to:
 
-- if a safe vanilla Park gate building is verified, explicit supported gate building(s) satisfy the requirement;
-- otherwise, detected dedicated pedestrian Path boundary crossing(s) satisfy the requirement.
+```
+Valid AS_ParkAreaHQ01_4x3 Headquarters
+AND
+Valid AS_ParkGate01_2x1 Entrance
+```
 
-A later B1/C2 explicit custom gate may coexist with the path-crossing baseline for saves created under fallback mode; adding new content must never make an already valid fallback Park invalid.
+Park Maintenance and path-derived Entrance evidence no longer satisfy activation after C2.
 
-No visitor pathfinding is forced through the entrance.
-
-This means the existing deferred item "mandatory physical Entrance gate traversal" remains deferred. The new rule validates an access point; it does not intercept or rewrite citizen routing.
+The dedicated Gate's authored pedestrian path may be used naturally by citizens once connected to the pedestrian network, but Area System does not force visitor routing through the gate and does not patch vanilla pathfinding.
 
 ## 6. UI behavior
 
 Industrial Area:
 
-- show one Headquarters row;
-- Assign/Change Headquarters selects an eligible office;
-- old invalid Headquarters remains visible/removable until replaced.
+- before C2, Assign/Change Headquarters follows the Foundation office-HQ behavior;
+- after C2, assignment accepts only `AS_IndustrialAreaHQ01_5x4`;
+- an old office Headquarters may remain visible as invalid/removable state but does not activate the Area.
 
 Park Area:
 
 - show Headquarters separately from Entrance;
-- Headquarters assignment selects Park Maintenance;
-- if explicit gate assignment is supported, show gate Entrance links and add/remove controls;
-- show detected dedicated-path entrances separately, e.g. "Detected path entrances: N";
-- clearly explain which missing requirement causes Suspended state.
+- before C2, Foundation Park Maintenance/path behavior remains available;
+- after C2, Headquarters assignment accepts only `AS_ParkAreaHQ01_4x3` and Entrance assignment accepts only `AS_ParkGate01_2x1`;
+- path-derived entrance status is retired from activation/UI once C2 removes the fallback;
+- clearly explain which required dedicated asset is missing when the Area is Suspended.
 
 The UI must preserve stable-ID/live-selection guards for all assignments.
 
@@ -264,9 +281,9 @@ This redesign must preserve:
 
 No save migration may fabricate a new Headquarters.
 
-Path entrances are rebuildable and therefore remain runtime-only.
+Before C2, path entrances are rebuildable and therefore runtime-only.
 
-Old Park leisure/attraction Entrance links that no longer satisfy the explicit gate rule may remain visible as invalid links, but activation is determined by the new Headquarters + EntranceEvidence contract.
+At C2, path-derived Entrance evidence is retired. Old office/Park Maintenance/legacy Entrance links may remain visible as invalid/removable links where the existing anchor lifecycle naturally exposes them, but they do not satisfy activation and are not auto-converted. The cutover preserves Area StableId, Level/XP, finance, history, policies and Industrial company ownership.
 
 ## 8. Testing and runtime proof
 
@@ -289,7 +306,12 @@ Minimum tests:
 - load rebuilds path evidence without saved Net Entity dependence;
 - old invalid anchors do not erase XP/Level/state;
 - no global per-frame net scan;
-- explicit gate assignment, if enabled, uses typed evidence rather than display names.
+- explicit gate assignment, if enabled, uses typed evidence rather than display names;
+- C2 exact `AS_` prefab identifiers are unique and collision-resistant against future DLC names;
+- after C2, office Industrial HQ, Park Maintenance HQ and path-only Park Entrance are rejected;
+- after C2, `AS_IndustrialAreaHQ01_5x4`, `AS_ParkAreaHQ01_4x3` and `AS_ParkGate01_2x1` are accepted for their exact roles;
+- old saves preserve Area state while becoming Suspended until dedicated anchors are reassigned;
+- the dedicated Gate's authored pedestrian passage connects to external pedestrian paths without a runtime pathfinding hook.
 
 In-game verification remains required for actual net classification and lifecycle behavior.
 
@@ -346,7 +368,7 @@ Simulation-mutating work retains strict save/load, idempotence and runtime-proof
 
 Previously agreed scope, now formally scheduled:
 
-- C2 optional dedicated Area asset/content integration;
+- C2 dedicated Area System Headquarters/Gate asset/content integration;
 - D1 Area-to-Area supply contracts;
 - D2 custom factory / existing-resource production content.
 
@@ -354,10 +376,15 @@ Relative implementation size: approximately **125 points plus 3D/content work**.
 
 C2 is revised by this design:
 
-- a dedicated Industrial HQ asset is **not required** because ordinary office buildings are the intended Headquarters;
-- Park Maintenance Depot is the baseline Park Headquarters;
-- an optional dedicated Park gate/entrance asset may be added and registered through B1;
-- any custom model follows the project rule that vanilla-prop-replaceable scenery is not authored; only building-fixed elements are modeled.
+- import the completed Industrial HQ as `AS_IndustrialAreaHQ01_5x4` and register it as the sole `IndustrialHeadquarters` source after C2;
+- import the completed Park HQ as `AS_ParkAreaHQ01_4x3` and register it as the sole `ParkHeadquarters` source after C2;
+- import the completed Park Gate as `AS_ParkGate01_2x1` and register it as the sole `ParkEntrance` source after C2;
+- author a pedestrian passage/subnetwork through the Gate with endpoints that connect/snap to external pedestrian paths using the verified 1.6.2f1 asset workflow;
+- retire the Foundation office/Park Maintenance/path-Entrance activation fallbacks at this cutover;
+- preserve authoritative Area state when old anchors become invalid; do not auto-convert old anchors;
+- package/load the three required assets through the verified CS2 content pipeline and rediscover runtime prefab entities each load;
+- all Area System-owned model/prefab IDs begin with `AS_`;
+- custom models follow the project rule that vanilla-prop-replaceable scenery is not authored; only building-fixed elements are modeled.
 
 ## 10. Order
 
@@ -383,4 +410,4 @@ This redesign does not:
 - change Tourism gameplay;
 - create new economy Resource enum members;
 - globally rebalance the economy;
-- make a dedicated custom HQ/gate asset mandatory.
+- keep Foundation office/Park Maintenance/path-Entrance fallbacks after the Phase 3 C2 dedicated-asset cutover.
