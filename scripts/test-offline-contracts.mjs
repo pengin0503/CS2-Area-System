@@ -86,14 +86,25 @@ const forbiddenIndustrial=[
   [/SetComponentData\s*<\s*(Game\.Buildings\.)?(BuildingEfficiency|Building)\b/, 'building/efficiency writes'],
   [/BindingFlags\.NonPublic|Harmony/, 'private reflection or patching'],
   [/\.Enabled\s*=\s*false/, 'disabling vanilla systems']];
+// Phase 2 C4: the dedicated support settlement file is the only Industrial source allowed to write company money, and only
+// through the verified EconomyUtils.AddResources(Resource.Money, ...) path; every other Resources/efficiency write stays forbidden.
+const supportSettlement = `${industrialDir}/IndustrialSupportSettlement.cs`;
 for (const source of industrialSources) {
   // Code only: comments may cite the vanilla systems whose behavior is mirrored.
-  const text = read(source).replace(/\/\/.*$/gm, '');
+  let text = read(source).replace(/\/\/.*$/gm, '');
+  if (source === supportSettlement) {
+    const writes = text.match(/(?:\b\w+\.)?AddResources\s*\([^,]*/g) || [];
+    check(writes.length === 1 && writes.every(w => /EconomyUtils\.AddResources\s*\(\s*Resource\.Money$/.test(w)), `${source}: support may only add Resource.Money once through EconomyUtils.AddResources`);
+    text = text.replace(/EconomyUtils\.AddResources\s*\(\s*Resource\.Money,/g, '');
+  }
   for (const [pattern, what] of forbiddenIndustrial) if (pattern.test(text)) failures.push(`${source}: Industrial v1 must not touch ${what}`);
 }
 const mod = read('src/CS2AreaSystem/Mod.cs');
-const industrialRegistration = mod.slice(mod.indexOf('void RegisterIndustrialSystems'));
+const industrialRegistration = mod.slice(mod.indexOf('RegisterIndustrialSystems(UpdateSystem updateSystem)'), mod.indexOf('void RegisterIndustrialSupport('));
 check(mod.includes('RegisterIndustrialSystems(updateSystem);'), 'Mod.OnLoad must register Industrial systems');
+const supportRegistration = mod.slice(mod.indexOf('void RegisterIndustrialSupport('));
+check(/ModuleRegistration\.Requires\(finance, "Industrial support"/.test(supportRegistration) && /ModuleRegistration\.Requires\(industrial, "Industrial support"/.test(supportRegistration), 'Industrial support must require complete finance and Industrial modules');
+check(/catch\s*\(System\.Exception error\)\s*\{\s*support\.Fail\(error,\s*type => Disable\(updateSystem,\s*type\),\s*ReportRegistrationFailure\);/.test(supportRegistration), 'Industrial support registration failure must disable the whole support module and be logged');
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialRuntimeSystem>\(SystemUpdatePhase\.ModificationEnd\)/.test(industrialRegistration), 'IndustrialRuntimeSystem must run in ModificationEnd');
 check(/UpdateAt<CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialObservationSystem must run in GameSimulation');
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialProgressionSystem,\s*CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialProgressionSystem must run after observation');

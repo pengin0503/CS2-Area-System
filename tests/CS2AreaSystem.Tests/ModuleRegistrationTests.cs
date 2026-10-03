@@ -47,6 +47,11 @@ public class ModuleRegistrationTests {
         var source = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../../src/CS2AreaSystem/Mod.cs"));
         Assert.That(source, Does.Contain("ModuleRegistration.Requires(finance, \"Area policy upkeep\""));
         Assert.That(source, Does.Contain("ModuleRegistration.Requires(finance, \"Park gameplay\""));
+        // Industrial support books city money and credits companies: it needs complete finance and Industrial modules and
+        // registers its scheduler and save flush as one unit, so it never runs without the flush.
+        Assert.That(source, Does.Contain("ModuleRegistration.Requires(finance, \"Industrial support\""));
+        Assert.That(source, Does.Contain("ModuleRegistration.Requires(industrial, \"Industrial support\""));
+        Assert.That(source, Does.Contain("new ModuleRegistration(\"Industrial support\",\n                typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem))"));
     }
 }
 // #49: a non-native tool blocks only its Area type, the native tool restores it, and a new load forgets every block.
