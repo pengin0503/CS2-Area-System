@@ -81,20 +81,27 @@ namespace CS2AreaSystem.Modules.Park
         // Panel action (main thread, after Core validated the stable ID and live selection).
         internal ParkEventRequestOutcome RequestStart(Entity area, int eventId)
         {
-            if (!EntityManager.Exists(area) || !EntityManager.HasComponent<ManagedAreaStableId>(area) || !EntityManager.HasComponent<ManagedArea>(area))
-                return ParkEventRequestOutcome.NoState;
+            var inputs = StartInputs(area, eventId, out var parkId);
+            if (parkId == 0) return ParkEventRequestOutcome.NoState;
+            return ParkEventFinance.TryRequest(inputs, finance.LoadGeneration, parkId, area,
+                amount => finance.EnqueueExpense(parkId, AreaFinanceKind.ParkEvent, amount), ledger);
+        }
+        // The same inputs decide the panel's start button and the action, so the panel never offers a start the action refuses.
+        internal ParkEventRequestInputs StartInputs(Entity area, int eventId, out ulong parkId)
+        {
+            parkId = 0;
+            if (!EntityManager.Exists(area) || EntityManager.HasComponent<Game.Common.Deleted>(area) || !EntityManager.HasComponent<ManagedAreaStableId>(area) ||
+                !EntityManager.HasComponent<ManagedArea>(area)) return new ParkEventRequestInputs { Available = Enabled, EventId = eventId };
             var managed = EntityManager.GetComponentData<ManagedArea>(area);
-            if (managed.TypeId != (int)AreaTypeId.Park) return ParkEventRequestOutcome.NoState;
-            var park = new ParkAreaRef(area, EntityManager.GetComponentData<ManagedAreaStableId>(area).Value, managed.State);
+            if (managed.TypeId != (int)AreaTypeId.Park) return new ParkEventRequestInputs { Available = Enabled, EventId = eventId };
+            parkId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
             bool hasState = EntityManager.HasComponent<ParkEventState>(area);
-            runtime.Store.TryGet(park.StableId, out var snapshot);
-            var inputs = new ParkEventRequestInputs {
-                Available = Enabled && finance.Started && runtime.Ready, ParkActive = park.State == AreaLifecycleState.Active, HasState = hasState,
+            runtime.Store.TryGet(parkId, out var snapshot);
+            return new ParkEventRequestInputs {
+                Available = Enabled && finance.Started && runtime.Ready, ParkActive = managed.State == AreaLifecycleState.Active, HasState = hasState,
                 State = hasState ? EntityManager.GetComponentData<ParkEventState>(area) : default, Frame = runtime.SimulationFrame, EventId = eventId,
-                HasPending = ledger.HasPending(park.StableId),
+                HasPending = ledger.HasPending(parkId),
                 CostKnown = snapshot != null && snapshot.ManagementCostKnown, DailyManagementCost = snapshot?.ManagementCostPerDay ?? double.NaN };
-            return ParkEventFinance.TryRequest(inputs, finance.LoadGeneration, park.StableId, area,
-                amount => finance.EnqueueExpense(park.StableId, AreaFinanceKind.ParkEvent, amount), ledger);
         }
         // Called from AreaFinanceSystem on the main thread, once per request batch (also zero/aborted/cancelled ones).
         public void OnAreaFinanceCompleted(AreaFinanceBatch requested, AreaFinanceBatch settled, uint frame)

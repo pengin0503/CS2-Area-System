@@ -165,7 +165,7 @@ public class ParkEventSystemSourceGuardTests {
   var system = Source("Modules/Park/ParkEventSystem.cs");
   Assert.That(system, Does.Contain("IAreaFinanceRequestListener"));
   Assert.That(system, Does.Contain("ParkEventFinance.TryRequest("));
-  Assert.That(system, Does.Contain("finance.EnqueueExpense(park.StableId, AreaFinanceKind.ParkEvent, amount)"));
+  Assert.That(system, Does.Contain("finance.EnqueueExpense(parkId, AreaFinanceKind.ParkEvent, amount)"));
   Assert.That(system, Does.Contain("Available = Enabled && finance.Started && runtime.Ready"));
   Assert.That(system, Does.Contain("CostKnown = snapshot != null && snapshot.ManagementCostKnown"));
  }

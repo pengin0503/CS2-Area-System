@@ -44,6 +44,8 @@ public class ParkPanelFixtureTests {
   Section(writer, "trends", ParkPanelBuilderTests.WithTrends());
   Section(writer, "diagnostics", ParkPanelBuilderTests.WithDiagnostics(true, new ParkLandscapeDiagnostic("LowLighting", 1, Unity.Entities.Entity.Null),
    new ParkLandscapeDiagnostic("SparseAmenities", 0.5, ParkPanelBuilderTests.Prop)));
+  Section(writer, "eventReady", ParkEventPanelTests.WithEvents(ParkPanelBuilderTests.Model()));
+  Section(writer, "eventActive", ParkEventPanelTests.Active());
   writer.MapEnd();
   writer.PropertyName("enUS"); writer.MapBegin(0);
   foreach (var entry in NativeAreaLocalization.Entries("en-US").OrderBy(e => e.Key, StringComparer.Ordinal)) { writer.PropertyName(entry.Key); writer.Write(entry.Value); }

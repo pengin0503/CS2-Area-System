@@ -16,16 +16,16 @@ vi.mock('cs2/modding',()=>({getModule:(_p:string,name:string)=>{
 const {AreaInfoSection}=await import('./AreaInfoSection');
 const {resetVanillaCache}=await import('./vanilla');
 afterEach(()=>{env.trigger.mockClear();resetVanillaCache();});
-type Name='level1'|'level2'|'level4'|'unscanned'|'suspended'|'trends'|'diagnostics';
+type Name='level1'|'level2'|'level4'|'unscanned'|'suspended'|'trends'|'diagnostics'|'eventReady'|'eventActive';
 const section=(name:Name)=>fixture.sections[name] as unknown as AreaSectionData;
 const t=(key:string)=>env.dict[key]??key;
 const item=(name:Name,tab:string,id:string)=>section(name).tabs.find(x=>x.id===tab)!.items!.find(x=>x.id===id) as AreaPanelItem;
 const row=(label:string)=>screen.getAllByRole('row').find(r=>r.firstElementChild?.textContent===label)!;
 const open=(key:string)=>fireEvent.click(screen.getByRole('button',{name:t(key)}));
 describe('Park management tabs (real C# payload)',()=>{
- it('offers the five approved tabs and hides the duplicate core level rows',()=>{
+ it('offers the approved tabs with Events last and hides the duplicate core level rows',()=>{
   render(<AreaInfoSection {...section('level2')}/>);
-  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Visitors','CS2AS.Tab.Finances','CS2AS.Tab.Landscape','CS2AS.Tab.Progress'].map(t));
+  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Visitors','CS2AS.Tab.Finances','CS2AS.Tab.Landscape','CS2AS.Tab.Progress','CS2AS.Tab.Events'].map(t));
   expect(screen.queryByText(t('CS2AS.UI.Level'))).toBeNull();
  });
  it('overview shows level name, quality, six metrics and the overlap warning',()=>{
@@ -106,6 +106,29 @@ describe('Park management tabs (real C# payload)',()=>{
   render(<AreaInfoSection {...section('suspended')}/>);
   expect(screen.getAllByRole('alert').map(a=>a.textContent)).toContain(t('CS2AS.Park.Warning.NoEntrance'));
   expect(row(t('CS2AS.Park.Quality'))).toHaveTextContent(t('CS2AS.Park.Calculating'));
+ });
+ it('events tab offers the festival at its cost and sends the start request with the event id',()=>{
+  render(<AreaInfoSection {...section('eventReady')}/>);open('CS2AS.Tab.Events');
+  expect(row(t('CS2AS.Park.Events.Status'))).toHaveTextContent(t('CS2AS.Park.Events.Status.None'));
+  expect(row(t('CS2AS.Park.Events.Cost'))).toHaveTextContent(item('eventReady','events','events.cost').value!);
+  fireEvent.click(screen.getByRole('button',{name:t('CS2AS.Park.Events.Start.1')}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','startEvent','1');
+ });
+ it('a running festival shows remaining time, effects and history, and its start button sends nothing',()=>{
+  render(<AreaInfoSection {...section('eventActive')}/>);open('CS2AS.Tab.Events');
+  expect(row(t('CS2AS.Park.Events.Status'))).toHaveTextContent(t('CS2AS.Park.Events.Status.Active'));
+  expect(row(t('CS2AS.Park.Events.RemainingHours'))).toHaveTextContent(item('eventActive','events','events.remaining').value!);
+  expect(screen.getByText(t('CS2AS.Park.Events.Effects'))).toBeInTheDocument();
+  expect(screen.getAllByRole('row').filter(r=>r.firstElementChild?.textContent===t('CS2AS.Park.Events.Name.1')).map(r=>r.lastElementChild?.textContent))
+   .toEqual([item('eventActive','events','events.history.0').value,item('eventActive','events','events.history.1').value]);
+  const start=screen.getByRole('button',{name:t('CS2AS.Park.Events.Start.1')});
+  fireEvent.click(start);
+  expect(env.trigger).not.toHaveBeenCalled();
+ });
+ it('without the event module the Events tab only explains why',()=>{
+  render(<AreaInfoSection {...section('level2')}/>);open('CS2AS.Tab.Events');
+  expect(screen.getByRole('alert')).toHaveTextContent(t('CS2AS.Park.Events.Unavailable'));
+  expect(screen.queryByRole('button',{name:t('CS2AS.Park.Events.Start.1')})).toBeNull();
  });
  it('every key the payload uses is localized',()=>{
   const keys=new Set<string>();

@@ -23,9 +23,9 @@ public class ParkPanelBuilderTests {
  }
  private static AreaPanelTabData Tab(AreaPanelDocument d, string id) => d.Tabs.Single(t => t.Id == id);
  private static AreaPanelItem Item(AreaPanelTabData t, string id) => t.Items.Single(i => i.Id == id);
- [Test] public void EmitsTheFiveApprovedTabs() {
+ [Test] public void EmitsTheApprovedTabsWithEventsLast() {
   var d = ParkPanelBuilder.Build(Model());
-  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "visitors", "finances", "landscape", "progress" }));
+  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "visitors", "finances", "landscape", "progress", "events" }));
   Assert.That(d.ShowsProgress, Is.True, "the Park tabs present Level/XP, so Core omits its numeric rows");
  }
  [Test] public void OverviewShowsLevelQualitySixMetricsVisitorsEntrancesAndNextAction() {
@@ -93,10 +93,13 @@ public class ParkPanelBuilderTests {
   var top = Model(level: 5); top.Promotion = ParkProgressionModel.EvaluatePromotion(5, 99_999, new ParkProgressInputs());
   Assert.That(Tab(ParkPanelBuilder.Build(top), "progress").Items.Any(i => i.Id == "maxLevel"), Is.True);
  }
- [Test] public void NoPoliciesOrEventsAreOffered() {
+ [Test] public void NoPoliciesAreOfferedAndTheOnlyEventActionIsTheFestivalStart() {
   var d = ParkPanelBuilder.Build(Model(level: 5));
   var actions = d.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null).Select(i => i.Action).Distinct();
-  Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee", "previewBudget", "previewFee" }));
+  Assert.That(actions, Is.EquivalentTo(new[] { "setBudget", "setFee", "previewBudget", "previewFee" }), "no start control while the event module is unavailable");
+  var events = ParkPanelBuilder.Build(ParkEventPanelTests.WithEvents(Model(level: 5)));
+  Assert.That(events.Tabs.SelectMany(t => t.Items).Where(i => i.Action != null).Select(i => i.Action).Distinct(),
+   Is.EquivalentTo(new[] { "setBudget", "setFee", "previewBudget", "previewFee", "startEvent" }));
  }
  // ---- Wave A5 landscape diagnostics
  internal static readonly Unity.Entities.Entity Prop = new() { Index = 41, Version = 3 };
@@ -194,7 +197,8 @@ public class ParkPanelBuilderTests {
  public void EveryKeyTheParkPanelCanEmitIsLocalized(string locale) {
   var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);
   var keys = new HashSet<string>(ParkPanelBuilder.AllKeys());
-  foreach (var model in new[] { Model(1), Model(2, landscape: false, primary: false), Model(4), Model(5), Model(quality: false, entrances: 0) })
+  foreach (var model in new[] { Model(1), Model(2, landscape: false, primary: false), Model(4), Model(5), Model(quality: false, entrances: 0),
+   ParkEventPanelTests.WithEvents(Model()), ParkEventPanelTests.Active(), ParkEventPanelTests.Pending() })
    foreach (var item in ParkPanelBuilder.Build(model).Tabs.SelectMany(t => t.Items.Select(i => (t, i)))) {
     keys.Add(item.t.LabelKey); keys.Add(item.i.LabelKey); if (item.i.ValueKey != null) keys.Add(item.i.ValueKey); if (item.i.TooltipKey != null) keys.Add(item.i.TooltipKey); }
   keys.Add("CS2AS.Park.Summary.Active"); keys.Add("CS2AS.Park.Summary.EntranceRequired"); keys.Add("CS2AS.Park.Summary.EntranceInvalid");
@@ -212,5 +216,80 @@ public class ParkPanelCacheTests {
   Assert.That(cache.Get(b, Build), Is.Not.SameAs(first), "another Park is never served a cached document"); Assert.That(builds, Is.EqualTo(2));
   now = 400; cache.Get(b, Build); Assert.That(builds, Is.EqualTo(3), "refreshes after the interval");
   cache.Invalidate(); cache.Get(b, Build); Assert.That(builds, Is.EqualTo(4), "an applied action shows immediately");
+ }
+}
+
+// Phase 2 C5 Task 4: the Events tab shows status, cost, the guarded start button, lifetime totals and history.
+public class ParkEventPanelTests {
+ internal static ParkPanelModel WithEvents(ParkPanelModel m, ParkEventRequestOutcome start = ParkEventRequestOutcome.Request, long cost = 450) {
+  m.EventsAvailable = true; m.HasEvents = true; m.Events = ParkEventState.CreateDefault(); m.EventStart = start; m.EventCost = cost;
+  return m;
+ }
+ internal static ParkPanelModel Active() {
+  var m = WithEvents(ParkPanelBuilderTests.Model(), ParkEventRequestOutcome.Active, 0);
+  m.Events = ParkEventModel.Start(m.Events, ParkEventCatalog.ParkFestival, 100, 450);
+  m.Frame = 100 + ParkEventCatalog.DurationFrames / 2;
+  m.EventHistory = new[] { ParkEventModel.HistoryEntry(ParkEventModel.Start(ParkEventState.CreateDefault(), 1, 10, 300), 300), ParkEventModel.HistoryEntry(m.Events, 450) };
+  return m;
+ }
+ internal static ParkPanelModel Pending() {
+  var m = WithEvents(ParkPanelBuilderTests.Model(), ParkEventRequestOutcome.Pending, 0);
+  m.EventPendingCost = 450;
+  return m;
+ }
+ static AreaPanelTabData Tab(ParkPanelModel m) => ParkPanelBuilder.Build(m).Tabs.Single(t => t.Id == "events");
+ static AreaPanelItem Item(AreaPanelTabData t, string id) => t.Items.Single(i => i.Id == id);
+ static AreaPanelItem? Find(AreaPanelTabData t, string id) => t.Items.SingleOrDefault(i => i.Id == id);
+ [Test] public void IdleParkOffersTheFestivalAtItsCost() {
+  var tab = Tab(WithEvents(ParkPanelBuilderTests.Model()));
+  Assert.That(Item(tab, "events.status").ValueKey, Is.EqualTo("CS2AS.Park.Events.Status.None"));
+  Assert.That(Item(tab, "events.cost").Value, Is.EqualTo("¢450"));
+  var start = Item(tab, "events.start");
+  Assert.That((start.Kind, start.Action, start.Value, start.Disabled, start.LabelKey), Is.EqualTo((AreaPanelItemKind.Button, ParkGameplayFacade.StartEvent, "1", false, "CS2AS.Park.Events.Start.1")));
+  Assert.That(tab.Items.Any(i => i.Kind == AreaPanelItemKind.Note && i.LabelKey == "CS2AS.Park.Events.Tip"), Is.True);
+ }
+ [TestCase(ParkEventRequestOutcome.Inactive)] [TestCase(ParkEventRequestOutcome.NoCost)] [TestCase(ParkEventRequestOutcome.Unavailable)]
+ public void BlockedStartIsDisabledWithItsReason(ParkEventRequestOutcome outcome) {
+  var start = Item(Tab(WithEvents(ParkPanelBuilderTests.Model(), outcome, 0)), "events.start");
+  Assert.That(start.Disabled, Is.True);
+  Assert.That(start.TooltipKey, Is.EqualTo("CS2AS.Park.Events.Blocked." + outcome));
+ }
+ [Test] public void UnknownCostIsCalculatingNotZero() =>
+  Assert.That(Item(Tab(WithEvents(ParkPanelBuilderTests.Model(), ParkEventRequestOutcome.NoCost, 0)), "events.cost").ValueKey, Is.EqualTo("CS2AS.Park.Calculating"));
+ [Test] public void PendingShowsTheRequestedCostAndNoSecondStart() {
+  var tab = Tab(Pending());
+  Assert.That(Item(tab, "events.status").ValueKey, Is.EqualTo("CS2AS.Park.Events.Status.Pending"));
+  Assert.That(Item(tab, "events.pendingCost").Value, Is.EqualTo("¢450"));
+  Assert.That(Item(tab, "events.start").Disabled, Is.True);
+ }
+ [Test] public void ActiveFestivalShowsRemainingTimeEffectsLifetimeAndNewestFirstHistory() {
+  var tab = Tab(Active());
+  Assert.That(Item(tab, "events.status").ValueKey, Is.EqualTo("CS2AS.Park.Events.Status.Active"));
+  Assert.That(Item(tab, "events.remaining").Value, Is.EqualTo("12"), "half a day left, in in-game hours");
+  Assert.That(tab.Items.Any(i => i.Kind == AreaPanelItemKind.Note && i.LabelKey == "CS2AS.Park.Events.Effects"), Is.True);
+  Assert.That(Find(tab, "events.cost"), Is.Null);
+  Assert.That(Item(tab, "events.lifetimeEvents").Value, Is.EqualTo("1"));
+  Assert.That(Item(tab, "events.lifetimeExpense").Value, Is.EqualTo("¢450"));
+  var history = tab.Items.Where(i => i.Id.StartsWith("events.history.")).ToList();
+  Assert.That(history.Select(h => h.Value), Is.EqualTo(new[] { "¢450", "¢300" }), "newest first");
+  Assert.That(history.All(h => h.LabelKey == "CS2AS.Park.Events.Name.1"), Is.True);
+ }
+ [Test] public void SuspendedParkShowsTheFestivalAsPaused() {
+  var m = Active(); m.Lifecycle = AreaLifecycleState.Suspended;
+  Assert.That(Item(Tab(m), "events.status").ValueKey, Is.EqualTo("CS2AS.Park.Events.Status.Paused"), "time continues, effects are neutral");
+ }
+ [Test] public void UnavailableModuleShowsAWarningAndNoControl() {
+  var m = WithEvents(ParkPanelBuilderTests.Model()); m.EventsAvailable = false;
+  var tab = Tab(m);
+  Assert.That(tab.Items.Any(i => i.Kind == AreaPanelItemKind.Warning && i.LabelKey == "CS2AS.Park.Events.Unavailable"), Is.True);
+  Assert.That(tab.Items.Any(i => i.Action != null), Is.False);
+ }
+ [TestCase("en-US")] [TestCase("ja-JP")]
+ public void EveryEventKeyIsLocalized(string locale) {
+  var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);
+  foreach (var key in ParkPanelBuilder.AllKeys().Where(k => k.Contains("Events")).Append("CS2AS.Tab.Events"))
+   Assert.That(entries.ContainsKey(key), Is.True, locale + " is missing " + key);
+  foreach (var outcome in Enum.GetNames(typeof(ParkEventRequestOutcome)).Where(o => o != "Request"))
+   Assert.That(ParkPanelBuilder.AllKeys(), Does.Contain("CS2AS.Park.Events.Blocked." + outcome));
  }
 }
