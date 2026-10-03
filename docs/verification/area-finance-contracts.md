@@ -21,7 +21,8 @@ Nothing here has been checked in a running game. The runtime checks are listed a
 | `Game.Simulation.ServiceFeeSystem` | `GetServiceFees(PlayerResource)`, `GetServiceFeeIncomeEstimate(PlayerResource, float)` | Fee income for `CollectedCityServiceFeeData` (`int m_PlayerResource`, export/import/internal amounts and counts). Keyed by `PlayerResource` only. |
 | `Game.Prefabs.ServiceData` | `CityService m_Service`, `bool m_BudgetAdjustable` | A service prefab belongs to one fixed `Game.City.CityService` value. |
 | `Game.Simulation.CollectedCityServiceUpkeepData` / `CollectedCityServiceBudgetData` | `m_Resource`, `m_FullCost`, `m_Amount`, `m_Cost` / `m_Workplaces`, `m_Count`, `m_Export`, `m_BaseCost`, `m_Wages`, `m_FullWages` | Per-service accumulators, rebuilt by vanilla jobs and serialized with the prefab entities. |
-| `EconomyUtils.GetResources(Resource, DynamicBuffer<Resources>)` / `AddResources(Resource, int, DynamicBuffer<Resources>)` | `int` / `int` | A household's money is its `Resource.Money` entry. `AddResources` clamps through `long`. |
+| `EconomyUtils.GetResources(Resource, DynamicBuffer<Resources>)` / `AddResources(Resource, int, DynamicBuffer<Resources>)` | `int` / `int` | A household's or company's money is its `Resource.Money` entry. `AddResources` adds through `long`, clamps to `int` and returns the new amount; with no entry for the resource it appends one with the given amount. |
+| `Game.Simulation.PayWageSystem.PayJob` | `IJob` with `BufferLookup<Resources>` (read-write) | The vanilla writer of company money: wages are paid with `EconomyUtils.AddResources(Resource.Money, -wage, m_Resources[company])` inside a scheduled job. Industrial support (C4) uses the same helper and access pattern. |
 
 ## Expense route (Area Management)
 
@@ -55,8 +56,25 @@ Park admission cannot use `CollectedCityServiceFeeData` or any `IncomeSource`. N
 
 - Producers run in GameSimulation (`UpdateAt`) and queue settled amounts with `EnqueueExpense`/`EnqueueIncome`. `AreaFinanceSystem` (`UpdateAfter`) takes the batch and schedules the job. The results are recorded on its next update, and the accounts hold only applied amounts.
 - `AreaFinanceSaveSystem` runs `UpdateBefore<SerializerSystem>` in Serialize. It completes the job in flight, completes tracked jobs, applies anything still queued and records it, so `PlayerMoney` is never serialized with Area amounts still pending. The logic is `AreaFinanceSaveBoundary.Flush`.
-- `OnGamePreload` clears the pending requests and the settled history. Nothing is back-charged across a load.
+- `OnGamePreload` first completes the job in flight and records what it applied (so the old city's listeners account it under the old load generation), then resets: queued requests are cancelled without charge and the settled history is cleared. Nothing is back-charged across a load.
 - `AreaFinanceAccounts` keeps the trailing in-game day of settled amounts. It is runtime-only: after a load it starts empty, and `SettledCoveredFrames` reports how much of the day it has observed so far.
+
+## Request completion (Phase 2)
+
+`IAreaFinanceRequestListener.OnAreaFinanceCompleted(requested, settled, frame)` reports every request batch exactly once, on the main thread:
+- after `CompleteApply`, with the applied entries (zero, partial or full);
+- after `AbortApply` (the job could not be scheduled), with `AreaFinanceBatch.Empty`;
+- on `Reset` (preload), for the in-flight and the queued batch, with `AreaFinanceBatch.Empty`.
+
+Requested entries the settlement omits (settled zero) are identified from `requested`. The positive `IAreaFinanceListener.OnAreaFinanceSettled` callback keeps its applied-only contract. A failing listener is isolated and reported; other listeners and the city accounts are unaffected. Tests: `AreaFinanceCompletionTests`.
+
+## Industrial support payments (Phase 2 C4)
+
+- `AreaFinanceKind.IndustrialSupport = 3` is an Area Management expense (value 4 is reserved for the C5 Park event kind).
+- `IndustrialSupportSystem` queues at most one request per Area and in-game day (`LastScheduledDay` is saved only after `EnqueueExpense` accepted it) and keeps the receiver roster runtime-only.
+- On completion only the settled amount is allocated: equal shares over the receivers that still resolve to the Area through B2, remainders to lower Entity Index/Version, each capped at the accepted per-company amount.
+- `IndustrialSupportCreditJob` is the only Area System write to company money: `EconomyUtils.AddResources(Resource.Money, amount, buffer)` through `BufferLookup<Resources>`, scheduled on the system's `Dependency`. The credited amount is the actual increase read back from the buffer, so `int` saturation is accounted, and `settled = credited + unallocated` per request.
+- `IndustrialSupportSaveSystem` runs after `AreaFinanceSaveSystem` in Serialize and credits/records everything settled by that flush before the serializer. Preload records a credit job that already ran and drops everything else; nothing is replayed after a load.
 
 ## Rounding
 
@@ -72,3 +90,4 @@ These checks are listed in `docs/verification/area-policy-system-runtime.md`:
 - The Expense/ServiceUpkeep statistic, as shown in the city statistics charts, includes the Area amount. This depends on a `StatisticsData` prefab existing for that key, which is asset data and cannot be read from `Game.dll`.
 - Park admission household debit and city credit are equal.
 - A save made between scheduling and recording reloads with matching counters and balance.
+- Industrial support debit, company credit and the save boundary: cases C401–C407 in `scripts/runtime-smoke-checklist.md` (NOT RUN).
