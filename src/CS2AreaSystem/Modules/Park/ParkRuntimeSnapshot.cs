@@ -93,6 +93,10 @@ namespace CS2AreaSystem.Modules.Park
         // Finance settlement remainder (runtime only; at most one currency unit is lost across a load).
         public double ExpenseCarry;
         public float ManagementNeedPerDay, ManagementCostPerDay;
+        // True once this load's management cost was computed (the Park event cost needs a current estimate).
+        public bool ManagementCostKnown;
+        // The event effects the current Quality snapshot was evaluated with (neutral until an event applies).
+        public ParkEventEffects QualityEventEffects = ParkEventEffects.Neutral;
         public readonly ParkTrendSnapshot Trends = new ParkTrendSnapshot();
         // Called after a Quality evaluation. Levels (Quality, satisfaction, occupancy) are sampled into the current hour,
         // replacing an earlier sample of the same hour. Flows (visits, admission, expense) are recorded for the previous,

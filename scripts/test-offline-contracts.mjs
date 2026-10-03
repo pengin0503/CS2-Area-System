@@ -262,6 +262,16 @@ for (const source of parkSources) {
   if (/\bPayManagement\b|\bStoredCityMoney\b|\bCityMoneyLimit\b|\bkMaxMoney\b|\bApply(Expense|Income)\s*\(/.test(text))
     failures.push(`${source}: Park must not clamp or apply city money itself (no available-balance management clamp)`);
 }
+// Phase 2 C5: Park events change only mod-owned Park inputs; never vanilla attraction, leisure providers, destination choice
+// or any vanilla component, and their expense is the ParkEvent Area Management kind.
+const parkEventSources = parkSources.filter(p => /\/ParkEvent[A-Za-z]*\.cs$/.test(p));
+check(parkEventSources.length >= 6, `Park event sources must exist (found ${parkEventSources.length})`);
+for (const source of parkEventSources) {
+  const text = code(source);
+  if (/Attraction|LeisureProvider|Pathfind|Citizen|(Set|Add)ComponentData<\s*Game\.|GetComponentLookup<\s*Game\.[^>]*>\s*\(\s*false/.test(text))
+    failures.push(`${source}: Park events must not touch vanilla attraction, leisure, citizens, pathfinding or vanilla components`);
+}
+check(/EnqueueExpense\(\s*park\.StableId,\s*AreaFinanceKind\.ParkEvent,/.test(code('src/CS2AreaSystem/Modules/Park/ParkEventSystem.cs')), 'Park event cost must be queued as a ParkEvent Area Management expense');
 const parkFinance = code('src/CS2AreaSystem/Modules/Park/ParkFinanceSystem.cs');
 check(/EnqueueExpense\(\s*park\.StableId,\s*AreaFinanceKind\.ParkManagement,/.test(parkFinance), 'Park management must be queued as an Area Management expense');
 check(/AreaFinanceHouseholdTransfer\.Transfer\(/.test(parkFinance) && /RecordSettledIncome\(/.test(code('src/CS2AreaSystem/Modules/Park/ParkTransactions.cs') + parkFinance),

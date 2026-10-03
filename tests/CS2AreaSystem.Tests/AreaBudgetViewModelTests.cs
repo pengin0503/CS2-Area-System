@@ -16,11 +16,12 @@ public class AreaBudgetViewModelTests {
   runtime.EnqueueExpense(1, AreaFinanceKind.PolicyUpkeep, 300);
   runtime.EnqueueExpense(2, AreaFinanceKind.ParkManagement, 120);
   runtime.EnqueueExpense(3, AreaFinanceKind.IndustrialSupport, 80);
+  runtime.EnqueueExpense(2, AreaFinanceKind.ParkEvent, 40);
   var money = new PlayerMoney(-50_000);
   Apply(runtime, ref money, 256);
   runtime.RecordSettledIncome(300, 2, AreaFinanceKind.ParkAdmission, 45);
   var view = AreaBudgetViewModel.From(runtime, 512);
-  Assert.That(view.AreaManagement, Is.EqualTo(500), "policy upkeep, Park management and Industrial support, all applied while the city was in debt");
+  Assert.That(view.AreaManagement, Is.EqualTo(540), "policy upkeep, Park management, Industrial support and the Park event, all applied while the city was in debt");
   Assert.That(view.AreaServiceFees, Is.EqualTo(45));
  }
  [Test] public void QueuedButUnappliedAmountsAreNotShown() {

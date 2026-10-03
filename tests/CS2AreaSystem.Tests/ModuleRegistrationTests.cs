@@ -52,6 +52,11 @@ public class ModuleRegistrationTests {
         Assert.That(source, Does.Contain("ModuleRegistration.Requires(finance, \"Industrial support\""));
         Assert.That(source, Does.Contain("ModuleRegistration.Requires(industrial, \"Industrial support\""));
         Assert.That(source, Does.Contain("new ModuleRegistration(\"Industrial support\",\n                typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem))"));
+        // Park events book city money and change Park gameplay inputs: they need complete finance and Park modules, and a
+        // failure disables only the event module (base Park gameplay keeps running with neutral event effects).
+        Assert.That(source, Does.Contain("ModuleRegistration.Requires(finance, \"Park events\""));
+        Assert.That(source, Does.Contain("ModuleRegistration.Requires(park, \"Park events\""));
+        Assert.That(source, Does.Contain("new ModuleRegistration(\"Park events\", typeof(CS2AreaSystem.Modules.Park.ParkEventSystem))"));
     }
 }
 // #49: a non-native tool blocks only its Area type, the native tool restores it, and a new load forgets every block.

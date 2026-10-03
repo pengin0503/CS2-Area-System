@@ -36,8 +36,9 @@ namespace CS2AreaSystem.Core.Finance
             for (int i = head; i < records.Count; i++) if (records[i].Kind == kind) total = AreaFinanceModel.SaturatingAdd(total, records[i].Amount);
             return total;
         }
-        public long AreaManagement(uint frame) => AreaFinanceModel.SaturatingAdd(AreaFinanceModel.SaturatingAdd(
-            Settled(AreaFinanceKind.PolicyUpkeep, frame), Settled(AreaFinanceKind.ParkManagement, frame)), Settled(AreaFinanceKind.IndustrialSupport, frame));
+        public long AreaManagement(uint frame) => AreaFinanceModel.SaturatingAdd(AreaFinanceModel.SaturatingAdd(AreaFinanceModel.SaturatingAdd(
+            Settled(AreaFinanceKind.PolicyUpkeep, frame), Settled(AreaFinanceKind.ParkManagement, frame)), Settled(AreaFinanceKind.IndustrialSupport, frame)),
+            Settled(AreaFinanceKind.ParkEvent, frame));
         public long AreaServiceFees(uint frame) => Settled(AreaFinanceKind.ParkAdmission, frame);
         // Records arrive in frame order; unsigned distance keeps the window correct across frame-counter wrap.
         private void Prune(uint frame)

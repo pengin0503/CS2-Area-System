@@ -118,6 +118,7 @@ namespace CS2AreaSystem.Modules.Park
                 // Enhanced Maintenance raises the real management spend; Quality's coverage reads the same multiplier.
                 snapshot.ManagementCostPerDay = ParkFinanceModel.ComputeManagementCostPerDay(snapshot.ManagementNeedPerDay, budget,
                     policyEffects.Read(park.Area).ManagementFundingMultiplier);
+                snapshot.ManagementCostKnown = true;
                 if (!ParkFinanceModel.ShouldSettleManagement(park.State)) return;
                 areaFinance.EnqueueExpense(park.StableId, AreaFinanceKind.ParkManagement, ParkFinanceModel.Settle(snapshot.ManagementCostPerDay, elapsed, ref snapshot.ExpenseCarry));
                 failures.Recovered(park.Area, "Park.Settlement");
