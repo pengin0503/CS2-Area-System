@@ -58,13 +58,19 @@ namespace CS2AreaSystem.Core.Finance
             DisposeBuffers();
             base.OnDestroy();
         }
-        // A new city starts with no pending requests and no settled history; nothing is carried across loads.
+        // A new city starts with no pending requests and no settled history; nothing is carried across loads. A job that
+        // already moved old-city money is recorded first, so request listeners account it under the old generation;
+        // queued requests are then cancelled without a charge (reported with an empty settlement).
         protected override void OnGamePreload(Colossal.Serialization.Entities.Purpose purpose, GameMode mode)
         {
             pending.Complete();
-            DisposeBuffers();
-            runtime.Reset();
-            loadGeneration++;
+            try { RecordResults(); }
+            finally
+            {
+                DisposeBuffers();
+                runtime.Reset();
+                loadGeneration++;
+            }
         }
         [Preserve]
         protected override void OnUpdate()
@@ -76,6 +82,8 @@ namespace CS2AreaSystem.Core.Finance
             if (runtime.HasQueued) Schedule();
         }
         public bool AddListener(IAreaFinanceListener listener) => runtime.AddListener(listener);
+        public bool AddRequestListener(IAreaFinanceRequestListener listener) => runtime.AddRequestListener(listener);
+        public bool RemoveRequestListener(IAreaFinanceRequestListener listener) => runtime.RemoveRequestListener(listener);
         // Owners remove themselves in OnDestroy; a destroyed system is never called back.
         public bool RemoveListener(IAreaFinanceListener listener) => runtime.RemoveListener(listener);
         public bool EnqueueExpense(ulong areaStableId, AreaFinanceKind kind, long amount) => runtime.EnqueueExpense(areaStableId, kind, amount);
