@@ -167,7 +167,9 @@ public class ParkEventSystemSourceGuardTests {
   Assert.That(system, Does.Contain("ParkEventFinance.TryRequest("));
   Assert.That(system, Does.Contain("finance.EnqueueExpense(parkId, AreaFinanceKind.ParkEvent, amount)"));
   Assert.That(system, Does.Contain("Available = Enabled && finance.Started && runtime.Ready"));
-  Assert.That(system, Does.Contain("CostKnown = snapshot != null && snapshot.ManagementCostKnown"));
+  Assert.That(system, Does.Not.Contain("snapshot.ManagementCostKnown"), "a settled snapshot does not prove current budget/policy inputs");
+  Assert.That(system, Does.Contain("parkFinance.ReadManagementCost(area, snapshot, frame)"));
+  Assert.That(system, Does.Contain("CostKnown = estimate.Known, DailyManagementCost = estimate.CostPerDay"));
  }
  [Test] public void CompletionRecordsTheEventExpenseInParkRecentExpenseOnce() {
   var system = Source("Modules/Park/ParkEventSystem.cs");

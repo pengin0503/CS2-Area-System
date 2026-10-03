@@ -17,6 +17,7 @@ namespace CS2AreaSystem.Modules.Park
         public const uint UpdateFrames = ParkQualitySystem.UpdateFrames;
         private ParkRuntimeSystem runtime;
         private AreaFinanceSystem finance;
+        private ParkFinanceSystem parkFinance;
         private ParkQualitySystem quality;
         private CS2AreaSystem.Core.Diagnostics.AreaFailureLog failures;
         private readonly ParkEventLedger ledger = new ParkEventLedger();
@@ -31,6 +32,7 @@ namespace CS2AreaSystem.Modules.Park
             base.OnCreate();
             runtime = World.GetOrCreateSystemManaged<ParkRuntimeSystem>();
             finance = World.GetOrCreateSystemManaged<AreaFinanceSystem>();
+            parkFinance = World.GetOrCreateSystemManaged<ParkFinanceSystem>();
             quality = World.GetOrCreateSystemManaged<ParkQualitySystem>();
             failures = World.GetOrCreateSystemManaged<AreaCoreServicesSystem>().Failures;
             finance.AddRequestListener(this);
@@ -97,11 +99,13 @@ namespace CS2AreaSystem.Modules.Park
             parkId = EntityManager.GetComponentData<ManagedAreaStableId>(area).Value;
             bool hasState = EntityManager.HasComponent<ParkEventState>(area);
             runtime.Store.TryGet(parkId, out var snapshot);
+            uint frame = runtime.SimulationFrame;
+            var estimate = parkFinance.ReadManagementCost(area, snapshot, frame);
             return new ParkEventRequestInputs {
                 Available = Enabled && finance.Started && runtime.Ready, ParkActive = managed.State == AreaLifecycleState.Active, HasState = hasState,
-                State = hasState ? EntityManager.GetComponentData<ParkEventState>(area) : default, Frame = runtime.SimulationFrame, EventId = eventId,
+                State = hasState ? EntityManager.GetComponentData<ParkEventState>(area) : default, Frame = frame, EventId = eventId,
                 HasPending = ledger.HasPending(parkId),
-                CostKnown = snapshot != null && snapshot.ManagementCostKnown, DailyManagementCost = snapshot?.ManagementCostPerDay ?? double.NaN };
+                CostKnown = estimate.Known, DailyManagementCost = estimate.CostPerDay };
         }
         // Called from AreaFinanceSystem on the main thread, once per request batch (also zero/aborted/cancelled ones).
         public void OnAreaFinanceCompleted(AreaFinanceBatch requested, AreaFinanceBatch settled, uint frame)
