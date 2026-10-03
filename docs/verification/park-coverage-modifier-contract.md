@@ -24,6 +24,7 @@ These are all `Game.dll` references to the type. `CoveragePreviewSystem` and `Se
 | `Game.Simulation.ParkAISystem` (`ParkTickJob`, `IJobChunk.ScheduleParallel`, RW type handle) | `GameSimulation`, interval `262144 / kUpdatesPerDay` = 1024 frames (`kUpdatesPerDay = 256`), offset assigned by `UpdateSystem` | For every entity in `Park + ModifiedServiceCoverage + Renter`, excluding `Temp`, `Destroyed` and `Deleted`, whose prefab has `ParkData` and `CoverageData`, it writes `GetModifiedServiceCoverage(park, parkData, coverageData, cityModifiers)` |
 | `Game.Buildings.ParkInitializeSystem` (`InitializeParksJob`) | `Modification5`, entities with `Created` | The same function, with maintenance reset to the pool |
 | Save/load (`ComponentSerializerLibrary`) | `Deserialize` | The saved value, because the type is `ISerializable` |
+| Structural paths (archetype rebuilds in `InitializeSystem`/`ReplacePrefabSystem`/`GenerateObjectsSystem`, Temp → original application) | Modification phases | Copied or default values; never a value derived by the mod |
 
 `GetModifiedServiceCoverage` always starts from `new ModifiedServiceCoverage(prefabCoverageData)`. It then:
 
@@ -104,6 +105,24 @@ A value that differs has been rewritten natively or externally, and is left alon
 
 On load, the saved values are native, and the runtime tracker starts empty. Even if a modified value was saved (for example after a crash mid-restore), it is overwritten by the next `ParkAISystem` pass (§2). The mod treats it as not fresh (§4), so it cannot be compounded.
 
+## 5a. Restore timing
+
+The writer runs only in `ParkAISystem`'s update slot (every 1024 frames). These cases therefore end at the next native pass, at most 1024 frames later, not at once:
+
+- the owning Park is suspended or deleted;
+- the building leaves the Park;
+- the budget changes.
+
+At that pass the native writer has already replaced the value with a fresh baseline, so the mod only forgets the entry. A tracked building that gets no fresh pass (destroyed, or its prefab lost its data) is restored to its stored baseline while the value is still the mod's write.
+
+Immediate restores happen on these paths:
+
+- save (`ParkCoverageModifierSaveSystem`);
+- writer failure (the `catch` in `OnUpdate`);
+- `Shutdown()`.
+
+Setting `Enabled = false` from outside restores through `OnStopRunning` at the writer's next update slot. This meets the plan's "same or next valid writer pass" rule. After every save, including autosave, buildings keep vanilla coverage until the next native pass.
+
 ## 6. Conclusion and remaining gate
 
 All five properties are proven from the supplied sources:
@@ -119,7 +138,7 @@ All five properties are proven from the supplied sources:
 
 C6 is therefore **not BLOCKED** at the API level.
 
-It still ships as a **production-disabled prototype**. `ParkCoverageModifierGate.RuntimeVerified` is `false`, and in that state the writer system is never enabled.
+It still ships as a **production-disabled prototype**. `ParkCoverageModifierGate.RuntimeVerified` is `false`, and in that state the writer system is never enabled. `Shutdown()` is the synchronous disable entry point. Any change that opens the gate must also wire a user-facing off switch to it, because nothing calls it while the gate is closed.
 
 ### Release gate
 

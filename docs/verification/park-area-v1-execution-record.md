@@ -86,3 +86,56 @@ Automated verification (final, after the review fixes):
 Final whole-branch review (fresh reviewer): no Critical/Important findings as labelled. Two Minor findings were re-graded and fixed test-first in `ff750be`: a suspended Park now still shows its outstanding festival payment, and a started festival recomputes Park Quality at once. Deferred minors: the "unavailable" warning can show for a brand-new Park until its event state is added on the next ModificationEnd; the XP tooltip does not mention that the +5 satisfaction also raises visit XP; the satisfaction adjustment is outside the per-listener `try`; a history write failure after the state write would leave a festival without a history row; the panel's start decision does not check quarantine (the action does).
 
 Runtime: **NOT RUN.** In-game checks C501–C507 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md) have not been performed.
+
+## Phase 2 C6 Park coverage operating modifier — 2026-10-03
+
+Branch `claude/phase2-c6-se4lwg`, based on the verified C5 head `a146d06` (merged to main as #89). Plan: `docs/superpowers/plans/2026-10-02-phase2-park-coverage-modifier-implementation.md`.
+
+**API gate: proven, not BLOCKED.** `docs/verification/park-coverage-modifier-contract.md` proves the following from the supplied 1.6.2f1 `Game.dll` and Entities 1.3.10 sources:
+
+- the exact fields;
+- every native writer, including the native recompute from prefab data on each pass;
+- consumer ordering (`ServiceCoverageSystem` before `ParkAISystem`) and job completion;
+- the fresh-baseline signal: chunk change version equals `ParkAISystem.LastSystemVersion`;
+- the serializer restore hook (before `SerializerSystem`).
+
+A fresh reviewer re-checked each step against the decompiled sources.
+
+**Implementation:**
+- **`ParkCoverageModifierModel`:** computes the factor `clamp(1 + 0.20 × (budget × EM funding − 1), 0.90, 1.10)`. It applies the factor to capacity and magnitude only; `m_Range` is untouched. Its tracker restores a building only while the value is still the mod's write.
+- **`ParkCoverageModifierSystem`:** runs directly after `ParkAISystem` at the same interval, inheriting its offset.
+- **`ParkCoverageModifierSaveSystem`:** restores the mod's values before the serializer.
+- **Finances tab:** shows the factor and a "not applied yet" note.
+- **Offline guards:** no `m_Range` writes; only the modifier touches `ModifiedServiceCoverage`; the gate stays closed.
+
+**Shipped disabled.** `ParkCoverageModifierGate.RuntimeVerified = false`, so the writer is created with `Enabled = false` and never runs in this build. Phase 2 is **not** complete.
+
+Commits after `a146d06`:
+
+| Commit | Change |
+| --- | --- |
+| `565d728` | contract |
+| `71eb327` | model |
+| `ecd8b99` | writer and save restore |
+| `21c7abc` | panel, guards, checklist |
+| (this commit) | review rulings and docs |
+
+Automated verification:
+- `scripts/verify.ps1 -ApiCheck` exits 0.
+  - NUnit: 1239/1239.
+  - Vitest: 113/113.
+  - Source guards and offline contracts pass, with negative checks for the gate and for `m_Range`.
+- Release API-check build: 0 warnings.
+- `git diff --check`: clean.
+- The test project keeps its 6 pre-existing CS8632 warnings.
+
+Review rulings:
+- Ownership loss, suspension and budget changes take effect at the next native pass (≤1024 frames).
+- `Shutdown()` must be wired to an off switch by whatever change opens the gate.
+
+Deferred minors:
+- The system tests live in the model test file.
+- System behaviour is covered only by source guards.
+- There is a theoretical bitwise-equality coincidence on restore.
+
+Runtime: **NOT RUN.** The release gate C601–C606 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md) has not been performed, and the gate must stay closed until it passes.
