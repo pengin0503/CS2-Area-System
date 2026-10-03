@@ -61,4 +61,65 @@ public class ParkCoverageModifierModelTests {
   Assert.That(restored.Select(r => (r.Item1, r.Item2.m_Capacity)), Is.EqualTo(new[] { (a, 10f) }), "b no longer exists");
   Assert.That(tracker.Count, Is.Zero);
  }
+ [TestCase(500u, 500u, true, true)] [TestCase(499u, 500u, true, false)] [TestCase(501u, 500u, true, false)] [TestCase(500u, 500u, false, false)] [TestCase(0u, 0u, true, false)]
+ public void OnlyAChunkWrittenInTheNativeWritersLastUpdateIsAFreshBaseline(uint chunk, uint native, bool written, bool fresh) =>
+  Assert.That(ParkCoverageModifierModel.IsFresh(chunk, native, written), Is.EqualTo(fresh));
+ [Test] public void BuildingsThatLeftEveryParkAreRestoredWhileStillOurs() {
+  var tracker = new ParkCoverageTracker();
+  var kept = new Entity { Index = 1, Version = 1 }; var left = new Entity { Index = 2, Version = 1 }; var rewritten = new Entity { Index = 3, Version = 1 };
+  tracker.OnFreshBaseline(kept, Value(10, 1), 1, 1.1f, out _);
+  tracker.OnFreshBaseline(left, Value(20, 1), 1, 1.1f, out var leftWrite);
+  tracker.OnFreshBaseline(rewritten, Value(30, 1), 1, 1.1f, out _);
+  var restored = new List<Entity>();
+  tracker.RestoreUnvisited(new HashSet<Entity> { kept }, e => e == left ? leftWrite : Value(31, 1), (e, v) => restored.Add(e));
+  Assert.That(restored, Is.EqualTo(new[] { left }), "a natively rewritten building keeps its native value");
+  Assert.That(tracker.IsTracked(kept), Is.True);
+  Assert.That(tracker.Count, Is.EqualTo(1));
+ }
 }
+// The C6 writer ships disabled: it is registered, ordered and restorable, but never enabled until the in-game gate passes.
+public class ParkCoverageModifierSystemTests {
+ static string Source(string path) => IndustrialSupportSourceGuardTests.Source(path);
+ [Test] public void TheRuntimeGateIsClosed() => Assert.That(ParkCoverageModifierGate.RuntimeVerified, Is.False);
+ [Test] public void TheWriterRunsOnTheNativeWritersInterval() =>
+  Assert.That(new ParkCoverageModifierSystem().GetUpdateInterval(Game.SystemUpdatePhase.GameSimulation), Is.EqualTo(262144 / Game.Simulation.ParkAISystem.kUpdatesPerDay));
+ [Test] public void TheWriterIsDisabledFromCreationUnlessTheGateIsOpen() {
+  var system = Source("Modules/Park/ParkCoverageModifierSystem.cs");
+  Assert.That(system, Does.Contain("Enabled = ParkCoverageModifierGate.RuntimeVerified;"));
+  Assert.That(system.IndexOf("Enabled = ParkCoverageModifierGate.RuntimeVerified;"), Is.LessThan(system.IndexOf("protected override void OnUpdate()")));
+ }
+ [Test] public void TheWriterUsesTheVerifiedFreshnessSignalAfterCompletingTheNativeJob() {
+  var system = Source("Modules/Park/ParkCoverageModifierSystem.cs");
+  int complete = system.IndexOf("EntityManager.CompleteDependencyBeforeRO<ModifiedServiceCoverage>();");
+  Assert.That(complete, Is.GreaterThan(0));
+  Assert.That(system.IndexOf("GetChangeVersion(ref coverageHandle)"), Is.GreaterThan(complete));
+  Assert.That(system, Does.Contain("parkAI.LastSystemVersion"));
+  Assert.That(system, Does.Contain("ParkCoverageModifierModel.IsFresh("));
+  Assert.That(system, Does.Contain("tracker.OnFreshBaseline("));
+  Assert.That(system, Does.Not.Contain("m_Range"), "range is never written");
+ }
+ // A write stamps the whole chunk with the mod's version, so every building's freshness is read before the first write.
+ [Test] public void FreshnessIsReadForEveryBuildingBeforeAnyWrite() {
+  var system = Source("Modules/Park/ParkCoverageModifierSystem.cs");
+  int update = system.IndexOf("protected override void OnUpdate()");
+  int lastFresh = system.LastIndexOf("IsFresh(member, native)");
+  int firstWrite = system.IndexOf("EntityManager.SetComponentData(", update);
+  Assert.That(lastFresh, Is.GreaterThan(update));
+  Assert.That(system.IndexOf("foreach (var candidate in candidates)", update), Is.GreaterThan(lastFresh));
+  Assert.That(firstWrite, Is.GreaterThan(system.IndexOf("foreach (var candidate in candidates)", update)));
+ }
+ // A tracked building the native writer no longer refreshes (destroyed, prefab lost its data) or that left every Park
+ // gets its baseline back instead of keeping a stale modified value.
+ [Test] public void TrackedBuildingsWithoutAFreshPassAreRestored() =>
+  Assert.That(Source("Modules/Park/ParkCoverageModifierSystem.cs"), Does.Contain("tracker.RestoreUnvisited(fresh, Read, Write);"));
+ [Test] public void FailureDisableAndSaveRestoreTrackedValues() {
+  var system = Source("Modules/Park/ParkCoverageModifierSystem.cs");
+  Assert.That(system, Does.Contain("protected override void OnStopRunning()"));
+  Assert.That(system, Does.Contain("public void Shutdown()"));
+  Assert.That(system.Split("RestoreTracked()").Length - 1, Is.GreaterThanOrEqualTo(4), "declaration, failure, stop, shutdown");
+  Assert.That(system, Does.Contain("tracker.Clear();"), "preload forgets the previous world's entities without writing");
+  var save = Source("Modules/Park/ParkCoverageModifierSaveSystem.cs");
+  Assert.That(save, Does.Contain("writer.RestoreTracked();"));
+ }
+}
+

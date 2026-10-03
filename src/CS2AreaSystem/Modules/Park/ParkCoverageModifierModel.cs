@@ -15,6 +15,11 @@ namespace CS2AreaSystem.Modules.Park
             float effective = ParkFinanceModel.ComputeManagementCoverage(budgetMultiplier, fundingMultiplier);
             return Math.Min(MaxFactor, Math.Max(MinFactor, 1f + BudgetSlope * (effective - 1f)));
         }
+        // Fresh native baseline (contract §4): the building's chunk was last written in ParkAISystem's latest update (its
+        // LastSystemVersion), the mod has not handled that update yet (checked by the caller), and its prefab has the
+        // ParkData/CoverageData the native job needs to actually write it. Version 0 means "never".
+        public static bool IsFresh(uint chunkChangeVersion, uint nativeWriterVersion, bool nativeWriterWritesIt) =>
+            nativeWriterWritesIt && nativeWriterVersion != 0 && chunkChangeVersion == nativeWriterVersion;
         public static ModifiedServiceCoverage Apply(in ModifiedServiceCoverage baseline, float factor) =>
             new ModifiedServiceCoverage { m_Range = baseline.m_Range, m_Capacity = baseline.m_Capacity * factor, m_Magnitude = baseline.m_Magnitude * factor };
         // Bitwise: "still our write" must not treat a different native value as equal.
@@ -61,6 +66,19 @@ namespace CS2AreaSystem.Modules.Park
         {
             scratch.Clear();
             scratch.AddRange(entries.Keys);
+            foreach (var building in scratch)
+            {
+                var current = read(building);
+                if (current == null) { entries.Remove(building); continue; }
+                if (TryRestore(building, current.Value, out var baseline)) write(building, baseline);
+            }
+            scratch.Clear();
+        }
+        // Buildings no longer handled by any Park this pass: restored while still ours, otherwise forgotten.
+        public void RestoreUnvisited(ICollection<Entity> visited, Func<Entity, ModifiedServiceCoverage?> read, Action<Entity, ModifiedServiceCoverage> write)
+        {
+            scratch.Clear();
+            foreach (var building in entries.Keys) if (!visited.Contains(building)) scratch.Add(building);
             foreach (var building in scratch)
             {
                 var current = read(building);
