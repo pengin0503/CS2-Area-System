@@ -25,6 +25,8 @@ namespace CS2AreaSystem.Modules.Industrial
     public sealed class IndustrialCycleAccumulator
     {
         internal readonly HashSet<Entity> Seen = new HashSet<Entity>();
+        // Every company resolved to this Area in this cycle (C4 support roster), independent of the UI candidate list.
+        internal readonly HashSet<Entity> SupportReceivers = new HashSet<Entity>();
         public int Members, Ignored, Extractors, Processors, StorageFacilities, CargoFacilities, CargoOperational, ProducerFacilities, OperatingProducers;
         public int ProducerJobs, ProducerEmployees, SupportJobs, SupportEmployees;
         public readonly int[] VacanciesByLevel = new int[5];
@@ -76,6 +78,7 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             // Each member building is credited once per cycle, even if it was read twice.
             if (obs.CandidateOnly || !acc.Seen.Add(obs.Facility)) return;
+            if (obs.OwnedCompanies != null) foreach (var company in obs.OwnedCompanies) acc.SupportReceivers.Add(company);
             acc.Members++;
             var roles = obs.Roles;
             if ((roles & IndustrialFacilityClassifier.EligibleRoles) == 0) { acc.Ignored++; return; }
@@ -160,6 +163,10 @@ namespace CS2AreaSystem.Modules.Industrial
                 StoredAmount = acc.Stored, StorageCapacity = acc.Capacity, StorageObserved = acc.StorageObserved,
                 InputSample = acc.Input, OutputSample = acc.Output, FailedReads = acc.FailedReads };
             Array.Copy(acc.VacanciesByLevel, result.VacanciesByLevel, 5);
+            var roster = new List<Entity>(acc.SupportReceivers);
+            roster.Sort(IndustrialSupportScheduling.CompareEntities);
+            result.SupportRoster = roster.AsReadOnly();
+            result.SupportRosterComplete = acc.FailedReads == 0;
             foreach (var total in acc.Resources.Values) result.Resources.Add(total);
             result.Resources.Sort((a, b) => b.WeightedActivity.CompareTo(a.WeightedActivity));
             result.Processes.AddRange(acc.Processes.Values);

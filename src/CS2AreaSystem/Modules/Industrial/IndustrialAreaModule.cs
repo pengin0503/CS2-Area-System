@@ -12,6 +12,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public void ValidateSavedState(Entity area, EntityManager entities, Core.Persistence.AreaSavedStateReport report)
         {
             if (entities.HasComponent<IndustrialAreaState>(area)) IndustrialSavedStateValidator.Validate(entities.GetComponentData<IndustrialAreaState>(area), report);
+            if (entities.HasComponent<IndustrialSupportState>(area)) IndustrialSavedStateValidator.ValidateSupport(entities.GetComponentData<IndustrialSupportState>(area), report);
         }
         private readonly Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits;
         private readonly AreaAssetSemanticRegistry semantics;
