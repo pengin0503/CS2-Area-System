@@ -164,6 +164,8 @@ Status: **NOT RUN**. Use Cities: Skylines II 1.6.2f1 with official postprocessin
 | B206 Revision/stale UI | Assign/remove mid-cycle, then click an old key or switch Area. Old cycle/coverage cannot earn XP, cycle restarts with current revision and no old time interval bridges; stale key/StableId is rejected. Unrelated Areas retain in-flight cycles, flow coverage and progression endpoints; removing a losing duplicate causes no restart. | NOT RUN |
 | B207 Removal/cap/focus | Fill 64 candidate rows, include invalid/duplicate saved claims and refresh observations. Saved claim removal stays accessible; manual owner's current bottleneck focus works, deleted/moved/stale target does not. | NOT RUN |
 | B208 Performance/regression | Profile many overlapping Areas and compare Foundation/Phase 1 behavior/UI ja-JP/en-US. Shared read work <=128/update, no second whole-world scan; record delayed cycles/frame timings. Native company assignment never changes economy/tax/pathfinding. | NOT RUN |
+| B209 Missing saved references (#84) | Load a claim whose Company reference resolves to Null, with present and missing rented Building references. Its invalid row allows removal only in the selected Area, never assignment; other Company/Area claims survive. | NOT RUN |
+| B210 Delayed ownership candidates (#85) | Start an observation at hour 5 and consume its pending read at hour 6. Companies rows remain visible with current-hour keys; hour-5 keys are rejected. Observation aggregation retains its original cycle/hour identity. | NOT RUN |
 
 # Phase 2 C4 — Industrial Support Payments
 
