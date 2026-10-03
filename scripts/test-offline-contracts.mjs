@@ -277,6 +277,25 @@ for (const source of parkEventSources) {
     failures.push(`${source}: Park events must not touch vanilla attraction, leisure, citizens, pathfinding or vanilla components`);
 }
 check(/EnqueueExpense\(\s*parkId,\s*AreaFinanceKind\.ParkEvent,/.test(code('src/CS2AreaSystem/Modules/Park/ParkEventSystem.cs')), 'Park event cost must be queued as a ParkEvent Area Management expense');
+// Phase 2 C6: only the coverage modifier writes ModifiedServiceCoverage, never m_Range, never prefab CoverageData or the
+// coverage network; the writer is created disabled behind a closed runtime gate.
+const allModSources = walk('src/CS2AreaSystem').filter(p => p.endsWith('.cs'));
+const coverageWriters = ['src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSystem.cs', 'src/CS2AreaSystem/Modules/Park/ParkCoverageModifierModel.cs', 'src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSaveSystem.cs'];
+for (const source of allModSources) {
+  const text = code(source);
+  const normalized = source.split(path.sep).join('/');
+  if (/m_Range\s*(\*|\+|-)?=(?!=)/.test(text) && !(normalized.endsWith('ParkCoverageModifierModel.cs') && /m_Range = baseline\.m_Range[,\s]/.test(text) && (text.match(/m_Range\s*=(?!=)/g) || []).length === 1))
+    failures.push(`${source}: coverage range (m_Range) must never be written`);
+  if (/ModifiedServiceCoverage/.test(text) && !coverageWriters.includes(normalized))
+    failures.push(`${source}: only the Park coverage modifier may use ModifiedServiceCoverage`);
+  if (/(Set|Add)ComponentData<\s*(Game\.Prefabs\.)?CoverageData\s*>|ServiceCoverage>\s*\(\s*false|GetBuffer<\s*(Game\.Net\.)?ServiceCoverage\s*>/.test(text))
+    failures.push(`${source}: prefab coverage data and the coverage network must not be modified`);
+}
+const coverageSystem = code('src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSystem.cs');
+check(/public const bool RuntimeVerified = false;/.test(coverageSystem), 'Park coverage modifier gate must stay closed until the in-game release gate passes');
+check(/Enabled = ParkCoverageModifierGate\.RuntimeVerified;/.test(coverageSystem), 'Park coverage writer must be created disabled behind its runtime gate');
+check(/ParkCoverageModifierModel\.IsFresh\(/.test(coverageSystem) && /GetChangeVersion\(ref coverageHandle\)/.test(coverageSystem), 'Park coverage writer must write only from a verified fresh native baseline');
+check(/writer\.RestoreTracked\(\);/.test(code('src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSaveSystem.cs')), 'Park coverage values must be restored before the native serializer');
 const parkFinance = code('src/CS2AreaSystem/Modules/Park/ParkFinanceSystem.cs');
 check(/EnqueueExpense\(\s*park\.StableId,\s*AreaFinanceKind\.ParkManagement,/.test(parkFinance), 'Park management must be queued as an Area Management expense');
 check(/AreaFinanceHouseholdTransfer\.Transfer\(/.test(parkFinance) && /RecordSettledIncome\(/.test(code('src/CS2AreaSystem/Modules/Park/ParkTransactions.cs') + parkFinance),

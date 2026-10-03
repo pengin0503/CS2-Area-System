@@ -28,6 +28,11 @@ namespace CS2AreaSystem.Modules.Park
         public ParkEventRequestOutcome EventStart = ParkEventRequestOutcome.Unavailable;
         public long EventCost, EventPendingCost;
         public System.Collections.Generic.IReadOnlyList<ParkEventHistoryEntry> EventHistory = Array.Empty<ParkEventHistoryEntry>();
+        // Phase 2 C6 coverage operating modifier: this Park's factor (1 unless Active), whether the writer is enabled, and
+        // how many buildings it currently modifies for this Park.
+        public float CoverageFactor = 1f;
+        public bool CoverageActive;
+        public int CoverageBuildings;
     }
     public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid }
     // Boundary between the module UI and Park gameplay: selected-Park reads and the only validated setters.
@@ -155,6 +160,10 @@ namespace CS2AreaSystem.Modules.Park
             }
             var policies=context.World?.GetExistingSystemManaged<Core.Policies.AreaPolicySystem>();
             if(policies!=null)model.Policies=new ParkPolicyEffectReader((a,id)=>policies.IsEffective(a,id),core?.Failures,"Park.Preview.PolicyEffects","Park preview policy inputs unavailable").Read(area);
+            if (model.Lifecycle == AreaLifecycleState.Active) model.CoverageFactor = ParkCoverageModifierModel.Factor(model.Budget, model.Policies.ManagementFundingMultiplier);
+            var coverage = context.World?.GetExistingSystemManaged<ParkCoverageModifierSystem>();
+            model.CoverageActive = coverage != null && coverage.Enabled;
+            if (coverage != null) model.CoverageBuildings = coverage.Tracker.CountFor(model.StableId);
             model.Promotion = ParkProgressionModel.EvaluatePromotion(model.Level, model.Experience, ParkProgressionSystem.BuildInputs(model.Runtime?.Quality, model.State));
             return model;
         }

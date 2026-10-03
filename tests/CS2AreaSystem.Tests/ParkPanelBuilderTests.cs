@@ -301,3 +301,40 @@ public class ParkEventPanelTests {
    Assert.That(ParkPanelBuilder.AllKeys(), Does.Contain("CS2AS.Park.Events.Blocked." + outcome));
  }
 }
+// Phase 2 C6: the Finances tab shows the coverage operating factor and whether it is actually applied.
+public class ParkCoveragePanelTests {
+ static AreaPanelTabData Finances(ParkPanelModel m) => ParkPanelBuilder.Build(m).Tabs.Single(t => t.Id == "finances");
+ static AreaPanelItem Find(AreaPanelTabData t, string id) => t.Items.SingleOrDefault(i => i.Id == id);
+ [Test] public void GatedModifierShowsTheFactorAndThatItIsNotApplied() {
+  var m = ParkPanelBuilderTests.Model(); m.CoverageFactor = 1.05f; m.CoverageActive = false;
+  var tab = Finances(m);
+  Assert.That(Find(tab, "coverage.factor")?.Value, Is.EqualTo("105%"));
+  Assert.That(Find(tab, "coverage.factor")?.TooltipKey, Is.EqualTo("CS2AS.Park.Coverage.Factor.Tip"));
+  Assert.That(Find(tab, "coverage.disabled")?.LabelKey, Is.EqualTo("CS2AS.Park.Coverage.Disabled"));
+  Assert.That(Find(tab, "coverage.buildings"), Is.Null);
+ }
+ [Test] public void ActiveModifierShowsHowManyBuildingsItModifies() {
+  var m = ParkPanelBuilderTests.Model(); m.CoverageFactor = 0.9f; m.CoverageActive = true; m.CoverageBuildings = 3;
+  var tab = Finances(m);
+  Assert.That(Find(tab, "coverage.factor")?.Value, Is.EqualTo("90%"));
+  Assert.That(Find(tab, "coverage.buildings")?.Value, Is.EqualTo("3"));
+  Assert.That(Find(tab, "coverage.disabled"), Is.Null);
+ }
+ [Test] public void TheModelDefaultIsNeutralAndGated() {
+  var m = new ParkPanelModel();
+  Assert.That((m.CoverageFactor, m.CoverageActive, m.CoverageBuildings), Is.EqualTo((1f, false, 0)));
+ }
+ [Test] public void TheFacadeReadsTheFactorFromBudgetAndPolicyFundingForActiveParksOnly() {
+  var facade = IndustrialSupportSourceGuardTests.Source("Modules/Park/ParkGameplayFacade.cs");
+  Assert.That(facade, Does.Contain("ParkCoverageModifierModel.Factor(model.Budget, model.Policies.ManagementFundingMultiplier)"));
+  Assert.That(facade, Does.Contain("model.CoverageActive = coverage != null && coverage.Enabled;"));
+  Assert.That(facade.IndexOf("ParkCoverageModifierModel.Factor("), Is.GreaterThan(facade.IndexOf("model.Policies=")), "policies are read first");
+ }
+ [TestCase("en-US")] [TestCase("ja-JP")]
+ public void EveryCoverageKeyIsLocalized(string locale) {
+  var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);
+  var keys = ParkPanelBuilder.AllKeys().Where(k => k.Contains(".Coverage.")).ToList();
+  Assert.That(keys, Is.SupersetOf(new[] { "CS2AS.Park.Coverage.Factor", "CS2AS.Park.Coverage.Factor.Tip", "CS2AS.Park.Coverage.Disabled", "CS2AS.Park.Coverage.Buildings" }));
+  foreach (var key in keys) Assert.That(entries.ContainsKey(key), Is.True, locale + " is missing " + key);
+ }
+}
