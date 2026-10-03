@@ -138,6 +138,10 @@ check(/live.Building == candidate.Building/.test(read(`${industrialDir}/Industri
 check(!/EntityQuery|ToEntityArray/.test(read(`${industrialDir}/IndustrialCompanyOwnership.cs`)), 'ownership resolution must not add a whole-world scan');
 check(/assignments.GetAreaRevision\(areaId\)/.test(read(`${industrialDir}/IndustrialObservationSystem.cs`)), 'assignment observation generations must be scoped per Area');
 check(/Store.InvalidateOwnership\(Assignments.ChangedAreas\)/.test(read(`${industrialDir}/IndustrialRuntimeSystem.cs`)), 'assignment changes must invalidate only affected owner snapshots');
+const industrialObservation = read(`${industrialDir}/IndustrialObservationSystem.cs`);
+check(/if \(hasPending\) Consume\(bucket\);/.test(industrialObservation), 'pending observation reads must carry current consumption hour to ownership UI');
+check(/runtime.ObserveCompanyCandidate\(read, company, currentHourBucket\)/.test(industrialObservation), 'ownership candidates must publish at current consumption hour, not cycle start hour');
+check(!/ObserveCompanyCandidate\([^;]*cycle.HourBucket/.test(industrialObservation), 'delayed cycles must not publish candidates with an expired hour key');
 const classifier = read(`${industrialDir}/IndustrialFacilityClassifier.cs`);
 const classify = classifier.slice(classifier.indexOf('public static IndustrialFacilityRole Classify'), classifier.indexOf('public static bool IsHeadquartersEligible'));
 const positiveClassify = classify.replace(/if\s*\([^;]*HasOffice[^;]*\)\s*return\s+IndustrialFacilityRole\.None;/, '');

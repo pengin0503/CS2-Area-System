@@ -293,7 +293,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 // Validate explicit references before consuming any result or capturing a generation.
                 runtime.RefreshAssignments();
                 if (!runtime.AssignmentsReady) { DropPending(); return; }
-                if (hasPending) Consume();
+                if (hasPending) Consume(bucket);
                 runtime.CollectAreas(areas);
                 scheduler.Sync(areas, bucket, frame, hours, source);
                 foreach (var cycle in scheduler.TakeFinished(source, bucket, frame, hours)) Publish(cycle, frame, hours);
@@ -318,7 +318,7 @@ namespace CS2AreaSystem.Modules.Industrial
             if (pendingRequests.IsCreated) pendingRequests.Dispose();
             buildingReads.Clear(); companyReads.Clear();
         }
-        private void Consume()
+        private void Consume(long currentHourBucket)
         {
             hasPending = false;
             var companies = new List<IndustrialCompanyRead>();
@@ -334,7 +334,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 var semantics = World.GetOrCreateSystemManaged<CS2AreaSystem.Core.Areas.AreaCoreServicesSystem>().Semantics;
                 var cycle = scheduler.Cycle(read.AreaId);
                 if (cycle != null && cycle.CycleId == read.CycleId && cycle.StructureToken == runtime.CycleSource.StructureToken(read.AreaId))
-                    foreach (var company in companies) runtime.ObserveCompanyCandidate(read, company, cycle.HourBucket);
+                    foreach (var company in companies) runtime.ObserveCompanyCandidate(read, company, currentHourBucket);
                 scheduler.Complete(request, IndustrialObservationMapper.ToOwnedObservation(read, companies, runtime.Membership, runtime.Assignments, company => {
                     var facts = IndustrialCompanyOwnership.ReadLive(company.Company, EntityManager, semantics, out var liveBuilding, read.Traits);
                     if (liveBuilding != company.Building) facts.Live = false;
