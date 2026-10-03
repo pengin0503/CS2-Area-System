@@ -6,6 +6,12 @@ namespace CS2AreaSystem.Core.Prefabs
         private readonly Dictionary<int, bool> values = new Dictionary<int, bool>();
         public void Set(int typeId, bool ready) => values[typeId] = ready;
         public bool IsReady(int typeId) => values.TryGetValue(typeId, out var ready) && ready;
+        public bool PublishToolbarIfReady(int typeId, bool attachToolbar, System.Action<int> publish)
+        {
+            if (!attachToolbar || !IsReady(typeId)) return false;
+            publish(typeId);
+            return true;
+        }
         public bool AllReady(IEnumerable<int> typeIds)
         {
             bool any = false;

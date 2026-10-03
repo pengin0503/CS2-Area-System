@@ -67,6 +67,7 @@ namespace CS2AreaSystem.Core.Prefabs
             {
                 if (decision.RegisterPrefabs) EnsurePrefabRegistered(type, decision.AttachToolbar);
                 readiness.Set(type.TypeId, IsPrefabReady(type));
+                readiness.PublishToolbarIfReady(type.TypeId, decision.AttachToolbar, MarkToolbarTypeRegistered);
             }
         }
         private void EnsurePrefabRegistered(AreaTypeDescriptor type, bool attachToolbar)
@@ -100,7 +101,6 @@ namespace CS2AreaSystem.Core.Prefabs
                     type.Prefab = candidate;
                     pendingPrefabs.Remove(type.TypeId);
                     registrationFailureLogged.Remove(type.TypeId);
-                    if (attachToolbar) MarkToolbarTypeRegistered(type.TypeId);
                     return;
                 }
 
@@ -114,7 +114,6 @@ namespace CS2AreaSystem.Core.Prefabs
                     type.Prefab = candidate;
                     pendingPrefabs.Remove(type.TypeId);
                     registrationFailureLogged.Remove(type.TypeId);
-                    if (attachToolbar) MarkToolbarTypeRegistered(type.TypeId);
                     return;
                 }
                 if (registrationFailureLogged.Add(type.TypeId))
