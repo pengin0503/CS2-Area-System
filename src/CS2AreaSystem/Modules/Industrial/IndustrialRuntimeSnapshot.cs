@@ -85,6 +85,10 @@ namespace CS2AreaSystem.Modules.Industrial
         // Top three diagnostics, and every current diagnostic (for the Logistics tab).
         public IReadOnlyList<IndustrialBottleneck> Bottlenecks = Array.Empty<IndustrialBottleneck>();
         public List<IndustrialBottleneck> AllBottlenecks = new List<IndustrialBottleneck>();
+        // Companies resolved to this Area in this cycle, ascending Entity Index/Version (C4 support receivers); complete
+        // only when every member read succeeded. Same generation tokens as the rest of the result.
+        public IReadOnlyList<Entity> SupportRoster = Array.Empty<Entity>();
+        public bool SupportRosterComplete;
         public ulong Generation => IndustrialGenerations.Combine(MembershipToken, StructureToken);
     }
     public static class IndustrialGenerations

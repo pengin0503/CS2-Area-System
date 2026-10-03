@@ -85,12 +85,23 @@ namespace CS2AreaSystem.Modules.Park
                 return 1.0;
             }
         }
+        // Festival visit XP bonus (Phase 2 C5); the completion was already reported for an Active Park.
+        private ParkEventEffects EventEffects(Entity area, uint frame)
+        {
+            try { return ParkEventSystem.ReadVisitEffects(World, EntityManager, area, true, frame); }
+            catch (System.Exception error)
+            {
+                failures.Report(area, "Park.EventXp", error, "Park event XP bonus unavailable for managed area " + area + "; visit XP continues without it");
+                return ParkEventEffects.Neutral;
+            }
+        }
         public void OnVisitStarted(in ParkVisitEvent visit, Entity area, ParkRuntimeSnapshot snapshot, ParkVisitTracker tracker) { }
         public void OnVisitCompleted(in ParkVisitEvent visit, Entity area, ParkRuntimeSnapshot snapshot, bool parkActive)
         {
             if (!parkActive || !EntityManager.Exists(area) || !EntityManager.HasComponent<ManagedAreaProgress>(area)) return;
             var progress = EntityManager.GetComponentData<ManagedAreaProgress>(area);
-            progress.Experience = ParkProgressionModel.AwardVisitXp(progress.Experience, visit.Satisfaction, true, XpMultiplier(area));
+            uint frame = visit.EventFrame;
+            progress.Experience = ParkProgressionModel.AwardVisitXp(progress.Experience, visit.Satisfaction, true, EventEffects(area, frame).ComposeXpMultiplier(XpMultiplier(area)));
             EntityManager.SetComponentData(area, progress);
         }
     }

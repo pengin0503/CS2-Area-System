@@ -63,3 +63,79 @@ Branch `claude/pre-tourism-wave-a1-a5-l5pses`, base `c04ebf4cf586b4d46532662000d
 This update supersedes the historical Park entrance-only activation and runtime-only trend assumptions above. Park now requires Park Maintenance Headquarters plus dedicated Path crossing or a registered explicit Entrance. Old leisure Entrance links remain invalid/removable. A6 adds read-only pedestrian connectivity; A7 adds transient budget/fee previews; B1 integrates registered asset semantics into anchors, visits and Quality; C1 persists 168 hourly buckets and seeds the latest 24 distinct hours after load.
 
 Final automated evidence and review decisions are in [the Foundation + Phase 1 execution record](foundation-phase1-execution-record.md). Runtime and official Unity postprocessing/deployment remain **NOT RUN**; use cases F02–F07 and P01–P08 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md). The original v1/Wave A records above describe their dated revisions rather than current prerequisites.
+
+## Phase 2 C5 Park festival — 2026-10-03
+
+Branch `claude/phase2-c5-se4lwg`, stacked on the verified C4 head `c59f063` (PR #87). Plan: `docs/superpowers/plans/2026-10-02-phase2-park-events-implementation.md`.
+
+Adds one internal Park event, the Park festival, started from a new **Events** tab in the Park panel:
+
+- Cost: half a day of the Park's current management cost (rounded, minimum ¢1), charged once through Area Finance as `AreaFinanceKind.ParkEvent` (Area management account). Only one request per Park can be pending; the festival starts only when the payment settles, and starts at the amount actually paid. A zero or cancelled settlement clears the request without starting anything.
+- Duration: one in-game day (262,144 frames). Saved in `ParkEventState` (schema 1) with a 16-entry history buffer; the saved end frame is never extended or replayed after load.
+- Effects while the Park is Active: comfortable-capacity share ×0.85, completed-visit satisfaction +5 (clamped), visit XP ×1.25 (composed with policy XP). A suspended Park keeps the calendar running but gets neutral effects. No vanilla attraction, leisure, pathfinding or citizen data is written.
+- The module registers only when Area Finance and Park gameplay registered; a failure disables it and its effects.
+
+Commits after `c59f063`: `4440978` events model/serialization, `06cca7a` finance settlement, `961a2b9` effects, `dea9cbb` panel, `be602dd` warning-count fix, `ff750be` review fixes, then this record.
+
+Automated verification (final, after the review fixes):
+
+- `pwsh -NoProfile -File scripts/verify.ps1 -ApiCheck`: exit 0 — NUnit 1197/1197, Vitest 113/113, source guards and offline contracts.
+- `dotnet build src/CS2AreaSystem/CS2AreaSystem.csproj -p:AreaApiCheck=true -c Release`: 0 warnings / 0 errors.
+- `node scripts/test-offline-contracts.mjs`: passed. `git diff --check`: clean.
+
+Final whole-branch review (fresh reviewer): no Critical/Important findings as labelled. Two Minor findings were re-graded and fixed test-first in `ff750be`: a suspended Park now still shows its outstanding festival payment, and a started festival recomputes Park Quality at once. Deferred minors: the "unavailable" warning can show for a brand-new Park until its event state is added on the next ModificationEnd; the XP tooltip does not mention that the +5 satisfaction also raises visit XP; the satisfaction adjustment is outside the per-listener `try`; a history write failure after the state write would leave a festival without a history row; the panel's start decision does not check quarantine (the action does).
+
+Runtime: **NOT RUN.** In-game checks C501–C507 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md) have not been performed.
+
+## Phase 2 C6 Park coverage operating modifier — 2026-10-03
+
+Branch `claude/phase2-c6-se4lwg`, based on the verified C5 head `a146d06` (merged to main as #89). Plan: `docs/superpowers/plans/2026-10-02-phase2-park-coverage-modifier-implementation.md`.
+
+**API gate: proven, not BLOCKED.** `docs/verification/park-coverage-modifier-contract.md` proves the following from the supplied 1.6.2f1 `Game.dll` and Entities 1.3.10 sources:
+
+- the exact fields;
+- every native writer, including the native recompute from prefab data on each pass;
+- consumer ordering (`ServiceCoverageSystem` before `ParkAISystem`) and job completion;
+- the fresh-baseline signal: chunk change version equals `ParkAISystem.LastSystemVersion`;
+- the serializer restore hook (before `SerializerSystem`).
+
+A fresh reviewer re-checked each step against the decompiled sources.
+
+**Implementation:**
+- **`ParkCoverageModifierModel`:** computes the factor `clamp(1 + 0.20 × (budget × EM funding − 1), 0.90, 1.10)`. It applies the factor to capacity and magnitude only; `m_Range` is untouched. Its tracker restores a building only while the value is still the mod's write.
+- **`ParkCoverageModifierSystem`:** runs directly after `ParkAISystem` at the same interval, inheriting its offset.
+- **`ParkCoverageModifierSaveSystem`:** restores the mod's values before the serializer.
+- **Finances tab:** shows the factor and a "not applied yet" note.
+- **Offline guards:** no `m_Range` writes; only the modifier touches `ModifiedServiceCoverage`; the gate stays closed.
+
+**Shipped disabled.** `ParkCoverageModifierGate.RuntimeVerified = false`, so the writer is created with `Enabled = false` and never runs in this build. Phase 2 is **not** complete.
+
+Commits after `a146d06`:
+
+| Commit | Change |
+| --- | --- |
+| `565d728` | contract |
+| `71eb327` | model |
+| `ecd8b99` | writer and save restore |
+| `21c7abc` | panel, guards, checklist |
+| (this commit) | review rulings and docs |
+
+Automated verification:
+- `scripts/verify.ps1 -ApiCheck` exits 0.
+  - NUnit: 1239/1239.
+  - Vitest: 113/113.
+  - Source guards and offline contracts pass, with negative checks for the gate and for `m_Range`.
+- Release API-check build: 0 warnings.
+- `git diff --check`: clean.
+- The test project keeps its 6 pre-existing CS8632 warnings.
+
+Review rulings:
+- Ownership loss, suspension and budget changes take effect at the next native pass (≤1024 frames).
+- `Shutdown()` must be wired to an off switch by whatever change opens the gate.
+
+Deferred minors:
+- The system tests live in the model test file.
+- System behaviour is covered only by source guards.
+- There is a theoretical bitwise-equality coincidence on restore.
+
+Runtime: **NOT RUN.** The release gate C601–C606 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md) has not been performed, and the gate must stay closed until it passes.

@@ -109,15 +109,11 @@ namespace CS2AreaSystem.Modules.Park
             {
                 if (!EntityManager.HasComponent<ParkAreaState>(park.Area)) return;
                 var snapshot = runtime.Store.GetOrCreate(park.StableId, park.Area);
-                float budget = EntityManager.HasComponent<ManagedAreaSettings>(park.Area) ? EntityManager.GetComponentData<ManagedAreaSettings>(park.Area).BudgetMultiplier : ParkFinanceModel.DefaultBudget;
-                var landscape = snapshot.Landscape;
-                snapshot.ManagementNeedPerDay = ParkFinanceModel.ComputeManagementNeedPerDay(new ParkManagementInputs {
-                    AreaSquareMeters = snapshot.AreaSquareMeters, VisitorsPerDay = snapshot.RecentVisitors.Sum(frame),
-                    LandscapeObjects = landscape != null && landscape.Available ? landscape.Result.ObjectCount : 0,
-                    ManagedFacilities = snapshot.Facilities?.RelevantFacilities ?? 0 });
+                var estimate = ReadManagementCost(park.Area, snapshot, frame);
+                snapshot.ManagementNeedPerDay = estimate.NeedPerDay;
                 // Enhanced Maintenance raises the real management spend; Quality's coverage reads the same multiplier.
-                snapshot.ManagementCostPerDay = ParkFinanceModel.ComputeManagementCostPerDay(snapshot.ManagementNeedPerDay, budget,
-                    policyEffects.Read(park.Area).ManagementFundingMultiplier);
+                snapshot.ManagementCostPerDay = estimate.CostPerDay;
+                snapshot.ManagementCostKnown = true;
                 if (!ParkFinanceModel.ShouldSettleManagement(park.State)) return;
                 areaFinance.EnqueueExpense(park.StableId, AreaFinanceKind.ParkManagement, ParkFinanceModel.Settle(snapshot.ManagementCostPerDay, elapsed, ref snapshot.ExpenseCarry));
                 failures.Recovered(park.Area, "Park.Settlement");
@@ -126,6 +122,11 @@ namespace CS2AreaSystem.Modules.Park
             {
                 failures.Report(park.Area, "Park.Settlement", error, "Park management settlement failed for managed area " + park.Area);
             }
+        }
+        internal ParkManagementEstimate ReadManagementCost(Entity area, ParkRuntimeSnapshot snapshot, uint frame)
+        {
+            float budget = EntityManager.HasComponent<ManagedAreaSettings>(area) ? EntityManager.GetComponentData<ManagedAreaSettings>(area).BudgetMultiplier : ParkFinanceModel.DefaultBudget;
+            return ParkFinanceModel.ComputeLiveManagementCost(snapshot, frame, budget, policyEffects.Read(area));
         }
         internal void FlushForSave() => AreaFinanceSaveBoundary.Flush(runtime.Ready, loadGeneration, runtime.LoadGeneration,
             CompleteAndRecord, () => ledger.HasPending, () => EntityManager.CompleteAllTrackedJobs(), () => Schedule(runtime.SimulationFrame));

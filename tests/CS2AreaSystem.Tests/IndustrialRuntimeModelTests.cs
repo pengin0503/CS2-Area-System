@@ -14,6 +14,18 @@ public class IndustrialRuntimeModelTests {
   public void AddState(Entity area, IndustrialAreaState state) => States.Add(area, state);
   public bool HasProgress(Entity area) => Progress.ContainsKey(area);
   public void AddProgress(Entity area, ManagedAreaProgress progress) => Progress.Add(area, progress);
+  public readonly Dictionary<Entity, IndustrialSupportState> Support = new();
+  public bool HasSupport(Entity area) => Support.ContainsKey(area);
+  public void AddSupport(Entity area, IndustrialSupportState state) => Support.Add(area, state);
+ }
+ [Test] public void InitializationAddsDefaultSupportStateAndNeverReplacesASavedSetting() {
+  var target = new Target(); target.Alive.UnionWith(new[] { a, b });
+  var saved = IndustrialSupportModel.MarkScheduled(IndustrialSupportState.CreateDefault(), 40); saved.DailySupportPerCompany = 750;
+  target.Support[b] = saved;
+  var areas = new[] { new IndustrialAreaRef(a, 1, AreaLifecycleState.Active), new IndustrialAreaRef(b, 2, AreaLifecycleState.Suspended) };
+  IndustrialStateInitializer.Ensure(areas, target, 41);
+  Assert.That(target.Support[a], Is.EqualTo(IndustrialSupportState.CreateDefault()), "support starts disabled and unscheduled");
+  Assert.That(target.Support[b], Is.EqualTo(saved));
  }
  [Test] public void SnapshotsAreKeyedByStableIdAndFollowTheCurrentEntity() {
   var store = new IndustrialRuntimeStore();

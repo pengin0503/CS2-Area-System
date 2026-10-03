@@ -56,7 +56,12 @@ const facadeActions = [...facade.matchAll(/case\s+([^:]+?)\s*:/g)].map(m=>m[1].t
 check(facadeActions==='SetBudget,SetFee', `Park UI actions must be limited to budget and admission fee (found ${facadeActions})`);
 // Wave A5: the only other Park action is the read-only landscape diagnostic focus, routed before any setter runs.
 const parkActionConsts = [...facade.matchAll(/(\w+)\s*=\s*"[^"]*"/g)].map(m=>m[1]).sort().join(',');
-check(parkActionConsts==='FocusDiagnosticTarget,PreviewBudget,PreviewFee,SetBudget,SetFee', `Park facade actions must be budget, fee, read-only preview and diagnostic focus (found ${parkActionConsts})`);
+check(parkActionConsts==='FocusDiagnosticTarget,PreviewBudget,PreviewFee,SetBudget,SetFee,StartEvent', `Park facade actions must be budget, fee, read-only preview, diagnostic focus and the C5 event start (found ${parkActionConsts})`);
+// Phase 2 C5: the event start is routed before the setters, only to ParkEventSystem, and never writes event state itself.
+check(/if\s*\(action\s*==\s*StartEvent\)\s*return\s+HandleStartEvent\(/.test(facade), 'Park event start must be routed before the setters');
+const parkStart = facade.slice(facade.indexOf('private static bool HandleStartEvent'), facade.indexOf('private static bool HandleFocus'));
+check(parkStart.length > 0 && /events\.RequestStart\(area, eventId\) == ParkEventRequestOutcome\.Request/.test(parkStart) && /IsQuarantined\(area\)/.test(parkStart) &&
+  !/SetComponentData|AddComponent|RemoveComponent|SetBuffer|GetBuffer|EnqueueExpense/.test(parkStart), 'Park event start must only ask ParkEventSystem (quarantine-checked) and never write state or money itself');
 const preview = read('src/CS2AreaSystem/Modules/Park/ParkWhatIfPreview.cs');
 check(!/SetComponentData|AddComponent|RemoveComponent|EntityCommandBuffer|AreaFinanceHouseholdTransfer|ISerializable/.test(preview), 'Park what-if must be pure and never persist or transfer money');
 check(/if\s*\(action\s*==\s*FocusDiagnosticTarget\)\s*return\s+HandleFocus\(/.test(facade), 'Park diagnostic focus must be routed before the setters');
@@ -86,14 +91,25 @@ const forbiddenIndustrial=[
   [/SetComponentData\s*<\s*(Game\.Buildings\.)?(BuildingEfficiency|Building)\b/, 'building/efficiency writes'],
   [/BindingFlags\.NonPublic|Harmony/, 'private reflection or patching'],
   [/\.Enabled\s*=\s*false/, 'disabling vanilla systems']];
+// Phase 2 C4: the dedicated support settlement file is the only Industrial source allowed to write company money, and only
+// through the verified EconomyUtils.AddResources(Resource.Money, ...) path; every other Resources/efficiency write stays forbidden.
+const supportSettlement = `${industrialDir}/IndustrialSupportSettlement.cs`;
 for (const source of industrialSources) {
   // Code only: comments may cite the vanilla systems whose behavior is mirrored.
-  const text = read(source).replace(/\/\/.*$/gm, '');
+  let text = read(source).replace(/\/\/.*$/gm, '');
+  if (source === supportSettlement) {
+    const writes = text.match(/(?:\b\w+\.)?AddResources\s*\([^,]*/g) || [];
+    check(writes.length === 1 && writes.every(w => /EconomyUtils\.AddResources\s*\(\s*Resource\.Money$/.test(w)), `${source}: support may only add Resource.Money once through EconomyUtils.AddResources`);
+    text = text.replace(/EconomyUtils\.AddResources\s*\(\s*Resource\.Money,/g, '');
+  }
   for (const [pattern, what] of forbiddenIndustrial) if (pattern.test(text)) failures.push(`${source}: Industrial v1 must not touch ${what}`);
 }
 const mod = read('src/CS2AreaSystem/Mod.cs');
-const industrialRegistration = mod.slice(mod.indexOf('void RegisterIndustrialSystems'));
+const industrialRegistration = mod.slice(mod.indexOf('RegisterIndustrialSystems(UpdateSystem updateSystem)'), mod.indexOf('void RegisterIndustrialSupport('));
 check(mod.includes('RegisterIndustrialSystems(updateSystem);'), 'Mod.OnLoad must register Industrial systems');
+const supportRegistration = mod.slice(mod.indexOf('void RegisterIndustrialSupport('));
+check(/ModuleRegistration\.Requires\(finance, "Industrial support"/.test(supportRegistration) && /ModuleRegistration\.Requires\(industrial, "Industrial support"/.test(supportRegistration), 'Industrial support must require complete finance and Industrial modules');
+check(/catch\s*\(System\.Exception error\)\s*\{\s*support\.Fail\(error,\s*type => Disable\(updateSystem,\s*type\),\s*ReportRegistrationFailure\);/.test(supportRegistration), 'Industrial support registration failure must disable the whole support module and be logged');
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialRuntimeSystem>\(SystemUpdatePhase\.ModificationEnd\)/.test(industrialRegistration), 'IndustrialRuntimeSystem must run in ModificationEnd');
 check(/UpdateAt<CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialObservationSystem must run in GameSimulation');
 check(/UpdateAfter<CS2AreaSystem\.Modules\.Industrial\.IndustrialProgressionSystem,\s*CS2AreaSystem\.Modules\.Industrial\.IndustrialObservationSystem>\(SystemUpdatePhase\.GameSimulation\)/.test(industrialRegistration), 'IndustrialProgressionSystem must run after observation');
@@ -102,14 +118,19 @@ const industrialFacade = read(`${industrialDir}/IndustrialGameplayFacade.cs`);
 // B2: simulation remains read-only; assignment writes are confined to module-owned Area buffers.
 check(!/SetComponentData|AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity/.test(industrialFacade), 'Industrial facade must stay read-only (no setters)');
 const industrialFacadeActions = [...industrialFacade.matchAll(/public const string (\w+)\s*=\s*"([^"]*)"/g)].map(m => m[2]);
-check(JSON.stringify(industrialFacadeActions) === JSON.stringify(['focusDiagnosticTarget', 'assignCompanyHere', 'clearCompanyAssignment']), 'Industrial facade must whitelist exactly focus and company assignment/removal');
-check(/if \(action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment\) return false;/.test(industrialFacade), 'Industrial facade must reject actions outside the B2 whitelist first');
+check(JSON.stringify(industrialFacadeActions) === JSON.stringify(['focusDiagnosticTarget', 'assignCompanyHere', 'clearCompanyAssignment', 'setSupportPerCompany']), 'Industrial facade must whitelist exactly focus, company assignment/removal and the C4 support setting');
+check(/if \(action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment && action != SetSupportPerCompany\) return false;/.test(industrialFacade), 'Industrial facade must reject actions outside the whitelist first');
+// C4: the support setting is written only by the enabled support system, through the setting-only action helper.
+check(/if \(action == SetSupportPerCompany\) return HandleSupport\(area, value, context\);/.test(industrialFacade) && /return support\.TrySetPerCompany\(area, value\);/.test(industrialFacade), 'Industrial support setting must route through IndustrialSupportSystem');
+const supportSystem = read(`${industrialDir}/IndustrialSupportSystem.cs`);
+const supportSetter = supportSystem.slice(supportSystem.indexOf('internal bool TrySetPerCompany'), supportSystem.indexOf('// Live B2 resolution'));
+check(/if \(!Enabled \|\|/.test(supportSetter) && /IndustrialSupportActions\.TryApply\(true, true, value, ref state\)/.test(supportSetter), 'Industrial support setting must require the enabled module and change only the setting');
 const industrialModule = read(`${industrialDir}/IndustrialAreaModule.cs`);
 check(/HandleAction\([^)]*\)\s*=>\s*IndustrialGameplayFacade\.HandleAction\(area, action, value, context\);/.test(industrialModule), 'Industrial module must route actions only to the read-only facade');
 const panelBuilder = read(`${industrialDir}/IndustrialPanelBuilder.cs`);
-check(!/AreaPanelItemKind\.Slider/.test(panelBuilder), 'Industrial panel must not emit sliders');
+check((panelBuilder.match(/AreaPanelItemKind\.Slider/g) || []).length === 1 && /Kind = AreaPanelItemKind\.Slider, Id = "support\.perCompany"[^\n]*Action = IndustrialGameplayFacade\.SetSupportPerCompany/.test(panelBuilder), 'Industrial panel may emit only the C4 support slider');
 const panelActions = [...panelBuilder.matchAll(/Action\s*=\s*([^,}]+)/g)].map(m => m[1].trim());
-check(panelActions.length === 3 && panelActions.every(action => ['IndustrialGameplayFacade.FocusDiagnosticTarget', 'IndustrialGameplayFacade.AssignCompanyHere', 'IndustrialGameplayFacade.ClearCompanyAssignment'].includes(action)), 'Industrial panel may emit only the B2 whitelist');
+check(panelActions.length === 4 && panelActions.every(action => ['IndustrialGameplayFacade.FocusDiagnosticTarget', 'IndustrialGameplayFacade.AssignCompanyHere', 'IndustrialGameplayFacade.ClearCompanyAssignment', 'IndustrialGameplayFacade.SetSupportPerCompany'].includes(action)), 'Industrial panel may emit only the whitelisted actions');
 check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 3, 'Industrial panel must emit only focus, assign and remove buttons');
 check(/GetBuffer<IndustrialCompanyAssignment>/.test(industrialFacade), 'assignment persistence must use only the module-owned buffer');
 check(/candidates.AssignmentRevision != assignments.Revision/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must reject stale revisions');
@@ -250,6 +271,35 @@ for (const source of parkSources) {
   if (/\bPayManagement\b|\bStoredCityMoney\b|\bCityMoneyLimit\b|\bkMaxMoney\b|\bApply(Expense|Income)\s*\(/.test(text))
     failures.push(`${source}: Park must not clamp or apply city money itself (no available-balance management clamp)`);
 }
+// Phase 2 C5: Park events change only mod-owned Park inputs; never vanilla attraction, leisure providers, destination choice
+// or any vanilla component, and their expense is the ParkEvent Area Management kind.
+const parkEventSources = parkSources.filter(p => /\/ParkEvent[A-Za-z]*\.cs$/.test(p));
+check(parkEventSources.length >= 6, `Park event sources must exist (found ${parkEventSources.length})`);
+for (const source of parkEventSources) {
+  const text = code(source);
+  if (/Attraction|LeisureProvider|Pathfind|Citizen|(Set|Add)ComponentData<\s*Game\.|GetComponentLookup<\s*Game\.[^>]*>\s*\(\s*false/.test(text))
+    failures.push(`${source}: Park events must not touch vanilla attraction, leisure, citizens, pathfinding or vanilla components`);
+}
+check(/EnqueueExpense\(\s*parkId,\s*AreaFinanceKind\.ParkEvent,/.test(code('src/CS2AreaSystem/Modules/Park/ParkEventSystem.cs')), 'Park event cost must be queued as a ParkEvent Area Management expense');
+// Phase 2 C6: only the coverage modifier writes ModifiedServiceCoverage, never m_Range, never prefab CoverageData or the
+// coverage network; the writer is created disabled behind a closed runtime gate.
+const allModSources = walk('src/CS2AreaSystem').filter(p => p.endsWith('.cs'));
+const coverageWriters = ['src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSystem.cs', 'src/CS2AreaSystem/Modules/Park/ParkCoverageModifierModel.cs', 'src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSaveSystem.cs'];
+for (const source of allModSources) {
+  const text = code(source);
+  const normalized = source.split(path.sep).join('/');
+  if (/m_Range\s*(\*|\+|-)?=(?!=)/.test(text) && !(normalized.endsWith('ParkCoverageModifierModel.cs') && /m_Range = baseline\.m_Range[,\s]/.test(text) && (text.match(/m_Range\s*=(?!=)/g) || []).length === 1))
+    failures.push(`${source}: coverage range (m_Range) must never be written`);
+  if (/ModifiedServiceCoverage/.test(text) && !coverageWriters.includes(normalized))
+    failures.push(`${source}: only the Park coverage modifier may use ModifiedServiceCoverage`);
+  if (/(Set|Add)ComponentData<\s*(Game\.Prefabs\.)?CoverageData\s*>|ServiceCoverage>\s*\(\s*false|GetBuffer<\s*(Game\.Net\.)?ServiceCoverage\s*>/.test(text))
+    failures.push(`${source}: prefab coverage data and the coverage network must not be modified`);
+}
+const coverageSystem = code('src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSystem.cs');
+check(/public const bool RuntimeVerified = false;/.test(coverageSystem), 'Park coverage modifier gate must stay closed until the in-game release gate passes');
+check(/Enabled = ParkCoverageModifierGate\.RuntimeVerified;/.test(coverageSystem), 'Park coverage writer must be created disabled behind its runtime gate');
+check(/ParkCoverageModifierModel\.IsFresh\(/.test(coverageSystem) && /GetChangeVersion\(ref coverageHandle\)/.test(coverageSystem), 'Park coverage writer must write only from a verified fresh native baseline');
+check(/writer\.RestoreTracked\(\);/.test(code('src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSaveSystem.cs')), 'Park coverage values must be restored before the native serializer');
 const parkFinance = code('src/CS2AreaSystem/Modules/Park/ParkFinanceSystem.cs');
 check(/EnqueueExpense\(\s*park\.StableId,\s*AreaFinanceKind\.ParkManagement,/.test(parkFinance), 'Park management must be queued as an Area Management expense');
 check(/AreaFinanceHouseholdTransfer\.Transfer\(/.test(parkFinance) && /RecordSettledIncome\(/.test(code('src/CS2AreaSystem/Modules/Park/ParkTransactions.cs') + parkFinance),

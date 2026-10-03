@@ -29,13 +29,17 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialTrendSnapshot Trends;
         public IReadOnlyList<IndustrialComparisonRow> Comparison=Array.Empty<IndustrialComparisonRow>();
         public IReadOnlyList<IndustrialCompanyCandidate> Companies = Array.Empty<IndustrialCompanyCandidate>();
+        // Phase 2 C4: the support module is registered and enabled; the Area's support state; the outstanding request stage.
+        public bool SupportAvailable, HasSupport;
+        public IndustrialSupportState Support;
+        public IndustrialSupportStage? SupportPending;
     }
     // Builds the seven Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
     // item with an action is the diagnostic focus button (camera only); unavailable data is never rendered as zero.
     public static class IndustrialPanelBuilder
     {
         public const string P = "CS2AS.Industrial.";
-        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress", "comparison", "companies" };
+        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress", "comparison", "companies", "support" };
         public static readonly string[] Components = { "Production", "Logistics", "Employment", "Efficiency" };
         public static readonly string[] Statuses = { "Unavailable", "NotApplicable", "WarmingUp", "Stale" };
         public static readonly string[] XpReasons = { "Suspended", "Stale", "NoOperatingProducer", "InsufficientInputs", "DailyCap", "AlreadySettled" };
@@ -54,7 +58,35 @@ namespace CS2AreaSystem.Modules.Industrial
                 new AreaPanelTabData { Id = "employment", LabelKey = "CS2AS.Tab.Employment", Items = Employment(model) },
                 new AreaPanelTabData { Id = "progress", LabelKey = "CS2AS.Tab.Progress", Items = Progress(model) },
                 new AreaPanelTabData { Id = "comparison", LabelKey = "CS2AS.Tab.Comparison", Items = Comparison(model) },
-                new AreaPanelTabData { Id = "companies", LabelKey = "CS2AS.Tab.Companies", Items = Companies(model) } } };
+                new AreaPanelTabData { Id = "companies", LabelKey = "CS2AS.Tab.Companies", Items = Companies(model) },
+                new AreaPanelTabData { Id = "support", LabelKey = "CS2AS.Tab.Support", Items = Support(model) } } };
+        }
+        public static readonly string[] SupportStages = { "None", "Requested", "Settled", "Crediting" };
+        // Phase 2 C4: the per-company daily support setting and its auditable accounting. The slider exists only while the
+        // support module is registered, so an unsupported request is never silently accepted.
+        private static List<AreaPanelItem> Support(IndustrialPanelModel m)
+        {
+            var items = new List<AreaPanelItem> { new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "support.tip", LabelKey = P + "Support.Tip" } };
+            if (!m.SupportAvailable || !m.HasSupport) { items.Add(Warning("support.unavailable", P + "Support.Unavailable")); return items; }
+            var s = m.Support;
+            int setting = IndustrialSupportModel.NormalizeSetting(s.DailySupportPerCompany);
+            items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Slider, Id = "support.perCompany", LabelKey = P + "Support.PerCompany", Action = IndustrialGameplayFacade.SetSupportPerCompany,
+                NumericValue = setting, Min = IndustrialSupportModel.MinPerCompany, Max = IndustrialSupportModel.MaxPerCompany, Step = IndustrialSupportModel.Step,
+                Value = setting > 0 ? Money(setting) : null, ValueKey = setting > 0 ? null : P + "Support.Off", TooltipKey = P + "Support.PerCompany.Tip" });
+            var r = m.Current;
+            if (r == null) items.Add(Row("support.receivers", P + "Support.Receivers", valueKey: P + "Calculating"));
+            else if (!r.SupportRosterComplete) items.Add(Row("support.receivers", P + "Support.Receivers", valueKey: P + "Status.Unavailable", tooltip: P + "Warning.ReadFailures"));
+            else
+            {
+                items.Add(Row("support.receivers", P + "Support.Receivers", Number(r.SupportRoster.Count), tooltip: Stale(m) ? P + "Status.Stale" : P + "Support.Receivers.Tip"));
+                items.Add(Row("support.dailyRequest", P + "Support.DailyRequest", Money(IndustrialSupportModel.DailyRequest(r.SupportRoster.Count, setting)), tooltip: P + "Support.DailyRequest.Tip"));
+            }
+            items.Add(Row("support.pending", P + "Support.Pending", valueKey: P + "Support.Stage." + (m.SupportPending?.ToString() ?? "None")));
+            items.Add(Row("support.lifetimeRequested", P + "Support.LifetimeRequested", Money(s.LifetimeRequested)));
+            items.Add(Row("support.lifetimeSettled", P + "Support.LifetimeSettled", Money(s.LifetimeSettled), tooltip: P + "Support.LifetimeSettled.Tip"));
+            items.Add(Row("support.lifetimeCredited", P + "Support.LifetimeCredited", Money(s.LifetimeCredited)));
+            items.Add(Row("support.lifetimeUnallocated", P + "Support.LifetimeUnallocated", Money(s.LifetimeUnallocated), tooltip: P + "Support.LifetimeUnallocated.Tip"));
+            return items;
         }
         private static List<AreaPanelItem> Companies(IndustrialPanelModel model)
         {
@@ -98,6 +130,10 @@ namespace CS2AreaSystem.Modules.Industrial
             foreach (var tab in new[] { "Production", "Logistics", "Employment", "Progress" }) yield return "CS2AS.Tab." + tab;
             yield return "CS2AS.Tab.Comparison";
             yield return "CS2AS.Tab.Companies";
+            yield return "CS2AS.Tab.Support";
+            foreach (var key in new[] { "Tip", "Unavailable", "PerCompany", "PerCompany.Tip", "Off", "Receivers", "Receivers.Tip", "DailyRequest", "DailyRequest.Tip", "Pending",
+                "LifetimeRequested", "LifetimeSettled", "LifetimeSettled.Tip", "LifetimeCredited", "LifetimeUnallocated", "LifetimeUnallocated.Tip" }) yield return P + "Support." + key;
+            foreach (var stage in SupportStages) yield return P + "Support.Stage." + stage;
             foreach (var key in new[] { "Tip", "Name", "Unnamed", "Ownership", "Owner", "Automatic", "Manual", "Invalid", "Assign", "Clear", "Empty" }) yield return P + "Company." + key;
             foreach(var key in new[]{"Tip","Area","Trend","Empty"})yield return P+"Comparison."+key;
             for (int level = IndustrialProgressionModel.MinLevel; level <= IndustrialProgressionModel.MaxLevel; level++) yield return P + "LevelName." + level;
@@ -126,6 +162,7 @@ namespace CS2AreaSystem.Modules.Industrial
         private static string One(double value) => value.ToString("0.0", Invariant);
         private static string Hours(double value) => value.ToString("0.0", Invariant) + " h";
         private static string Percent(double value) => Math.Round(value).ToString("N0", Invariant) + "%";
+        private static string Money(long value) => (value < 0 ? "-¢" : "¢") + Math.Abs(value).ToString("N0", Invariant);
         private static string Clock(double hours)
         {
             double h = Math.Max(0, hours);

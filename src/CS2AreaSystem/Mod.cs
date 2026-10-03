@@ -39,8 +39,11 @@ namespace CS2AreaSystem
             try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicySystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Area policy runtime unavailable; Area Core and modules remain registered."); }
             var finance = RegisterAreaFinance(updateSystem);
-            RegisterParkSystems(updateSystem, finance);
-            RegisterIndustrialSystems(updateSystem);
+            var park = RegisterParkSystems(updateSystem, finance);
+            var industrial = RegisterIndustrialSystems(updateSystem);
+            RegisterIndustrialSupport(updateSystem, finance, industrial);
+            RegisterParkEvents(updateSystem, finance, park);
+            RegisterParkCoverageModifier(updateSystem, park);
             RegisterLocalization();
             RegisterSettings();
             // After DefaultToolSystem in the same frame, so an accepted label click replaces the selection vanilla just made.
@@ -96,9 +99,9 @@ namespace CS2AreaSystem
         // Park gameplay observes the city after Core and books its money through Area finance, so it is registered only with
         // a complete Area finance module and only as a whole. A Park failure leaves Core geometry, lifecycle, persistence and
         // the other area types running.
-        private static void RegisterParkSystems(UpdateSystem updateSystem, ModuleRegistration finance)
+        private static ModuleRegistration RegisterParkSystems(UpdateSystem updateSystem, ModuleRegistration finance)
         {
-            if (!ModuleRegistration.Requires(finance, "Park gameplay", message => Log.Error(message))) return;
+            if (!ModuleRegistration.Requires(finance, "Park gameplay", message => Log.Error(message))) return null;
             var park = new ModuleRegistration("Park gameplay",
                 typeof(CS2AreaSystem.Modules.Park.ParkRuntimeSystem), typeof(CS2AreaSystem.Modules.Park.ParkHistorySystem), typeof(CS2AreaSystem.Modules.Park.ParkHistorySaveSystem),
                 typeof(CS2AreaSystem.Modules.Park.ParkLandscapeSystem), typeof(CS2AreaSystem.Modules.Park.ParkVisitSystem),
@@ -120,11 +123,43 @@ namespace CS2AreaSystem
                 park.Complete();
             }
             catch (System.Exception error) { park.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
+            return park;
+        }
+        // Park internal events (Phase 2 C5) charge city money through Area finance and change Park gameplay inputs, so they
+        // need both modules complete. Completions arrive through Area finance's listener, also inside its save flush, so no
+        // separate save system exists. A failure disables only the events (base Park gameplay keeps neutral event effects).
+        private static void RegisterParkEvents(UpdateSystem updateSystem, ModuleRegistration finance, ModuleRegistration park)
+        {
+            if (!ModuleRegistration.Requires(finance, "Park events", message => Log.Error(message))) return;
+            if (!ModuleRegistration.Requires(park, "Park events", message => Log.Error(message))) return;
+            var events = new ModuleRegistration("Park events", typeof(CS2AreaSystem.Modules.Park.ParkEventSystem));
+            try
+            {
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Park.ParkEventSystem>(SystemUpdatePhase.GameSimulation); events.Step();
+                events.Complete();
+            }
+            catch (System.Exception error) { events.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
+        }
+        // Phase 2 C6: the coverage writer runs directly after the native Park writer (same interval, so it inherits its
+        // offset) and its values are restored before the serializer. It ships disabled (ParkCoverageModifierGate); a
+        // registration failure disables only the modifier.
+        private static void RegisterParkCoverageModifier(UpdateSystem updateSystem, ModuleRegistration park)
+        {
+            if (!ModuleRegistration.Requires(park, "Park coverage modifier", message => Log.Error(message))) return;
+            var coverage = new ModuleRegistration("Park coverage modifier",
+                typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem), typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem));
+            try
+            {
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem, Game.Simulation.ParkAISystem>(SystemUpdatePhase.GameSimulation); coverage.Step();
+                updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem, Game.Serialization.SerializerSystem>(SystemUpdatePhase.Serialize); coverage.Step();
+                coverage.Complete();
+            }
+            catch (System.Exception error) { coverage.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
         // Industrial gameplay observes the city after Core (runtime state in ModificationEnd after membership/activation,
         // hourly observation and progression in GameSimulation), as a whole. A registration failure leaves Area Core, Park
         // and Tourism running.
-        private static void RegisterIndustrialSystems(UpdateSystem updateSystem)
+        private static ModuleRegistration RegisterIndustrialSystems(UpdateSystem updateSystem)
         {
             var industrial = new ModuleRegistration("Industrial gameplay",
                 typeof(CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySaveSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialObservationSystem),
@@ -141,6 +176,25 @@ namespace CS2AreaSystem
                 industrial.Complete();
             }
             catch (System.Exception error) { industrial.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
+            return industrial;
+        }
+        // Industrial support payments (Phase 2 C4) charge city money through Area finance and credit companies resolved by
+        // Industrial gameplay, so they need both modules complete. The scheduler (a GameSimulation producer, applied by
+        // AreaFinanceSystem in the same frame) and its save flush (after Area finance's flush, before the serializer) are
+        // one unit. A failure leaves Industrial observation, Core and Park running and the support controls unavailable.
+        private static void RegisterIndustrialSupport(UpdateSystem updateSystem, ModuleRegistration finance, ModuleRegistration industrial)
+        {
+            if (!ModuleRegistration.Requires(finance, "Industrial support", message => Log.Error(message))) return;
+            if (!ModuleRegistration.Requires(industrial, "Industrial support", message => Log.Error(message))) return;
+            var support = new ModuleRegistration("Industrial support",
+                typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem), typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem));
+            try
+            {
+                updateSystem.UpdateAt<CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem>(SystemUpdatePhase.GameSimulation); support.Step();
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem, CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem>(SystemUpdatePhase.Serialize); support.Step();
+                support.Complete();
+            }
+            catch (System.Exception error) { support.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
         // Registered systems cannot be removed from UpdateSystem; a disabled system is skipped by ComponentSystemBase.Update.
         private static void Disable(UpdateSystem updateSystem, System.Type type)

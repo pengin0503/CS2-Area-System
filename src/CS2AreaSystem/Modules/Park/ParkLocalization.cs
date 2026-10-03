@@ -10,6 +10,45 @@ namespace CS2AreaSystem.Modules.Park
             Add("CS2AS.Tab.Visitors", "Visitors", "来園者");
             Add("CS2AS.Tab.Finances", "Finances", "財政");
             Add("CS2AS.Tab.Landscape", "Landscape", "景観");
+            Add("CS2AS.Tab.Events", "Events", "イベント");
+            Add(P + "Coverage.Factor", "Coverage operating factor", "サービス範囲の運営係数");
+            Add(P + "Coverage.Factor.Tip", "How strongly this Park's budget would scale the coverage capacity and strength of the park buildings it owns: 50% budget = 90%, 100% = 100%, 150% = 110% (Enhanced Maintenance raises the budget input; at most 110%). Coverage range is never changed. 100% while the Park is not active.",
+                "このパークの予算が、所有するパーク建物のサービス範囲の容量と強さをどれだけ変えるか：予算50%で90%、100%で100%、150%で110%（強化メンテナンスは予算側を引き上げます。最大110%）。範囲（距離）は変えません。パークが稼働中でないときは100%です。");
+            Add(P + "Coverage.Disabled", "Not applied yet: this modifier stays off until it has been verified in game.", "まだ適用されていません：ゲーム内での検証が済むまでこの補正は無効です。");
+            Add(P + "Coverage.Buildings", "Buildings with modified coverage", "範囲を補正中の建物");
+            Add(P + "Events.Tip", "Park events are paid from city money as Area Management and change only this Park: during a Park Festival 15% of the comfortable visitor capacity is used by the festival, known visit satisfaction gets +5 and visit XP ×1.25. Vanilla attractiveness and where citizens go are not changed.",
+                "パークイベントは市の資金からエリア管理費として支払われ、このパークの中だけに作用します。パークフェスティバル中は快適に受け入れられる来園者数の15%をフェスティバルが使い、記録された来園満足度に+5、来園XPが1.25倍になります。バニラの魅力度や市民の行き先は変わりません。");
+            Add(P + "Events.Unavailable", "Park events are unavailable (Area finance or Park gameplay failed to load). No event can be started and no event effect applies.",
+                "パークイベントは利用できません（エリア財政またはパーク機能の読み込みに失敗しました）。イベントは開始できず、効果も適用されません。");
+            Add(P + "Events.Status", "Event", "イベント");
+            Add(P + "Events.Status.None", "None", "なし");
+            Add(P + "Events.Status.Pending", "Waiting for city money", "市の資金からの支出待ち");
+            Add(P + "Events.Status.Active", "Park Festival running", "パークフェスティバル開催中");
+            Add(P + "Events.Status.Paused", "Park Festival paused (Park suspended)", "パークフェスティバル一時停止中（パーク停止中）");
+            Add(P + "Events.RemainingHours", "Hours remaining", "残り時間（時間）");
+            Add(P + "Events.Effects", "Festival effects: comfortable capacity −15%, visit satisfaction +5, visit XP ×1.25.",
+                "フェスティバル効果：快適収容数 −15%、来園満足度 +5、来園XP ×1.25。");
+            Add(P + "Events.Cost", "Festival cost", "フェスティバル費用");
+            Add(P + "Events.Cost.Tip", "Half of this Park's current daily management cost, charged once when the festival is started. It starts only after the city has paid; if nothing can be paid it does not start and nothing is charged.",
+                "このパークの現在の1日あたり管理費の半額で、開始時に1回だけ請求されます。市が支払った後にだけ開始し、支払えなかった場合は開始せず請求もされません。");
+            Add(P + "Events.PendingCost", "Requested cost", "請求額");
+            Add(P + "Events.Start.Tip", "Starts a Park Festival for one full in-game day once the city has paid. It does not repeat automatically.",
+                "市の支払い後、ゲーム内でまる1日パークフェスティバルを開催します。自動では繰り返しません。");
+            Add(P + "Events.Name.1", "Park Festival", "パークフェスティバル");
+            Add(P + "Events.Start.1", "Start Park Festival", "パークフェスティバルを開始");
+            Add(P + "Events.Blocked.Unavailable", "Park events are not ready yet (loading or unavailable).", "パークイベントはまだ利用できません（読み込み中または利用不可）。");
+            Add(P + "Events.Blocked.NoState", "This Park has no event data yet.", "このパークにはまだイベントデータがありません。");
+            Add(P + "Events.Blocked.Inactive", "Only an active Park can start an event.", "イベントを開始できるのは稼働中のパークだけです。");
+            Add(P + "Events.Blocked.UnknownEvent", "Unknown event.", "不明なイベントです。");
+            Add(P + "Events.Blocked.Pending", "The festival payment is still being processed.", "フェスティバルの支払いを処理中です。");
+            Add(P + "Events.Blocked.Active", "A festival is already running in this Park.", "このパークではすでにフェスティバルを開催中です。");
+            Add(P + "Events.Blocked.NoCost", "The management cost is still being calculated.", "管理費を計算中です。");
+            Add(P + "Events.LifetimeEvents", "Festivals held", "開催したフェスティバル");
+            Add(P + "Events.LifetimeExpense", "Total event cost", "イベント費用の累計");
+            Add(P + "Events.LifetimeExpense.Tip", "Only the amounts actually paid from city money, including a payment for a festival that could not start because the Park stopped being active.",
+                "実際に市の資金から支払われた額だけです。パークが稼働中でなくなり開始できなかったフェスティバルの支払いも含みます。");
+            Add(P + "Events.History", "Recent festivals (newest first)", "最近のフェスティバル（新しい順）");
+            Add(P + "Events.History.Tip", "Amount paid by the city for this festival.", "このフェスティバルに市が支払った額です。");
             Add("CS2AS.Tab.Progress", "Progress", "進捗");
             Add(P + "Summary.BothRequired", "Suspended: assign a Park Maintenance headquarters and connect a dedicated pedestrian path across the boundary.", "停止中：公園整備施設を本部に指定し、専用歩道で境界の内外を接続してください。");
             Add(P + "Summary.HeadquartersRequired", "Suspended: assign a Park Maintenance building inside this area as headquarters.", "停止中：エリア内の公園整備施設を本部に指定してください。");

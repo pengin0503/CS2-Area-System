@@ -105,6 +105,40 @@ public class ModSystemOrderTests {
         Assert.That(park, Is.LessThan(area), "admission income is recorded and Park counters exist before Area finance settles");
         Assert.That(area, Is.LessThan(order.IndexOf(typeof(Game.Serialization.SerializerSystem))));
     }
+    [Test] public void IndustrialSupportIsQueuedBeforeAreaFinanceAndFlushedAfterItBeforeTheSerializer() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAt", typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem), null, SystemUpdatePhase.GameSimulation) }));
+        var simulation = Schedule(SystemUpdatePhase.GameSimulation);
+        Assert.That(simulation.IndexOf(typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem)), Is.GreaterThanOrEqualTo(0));
+        Assert.That(simulation.IndexOf(typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSystem)), Is.LessThan(simulation.IndexOf(typeof(CS2AreaSystem.Core.Finance.AreaFinanceSystem))));
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem), typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem), SystemUpdatePhase.Serialize) }));
+        var save = Schedule(SystemUpdatePhase.Serialize);
+        int area = save.IndexOf(typeof(CS2AreaSystem.Core.Finance.AreaFinanceSaveSystem)), support = save.IndexOf(typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupportSaveSystem));
+        Assert.That(support, Is.GreaterThan(area), "Area Finance applies and completes the request first");
+        Assert.That(support, Is.LessThan(save.IndexOf(typeof(Game.Serialization.SerializerSystem))), "company money and counters are final before serialization");
+    }
+    // Phase 2 C5: event starts are queued in GameSimulation (UpdateAt) and their completion is handled by Area Finance's
+    // listener, including inside AreaFinanceSaveSystem's flush before the serializer; no separate save system exists.
+    [Test] public void ParkEventsAreQueuedBeforeAreaFinanceAppliesTheBatch() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Modules.Park.ParkEventSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAt", typeof(CS2AreaSystem.Modules.Park.ParkEventSystem), null, SystemUpdatePhase.GameSimulation) }));
+        var simulation = Schedule(SystemUpdatePhase.GameSimulation);
+        Assert.That(simulation.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkEventSystem)), Is.GreaterThanOrEqualTo(0));
+        Assert.That(simulation.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkEventSystem)), Is.LessThan(simulation.IndexOf(typeof(CS2AreaSystem.Core.Finance.AreaFinanceSystem))));
+    }
+    // Phase 2 C6: the coverage writer runs directly after the native Park writer (same interval, inherited offset) and its
+    // tracked values are restored before the native serializer.
+    [Test] public void CoverageModifierRunsDirectlyAfterTheNativeParkWriterAndRestoresBeforeSaving() {
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateAfter", typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem), typeof(Game.Simulation.ParkAISystem), SystemUpdatePhase.GameSimulation) }));
+        var simulation = Schedule(SystemUpdatePhase.GameSimulation);
+        Assert.That(simulation.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSystem)), Is.EqualTo(simulation.IndexOf(typeof(Game.Simulation.ParkAISystem)) + 1));
+        Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem)),
+            Is.EqualTo(new[] { new UpdateSystemCall("UpdateBefore", typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem), typeof(Game.Serialization.SerializerSystem), SystemUpdatePhase.Serialize) }));
+        var save = Schedule(SystemUpdatePhase.Serialize);
+        Assert.That(save.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkCoverageModifierSaveSystem)), Is.LessThan(save.IndexOf(typeof(Game.Serialization.SerializerSystem))));
+    }
     [Test] public void PolicyUpkeepIsQueuedBeforeAreaFinanceAppliesTheBatch() {
         Assert.That(ModCalls.Where(c => c.System == typeof(CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem)),
             Is.EqualTo(new[] { new UpdateSystemCall("UpdateAt", typeof(CS2AreaSystem.Core.Policies.AreaPolicyUpkeepSystem), null, SystemUpdatePhase.GameSimulation) }));
@@ -136,8 +170,8 @@ public class ModSystemOrderTests {
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
     [TestCase(SystemUpdatePhase.ToolUpdate, "AreaLabelSystem")]
     [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,ParkEntranceSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem")]
-    [TestCase(SystemUpdatePhase.GameSimulation, "AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,AreaFinanceSystem")]
-    [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem,ParkHistorySaveSystem,IndustrialHistorySaveSystem")]
+    [TestCase(SystemUpdatePhase.GameSimulation, "ParkCoverageModifierSystem,AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,IndustrialSupportSystem,ParkEventSystem,AreaFinanceSystem")]
+    [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem,IndustrialSupportSaveSystem,ParkHistorySaveSystem,IndustrialHistorySaveSystem,ParkCoverageModifierSaveSystem")]
     [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]
     public void ModSystemOrderPerPhaseIsUnchanged(SystemUpdatePhase phase, string expected) {
         var ours = Schedule(phase).Where(t => t.Assembly == typeof(Mod).Assembly).Select(t => t.Name);

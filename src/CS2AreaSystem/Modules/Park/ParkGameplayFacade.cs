@@ -22,16 +22,29 @@ namespace CS2AreaSystem.Modules.Park
         public ParkHeadquartersState Headquarters;
         public ParkPolicyEffects Policies;
         public ParkWhatIfCandidates? Preview;
+        // Phase 2 C5 events: module availability, saved state/history, the start decision with its cost, a pending request.
+        public bool EventsAvailable, HasEvents;
+        public ParkEventState Events;
+        public ParkEventRequestOutcome EventStart = ParkEventRequestOutcome.Unavailable;
+        public long EventCost, EventPendingCost;
+        public System.Collections.Generic.IReadOnlyList<ParkEventHistoryEntry> EventHistory = Array.Empty<ParkEventHistoryEntry>();
+        // Phase 2 C6 coverage operating modifier: this Park's factor (1 unless Active), whether the writer is enabled, and
+        // how many buildings it currently modifies for this Park.
+        public float CoverageFactor = 1f;
+        public bool CoverageActive;
+        public int CoverageBuildings;
     }
     public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid }
     // Boundary between the module UI and Park gameplay: selected-Park reads and the only validated setters.
-    // Entrance add/remove stays in Core's guarded anchor actions. No policies, events or XP/level setters exist.
+    // Entrance add/remove stays in Core's guarded anchor actions. No policies or XP/level setters exist.
     // FocusDiagnosticTarget is read-only (camera focus on a landscape diagnostic target) and never reaches the setters.
+    // StartEvent only asks ParkEventSystem to request a festival through Area Finance; it never writes event state itself.
     public static class ParkGameplayFacade
     {
         public const string SetBudget = "setBudget", SetFee = "setFee";
         public const string PreviewBudget = "previewBudget", PreviewFee = "previewFee";
         public const string FocusDiagnosticTarget = "focusDiagnosticTarget";
+        public const string StartEvent = "startEvent";
         public static bool TryApplyAction(string action, string value, int level, ref ManagedAreaSettings settings, ref ParkAreaState state)
         {
             switch (action)
@@ -50,6 +63,7 @@ namespace CS2AreaSystem.Modules.Park
         public static bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
         {
             if (action == FocusDiagnosticTarget) return HandleFocus(area, value, context);
+            if (action == StartEvent) return HandleStartEvent(area, value, context);
             if(action==PreviewBudget||action==PreviewFee) {
                 var runtime=context.World?.GetExistingSystemManaged<ParkRuntimeSystem>();
                 return runtime!=null&&runtime.Preview.TryApply(Read(area,context),action,value);
@@ -63,6 +77,15 @@ namespace CS2AreaSystem.Modules.Park
             entities.SetComponentData(area, settings);
             entities.SetComponentData(area, state);
             return true;
+        }
+        // A stale or quarantined Area, an unavailable module, a pending/active event or an unknown id is rejected.
+        private static bool HandleStartEvent(Entity area, string value, in AreaPanelContext context)
+        {
+            if (context.World == null || !int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var eventId)) return false;
+            var events = context.World.GetExistingSystemManaged<ParkEventSystem>();
+            var services = context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            if (events == null || services == null || services.IsQuarantined(area)) return false;
+            return events.RequestStart(area, eventId) == ParkEventRequestOutcome.Request;
         }
         private static bool HandleFocus(Entity area, string key, in AreaPanelContext context)
         {
@@ -124,8 +147,23 @@ namespace CS2AreaSystem.Modules.Park
                 if (runtime.Store.TryGet(model.StableId, out var snapshot)) model.Runtime = snapshot;
                 model.Preview=runtime.Preview.Read(model);
             }
+            model.HasEvents = entities.HasComponent<ParkEventState>(area);
+            if (model.HasEvents) model.Events = entities.GetComponentData<ParkEventState>(area);
+            if (entities.HasBuffer<ParkEventHistoryEntry>(area)) model.EventHistory = entities.GetBuffer<ParkEventHistoryEntry>(area, true).ToArray();
+            var events = context.World?.GetExistingSystemManaged<ParkEventSystem>();
+            model.EventsAvailable = events != null && events.Enabled;
+            if (events != null)
+            {
+                model.EventStart = ParkEventFinance.Decide(events.StartInputs(area, ParkEventCatalog.ParkFestival, out var parkId), out var cost);
+                model.EventCost = cost;
+                model.EventPendingCost = events.Ledger.Get(parkId)?.Requested ?? 0;
+            }
             var policies=context.World?.GetExistingSystemManaged<Core.Policies.AreaPolicySystem>();
             if(policies!=null)model.Policies=new ParkPolicyEffectReader((a,id)=>policies.IsEffective(a,id),core?.Failures,"Park.Preview.PolicyEffects","Park preview policy inputs unavailable").Read(area);
+            if (model.Lifecycle == AreaLifecycleState.Active) model.CoverageFactor = ParkCoverageModifierModel.Factor(model.Budget, model.Policies.ManagementFundingMultiplier);
+            var coverage = context.World?.GetExistingSystemManaged<ParkCoverageModifierSystem>();
+            model.CoverageActive = coverage != null && coverage.Enabled;
+            if (coverage != null) model.CoverageBuildings = coverage.Tracker.CountFor(model.StableId);
             model.Promotion = ParkProgressionModel.EvaluatePromotion(model.Level, model.Experience, ParkProgressionSystem.BuildInputs(model.Runtime?.Quality, model.State));
             return model;
         }

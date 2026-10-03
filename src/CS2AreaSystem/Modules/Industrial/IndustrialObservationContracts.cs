@@ -39,6 +39,8 @@ namespace CS2AreaSystem.Modules.Industrial
         public Entity Facility;
         // Read for ownership UI only; contributes no member count or metrics.
         public bool CandidateOnly;
+        // Live Industrial companies of this building whose resolved owner (B2) is the read Area: the C4 support roster.
+        public Entity[] OwnedCompanies;
         public IndustrialFacilityRole Roles;
         // Producer capability (extractor or processor) and confirmed current production (> 0 actual output).
         public bool IsProducer, IsOperatingProducer;

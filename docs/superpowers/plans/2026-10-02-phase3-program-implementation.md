@@ -2,20 +2,23 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Deliver the optional Park Gate content integration, advisory Industrial Area supply contracts, and custom-factory content that uses only verified vanilla resources.
+**Goal:** Deliver the dedicated Area System Headquarters/Entrance asset integration, advisory Industrial Area supply contracts, and custom-factory content that uses only verified vanilla resources.
 
-**Architecture:** Phase 3 builds on the semantic registry and resolved Industrial ownership from Phases 1/2. C2 adds optional explicit Park Entrance content without replacing path-crossing entrances; D1 adds persisted Area-to-Area agreements but remains observational/advisory; D2 adds asset/content using native `IndustrialProcessData` and existing `Resource` enum values without special-case scoring.
+**Architecture:** Phase 3 builds on the semantic registry and resolved Industrial ownership from Phases 1/2. C2 replaces the Foundation-era temporary vanilla/path Headquarters and Entrance sources with three required Area System assets registered through the semantic registry. Those three prefabs are sourced from two authoritative archives: `CS2_AS_IndustrialHeadquarters.zip` for Industrial HQ, and `CS2_AS_ParkSet_HQ_Gate.zip` for both Park HQ and Park Gate; D1 adds persisted Area-to-Area agreements but remains observational/advisory; D2 adds asset/content using native `IndustrialProcessData` and existing `Resource` enum values without special-case scoring.
 
-**Tech Stack:** C# 9, Unity ECS, Phase 1 semantic registry/history, Phase 2 ownership, CS2 1.6.2f1 prefab/content pipeline, NUnit/NUnitLite, React/Vitest.
+**Tech Stack:** C# 9, Unity ECS, Phase 1 semantic registry/history, Phase 2 ownership, CS2 1.6.2f1 asset/prefab pipeline, NUnit/NUnitLite, React/Vitest.
 
 **Spec:** `docs/superpowers/specs/2026-10-02-headquarters-entrance-and-post-wave-a-roadmap-design.md` Phase 3 and `docs/superpowers/specs/2026-10-02-pre-tourism-park-industrial-expansion-design.md` §D
 
 ## Global Constraints
 
 - Start only from latest `main` containing completed Phase 2.
-- No dedicated Industrial HQ asset is required; ordinary office buildings remain Industrial Headquarters.
-- Park Maintenance remains the baseline Park Headquarters.
-- Dedicated Park Gate is optional; existing dedicated-Path entrance evidence must remain valid.
+- C2 introduces three authoritative built-in assets: `AS_ParkHeadquarters`, `AS_IndustrialHeadquarters`, and `AS_ParkGate`.
+- C2 source archives are exactly `CS2_AS_IndustrialHeadquarters.zip` and `CS2_AS_ParkSet_HQ_Gate.zip`; the ParkSet archive is the source of truth for both `AS_ParkHeadquarters` and `AS_ParkGate`, and standalone `CS2_AS_ParkHeadquarters.zip` is not used by C2.
+- Every Area System-owned model/prefab identifier added by C2 starts with `AS_` to avoid collisions with future base-game/DLC assets.
+- After C2, ordinary office buildings no longer satisfy Industrial Headquarters, Park Maintenance buildings no longer satisfy Park Headquarters, and derived dedicated-Path crossings no longer satisfy Park Entrance activation.
+- Existing Area StableId, Level/XP, finance, history and ownership state are preserved; old Headquarters/Entrance links are not auto-converted and do not satisfy activation after C2.
+- `AS_ParkGate` must contain an editor-authored pedestrian connection through the gate with connectable/snap-compatible ends for external pedestrian paths; do not patch citizen pathfinding.
 - D1 does not intercept routing, transfer requests, pathfinding or market prices.
 - D2 uses only existing vanilla `Resource` enum values and valid native process data.
 - Custom content must participate through generic semantic/process observation, not hard-coded score exceptions.
@@ -23,17 +26,17 @@
 
 ## Review Focus
 
-- Installing/removing the optional Park Gate content never invalidates a path-based Park.
-- Supply contract references an Area deleted after save: contract becomes invalid/inert without resolving to a reused StableId.
-- D1 reports “advisory/estimated”, never claims a physical transfer occurred from observed capacity alone.
-- Custom factory prefab missing/changed recipe data: observation degrades to unavailable instead of inventing output.
-- Content pack removed after save: Core/Industrial state loads without quarantining unrelated Areas.
+- Existing save using office/Park Maintenance/path fallback reaches C2: Area state remains intact but the Area is Suspended until the dedicated AS-prefixed asset is assigned.
+- Required C2 content missing or removed: no fallback asset/path is silently accepted and unrelated Areas/state still load safely.
+- `AS_ParkGate` connects to external pedestrian paths and allows pedestrian traversal without any runtime pathfinding hook.
+- Asset upgrade changes runtime prefab Entity: the built-in provider rediscovers exact AS-prefixed authored content and re-registers semantics for the new load generation.
+- Future DLC introduces similarly named Headquarters/Gate assets: exact `AS_` identifiers prevent them from being mistaken for Area System content.
 
 ---
 
 ## Execution order
 
-1. C2 optional Park Gate asset/content integration
+1. C2 dedicated Area System HQ/Gate asset/content integration
    - `docs/superpowers/plans/2026-10-02-phase3-park-gate-asset-integration-implementation.md`
 2. D1 Area-to-Area supply contracts
    - `docs/superpowers/plans/2026-10-02-phase3-industrial-supply-contracts-implementation.md`
@@ -44,7 +47,10 @@ Each is a separate PR/release-risk boundary.
 
 ## Phase 3 completion gate
 
-- [ ] Optional Gate install/uninstall/load compatibility verified.
+- [ ] `AS_ParkHeadquarters`, `AS_IndustrialHeadquarters`, and `AS_ParkGate` pass the verified 1.6.2f1 asset import/content pipeline.
+- [ ] C2 semantic registration makes those three prefabs the only valid Park HQ, Industrial HQ, and Park Entrance sources.
+- [ ] Gate pedestrian-path connection and external path snapping are verified in game.
+- [ ] Old office/Park Maintenance/path Entrance fallback no longer activates Areas after C2, while existing Level/XP/finance/history remain intact.
 - [ ] Supply contracts remain advisory and bounded in large Industrial Area counts.
 - [ ] At least one custom factory/content asset passes native importer/runtime observation using only existing resources.
 - [ ] No new Resource enum, global economy rewrite or pathfinding hook appears in source guards.

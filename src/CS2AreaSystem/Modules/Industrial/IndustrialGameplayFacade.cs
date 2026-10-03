@@ -6,21 +6,23 @@ using CS2AreaSystem.Core.Modules;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Industrial
 {
-    // Industrial panel boundary: diagnostic focus and module-owned company assignment buffers only.
-    // HQ assignment, Edit and Delete stay in Core's guarded generic actions.
+    // Industrial panel boundary: diagnostic focus, module-owned company assignment buffers and the support setting
+    // (written by IndustrialSupportSystem). HQ assignment, Edit and Delete stay in Core's guarded generic actions.
     public static class IndustrialGameplayFacade
     {
         public const string FocusDiagnosticTarget = "focusDiagnosticTarget";
         public const string AssignCompanyHere = "assignCompanyHere";
         public const string ClearCompanyAssignment = "clearCompanyAssignment";
+        public const string SetSupportPerCompany = "setSupportPerCompany";
         // Core already checked the stable ID and live selection. Never modifies simulation state.
         public static bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
         {
-            if (action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment) return false;
+            if (action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment && action != SetSupportPerCompany) return false;
             if (context.World == null) return false;
             var entities = context.Entities;
             if (!entities.Exists(area) || entities.HasComponent<Game.Common.Deleted>(area) || !entities.HasComponent<ManagedAreaStableId>(area) ||
                 !entities.HasComponent<ManagedArea>(area) || entities.GetComponentData<ManagedArea>(area).TypeId != (int)AreaTypeId.Industrial) return false;
+            if (action == SetSupportPerCompany) return HandleSupport(area, value, context);
             var runtime = context.World.GetExistingSystemManaged<IndustrialRuntimeSystem>();
             ulong areaId = entities.GetComponentData<ManagedAreaStableId>(area).Value;
             if (runtime == null || !runtime.Store.TryGet(areaId, out var snapshot)) return false;
@@ -38,6 +40,14 @@ namespace CS2AreaSystem.Modules.Industrial
             }, runtime.Membership, new EntityAssignmentStore(runtime, entities));
             if (applied) runtime.AssignmentChanged();
             return applied;
+        }
+        // Only the per-company setting changes; a disabled or unregistered support module or a quarantined Area rejects it.
+        private static bool HandleSupport(Entity area, string value, in AreaPanelContext context)
+        {
+            var support = context.World.GetExistingSystemManaged<IndustrialSupportSystem>();
+            var services = context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            if (support == null || services == null || services.IsQuarantined(area)) return false;
+            return support.TrySetPerCompany(area, value);
         }
         public static bool TryFocus(IndustrialObservationResult current, string key, ulong areaId, Func<Entity, bool> isLive, AreaMembershipIndex membership, Action<Entity> focus, IndustrialCompanyAssignmentIndex assignments = null)
         {
@@ -118,6 +128,11 @@ namespace CS2AreaSystem.Modules.Industrial
             }
             model.HasState = entities.HasComponent<IndustrialAreaState>(area);
             model.State = model.HasState ? entities.GetComponentData<IndustrialAreaState>(area) : IndustrialAreaState.CreateDefault(0);
+            var support = context.World?.GetExistingSystemManaged<IndustrialSupportSystem>();
+            model.SupportAvailable = support != null && support.Enabled;
+            model.HasSupport = entities.HasComponent<IndustrialSupportState>(area);
+            if (model.HasSupport) model.Support = entities.GetComponentData<IndustrialSupportState>(area);
+            model.SupportPending = support?.Ledger.Get(model.StableId)?.Stage;
             var runtime = context.World?.GetExistingSystemManaged<IndustrialRuntimeSystem>();
             if (runtime != null)
             {

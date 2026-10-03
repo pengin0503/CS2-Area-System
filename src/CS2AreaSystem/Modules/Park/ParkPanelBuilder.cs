@@ -22,7 +22,8 @@ namespace CS2AreaSystem.Modules.Park
                 new AreaPanelTabData { Id = "visitors", LabelKey = "CS2AS.Tab.Visitors", Items = Visitors(model) },
                 new AreaPanelTabData { Id = "finances", LabelKey = "CS2AS.Tab.Finances", Items = Finances(model) },
                 new AreaPanelTabData { Id = "landscape", LabelKey = "CS2AS.Tab.Landscape", Items = Landscape(model) },
-                new AreaPanelTabData { Id = "progress", LabelKey = "CS2AS.Tab.Progress", Items = Progress(model) } } };
+                new AreaPanelTabData { Id = "progress", LabelKey = "CS2AS.Tab.Progress", Items = Progress(model) },
+                new AreaPanelTabData { Id = "events", LabelKey = "CS2AS.Tab.Events", Items = Events(model) } } };
         }
         // Every key the builder can emit, including the dynamic ones (for localization coverage).
         public static IEnumerable<string> AllKeys()
@@ -37,6 +38,10 @@ namespace CS2AreaSystem.Modules.Park
             yield return P + "FocusTarget"; yield return P + "FocusTarget.Tip";
             foreach(var key in new[]{"Status","Unknown","Partial","Complete","Reachable","Unattached","Disconnected"}) yield return P+"Connectivity."+key;
             foreach(var key in new[]{"Budget","Fee","Cost","Coverage","Maintenance","Value","Net","Tip"})yield return P+"Preview."+key;
+            foreach (var key in EventKeys) yield return P + "Events." + key;
+            foreach (var key in CoverageKeys) yield return P + "Coverage." + key;
+            foreach (var id in ParkEventCatalog.Ids) { yield return P + "Events.Name." + id; yield return P + "Events.Start." + id; }
+            foreach (var outcome in Enum.GetNames(typeof(ParkEventRequestOutcome))) if (outcome != nameof(ParkEventRequestOutcome.Request)) yield return P + "Events.Blocked." + outcome;
         }
         private static AreaPanelItem Row(string id, string label, string value = null, string valueKey = null, string tooltip = null) =>
             new AreaPanelItem { Kind = AreaPanelItemKind.Row, Id = id, LabelKey = label, Value = value, ValueKey = valueKey, TooltipKey = tooltip };
@@ -133,6 +138,7 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("lifetimeExpense", P + "LifetimeExpense", Money(s.LifetimeManagementExpense)));
             items.Add(Row("recentNet", P + "RecentNet", Money(income - expense), tooltip: P + "RecentNet.Tip"));
             items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "vanillaSeparate", LabelKey = P + "Note.VanillaSeparate" });
+            Coverage(items, model);
             Preview(items,model);
             return items;
         }
@@ -148,6 +154,14 @@ namespace CS2AreaSystem.Modules.Park
             Estimate("Maintenance",Number(estimate.Maintenance),estimate.MaintenanceAvailable);
             Estimate("Value",Number(estimate.ValueForMoney),estimate.ValueAvailable);
             Estimate("Net",MoneyAmount(estimate.EstimatedNet),estimate.NetAvailable);
+        }
+        private static readonly string[] CoverageKeys = { "Factor", "Factor.Tip", "Disabled", "Buildings" };
+        // Phase 2 C6: the factor this Park's budget would give its buildings' coverage, and whether it is applied at all.
+        private static void Coverage(List<AreaPanelItem> items, ParkPanelModel model)
+        {
+            items.Add(Row("coverage.factor", P + "Coverage.Factor", Percent(model.CoverageFactor), tooltip: P + "Coverage.Factor.Tip"));
+            if (model.CoverageActive) items.Add(Row("coverage.buildings", P + "Coverage.Buildings", Number(model.CoverageBuildings)));
+            else items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "coverage.disabled", LabelKey = P + "Coverage.Disabled" });
         }
         private static List<AreaPanelItem> Landscape(ParkPanelModel model)
         {
@@ -219,6 +233,48 @@ namespace CS2AreaSystem.Modules.Park
                 case "LowDecoration": return r.Decoration < ParkLandscapeModel.DecorationWeight * ParkLandscapeDiagnostics.ShortageShare;
                 default: return true;
             }
+        }
+        private static readonly string[] EventKeys = { "Tip", "Unavailable", "Status", "Status.None", "Status.Pending", "Status.Active", "Status.Paused",
+            "RemainingHours", "Effects", "Cost", "Cost.Tip", "PendingCost", "Start.Tip", "LifetimeEvents", "LifetimeExpense", "LifetimeExpense.Tip", "History", "History.Tip" };
+        // Phase 2 C5 Events tab: status, remaining time and effects, cost, the start request, lifetime totals, newest-first history.
+        private static List<AreaPanelItem> Events(ParkPanelModel model)
+        {
+            const string E = P + "Events.";
+            var items = new List<AreaPanelItem> { new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "events.tip", LabelKey = E + "Tip" } };
+            if (!model.EventsAvailable || !model.HasEvents)
+                items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "events.unavailable", LabelKey = E + "Unavailable" });
+            else
+            {
+                var state = model.Events;
+                bool running = ParkEventModel.IsActive(state, model.Frame);
+                // An outstanding request stays visible even when the start is now blocked (e.g. the Park was suspended).
+                bool pending = model.EventStart == ParkEventRequestOutcome.Pending || model.EventPendingCost > 0;
+                string status = running ? (model.Lifecycle == AreaLifecycleState.Active ? "Active" : "Paused") : pending ? "Pending" : "None";
+                items.Add(Row("events.status", E + "Status", valueKey: E + "Status." + status));
+                if (running)
+                {
+                    double hours = Math.Ceiling(unchecked(state.EndFrameExclusive - model.Frame) * 24.0 / ParkFinanceModel.FramesPerDay);
+                    items.Add(Row("events.remaining", E + "RemainingHours", Number(hours)));
+                    items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "events.effects", LabelKey = E + "Effects" });
+                }
+                else if (pending) items.Add(Row("events.pendingCost", E + "PendingCost", Money(model.EventPendingCost)));
+                else items.Add(model.EventStart == ParkEventRequestOutcome.Request ? Row("events.cost", E + "Cost", Money(model.EventCost), tooltip: E + "Cost.Tip")
+                    : Row("events.cost", E + "Cost", valueKey: model.EventStart == ParkEventRequestOutcome.NoCost ? P + "Calculating" : P + "Unavailable", tooltip: E + "Cost.Tip"));
+                bool canStart = model.EventStart == ParkEventRequestOutcome.Request;
+                items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = "events.start", LabelKey = E + "Start." + ParkEventCatalog.ParkFestival,
+                    Action = ParkGameplayFacade.StartEvent, Value = ParkEventCatalog.ParkFestival.ToString(Invariant), Disabled = !canStart,
+                    TooltipKey = canStart ? E + "Start.Tip" : E + "Blocked." + model.EventStart });
+            }
+            if (!model.HasEvents) return items;
+            items.Add(Row("events.lifetimeEvents", E + "LifetimeEvents", Number(model.Events.LifetimeEvents)));
+            items.Add(Row("events.lifetimeExpense", E + "LifetimeExpense", Money(model.Events.LifetimeEventExpense), tooltip: E + "LifetimeExpense.Tip"));
+            var history = model.EventHistory ?? Array.Empty<ParkEventHistoryEntry>();
+            if (history.Count == 0) return items;
+            items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "events.history", LabelKey = E + "History" });
+            for (int i = history.Count - 1, n = 0; i >= 0; i--, n++)
+                items.Add(Row("events.history." + n, E + "Name." + (ParkEventCatalog.IsKnown(history[i].EventId) ? history[i].EventId : ParkEventCatalog.ParkFestival),
+                    Money(history[i].SettledExpense), tooltip: E + "History.Tip"));
+            return items;
         }
         private static List<AreaPanelItem> Progress(ParkPanelModel model)
         {
