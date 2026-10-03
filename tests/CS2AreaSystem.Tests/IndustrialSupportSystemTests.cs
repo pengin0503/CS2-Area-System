@@ -152,4 +152,15 @@ public class IndustrialSupportSourceGuardTests {
   Assert.That(system, Does.Contain("IndustrialSupportScheduling.TryRequest("), "the day is committed only through the accepted-enqueue path");
   Assert.That(system.Split("LastScheduledDay").Length - 1, Is.Zero, "the system never writes the scheduled day directly");
  }
+ [Test] public void PanelSettingIsRoutedThroughTheEnabledSupportSystemOnly() {
+  var facade = Source("Modules/Industrial/IndustrialGameplayFacade.cs");
+  Assert.That(facade, Does.Contain("if (action == SetSupportPerCompany) return HandleSupport(area, value, context);"), "after the Industrial Area checks");
+  Assert.That(facade, Does.Contain("services.IsQuarantined(area)) return false;\n            return support.TrySetPerCompany(area, value);"));
+  Assert.That(facade, Does.Not.Contain("SetComponentData"), "the facade itself never writes");
+  var system = Source("Modules/Industrial/IndustrialSupportSystem.cs");
+  int set = system.IndexOf("internal bool TrySetPerCompany", StringComparison.Ordinal);
+  var body = system.Substring(set, system.IndexOf("// Live B2 resolution", set, StringComparison.Ordinal) - set);
+  Assert.That(body, Does.Contain("if (!Enabled ||"), "a failed registration disables the setting");
+  Assert.That(body, Does.Contain("IndustrialSupportActions.TryApply(true, true, value, ref state)"), "only the setting changes");
+ }
 }

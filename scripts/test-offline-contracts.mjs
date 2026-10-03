@@ -113,14 +113,19 @@ const industrialFacade = read(`${industrialDir}/IndustrialGameplayFacade.cs`);
 // B2: simulation remains read-only; assignment writes are confined to module-owned Area buffers.
 check(!/SetComponentData|AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity/.test(industrialFacade), 'Industrial facade must stay read-only (no setters)');
 const industrialFacadeActions = [...industrialFacade.matchAll(/public const string (\w+)\s*=\s*"([^"]*)"/g)].map(m => m[2]);
-check(JSON.stringify(industrialFacadeActions) === JSON.stringify(['focusDiagnosticTarget', 'assignCompanyHere', 'clearCompanyAssignment']), 'Industrial facade must whitelist exactly focus and company assignment/removal');
-check(/if \(action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment\) return false;/.test(industrialFacade), 'Industrial facade must reject actions outside the B2 whitelist first');
+check(JSON.stringify(industrialFacadeActions) === JSON.stringify(['focusDiagnosticTarget', 'assignCompanyHere', 'clearCompanyAssignment', 'setSupportPerCompany']), 'Industrial facade must whitelist exactly focus, company assignment/removal and the C4 support setting');
+check(/if \(action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment && action != SetSupportPerCompany\) return false;/.test(industrialFacade), 'Industrial facade must reject actions outside the whitelist first');
+// C4: the support setting is written only by the enabled support system, through the setting-only action helper.
+check(/if \(action == SetSupportPerCompany\) return HandleSupport\(area, value, context\);/.test(industrialFacade) && /return support\.TrySetPerCompany\(area, value\);/.test(industrialFacade), 'Industrial support setting must route through IndustrialSupportSystem');
+const supportSystem = read(`${industrialDir}/IndustrialSupportSystem.cs`);
+const supportSetter = supportSystem.slice(supportSystem.indexOf('internal bool TrySetPerCompany'), supportSystem.indexOf('// Live B2 resolution'));
+check(/if \(!Enabled \|\|/.test(supportSetter) && /IndustrialSupportActions\.TryApply\(true, true, value, ref state\)/.test(supportSetter), 'Industrial support setting must require the enabled module and change only the setting');
 const industrialModule = read(`${industrialDir}/IndustrialAreaModule.cs`);
 check(/HandleAction\([^)]*\)\s*=>\s*IndustrialGameplayFacade\.HandleAction\(area, action, value, context\);/.test(industrialModule), 'Industrial module must route actions only to the read-only facade');
 const panelBuilder = read(`${industrialDir}/IndustrialPanelBuilder.cs`);
-check(!/AreaPanelItemKind\.Slider/.test(panelBuilder), 'Industrial panel must not emit sliders');
+check((panelBuilder.match(/AreaPanelItemKind\.Slider/g) || []).length === 1 && /Kind = AreaPanelItemKind\.Slider, Id = "support\.perCompany"[^\n]*Action = IndustrialGameplayFacade\.SetSupportPerCompany/.test(panelBuilder), 'Industrial panel may emit only the C4 support slider');
 const panelActions = [...panelBuilder.matchAll(/Action\s*=\s*([^,}]+)/g)].map(m => m[1].trim());
-check(panelActions.length === 3 && panelActions.every(action => ['IndustrialGameplayFacade.FocusDiagnosticTarget', 'IndustrialGameplayFacade.AssignCompanyHere', 'IndustrialGameplayFacade.ClearCompanyAssignment'].includes(action)), 'Industrial panel may emit only the B2 whitelist');
+check(panelActions.length === 4 && panelActions.every(action => ['IndustrialGameplayFacade.FocusDiagnosticTarget', 'IndustrialGameplayFacade.AssignCompanyHere', 'IndustrialGameplayFacade.ClearCompanyAssignment', 'IndustrialGameplayFacade.SetSupportPerCompany'].includes(action)), 'Industrial panel may emit only the whitelisted actions');
 check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 3, 'Industrial panel must emit only focus, assign and remove buttons');
 check(/GetBuffer<IndustrialCompanyAssignment>/.test(industrialFacade), 'assignment persistence must use only the module-owned buffer');
 check(/candidates.AssignmentRevision != assignments.Revision/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must reject stale revisions');

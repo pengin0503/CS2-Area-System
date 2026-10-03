@@ -117,6 +117,15 @@ namespace CS2AreaSystem.Modules.Industrial
                 services.Failures.Report(area.Area, "Industrial.Support.Schedule", error, "Industrial support could not be scheduled for managed area " + area.Area + "; nothing was charged");
             }
         }
+        // Panel setting write (main thread, from the Industrial facade). Only DailySupportPerCompany changes.
+        internal bool TrySetPerCompany(Entity area, string value)
+        {
+            if (!Enabled || !EntityManager.Exists(area) || !EntityManager.HasComponent<IndustrialSupportState>(area)) return false;
+            var state = EntityManager.GetComponentData<IndustrialSupportState>(area);
+            if (!IndustrialSupportActions.TryApply(true, true, value, ref state)) return false;
+            EntityManager.SetComponentData(area, state);
+            return true;
+        }
         // Live B2 resolution of one referenced company; no world query.
         internal bool StillOwned(Entity company, ulong areaId)
         {

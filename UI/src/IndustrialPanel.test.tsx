@@ -9,7 +9,8 @@ env.dict=fixture.enUS as Record<string,string>;
 vi.mock('cs2/api',()=>({trigger:env.trigger,useValue:()=>null,bindValue:()=>({})}));
 vi.mock('cs2/l10n',()=>({useLocalization:()=>({translate:(key:string)=>env.dict[key]??null})}));
 vi.mock('cs2/modding',()=>({getModule:(_p:string,name:string)=>{
- if(name==='Slider')throw new Error('no sliders in the Industrial panel');
+ // No vanilla slider: the support setting falls back to the - / + step buttons (ModulePanel).
+ if(name==='Slider')throw new Error('use step buttons');
  if(name==='InfoSection')return ({children}:React.PropsWithChildren)=><section>{children}</section>;
  return ({left,right}:{left?:React.ReactNode;right?:React.ReactNode})=><div role="row"><span>{left}</span><span>{right}</span></div>;
 }}));
@@ -35,9 +36,9 @@ describe('Industrial management tabs (real C# payload)',()=>{
   expect(screen.getByText(t('CS2AS.Industrial.Company.Automatic'))).toBeInTheDocument();
   expect(screen.getByText(t('CS2AS.Industrial.Company.Manual'))).toBeInTheDocument();
  });
- it('offers exactly Overview | Production | Logistics | Employment | Progress | Comparison and hides the duplicate core level rows',()=>{
+ it('offers exactly Overview | Production | Logistics | Employment | Progress | Comparison | Companies | Support and hides the duplicate core level rows',()=>{
   render(<AreaInfoSection {...section('active')}/>);
-  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress','CS2AS.Tab.Comparison','CS2AS.Tab.Companies'].map(t));
+  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress','CS2AS.Tab.Comparison','CS2AS.Tab.Companies','CS2AS.Tab.Support'].map(t));
   expect(screen.queryByText(t('CS2AS.UI.Level'))).toBeNull();
   expect(row(t('CS2AS.UI.Headquarters'))).toHaveTextContent('Riverside Steelworks');
  });
@@ -117,7 +118,7 @@ describe('Industrial management tabs (real C# payload)',()=>{
   render(<AreaInfoSection {...section('maxLevel')}/>);open('CS2AS.Tab.Progress');
   expect(row(t('CS2AS.Industrial.MaxLevel'))).toHaveTextContent(t('CS2AS.Industrial.LevelName.5'));
  });
- it('offers no Industrial mutation: the only module action is the read-only bottleneck focus button',()=>{
+ it('offers no Industrial simulation mutation: module actions are focus, company ownership and the support setting only',()=>{
   for(const name of ['active','paused','overlapping'] as Name[]){
    const {unmount}=render(<AreaInfoSection {...section(name)}/>);
    for(const tab of ['CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress']){
@@ -130,7 +131,9 @@ describe('Industrial management tabs (real C# payload)',()=>{
   const items=Object.values(fixture.sections).flatMap(s=>(s as unknown as AreaSectionData).tabs.flatMap(tab=>tab.items??[]));
   const actions=items.filter(i=>i.action!==null||i.kind==='slider'||i.kind==='button');
   expect(actions.length).toBeGreaterThan(0);
-  expect(actions.every(i=>i.kind==='button'&&['focusDiagnosticTarget','assignCompanyHere','clearCompanyAssignment'].includes(i.action!)&&!!i.value)).toBe(true);
+  const sliders=actions.filter(i=>i.kind==='slider');
+  expect(sliders.map(i=>[i.id,i.action])).toEqual([['support.perCompany','setSupportPerCompany']]);
+  expect(actions.filter(i=>i.kind!=='slider').every(i=>i.kind==='button'&&['focusDiagnosticTarget','assignCompanyHere','clearCompanyAssignment'].includes(i.action!)&&!!i.value)).toBe(true);
  });
  it('production tab lists each observed recipe as input and output rows with its measured rate',()=>{
   render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Production');
@@ -147,6 +150,25 @@ describe('Industrial management tabs (real C# payload)',()=>{
   const button=section('overlapping').tabs[0].items!.find(i=>i.kind==='button')!;
   fireEvent.click(screen.getAllByRole('button',{name:t(button.labelKey)})[0]);
   expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','moduleAction','42','focusDiagnosticTarget',button.value);
+ });
+ it('support tab sends the stepped per-company setting and shows auditable accounting',()=>{
+  render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Support');
+  const slider=item('active','support','support.perCompany');
+  expect(row(t('CS2AS.Industrial.Support.PerCompany'))).toHaveTextContent(slider.value!);
+  expect(row(t('CS2AS.Industrial.Support.Receivers'))).toHaveTextContent(item('active','support','support.receivers').value!);
+  expect(row(t('CS2AS.Industrial.Support.DailyRequest'))).toHaveTextContent(item('active','support','support.dailyRequest').value!);
+  expect(row(t('CS2AS.Industrial.Support.Pending'))).toHaveTextContent(t('CS2AS.Industrial.Support.Stage.Requested'));
+  for(const [key,id] of [['LifetimeRequested','lifetimeRequested'],['LifetimeSettled','lifetimeSettled'],['LifetimeCredited','lifetimeCredited'],['LifetimeUnallocated','lifetimeUnallocated']])
+   expect(row(t(`CS2AS.Industrial.Support.${key}`))).toHaveTextContent(item('active','support',`support.${id}`).value!);
+  fireEvent.click(screen.getByRole('button',{name:'+'}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','setSupportPerCompany',String(slider.numericValue!+slider.step!));
+  fireEvent.click(screen.getByRole('button',{name:'-'}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','setSupportPerCompany',String(slider.numericValue));
+ });
+ it('an unregistered support module shows a warning and no control',()=>{
+  render(<AreaInfoSection {...section('paused')}/>);open('CS2AS.Tab.Support');
+  expect(screen.getByRole('alert')).toHaveTextContent(t('CS2AS.Industrial.Support.Unavailable'));
+  expect(screen.queryAllByRole('button',{name:'+'})).toEqual([]);
  });
  it('every mod key the payload uses is localized',()=>{
   const keys=new Set<string>();

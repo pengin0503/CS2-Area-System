@@ -1725,6 +1725,148 @@
               "action": "clearCompanyAssignment"
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "support",
+          "labelKey": "CS2AS.Tab.Support",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "support.tip",
+              "labelKey": "CS2AS.Industrial.Support.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "slider",
+              "id": "support.perCompany",
+              "labelKey": "CS2AS.Industrial.Support.PerCompany",
+              "value": "¢750",
+              "valueKey": null,
+              "numericValue": 750,
+              "min": 0,
+              "max": 5000,
+              "step": 250,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Support.PerCompany.Tip",
+              "action": "setSupportPerCompany"
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "support.receivers",
+              "labelKey": "CS2AS.Industrial.Support.Receivers",
+              "value": "3",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Support.Receivers.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "support.dailyRequest",
+              "labelKey": "CS2AS.Industrial.Support.DailyRequest",
+              "value": "¢2,250",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Support.DailyRequest.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "support.pending",
+              "labelKey": "CS2AS.Industrial.Support.Pending",
+              "value": null,
+              "valueKey": "CS2AS.Industrial.Support.Stage.Requested",
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "support.lifetimeRequested",
+              "labelKey": "CS2AS.Industrial.Support.LifetimeRequested",
+              "value": "¢2,250",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "support.lifetimeSettled",
+              "labelKey": "CS2AS.Industrial.Support.LifetimeSettled",
+              "value": "¢1,125",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Support.LifetimeSettled.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "support.lifetimeCredited",
+              "labelKey": "CS2AS.Industrial.Support.LifetimeCredited",
+              "value": "¢1,125",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "support.lifetimeUnallocated",
+              "labelKey": "CS2AS.Industrial.Support.LifetimeUnallocated",
+              "value": "¢0",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Support.LifetimeUnallocated.Tip",
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -2252,6 +2394,43 @@
               "kind": "row",
               "id": "company.empty",
               "labelKey": "CS2AS.Industrial.Company.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "support",
+          "labelKey": "CS2AS.Tab.Support",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "support.tip",
+              "labelKey": "CS2AS.Industrial.Support.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "support.unavailable",
+              "labelKey": "CS2AS.Industrial.Support.Unavailable",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -3323,6 +3502,43 @@
               "kind": "row",
               "id": "company.empty",
               "labelKey": "CS2AS.Industrial.Company.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "support",
+          "labelKey": "CS2AS.Tab.Support",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "support.tip",
+              "labelKey": "CS2AS.Industrial.Support.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "support.unavailable",
+              "labelKey": "CS2AS.Industrial.Support.Unavailable",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -4431,6 +4647,43 @@
               "kind": "row",
               "id": "company.empty",
               "labelKey": "CS2AS.Industrial.Company.Empty",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "support",
+          "labelKey": "CS2AS.Tab.Support",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "support.tip",
+              "labelKey": "CS2AS.Industrial.Support.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "support.unavailable",
+              "labelKey": "CS2AS.Industrial.Support.Unavailable",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -5745,6 +5998,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "support",
+          "labelKey": "CS2AS.Tab.Support",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "support.tip",
+              "labelKey": "CS2AS.Industrial.Support.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "support.unavailable",
+              "labelKey": "CS2AS.Industrial.Support.Unavailable",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -6763,6 +7053,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "support",
+          "labelKey": "CS2AS.Tab.Support",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "support.tip",
+              "labelKey": "CS2AS.Industrial.Support.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "support.unavailable",
+              "labelKey": "CS2AS.Industrial.Support.Unavailable",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -6923,6 +7250,26 @@
     "CS2AS.Industrial.Summary.Active": "Active. Metrics come from the real companies inside this area, observed once per game hour.",
     "CS2AS.Industrial.Summary.HeadquartersInvalid": "Suspended: the headquarters building was removed or is no longer inside this area. Assign a new headquarters; Level and XP are kept.",
     "CS2AS.Industrial.Summary.HeadquartersRequired": "Assign an office building inside this area as the headquarters to activate it.",
+    "CS2AS.Industrial.Support.DailyRequest": "Next daily request",
+    "CS2AS.Industrial.Support.DailyRequest.Tip": "Eligible companies × daily support per company, requested once per in-game day. Skipped days are not paid later.",
+    "CS2AS.Industrial.Support.LifetimeCredited": "Total credited to companies",
+    "CS2AS.Industrial.Support.LifetimeRequested": "Total requested",
+    "CS2AS.Industrial.Support.LifetimeSettled": "Total paid by the city",
+    "CS2AS.Industrial.Support.LifetimeSettled.Tip": "Only the amount actually taken from city money; equals credited + unallocated.",
+    "CS2AS.Industrial.Support.LifetimeUnallocated": "Total unallocated",
+    "CS2AS.Industrial.Support.LifetimeUnallocated.Tip": "Paid by the city but not credited: companies that closed, moved or changed ownership before payment, or companies whose money was at its limit. Never refunded or paid again.",
+    "CS2AS.Industrial.Support.Off": "Off",
+    "CS2AS.Industrial.Support.Pending": "Current payment",
+    "CS2AS.Industrial.Support.PerCompany": "Daily support per company",
+    "CS2AS.Industrial.Support.PerCompany.Tip": "0 to 5,000 per in-game day in steps of 250. Changes apply from the next daily payment.",
+    "CS2AS.Industrial.Support.Receivers": "Eligible companies",
+    "CS2AS.Industrial.Support.Receivers.Tip": "Industrial companies resolved to this Area by the latest complete observation.",
+    "CS2AS.Industrial.Support.Stage.Crediting": "Crediting companies",
+    "CS2AS.Industrial.Support.Stage.None": "None",
+    "CS2AS.Industrial.Support.Stage.Requested": "Waiting for city money",
+    "CS2AS.Industrial.Support.Stage.Settled": "Paid by the city, waiting to credit companies",
+    "CS2AS.Industrial.Support.Tip": "Daily support paid from city money to every Industrial company owned by this Area (automatic or manual ownership). It is booked once a day as Area Management and only the amount actually taken from city money is passed on to companies. A negative balance does not stop it.",
+    "CS2AS.Industrial.Support.Unavailable": "Industrial support is unavailable (Area finance or Industrial gameplay failed to load). No support is paid.",
     "CS2AS.Industrial.SupportJobs": "Logistics & support: employees / jobs",
     "CS2AS.Industrial.Vacancies": "Vacancies",
     "CS2AS.Industrial.Vacancy.0": "Vacant: uneducated jobs",
@@ -7121,6 +7468,7 @@
     "CS2AS.Tab.Overview": "Overview",
     "CS2AS.Tab.Production": "Production",
     "CS2AS.Tab.Progress": "Progress",
+    "CS2AS.Tab.Support": "Support",
     "CS2AS.Tab.Visitors": "Visitors",
     "CS2AS.Trend.Down": "vs previous: falling",
     "CS2AS.Trend.Flat": "vs previous: unchanged",
