@@ -16,6 +16,7 @@ Replace the current single-anchor activation model with a safer multi-requiremen
   - `AS_IndustrialHeadquarters` for Industrial Headquarters;
   - `AS_ParkHeadquarters` for Park Headquarters;
   - `AS_ParkGate` for Park Entrance.
+- The three prefabs come from two authoritative source archives: `CS2_AS_IndustrialHeadquarters.zip` supplies Industrial HQ, while `CS2_AS_ParkSet_HQ_Gate.zip` supplies both Park HQ and Park Gate. The standalone `CS2_AS_ParkHeadquarters.zip` is not used for C2.
 - All Area System-owned model/prefab identifiers introduced by C2 start with `AS_` to avoid future base-game/DLC naming collisions.
 - After C2, the Foundation-era office, Park Maintenance and path-derived Entrance sources do not remain activation fallbacks.
 - A1-A5 are complete. The previously agreed Phase 1-3 program is now part of the formal implementation roadmap.
@@ -376,6 +377,9 @@ Relative implementation size: approximately **125 points plus 3D/content work**.
 
 C2 is revised by this design:
 
+- use `CS2_AS_IndustrialHeadquarters.zip` as the authoritative source archive for `AS_IndustrialHeadquarters`;
+- use `CS2_AS_ParkSet_HQ_Gate.zip` as the authoritative source archive for both `AS_ParkHeadquarters` and `AS_ParkGate`, preserving its shared texture/material relationship;
+- do not use the standalone `CS2_AS_ParkHeadquarters.zip` as a C2 implementation source;
 - import the completed Industrial HQ as `AS_IndustrialHeadquarters` and register it as the sole `IndustrialHeadquarters` source after C2;
 - import the completed Park HQ as `AS_ParkHeadquarters` and register it as the sole `ParkHeadquarters` source after C2;
 - import the completed Park Gate as `AS_ParkGate` and register it as the sole `ParkEntrance` source after C2;

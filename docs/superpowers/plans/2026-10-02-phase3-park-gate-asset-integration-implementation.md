@@ -4,7 +4,7 @@
 
 **Goal:** Ship the completed Park Headquarters, Industrial Headquarters and Park Gate models as required Area System content, make those three prefabs the authoritative Headquarters/Entrance sources, and make the Park Gate physically connectable to pedestrian paths.
 
-**Architecture:** C2 packages three normal placeable Building prefabs through the verified CS2 1.6.2f1 content pipeline. A built-in content provider resolves the exact Area System-owned prefab identities and registers `ParkHeadquarters`, `IndustrialHeadquarters` and `ParkEntrance` semantics each load generation. C2 then retires the temporary Foundation-era office/Park Maintenance/path-Entrance eligibility; the gate's pedestrian passage is authored in the asset itself rather than implemented with a runtime pathfinding patch.
+**Architecture:** C2 packages three normal placeable Building prefabs through the verified CS2 1.6.2f1 content pipeline, using two authoritative source archives: `CS2_AS_IndustrialHeadquarters.zip` for Industrial HQ and `CS2_AS_ParkSet_HQ_Gate.zip` for both Park HQ and Park Gate. The standalone `CS2_AS_ParkHeadquarters.zip` is not an implementation source. A built-in content provider resolves the exact Area System-owned prefab identities and registers `ParkHeadquarters`, `IndustrialHeadquarters` and `ParkEntrance` semantics each load generation. C2 then retires the temporary Foundation-era office/Park Maintenance/path-Entrance eligibility; the gate's pedestrian passage is authored in the asset itself rather than implemented with a runtime pathfinding patch.
 
 **Tech Stack:** C# 9, Unity ECS, Phase 1 `AreaAssetSemanticRegistry`, CS2 1.6.2f1 asset/prefab pipeline, existing multi-role anchor UI, NUnit/NUnitLite.
 
@@ -16,6 +16,10 @@
   - `AS_ParkHeadquarters`
   - `AS_IndustrialHeadquarters`
   - `AS_ParkGate`
+- Authoritative source archives are exactly:
+  - `CS2_AS_IndustrialHeadquarters.zip` => `AS_IndustrialHeadquarters`
+  - `CS2_AS_ParkSet_HQ_Gate.zip` => `AS_ParkHeadquarters` + `AS_ParkGate`
+- `CS2_AS_ParkHeadquarters.zip` is a superseded standalone copy and must not be used as a C2 source.
 - All future Area System-owned building/model identifiers introduced by this content pack must begin with `AS_`.
 - After C2, only registered `AS_ParkHeadquarters` satisfies Park Headquarters, only registered `AS_IndustrialHeadquarters` satisfies Industrial Headquarters, and only registered `AS_ParkGate` satisfies Park Entrance.
 - Ordinary office HQ, Park Maintenance HQ and automatic dedicated-Path Entrance are Foundation-era compatibility mechanisms only and are retired by C2; they do not remain activation fallbacks.
@@ -73,9 +77,9 @@
 **Files:**
 - Create: `assets/area-system/README.md`
 - Modify: `docs/content/area-system-built-in-assets-contract.md`
-- Add only repository-approved source/metadata files produced from the completed Park HQ, Industrial HQ and Park HQ/Gate model packages.
+- Add only repository-approved source/metadata files produced from the two authoritative source archives: `CS2_AS_IndustrialHeadquarters.zip` and `CS2_AS_ParkSet_HQ_Gate.zip`.
 
-Before authoring, inspect the supplied/installed 1.6.2f1 asset toolchain and record the exact verified source, import and output paths/formats. Do not invent an FBX/material/package layout not supported by that toolchain.
+Before authoring, inspect the supplied/installed 1.6.2f1 asset toolchain and record the exact verified source, import and output paths/formats. Treat the ParkSet archive as authoritative for both Park HQ and Park Gate, including their shared texture/material references; do not mix in files from standalone `CS2_AS_ParkHeadquarters.zip`. Do not invent an FBX/material/package layout not supported by that toolchain.
 
 - [ ] **Step 1: Rename authored internal prefab/model identifiers before final import**
   - Park HQ => `AS_ParkHeadquarters`

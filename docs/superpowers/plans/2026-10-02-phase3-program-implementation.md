@@ -4,7 +4,7 @@
 
 **Goal:** Deliver the dedicated Area System Headquarters/Entrance asset integration, advisory Industrial Area supply contracts, and custom-factory content that uses only verified vanilla resources.
 
-**Architecture:** Phase 3 builds on the semantic registry and resolved Industrial ownership from Phases 1/2. C2 replaces the Foundation-era temporary vanilla/path Headquarters and Entrance sources with three required Area System assets registered through the semantic registry; D1 adds persisted Area-to-Area agreements but remains observational/advisory; D2 adds asset/content using native `IndustrialProcessData` and existing `Resource` enum values without special-case scoring.
+**Architecture:** Phase 3 builds on the semantic registry and resolved Industrial ownership from Phases 1/2. C2 replaces the Foundation-era temporary vanilla/path Headquarters and Entrance sources with three required Area System assets registered through the semantic registry. Those three prefabs are sourced from two authoritative archives: `CS2_AS_IndustrialHeadquarters.zip` for Industrial HQ, and `CS2_AS_ParkSet_HQ_Gate.zip` for both Park HQ and Park Gate; D1 adds persisted Area-to-Area agreements but remains observational/advisory; D2 adds asset/content using native `IndustrialProcessData` and existing `Resource` enum values without special-case scoring.
 
 **Tech Stack:** C# 9, Unity ECS, Phase 1 semantic registry/history, Phase 2 ownership, CS2 1.6.2f1 asset/prefab pipeline, NUnit/NUnitLite, React/Vitest.
 
@@ -14,6 +14,7 @@
 
 - Start only from latest `main` containing completed Phase 2.
 - C2 introduces three authoritative built-in assets: `AS_ParkHeadquarters`, `AS_IndustrialHeadquarters`, and `AS_ParkGate`.
+- C2 source archives are exactly `CS2_AS_IndustrialHeadquarters.zip` and `CS2_AS_ParkSet_HQ_Gate.zip`; the ParkSet archive is the source of truth for both `AS_ParkHeadquarters` and `AS_ParkGate`, and standalone `CS2_AS_ParkHeadquarters.zip` is not used by C2.
 - Every Area System-owned model/prefab identifier added by C2 starts with `AS_` to avoid collisions with future base-game/DLC assets.
 - After C2, ordinary office buildings no longer satisfy Industrial Headquarters, Park Maintenance buildings no longer satisfy Park Headquarters, and derived dedicated-Path crossings no longer satisfy Park Entrance activation.
 - Existing Area StableId, Level/XP, finance, history and ownership state are preserved; old Headquarters/Entrance links are not auto-converted and do not satisfy activation after C2.
