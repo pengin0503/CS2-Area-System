@@ -192,3 +192,9 @@ API compilation and unit tests do not show that the mod is ready to play.
 - **Deferred minors:**
   - No single end-to-end test covers an owner change between days; it is covered piecewise.
   - Counters are still written onto an Area quarantined mid-session. Quarantine is load-time only today.
+
+## Runtime verification addendum — 2026-10-04
+
+**PASS — user-confirmed.** The user reports all Industrial v1, Phase 2 B2 manual-company-assignment and Phase 2 C4 support-payment in-game checks completed on Cities: Skylines II 1.6.2f1 and behaved normally. The original NOT RUN statements above remain as implementation-time history; they are not rewritten as automated evidence. Exact local save/build metadata was not supplied in this chat.
+
+Runtime-confirmation Issue #43 was closed as completed. The Phase 3 D1/D2 plans may rely on the verified Phase 2 ownership/support baseline.
