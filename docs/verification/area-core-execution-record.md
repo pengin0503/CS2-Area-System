@@ -93,3 +93,9 @@ Final: Ruling: Reviewer declined city-scale performance/allocation measurements 
 Final: Ruling: Reviewer declined full Park/Industrial/Tourism algorithms — retain activation/module/Overview stubs because the approved Area Core scope defers detailed visitors, production/progression and tourism scoring — cost if wrong is missing gameplay expected beyond this scope.
 Final: Ruling: Reviewer declined large-footprint/linear geometry and new models — retain the specified v1 point-based native membership and existing Building anchor baseline with no required new model — cost if wrong is edge membership/anchor limitations that require later geometry/eligibility expansion.
 Final: Ruling: User forbids intermediate approvals and permits shared-branch effects only after confirmation — finish by preserving feat/area-core and its isolated worktree (finishing skill Keep As-Is), without push/merge — cost is deferred integration, with source/history available for review.
+
+## Runtime verification addendum — 2026-10-04
+
+**PASS — user-confirmed.** The user reports all current Area Core and related overlap/load-isolation in-game checks in `scripts/runtime-smoke-checklist.md` completed on Cities: Skylines II 1.6.2f1 and behaved normally. The original NOT RUN statements above remain as implementation-time history; they are not rewritten as automated evidence. Exact local save/build metadata was not supplied in this chat.
+
+Runtime-confirmation Issues #38, #44 and #54 were closed as completed. Performance Issues remain separate and are not treated as runtime failures.

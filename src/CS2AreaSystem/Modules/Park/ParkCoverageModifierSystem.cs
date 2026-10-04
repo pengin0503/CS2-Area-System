@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CS2AreaSystem.Core.Areas;
+using CS2AreaSystem.Core.Settings;
 using Game;
 using Game.Buildings;
 using Game.Prefabs;
@@ -7,11 +8,11 @@ using Unity.Entities;
 using UnityEngine.Scripting;
 namespace CS2AreaSystem.Modules.Park
 {
-    // Release gate for the Phase 2 C6 coverage modifier. Static/API proof exists (park-coverage-modifier-contract.md);
-    // the in-game checks in runtime-smoke-checklist.md (C6) have NOT RUN, so the writer is never enabled.
+    // Release gate for the Phase 2 C6 coverage modifier. Static/API proof and the 1.6.2f1 in-game release checks passed;
+    // the live Options switch below can restore native values and suppress all modifier writes at any time.
     public static class ParkCoverageModifierGate
     {
-        public const bool RuntimeVerified = false;
+        public const bool RuntimeVerified = true;
     }
     // Scales the native ModifiedServiceCoverage capacity/magnitude of buildings whose primary Park owner is an Active
     // managed Park, by that Park's budget factor. Registered directly after ParkAISystem with the same interval, so it
@@ -56,6 +57,11 @@ namespace CS2AreaSystem.Modules.Park
         [Preserve]
         protected override void OnUpdate()
         {
+            if (!AreaSettings.Current.EnableParkCoverageModifier)
+            {
+                RestoreTracked();
+                return;
+            }
             if (!runtime.Ready) return;
             uint native = parkAI.LastSystemVersion;
             if (native == handledNativeVersion) return;

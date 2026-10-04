@@ -139,3 +139,9 @@ Deferred minors:
 - There is a theoretical bitwise-equality coincidence on restore.
 
 Runtime: **NOT RUN.** The release gate C601–C606 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md) has not been performed, and the gate must stay closed until it passes.
+
+## Runtime verification addendum — 2026-10-04
+
+**PASS — user-confirmed.** The user reports all Park v1, Phase 2 C5 Festival and Phase 2 C6 coverage-modifier in-game checks completed on Cities: Skylines II 1.6.2f1 and behaved normally. The original NOT RUN statements above remain as implementation-time history; they are not rewritten as automated evidence. Exact local save/build metadata was not supplied in this chat.
+
+Runtime-confirmation Issues #30, #50, #53 and #55 were closed as completed. C6 is therefore release-eligible; the readiness branch opens `ParkCoverageModifierGate.RuntimeVerified` and adds an Options off switch.

@@ -31,7 +31,7 @@ public class AreaSettingsTests {
   foreach(var name in names) Assert.That(typeof(AreaSystemSettings).GetProperty(name)?.GetCustomAttribute<SettingsUISectionAttribute>(),Is.Not.Null,name+" must be shown in Options");
   var defaults=AreaSettings.Current;
   Assert.That(defaults,Is.SameAs(AreaSettingsDefaults.Instance),"before OnLoad the defaults are active");
-  Assert.That(defaults.ShowAreaList&&defaults.FocusCameraOnSelect&&defaults.ConfirmAreaDeletion&&defaults.AllowManagedAreaOverlap,Is.True);
+  Assert.That(defaults.ShowAreaList&&defaults.FocusCameraOnSelect&&defaults.ConfirmAreaDeletion&&defaults.AllowManagedAreaOverlap&&defaults.EnableParkCoverageModifier,Is.True);
   Assert.That(defaults.PanelSide,Is.EqualTo(AreaPanelSide.Right));
  }
  [Test] public void SettingsFileFollowsTheModsSettingsConvention() {

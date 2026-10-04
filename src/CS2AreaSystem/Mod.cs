@@ -141,8 +141,8 @@ namespace CS2AreaSystem
             catch (System.Exception error) { events.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
         // Phase 2 C6: the coverage writer runs directly after the native Park writer (same interval, so it inherits its
-        // offset) and its values are restored before the serializer. It ships disabled (ParkCoverageModifierGate); a
-        // registration failure disables only the modifier.
+        // offset) and its values are restored before the serializer. The verified runtime gate is open; a live gameplay
+        // option restores/suppresses the modifier without disabling Park gameplay. A registration failure disables only it.
         private static void RegisterParkCoverageModifier(UpdateSystem updateSystem, ModuleRegistration park)
         {
             if (!ModuleRegistration.Requires(park, "Park coverage modifier", message => Log.Error(message))) return;

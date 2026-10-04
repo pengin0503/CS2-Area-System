@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using CS2AreaSystem.Core.Areas;
 using CS2AreaSystem.Core.Modules;
+using CS2AreaSystem.Core.Settings;
 using Unity.Entities;
 using Unity.Mathematics;
 namespace CS2AreaSystem.Modules.Park
@@ -162,7 +163,7 @@ namespace CS2AreaSystem.Modules.Park
             if(policies!=null)model.Policies=new ParkPolicyEffectReader((a,id)=>policies.IsEffective(a,id),core?.Failures,"Park.Preview.PolicyEffects","Park preview policy inputs unavailable").Read(area);
             if (model.Lifecycle == AreaLifecycleState.Active) model.CoverageFactor = ParkCoverageModifierModel.Factor(model.Budget, model.Policies.ManagementFundingMultiplier);
             var coverage = context.World?.GetExistingSystemManaged<ParkCoverageModifierSystem>();
-            model.CoverageActive = coverage != null && coverage.Enabled;
+            model.CoverageActive = coverage != null && coverage.Enabled && AreaSettings.Current.EnableParkCoverageModifier;
             if (coverage != null) model.CoverageBuildings = coverage.Tracker.CountFor(model.StableId);
             model.Promotion = ParkProgressionModel.EvaluatePromotion(model.Level, model.Experience, ParkProgressionSystem.BuildInputs(model.Runtime?.Quality, model.State));
             return model;

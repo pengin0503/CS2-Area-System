@@ -73,3 +73,11 @@ Each feature should use its own branch/PR. Do not combine C6 with another featur
 - `dotnet build src/CS2AreaSystem/CS2AreaSystem.csproj -p:AreaApiCheck=true -c Release` and `git diff --check`.
 - If the environment cannot execute VSTest, use the documented NUnitLite route on the same compiled test assembly and report the exact commands/counts; a successful test-assembly build is not a test run.
 - Update each module execution record with base SHA, task commits, actual automated results and remaining runtime checks. Official Unity postprocessing/deployment and game checks stay **NOT RUN** unless actually performed.
+
+## Completion update — 2026-10-04
+
+- B2, C4 and C5 are merged to `main`; C6 implementation is merged but was intentionally runtime-gated.
+- The user reports every current game-side verification item, including C601–C606, completed on Cities: Skylines II 1.6.2f1 and behaved normally.
+- Runtime-confirmation Issues #30, #38, #43, #44, #50, #53, #54 and #55 were closed as completed. Performance Issues remain independent follow-up work.
+- The Phase 3 readiness branch opens the verified C6 gate and adds a live Options off switch. Its GitHub Offline verification passed after an observed contract-test RED→GREEN cycle.
+- Once the readiness branch is merged to latest `main`, Phase 2 satisfies the prerequisite for `docs/superpowers/plans/2026-10-02-phase3-program-implementation.md`. Phase 3 product implementation itself is not part of this readiness change.
