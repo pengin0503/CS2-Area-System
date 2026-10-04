@@ -31,14 +31,16 @@ public class AreaAnchorServiceTests {
         Assert.That(tourism.ValidateActivation(area, default),Is.True);
     }
     [Test] public void ParkNeedsBothRolesAndInvalidAssignmentCannotReplaceExistingLinks() {
-        var store=new Store(); var anchors=new AreaAnchorService(store,e=>e!=Entity.Null,(a,e,r)=>r==AreaAnchorRole.Headquarters);
-        var evidence=new ParkEntranceEvidence(ParkEntranceEvidenceStatus.Complete,1,new[]{new ParkEntrancePoint(0,0,hq)});
-        var park=new ParkAreaModule(anchors,null,(a,c)=>evidence);
+        var gate=new Entity{Index=50,Version=1};
+        var store=new Store(); var anchors=new AreaAnchorService(store,e=>e!=Entity.Null,(a,e,r)=>r==AreaAnchorRole.Headquarters||e==gate);
+        var park=new ParkAreaModule(anchors);
         Assert.That(park.ValidateActivation(area, default),Is.False);
         Assert.That(anchors.Assign(area,hq,AreaAnchorRole.Headquarters),Is.True);
-        Assert.That(park.ValidateActivation(area, default),Is.True);
+        Assert.That(park.ValidateActivation(area, default),Is.False,"Headquarters alone never activates a Park");
         Assert.That(anchors.Assign(area,Entity.Null,AreaAnchorRole.Entrance),Is.False);
         Assert.That(anchors.Assign(area,replacement,AreaAnchorRole.Entrance),Is.False);
+        Assert.That(anchors.Assign(area,gate,AreaAnchorRole.Entrance),Is.True);
+        Assert.That(park.ValidateActivation(area, default),Is.True);
         Assert.That(anchors.Remove(area,hq,AreaAnchorRole.Headquarters),Is.True);
         Assert.That(park.ValidateActivation(area, default),Is.False);
     }
@@ -114,10 +116,11 @@ public class AreaAnchorPolicyTests {
   var module=new ParkAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),(e,_)=>throw new InvalidOperationException("reader"));
   Assert.That(((IAreaAnchorPolicy)module).AcceptsAnchor(area,park,AreaAnchorRole.Entrance,default),Is.False);
  }
- [Test] public void IndustrialAcceptsOrdinaryOfficesAtAssignment() {
+ // Phase 3 C2: an ordinary office no longer qualifies as Industrial Headquarters.
+ [Test] public void IndustrialRejectsOrdinaryOfficesAtAssignment() {
   IAreaAnchorPolicy industrial=new IndustrialAreaModule(new AreaAnchorService(new Store(),e=>true,(a,e,r)=>true),
-   (e,_)=>new IndustrialFacilityTraits{IsBuilding=true,HasOfficeProperty=true,HasOfficeCompany=true,HasWorkplaces=true});
-  Assert.That(industrial.AcceptsAnchor(area,office,AreaAnchorRole.Headquarters,default),Is.True);
+   (e,_)=>new IndustrialFacilityTraits{IsBuilding=true,HasOfficeProperty=true,HasOfficeCompany=true,HasWorkplaces=true},new CS2AreaSystem.Core.Semantics.AreaAssetSemanticRegistry());
+  Assert.That(industrial.AcceptsAnchor(area,office,AreaAnchorRole.Headquarters,default),Is.False);
  }
  [Test] public void AssignmentAndExistingLinkUseSeparatePredicates() {
   var invalid=new HashSet<Entity>();
@@ -193,11 +196,13 @@ public class AreaAnchorLinkListTests {
  [Test] public void ParkExplainsWhyItIsSuspendedWhenOnlyIneligibleEntrancesRemain() {
   var store=new Store();
   var service=new AreaAnchorService(store,e=>true,(a,e,r)=>e==gate);
-  var park=new ParkAreaModule(service,null,(a,c)=>new ParkEntranceEvidence(ParkEntranceEvidenceStatus.Complete,1,new[]{new ParkEntrancePoint(0,0,gate)}));
-  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.HeadquartersRequired"));
+  var park=new ParkAreaModule(service);
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.BothRequired"));
   store.Values[area]=new[]{ new AreaAnchorLink{Anchor=house,Role=AreaAnchorRole.Entrance} };
-  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.HeadquartersRequired"));
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.BothRequired"));
   store.Values[area]=new[]{ new AreaAnchorLink{Anchor=house,Role=AreaAnchorRole.Entrance}, new AreaAnchorLink{Anchor=gate,Role=AreaAnchorRole.Headquarters} };
+  Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.EntranceInvalid"),"only ineligible entrances remain");
+  store.Values[area]=new[]{ new AreaAnchorLink{Anchor=gate,Role=AreaAnchorRole.Entrance}, new AreaAnchorLink{Anchor=gate,Role=AreaAnchorRole.Headquarters} };
   Assert.That(park.BuildSummary(area,default),Is.EqualTo("CS2AS.Park.Summary.Active"));
  }
 }

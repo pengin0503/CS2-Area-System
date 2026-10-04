@@ -17,7 +17,8 @@ public class ParkPanelBuilderTests {
    Landscape = runtime.Landscape, Facilities = runtime.Facilities, Satisfaction = state.Satisfaction, ActiveVisitors = 14, Budget = 1, Level = level,
    AdmissionFee = state.AdmissionFee, IsPrimaryForAllMembers = primary, Active = entrances > 0 });
   var model = new ParkPanelModel { StableId = 7, Lifecycle = entrances > 0 ? AreaLifecycleState.Active : AreaLifecycleState.Suspended, Level = level, Experience = 2_500,
-   State = state, Budget = 1.1f, Frame = 200, Runtime = runtime, HasState = true };
+   State = state, Budget = 1.1f, Frame = 200, Runtime = runtime, HasState = true,
+   Entrance = entrances > 0 ? ParkHeadquartersState.Valid : ParkHeadquartersState.Missing };
   model.Promotion = ParkProgressionModel.EvaluatePromotion(level, model.Experience, ParkProgressionSystem.BuildInputs(runtime.Quality, state));
   return model;
  }

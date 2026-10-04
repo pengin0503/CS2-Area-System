@@ -354,19 +354,23 @@ check(tryBlocks.length >= 3, 'policy and finance registrations must each be isol
 const requirements = read('docs/verification/area-core-requirements.md');
 check(!requirements.includes('Main is unchanged; all implementation commits are on feat/area-core'), 'verification docs must describe the current merged repository state');
 
-const entranceSystem = code('src/CS2AreaSystem/Modules/Park/ParkEntranceSystem.cs');
-const entranceEvidence = code('src/CS2AreaSystem/Modules/Park/ParkEntranceEvidence.cs');
-check(entranceSystem.includes('HasComponent<PathwayData>'), 'automatic Park entrance classification must use PathwayData');
-check(!/ISerializable|IBufferElementData|IComponentData/.test(entranceEvidence), 'path entrance evidence must remain runtime-only');
-check(!/Pathfind|Citizen|GetEntityQuery\([^;]*ReadOnly<Game.Net.Edge>/s.test(entranceSystem.split('private ParkNetPage ReadPage')[1]??''), 'entrance query must be spatial, with no citizen/pathfinding changes');
-check(/UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem,\s*CS2AreaSystem.Core.Anchors.AreaActivationSystem>/.test(mod), 'Park entrances must update before activation');
+// Phase 3 C2: the derived dedicated-Path Entrance is retired; only an assigned AS_ParkGate is an Entrance and no pathfinding is hooked.
+for (const retired of ['ParkEntranceSystem.cs','ParkEntranceEvidence.cs','ParkPathEntranceDetector.cs'])
+  check(!fs.existsSync(filePath(`src/CS2AreaSystem/Modules/Park/${retired}`)), `${retired}: the Foundation path-Entrance fallback must stay removed after C2`);
+check(!/ParkEntranceSystem|PathEntrance/.test(mod), 'Mod.cs must not schedule the retired path-Entrance system');
+const parkModuleCode = code('src/CS2AreaSystem/Modules/Park/ParkAreaModule.cs');
+check(/HasValidAnchor\(area,AreaAnchorRole\.Headquarters\)\s*&&\s*Anchors\.HasValidAnchor\(area,AreaAnchorRole\.Entrance\)/.test(parkModuleCode), 'Park activation must require a valid Headquarters and a valid Entrance anchor');
+for (const [source, retired] of [['Modules/Park/ParkFacilityClassifier.cs','traits.HasParkMaintenance)'],['Modules/Industrial/IndustrialFacilityClassifier.cs','traits.HasOfficeProperty)']])
+  check(!code(`src/CS2AreaSystem/${source}`).includes(retired) && code(`src/CS2AreaSystem/${source}`).includes('AreaBuiltInAssetContract.Qualifies('), `${source}: Headquarters must come only from the dedicated AS_ asset, with no Foundation default`);
+for (const source of walk('src').filter(p=>p.endsWith('.cs') && !/[\\/](bin|obj)[\\/]/.test(p)))
+  if (/\b(PathfindSetupSystem|PathfindQueueSystem|SetupPathfind|PathfindTargetSeeker)\b|PathfindParameters/.test(read(source))) failures.push(`${source}: Area System must not hook citizen pathfinding`);
 
 // Foundation + Phase 1: derived network diagnostics cannot become authoritative save data.
 for (const module of ['Park', 'Industrial']) {
   const history = code(`src/CS2AreaSystem/Modules/${module}/${module}HistoryEntry.cs`);
   check(!/\bEntity\b|\bGame\.Net\b/.test(history), `${module} hourly history must not serialize runtime entity identities`);
 }
-for (const source of ['ParkPathEntranceDetector.cs', 'ParkEntranceEvidence.cs', 'ParkConnectivityModel.cs']) {
+for (const source of ['ParkConnectivityModel.cs']) {
   check(!/ISerializable|\bSerialize\s*\(/.test(code(`src/CS2AreaSystem/Modules/Park/${source}`)), `${source}: derived path evidence must remain runtime-only`);
 }
 const connectivity = code('src/CS2AreaSystem/Modules/Park/ParkConnectivitySystem.cs');

@@ -24,8 +24,12 @@ namespace CS2AreaSystem.Modules.Park
     public enum ParkFacilityRoles : byte { None = 0, CoreParkFacility = 1, Leisure = 2, Attraction = 4, SupportingAmenity = 8 }
     public static class ParkFacilityClassifier
     {
+        // Phase 3 C2: only the registered AS_ParkHeadquarters / AS_ParkGate prefabs qualify; Park Maintenance and derived
+        // pedestrian-path crossings are retired with no fallback.
         public static bool IsHeadquartersEligible(in ParkFacilityTraits traits,AreaAssetSemanticRegistry registry=null) => traits.IsBuilding &&
-            (registry?.Resolve(traits.Prefab,AreaAssetSemantic.ParkHeadquarters,traits.HasParkMaintenance)??traits.HasParkMaintenance);
+            AreaBuiltInAssetContract.Qualifies(registry,traits.Prefab,AreaAssetSemantic.ParkHeadquarters);
+        public static bool IsEntranceEligible(in ParkFacilityTraits traits,AreaAssetSemanticRegistry registry=null) => traits.IsBuilding &&
+            AreaBuiltInAssetContract.Qualifies(registry,traits.Prefab,AreaAssetSemantic.ParkEntrance);
         public static uint LeisureBit(LeisureType type) => 1u << (int)type;
         // Park-local roles; a building may hold several. Unrelated residential/industrial/office members get None.
         public static ParkFacilityRoles Classify(in ParkFacilityTraits traits,AreaAssetSemanticRegistry registry=null)

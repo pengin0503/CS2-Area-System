@@ -76,7 +76,6 @@ namespace CS2AreaSystem.Modules.Park
         public ParkQualitySnapshot Quality;
         public uint QualityFrame;
         public int EntranceCount;
-        public ParkEntranceEvidence EntranceEvidence;
         public ParkConnectivitySnapshot Connectivity=new ParkConnectivitySnapshot();
         // Visitors: "recent" = the last in-game day.
         public int PeakOccupancy;

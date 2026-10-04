@@ -38,8 +38,6 @@ public class ParkPanelFixtureTests {
   Section(writer, "level4", ParkPanelBuilderTests.Model(level: 4));
   Section(writer, "unscanned", ParkPanelBuilderTests.Model(level: 2, landscape: false));
   var suspended=ParkPanelBuilderTests.Model(quality: false, entrances: 0);
-  // Foundation requires completed entrance evidence before reporting a missing entrance.
-  suspended.Runtime.EntranceEvidence=new(ParkEntranceEvidenceStatus.Complete,0,Array.Empty<ParkEntrancePoint>());
   Section(writer, "suspended", suspended, entrances: false);
   Section(writer, "trends", ParkPanelBuilderTests.WithTrends());
   Section(writer, "diagnostics", ParkPanelBuilderTests.WithDiagnostics(true, new ParkLandscapeDiagnostic("LowLighting", 1, Unity.Entities.Entity.Null),

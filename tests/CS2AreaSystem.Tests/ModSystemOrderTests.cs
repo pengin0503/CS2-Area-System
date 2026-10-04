@@ -15,11 +15,13 @@ public class ModSystemOrderTests {
         foreach(var history in new[]{typeof(CS2AreaSystem.Modules.Park.ParkHistorySaveSystem),typeof(CS2AreaSystem.Modules.Industrial.IndustrialHistorySaveSystem)})
             Assert.That(order.IndexOf(history),Is.LessThan(order.IndexOf(typeof(Game.Serialization.SerializerSystem))));
     }
-    [Test] public void ParkEntrancesRunBeforeActivationIndependentlyOfFinance() {
+    // Phase 3 C2: the derived path-entrance system is retired; connectivity diagnostics still run before activation.
+    [Test] public void ParkConnectivityRunsBeforeActivationIndependentlyOfFinance() {
         var order=Schedule(SystemUpdatePhase.ModificationEnd);
-        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkEntranceSystem)),Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem))));
-        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkEntranceSystem)),Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem))));
-        Assert.That(ModCalls.Count(c=>c.System==typeof(CS2AreaSystem.Modules.Park.ParkEntranceSystem)),Is.EqualTo(1));
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkConnectivitySystem)),Is.GreaterThan(order.IndexOf(typeof(CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem))));
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkConnectivitySystem)),Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem))));
+        Assert.That(ModCalls.Count(c=>c.System==typeof(CS2AreaSystem.Modules.Park.ParkConnectivitySystem)),Is.EqualTo(1));
+        Assert.That(ModCalls.Any(c=>c.System?.Name=="ParkEntranceSystem"),Is.False);
     }
     // Phase 3 C2: dedicated asset semantics are rediscovered before activation evaluates any anchor.
     [Test] public void BuiltInContentRegistersBeforeActivation() {
@@ -177,7 +179,7 @@ public class ModSystemOrderTests {
     [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
     [TestCase(SystemUpdatePhase.ToolUpdate, "AreaLabelSystem")]
-    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaBuiltInContentSystem,ParkEntranceSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem")]
+    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaBuiltInContentSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem")]
     [TestCase(SystemUpdatePhase.GameSimulation, "ParkCoverageModifierSystem,AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,IndustrialSupportSystem,ParkEventSystem,AreaFinanceSystem")]
     [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem,IndustrialSupportSaveSystem,ParkHistorySaveSystem,IndustrialHistorySaveSystem,ParkCoverageModifierSaveSystem")]
     [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]
