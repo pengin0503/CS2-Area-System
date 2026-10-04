@@ -11,8 +11,10 @@ namespace CS2AreaSystem.Core.Semantics
         public bool Packaged { get; }
         public bool BuiltIn { get; }
         public string PackageName { get; }
-        public AreaBuiltInPrefabCandidate(Entity prefab, string prefabType, string prefabName, bool packaged, bool builtIn, string packageName)
-        { Prefab = prefab; PrefabType = prefabType; PrefabName = prefabName; Packaged = packaged; BuiltIn = builtIn; PackageName = packageName; }
+        // Read only for assets with a manufacturing contract (Phase 3 D2); null otherwise.
+        public AreaBuiltInBuildingFacts Building { get; }
+        public AreaBuiltInPrefabCandidate(Entity prefab, string prefabType, string prefabName, bool packaged, bool builtIn, string packageName, AreaBuiltInBuildingFacts building = null)
+        { Prefab = prefab; PrefabType = prefabType; PrefabName = prefabName; Packaged = packaged; BuiltIn = builtIn; PackageName = packageName; Building = building; }
     }
     public readonly struct AreaBuiltInContentResult
     {
@@ -21,7 +23,8 @@ namespace CS2AreaSystem.Core.Semantics
         public AreaAssetSemantic Missing => AreaBuiltInAssetContract.RequiredSemantics & ~Registered;
         public AreaBuiltInContentResult(AreaAssetSemantic registered, int rejected) { Registered = registered; Rejected = rejected; }
     }
-    // Phase 3 C2: registers the three dedicated Area System prefabs. Every refresh drops this provider's previous
+    // Phase 3 C2: registers the three dedicated Area System prefabs (plus, since D2, the optional reference factory when it
+    // matches its process contract). Every refresh drops this provider's previous
     // registrations first, so a stale load generation or removed content never keeps a role.
     public sealed class AreaBuiltInContentSemanticProvider
     {
@@ -33,9 +36,10 @@ namespace CS2AreaSystem.Core.Semantics
             var registered = AreaAssetSemantic.None; int rejected = 0;
             foreach (var candidate in candidates)
             {
-                if (!AreaBuiltInAssetContract.TryGetSemantic(candidate.PrefabName, out var semantic)) continue;
+                if (!AreaBuiltInAssetContract.TryGetAsset(candidate.PrefabName, out var asset)) continue;
+                var semantic = asset.Semantic;
                 if (candidate.Prefab == Entity.Null || !string.Equals(candidate.PrefabType, AreaBuiltInAssetContract.PrefabType, System.StringComparison.Ordinal) ||
-                    !AreaBuiltInAssetContract.IsOwnedSource(candidate.Packaged, candidate.BuiltIn, candidate.PackageName) ||
+                    !AreaBuiltInAssetContract.IsOwnedSource(candidate.Packaged, candidate.BuiltIn, candidate.PackageName) || !AreaBuiltInAssetContract.Matches(asset, candidate.Building) ||
                     !registry.Register(ProviderId, candidate.Prefab, new AreaAssetSemanticPatch(semantic, AreaAssetSemantic.None, Priority))) { rejected++; continue; }
                 registered |= semantic;
             }

@@ -91,3 +91,12 @@ streetlights and other scenery available as vanilla props are not modeled.
   database (`EnvPath.kUserDataPath`, package extensions watched) and `ParadoxModsDataSource` index `.cok` files in mod folders;
   `GameManager.LoadPrefabs` then adds their prefabs to `PrefabSystem` at boot. A missing package fails the build (an error; only `-p:AllowMissingAreaContent=true` downgrades it to a warning for runtime case C207).
   Deployed without it, the runtime shows the missing-content state; nothing is substituted.
+
+## Optional content (Phase 3 D2)
+
+| Prefab name (exact, ordinal) | Semantic (Allow) | Extra check |
+| --- | --- | --- |
+| `AS_FurnitureFactory` | `IndustrialProducer` | Industrial non-office signature building manufacturing only `Furniture` (`docs/verification/custom-factory-process-contract.md`) |
+
+Optional content uses the same provider, prefab type and `AS_*.cok` source rule. It is never an anchor, is never reported as
+missing, and a prefab that fails its extra check is rejected with no role.
