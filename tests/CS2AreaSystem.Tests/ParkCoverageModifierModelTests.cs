@@ -77,10 +77,17 @@ public class ParkCoverageModifierModelTests {
   Assert.That(tracker.Count, Is.EqualTo(1));
  }
 }
-// The C6 writer ships disabled: it is registered, ordered and restorable, but never enabled until the in-game gate passes.
+// The C6 writer is release-enabled after the in-game gate passed; the Options switch can restore/disable its effect live.
 public class ParkCoverageModifierSystemTests {
  static string Source(string path) => IndustrialSupportSourceGuardTests.Source(path);
- [Test] public void TheRuntimeGateIsClosed() => Assert.That(ParkCoverageModifierGate.RuntimeVerified, Is.False);
+ [Test] public void TheRuntimeGateIsOpen() => Assert.That(ParkCoverageModifierGate.RuntimeVerified, Is.True);
+ [Test] public void TheUserOffSwitchRestoresBeforeSkippingWrites() {
+  var system = Source("Modules/Park/ParkCoverageModifierSystem.cs");
+  int gate = system.IndexOf("if (!AreaSettings.Current.EnableParkCoverageModifier)");
+  Assert.That(gate, Is.GreaterThan(0));
+  Assert.That(system.IndexOf("RestoreTracked();", gate), Is.GreaterThan(gate));
+  Assert.That(system.IndexOf("return;", gate), Is.GreaterThan(gate));
+ }
  [Test] public void TheWriterRunsOnTheNativeWritersInterval() =>
   Assert.That(new ParkCoverageModifierSystem().GetUpdateInterval(Game.SystemUpdatePhase.GameSimulation), Is.EqualTo(262144 / Game.Simulation.ParkAISystem.kUpdatesPerDay));
  [Test] public void TheWriterIsDisabledFromCreationUnlessTheGateIsOpen() {

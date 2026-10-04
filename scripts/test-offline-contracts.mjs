@@ -296,7 +296,7 @@ for (const source of allModSources) {
     failures.push(`${source}: prefab coverage data and the coverage network must not be modified`);
 }
 const coverageSystem = code('src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSystem.cs');
-check(/public const bool RuntimeVerified = false;/.test(coverageSystem), 'Park coverage modifier gate must stay closed until the in-game release gate passes');
+check(/public const bool RuntimeVerified = true;/.test(coverageSystem), 'Park coverage modifier gate must be open after the in-game release gate passes');
 check(/Enabled = ParkCoverageModifierGate\.RuntimeVerified;/.test(coverageSystem), 'Park coverage writer must be created disabled behind its runtime gate');
 check(/ParkCoverageModifierModel\.IsFresh\(/.test(coverageSystem) && /GetChangeVersion\(ref coverageHandle\)/.test(coverageSystem), 'Park coverage writer must write only from a verified fresh native baseline');
 check(/writer\.RestoreTracked\(\);/.test(code('src/CS2AreaSystem/Modules/Park/ParkCoverageModifierSaveSystem.cs')), 'Park coverage values must be restored before the native serializer');
