@@ -79,3 +79,15 @@ external pedestrian paths can connect. Area System does not intercept or rewrite
 
 Models contain only building-fixed elements (doors, windows, vents, piping, wall-mounted equipment). Benches, vegetation,
 streetlights and other scenery available as vanilla props are not modeled.
+
+## Source preparation, import and shipping
+
+- `scripts/prepare_area_system_assets.py` produces the Asset Importer project root `AS_AreaSystemAssets/` from the two archives
+  (hash-checked, superseded archive refused, files/folders renamed to the exact identifiers, Gate `settings.json` pointed at the
+  renamed Park HQ textures, bytes otherwise unchanged). Its `--self-test` pins that behavior.
+- Import, Gate pedestrian-passage authoring and packaging are in-editor steps documented in `assets/area-system/README.md`.
+- Shipping: the official build target `DeployAreaContent` copies `assets/area-system/package/AS_*.cok` into the mod deploy folder,
+  which is also the publish content folder (toolchain `Mod.targets` `DeployWIP`/`AdditionalFilesToDeploy` pattern). The User asset
+  database (`EnvPath.kUserDataPath`, package extensions watched) and `ParadoxModsDataSource` index `.cok` files in mod folders;
+  `GameManager.LoadPrefabs` then adds their prefabs to `PrefabSystem` at boot. A missing package produces a build warning and,
+  at runtime, the missing-content state; nothing is substituted.

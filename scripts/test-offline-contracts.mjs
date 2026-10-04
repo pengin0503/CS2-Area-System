@@ -383,6 +383,12 @@ check(/StringComparison\.Ordinal\)/.test(builtInCode) && !/IgnoreCase|ToLower|To
 for (const id of ['AS_AreaSystemAssets','CS2AreaSystem.BuiltInContent','AS_ParkHeadquarters','AS_IndustrialHeadquarters','AS_ParkGate','CS2_AS_IndustrialHeadquarters.zip','CS2_AS_ParkSet_HQ_Gate.zip'])
   check(builtInContract.includes('`'+id+'`'), `C2 asset contract must name ${id}`);
 check(/`CS2_AS_ParkHeadquarters\.zip` is a superseded copy and is not a C2 source/.test(builtInContract), 'C2 asset contract must exclude the superseded standalone Park HQ archive');
+const csproj = read('src/CS2AreaSystem/CS2AreaSystem.csproj');
+check(/<Target Name="DeployAreaContent" AfterTargets="DeployWIP"[\s\S]*assets\/area-system\/package\/AS_\*\.cok[\s\S]*<Warning Condition="'@\(AreaContentPackages\)' == ''"/.test(csproj),
+  'official build must ship AS_*.cok content packages and warn (not substitute) when they are missing');
+const prepare = read('scripts/prepare_area_system_assets.py');
+check(/SUPERSEDED = "CS2_AS_ParkHeadquarters\.zip"/.test(prepare) && prepare.includes('30b4138e2ce7b8c57a89ec783a57f5bf3ee4a233f2ce8beff01203c0ca14b1a3') &&
+  prepare.includes('b4e0d3c249552c3b8922000c93a53b7a17198745e1748bd1ef445e1e4852d175'), 'asset preparation must pin both archive hashes and refuse the superseded archive');
 
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);

@@ -5,3 +5,7 @@ node_modules/
 UI/dist/
 
 UI/build/
+
+# Phase 3 C2: editor-built content packages and prepared importer sources are not tracked.
+assets/area-system/package/
+assets/area-system/import/

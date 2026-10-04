@@ -55,4 +55,11 @@
     <Error Condition="!Exists('$(MSBuildProjectDirectory)/../../UI/build/CS2AreaSystem.js')" Text="Current Area System UI output is missing; refusing stale deployment." />
     <Copy SourceFiles="@(AreaUIFiles)" DestinationFiles="@(AreaUIFiles->'$(DeployDir)/%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
+  <!-- Phase 3 C2: the editor-built Area System content package(s) ship inside the mod folder, which the User and ParadoxMods
+       asset databases index (assets/area-system/README.md). Missing content is reported, never substituted. -->
+  <Target Name="DeployAreaContent" AfterTargets="DeployWIP" Condition="'$(NeedBuild)' == 'true'">
+    <ItemGroup><AreaContentPackages Include="$(MSBuildProjectDirectory)/../../assets/area-system/package/AS_*.cok" /></ItemGroup>
+    <Warning Condition="'@(AreaContentPackages)' == ''" Text="Area System content package missing (assets/area-system/package/AS_*.cok). Park/Industrial Headquarters and Park Gate stay unavailable; Areas remain Suspended." />
+    <Copy SourceFiles="@(AreaContentPackages)" DestinationFolder="$(DeployDir)" />
+  </Target>
 </Project>
