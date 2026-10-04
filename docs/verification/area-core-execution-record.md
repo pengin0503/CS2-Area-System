@@ -14,7 +14,7 @@ The task ledger below preserves task-specific RED/GREEN evidence, commits, inter
 
 ---
 
-# SDD ledger — plan: docs/superpowers/plans/2026-09-30-area-system-core-implementation.md
+# SDD ledger — plan: docs/superpowers/plans/archive/2026-09-30-area-system-core-implementation.md
 
 Execution: Native/executing-plans; no Task implementer/reviewer subagents. Base: bd732ae5f10628bb4f28739a293e978268466ce0. Branch: feat/area-core.
 Spec and plan read completely. Original GitHub blobs, trees and all three commits restored and SHA-verified via plugin; no remote mutations.

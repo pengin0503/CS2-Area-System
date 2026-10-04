@@ -1,6 +1,6 @@
 # Industrial Area v1 execution record — 2026-10-01
 
-Native / executing-plans in one session; no per-task implementer subagents. Base: `main` at `92e7b50` (approved spec and plan). Spec `docs/superpowers/specs/2026-10-01-industrial-area-v1-design.md` and plan `docs/superpowers/plans/2026-10-01-industrial-area-v1-implementation.md` were read in full and not modified (their blob hashes are pinned by `scripts/test-offline-contracts.mjs`).
+Native / executing-plans in one session; no per-task implementer subagents. Base: `main` at `92e7b50` (approved spec and plan). Spec `docs/superpowers/specs/2026-10-01-industrial-area-v1-design.md` and plan `docs/superpowers/plans/archive/2026-10-01-industrial-area-v1-implementation.md` were read in full and not modified (their blob hashes are pinned by `scripts/test-offline-contracts.mjs`).
 
 ## Environment
 

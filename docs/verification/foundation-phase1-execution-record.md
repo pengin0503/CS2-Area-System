@@ -7,7 +7,7 @@ Implementation start base and freshly checked `main`: `3aad310c71ef46eea2e442ba5
 Native / Superpowers executing-plans. Approved source of truth:
 
 - [Design](../superpowers/specs/2026-10-02-headquarters-entrance-and-post-wave-a-roadmap-design.md)
-- [Implementation plan](../superpowers/plans/2026-10-02-foundation-phase1-implementation.md)
+- [Implementation plan](../superpowers/plans/archive/2026-10-02-foundation-phase1-implementation.md)
 
 The approved design/plan were not rewritten. Foundation and Phase 1 remain one branch and one PR. No automatic merge; Phase 2, Phase 3 and Tourism gameplay are excluded.
 

@@ -25,7 +25,7 @@ const walk = directory => {
 };
 
 const specPath='docs/superpowers/specs/2026-09-30-area-system-core-design.md';
-const planPath='docs/superpowers/plans/2026-09-30-area-system-core-implementation.md';
+const planPath='docs/superpowers/plans/archive/2026-09-30-area-system-core-implementation.md';
 const spec = read(specPath);
 const plan = read(planPath);
 check(gitBlobSha(specPath)==='b43f8b99932b058744284902df9700a9e0aae0d9', 'approved design spec must remain byte-identical to its approved UTF-8 blob');
@@ -35,7 +35,7 @@ check(plan.startsWith('# CS2 Area System — Area Core Implementation Plan\n') &
 
 // Park Area v1: approved spec/plan are immutable; Park observes vanilla simulation and stays within its v1 scope.
 const parkSpecPath='docs/superpowers/specs/2026-09-30-park-area-v1-design.md';
-const parkPlanPath='docs/superpowers/plans/2026-09-30-park-area-v1-implementation.md';
+const parkPlanPath='docs/superpowers/plans/archive/2026-09-30-park-area-v1-implementation.md';
 check(gitBlobSha(parkSpecPath)==='3f8a76d7ff9e03c5a4feffca09d5afc5fb936f3a', 'approved Park v1 design spec must remain byte-identical');
 check(gitBlobSha(parkPlanPath)==='2d6cca5ab9dbc6c73044fb271764dfbf42c5642d', 'approved Park v1 implementation plan must remain byte-identical');
 for (const source of walk('src').filter(p=>p.endsWith('.cs') && !/[\\/](bin|obj)[\\/]/.test(p))) {
@@ -72,7 +72,7 @@ check(parkPanelTest.includes("./__fixtures__/park-panel.json"), 'Park UI tests m
 
 // Industrial Area v1: approved spec/plan are immutable; Industrial observes the vanilla economy and never mutates it.
 const industrialSpecPath='docs/superpowers/specs/2026-10-01-industrial-area-v1-design.md';
-const industrialPlanPath='docs/superpowers/plans/2026-10-01-industrial-area-v1-implementation.md';
+const industrialPlanPath='docs/superpowers/plans/archive/2026-10-01-industrial-area-v1-implementation.md';
 check(gitBlobSha(industrialSpecPath)==='0e912259279d904c27f7a03ba928c4f06c7a02e3', 'approved Industrial v1 design spec must remain byte-identical');
 check(gitBlobSha(industrialPlanPath)==='aa703b244d011aaeea4e4d68fb250ffc072ddd3a', 'approved Industrial v1 implementation plan must remain byte-identical');
 for (const doc of ['docs/verification/industrial-observation-contracts.md','docs/verification/industrial-score-examples.json','docs/verification/industrial-score-examples.md','docs/verification/industrial-area-v1-execution-record.md'])
