@@ -90,3 +90,9 @@ Deferred Minor: `AreaManagementUISystem.BuildAnchorGroups` does not locally catc
 3. A loaded buffer with more than 168 physical rows is rejected before native reading/overwriting, while supported buffers are fully normalized. Risk: an already oversized corrupt history remains unavailable and untouched until separately repaired; gameplay failure isolation remains in place. This avoids arbitrarily scanning corrupted save buffers during normal updates.
 
 Task 13's remaining checklist, execution-record updates, truthful README, guards, audit and final automated verification are complete. Reviewable integration is one PR against the freshly checked main. The [runtime procedures](../../scripts/runtime-smoke-checklist.md) are **all NOT RUN**; this record does not declare the MOD playable or runtime verified.
+
+## Runtime verification addendum — 2026-10-04
+
+**PASS — user-confirmed.** The user reports every Foundation + Phase 1 F01–F07/P01–P08 in-game check completed on Cities: Skylines II 1.6.2f1 and behaved normally. The original NOT RUN statements above remain as implementation-time history; they are not rewritten as automated evidence. Exact local save/build metadata was not supplied in this chat.
+
+This clears the Foundation/Phase 1 runtime prerequisite used by Phase 2 and the Phase 3 program.
