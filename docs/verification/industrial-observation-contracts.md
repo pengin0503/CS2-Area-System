@@ -56,3 +56,13 @@ Offices (`OfficeProperty`/`OfficeCompany`), residential, commercial, parks and c
 - `CompanyNotifications` counters: no writer in 1.6.2f1.
 - `ExtractorFacility` animation flags.
 - Cargo route/terminal usage: not attributable; external cargo is reported as unknown.
+
+## Custom factory content (Phase 3 D2)
+
+The reference factory `AS_FurnitureFactory` adds no observation path (`docs/verification/custom-factory-process-contract.md`).
+Its company is a vanilla Furniture processing company, read through the same `IndustrialCompanyRead`
+(`IndustrialProcessData` copy), `IndustrialObservationMapper` and `IndustrialObservationAggregator` contracts as any vanilla
+factory. `CustomFactoryObservationTests` proves that identical company reads in the factory and in a vanilla building give
+identical process rows, resource totals, bottlenecks, scores and comparison metrics, and that B2 manual ownership moves the
+factory's company like any other. The `IndustrialProducer` semantic only keeps a vacant factory classified as a producer
+facility; no output is invented.
