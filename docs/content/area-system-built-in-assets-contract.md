@@ -89,5 +89,5 @@ streetlights and other scenery available as vanilla props are not modeled.
 - Shipping: the official build target `DeployAreaContent` copies `assets/area-system/package/AS_*.cok` into the mod deploy folder,
   which is also the publish content folder (toolchain `Mod.targets` `DeployWIP`/`AdditionalFilesToDeploy` pattern). The User asset
   database (`EnvPath.kUserDataPath`, package extensions watched) and `ParadoxModsDataSource` index `.cok` files in mod folders;
-  `GameManager.LoadPrefabs` then adds their prefabs to `PrefabSystem` at boot. A missing package produces a build warning and,
-  at runtime, the missing-content state; nothing is substituted.
+  `GameManager.LoadPrefabs` then adds their prefabs to `PrefabSystem` at boot. A missing package fails the build (an error; only `-p:AllowMissingAreaContent=true` downgrades it to a warning for runtime case C207).
+  Deployed without it, the runtime shows the missing-content state; nothing is substituted.

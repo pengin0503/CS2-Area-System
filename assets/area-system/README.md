@@ -76,7 +76,7 @@ gate, and nothing collides with the gate posts. Area System adds no pathfinding 
    `AS_*.cok` name satisfies the ownership rule; non-`AS_` packages and unpackaged local prefabs are ignored.
 2. Copy the package to `assets/area-system/package/`.
 3. The official build target `DeployAreaContent` copies `assets/area-system/package/AS_*.cok` into the mod deploy folder, which
-   is also the publish content folder. It warns when no package is present. The User (`Mods` under the user data folder) and
+   is also the publish content folder. With no package it fails the build (an error) unless `-p:AllowMissingAreaContent=true` is passed for the missing-content runtime test. The User (`Mods` under the user data folder) and
    ParadoxMods asset databases index `.cok` files in mod folders, and `GameManager.LoadPrefabs` loads their prefabs at boot.
 4. At load, Area System logs which required prefabs it registered. Missing content is reported in the Area panel and nothing is
    substituted.
