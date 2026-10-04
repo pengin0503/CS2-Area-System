@@ -36,9 +36,9 @@ describe('Industrial management tabs (real C# payload)',()=>{
   expect(screen.getByText(t('CS2AS.Industrial.Company.Automatic'))).toBeInTheDocument();
   expect(screen.getByText(t('CS2AS.Industrial.Company.Manual'))).toBeInTheDocument();
  });
- it('offers exactly Overview | Production | Logistics | Employment | Progress | Comparison | Companies | Support and hides the duplicate core level rows',()=>{
+ it('offers exactly Overview | Production | Logistics | Employment | Progress | Comparison | Companies | Support | Contracts and hides the duplicate core level rows',()=>{
   render(<AreaInfoSection {...section('active')}/>);
-  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress','CS2AS.Tab.Comparison','CS2AS.Tab.Companies','CS2AS.Tab.Support'].map(t));
+  expect(screen.getAllByRole('tab').map(x=>x.textContent)).toEqual(['CS2AS.Tab.Overview','CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress','CS2AS.Tab.Comparison','CS2AS.Tab.Companies','CS2AS.Tab.Support','CS2AS.Tab.Contracts'].map(t));
   expect(screen.queryByText(t('CS2AS.UI.Level'))).toBeNull();
   expect(row(t('CS2AS.UI.Headquarters'))).toHaveTextContent('Riverside Steelworks');
  });
@@ -118,7 +118,7 @@ describe('Industrial management tabs (real C# payload)',()=>{
   render(<AreaInfoSection {...section('maxLevel')}/>);open('CS2AS.Tab.Progress');
   expect(row(t('CS2AS.Industrial.MaxLevel'))).toHaveTextContent(t('CS2AS.Industrial.LevelName.5'));
  });
- it('offers no Industrial simulation mutation: module actions are focus, company ownership and the support setting only',()=>{
+ it('offers no Industrial simulation mutation: module actions are focus, company ownership, the support setting and advisory contracts only',()=>{
   for(const name of ['active','paused','overlapping'] as Name[]){
    const {unmount}=render(<AreaInfoSection {...section(name)}/>);
    for(const tab of ['CS2AS.Tab.Production','CS2AS.Tab.Logistics','CS2AS.Tab.Employment','CS2AS.Tab.Progress']){
@@ -132,8 +132,11 @@ describe('Industrial management tabs (real C# payload)',()=>{
   const actions=items.filter(i=>i.action!==null||i.kind==='slider'||i.kind==='button');
   expect(actions.length).toBeGreaterThan(0);
   const sliders=actions.filter(i=>i.kind==='slider');
-  expect(sliders.map(i=>[i.id,i.action])).toEqual([['support.perCompany','setSupportPerCompany']]);
-  expect(actions.filter(i=>i.kind!=='slider').every(i=>i.kind==='button'&&['focusDiagnosticTarget','assignCompanyHere','clearCompanyAssignment'].includes(i.action!)&&!!i.value)).toBe(true);
+  expect(sliders.map(i=>[i.id,i.action])).toEqual([['support.perCompany','setSupportPerCompany'],['contracts.draft.target','contractDraftTarget'],['contract.5.target','contractTarget.5']]);
+  const selects=actions.filter(i=>i.kind==='select');
+  expect(selects.map(i=>[i.id,i.action])).toEqual([['contracts.draft.destination','contractDraftDestination'],['contracts.draft.resource','contractDraftResource']]);
+  const buttons=actions.filter(i=>i.kind!=='slider'&&i.kind!=='select');
+  expect(buttons.every(i=>i.kind==='button'&&(['focusDiagnosticTarget','assignCompanyHere','clearCompanyAssignment','contractToggle','contractRemove'].includes(i.action!)&&!!i.value||i.action==='contractCreate'))).toBe(true);
  });
  it('production tab lists each observed recipe as input and output rows with its measured rate',()=>{
   render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Production');
@@ -169,6 +172,30 @@ describe('Industrial management tabs (real C# payload)',()=>{
   render(<AreaInfoSection {...section('paused')}/>);open('CS2AS.Tab.Support');
   expect(screen.getByRole('alert')).toHaveTextContent(t('CS2AS.Industrial.Support.Unavailable'));
   expect(screen.queryAllByRole('button',{name:'+'})).toEqual([]);
+ });
+ it('contracts tab is labelled advisory and sends draft, create, target, toggle and remove through the guarded action',()=>{
+  render(<AreaInfoSection {...section('active')}/>);open('CS2AS.Tab.Contracts');
+  expect(screen.getAllByRole('note').some(n=>n.textContent===t('CS2AS.Industrial.Contracts.Tip'))).toBe(true);
+  expect(row(t('CS2AS.Industrial.Contracts.Destination'))).toHaveTextContent('Paused Industry');
+  fireEvent.click(screen.getAllByRole('button',{name:t('CS2AS.UI.Next')})[0]);
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','contractDraftDestination','44');
+  fireEvent.click(screen.getByRole('button',{name:t('CS2AS.Industrial.Contracts.Create')}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','contractCreate','');
+  expect(row(t('CS2AS.Industrial.Contracts.Status'))).toHaveTextContent(t('CS2AS.Industrial.Contracts.Status.Constrained'));
+  expect(row(t('CS2AS.Industrial.Contracts.Potential'))).toHaveTextContent(item('active','contracts','contract.5.potential').value!);
+  const target=item('active','contracts','contract.5.target');
+  const plus=screen.getAllByRole('button',{name:'+'});
+  fireEvent.click(plus[plus.length-1]);
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','contractTarget.5',String(target.numericValue!+target.step!));
+  fireEvent.click(screen.getByRole('button',{name:t('CS2AS.Industrial.Contracts.Disable')}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','contractToggle','5');
+  fireEvent.click(screen.getByRole('button',{name:t('CS2AS.Industrial.Contracts.Remove')}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','42','contractRemove','5');
+ });
+ it('an unavailable contract module shows a warning and no controls',()=>{
+  render(<AreaInfoSection {...section('paused')}/>);open('CS2AS.Tab.Contracts');
+  expect(screen.getByRole('alert')).toHaveTextContent(t('CS2AS.Industrial.Contracts.Unavailable'));
+  expect(screen.queryByRole('button',{name:t('CS2AS.Industrial.Contracts.Create')})).toBeNull();
  });
  it('every mod key the payload uses is localized',()=>{
   const keys=new Set<string>();

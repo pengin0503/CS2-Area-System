@@ -17,6 +17,9 @@ public class IndustrialRuntimeModelTests {
   public readonly Dictionary<Entity, IndustrialSupportState> Support = new();
   public bool HasSupport(Entity area) => Support.ContainsKey(area);
   public void AddSupport(Entity area, IndustrialSupportState state) => Support.Add(area, state);
+  public readonly Dictionary<Entity, IndustrialSupplyContractState> Contracts = new();
+  public bool HasContracts(Entity area) => Contracts.ContainsKey(area);
+  public void AddContracts(Entity area, IndustrialSupplyContractState state) => Contracts.Add(area, state);
  }
  [Test] public void InitializationAddsDefaultSupportStateAndNeverReplacesASavedSetting() {
   var target = new Target(); target.Alive.UnionWith(new[] { a, b });

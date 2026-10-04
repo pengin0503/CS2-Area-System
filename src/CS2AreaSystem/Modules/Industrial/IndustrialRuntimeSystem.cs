@@ -37,6 +37,9 @@ namespace CS2AreaSystem.Modules.Industrial
         void AddProgress(Entity area, ManagedAreaProgress progress);
         bool HasSupport(Entity area);
         void AddSupport(Entity area, IndustrialSupportState state);
+        bool HasContracts(Entity area);
+        // Adds the contract id allocator and an empty contract buffer (never replacing an existing buffer).
+        void AddContracts(Entity area, IndustrialSupplyContractState state);
     }
     public static class IndustrialStateInitializer
     {
@@ -54,6 +57,8 @@ namespace CS2AreaSystem.Modules.Industrial
                     target.AddProgress(area.Area, new ManagedAreaProgress { SchemaVersion = ManagedAreaProgress.CurrentSchemaVersion, Level = IndustrialProgressionLevels.MinLevel });
                 // Phase 2 C4: support starts disabled; a saved setting/day is never replaced.
                 if (!target.HasSupport(area.Area)) target.AddSupport(area.Area, IndustrialSupportState.CreateDefault());
+                // Phase 3 D1: no contracts by default; a saved id allocator/contract list is never replaced.
+                if (!target.HasContracts(area.Area)) target.AddContracts(area.Area, IndustrialSupplyContractState.CreateDefault());
             }
             return added;
         }
@@ -265,6 +270,12 @@ namespace CS2AreaSystem.Modules.Industrial
             public void AddProgress(Entity area, ManagedAreaProgress progress) => entities.AddComponentData(area, progress);
             public bool HasSupport(Entity area) => entities.HasComponent<IndustrialSupportState>(area);
             public void AddSupport(Entity area, IndustrialSupportState state) => entities.AddComponentData(area, state);
+            public bool HasContracts(Entity area) => entities.HasComponent<IndustrialSupplyContractState>(area);
+            public void AddContracts(Entity area, IndustrialSupplyContractState state)
+            {
+                entities.AddComponentData(area, state);
+                if (!entities.HasBuffer<IndustrialSupplyContract>(area)) entities.AddBuffer<IndustrialSupplyContract>(area);
+            }
         }
     }
 }

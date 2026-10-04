@@ -13,6 +13,13 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             if (entities.HasComponent<IndustrialAreaState>(area)) IndustrialSavedStateValidator.Validate(entities.GetComponentData<IndustrialAreaState>(area), report);
             if (entities.HasComponent<IndustrialSupportState>(area)) IndustrialSavedStateValidator.ValidateSupport(entities.GetComponentData<IndustrialSupportState>(area), report);
+            if (entities.HasComponent<IndustrialSupplyContractState>(area) && entities.HasBuffer<IndustrialSupplyContract>(area) && entities.HasComponent<ManagedAreaStableId>(area))
+            {
+                var buffer = entities.GetBuffer<IndustrialSupplyContract>(area, true);
+                var contracts = new System.Collections.Generic.List<IndustrialSupplyContract>(buffer.Length);
+                for (int i = 0; i < buffer.Length; i++) contracts.Add(buffer[i]);
+                IndustrialSavedStateValidator.ValidateContracts(contracts, entities.GetComponentData<IndustrialSupplyContractState>(area), entities.GetComponentData<ManagedAreaStableId>(area).Value, report);
+            }
         }
         private readonly Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits;
         private readonly AreaAssetSemanticRegistry semantics;
@@ -50,9 +57,14 @@ namespace CS2AreaSystem.Modules.Industrial
                 return IndustrialPanelBuilder.Build(model);
             });
         }
-        // The only Industrial module action is the read-only diagnostic focus; Core's HQ/Edit/Delete actions are handled by Core.
-        public override bool HandleAction(Entity area, string action, string value, in AreaPanelContext context) =>
-            IndustrialGameplayFacade.HandleAction(area, action, value, context);
+        // Industrial module actions (focus, company ownership, support, supply contracts); Core's HQ/Edit/Delete stay in Core.
+        // An applied change rebuilds the panel on the next request instead of showing the cached document.
+        public override bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
+        {
+            bool applied = IndustrialGameplayFacade.HandleAction(area, action, value, context);
+            if (applied) panels.Invalidate();
+            return applied;
+        }
         public System.Collections.Generic.IReadOnlyList<AreaPolicyDefinition> PolicyDefinitions => IndustrialPolicyCatalog.Definitions;
         public bool IsPolicyEffectAvailable(Entity area, int policyId, in AreaPolicyContext context, out string reasonKey)
         {

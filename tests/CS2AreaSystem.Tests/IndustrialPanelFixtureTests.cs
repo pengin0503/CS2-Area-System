@@ -28,6 +28,16 @@ public class IndustrialPanelFixtureTests {
    model.Current.SupportRoster = new[] { new Unity.Entities.Entity { Index = 501, Version = 1 }, new Unity.Entities.Entity { Index = 503, Version = 1 }, new Unity.Entities.Entity { Index = 504, Version = 1 } };
    model.Current.SupportRosterComplete = true;
    model.SupportPending = IndustrialSupportStage.Requested;
+   // Phase 3 D1: two destinations offered, a complete draft and one constrained advisory contract.
+   var timber = ((ulong)Game.Economy.Resource.Timber).ToString(System.Globalization.CultureInfo.InvariantCulture);
+   model.ContractsAvailable = true;
+   model.ContractDraft = new IndustrialSupplyContractDraft { Destination = 43, Resource = (ulong)Game.Economy.Resource.Timber, TargetPerDay = 1500 };
+   model.ContractDestinations = new[] { new CS2AreaSystem.Core.Modules.AreaPanelOption { Value = "43", Label = "Paused Industry" }, new CS2AreaSystem.Core.Modules.AreaPanelOption { Value = "44", Label = "Harbor Works" } };
+   model.ContractResources = new[] { new CS2AreaSystem.Core.Modules.AreaPanelOption { Value = timber, LabelKey = "Resources.TITLE[Timber]" } };
+   model.ContractRows = new[] { new IndustrialSupplyContractRow {
+    Contract = new IndustrialSupplyContract { SchemaVersion = 1, ContractId = 5, DestinationStableId = 44, Resource = (ulong)Game.Economy.Resource.Timber, TargetPerDay = 1000, Enabled = true },
+    DestinationName = "Harbor Works",
+    Evaluation = new IndustrialSupplyContractEvaluation { ContractId = 5, Status = IndustrialSupplyContractStatus.Constrained, SourceCapacityPerDay = 1500, DestinationNeedPerDay = 800, PotentialPerDay = 800 } } };
    var current=new IndustrialRuntimeSnapshot();current.Publish(model.Current);
    var stale=new IndustrialRuntimeSnapshot();stale.Publish(model.Current);
    model.Comparison=IndustrialAreaComparison.Build(new[]{

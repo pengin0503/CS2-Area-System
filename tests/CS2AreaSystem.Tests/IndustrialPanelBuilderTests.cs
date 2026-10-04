@@ -79,7 +79,7 @@ public class IndustrialPanelBuilderTests {
  private static bool Has(AreaPanelTabData t, string id) => t.Items.Any(i => i.Id == id);
  [Test] public void EmitsApprovedTabsIncludingComparisonAndHidesCoreProgressRows() {
   var d = IndustrialPanelBuilder.Build(Model("active"));
-  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "production", "logistics", "employment", "progress", "comparison", "companies", "support" }));
+  Assert.That(d.Tabs.Select(t => t.Id), Is.EqualTo(new[] { "overview", "production", "logistics", "employment", "progress", "comparison", "companies", "support", "contracts" }));
   Assert.That(d.ShowsProgress, Is.True);
  }
  [Test] public void OverviewShowsLevelScoresFacilitiesJobsBottlenecksAndLastUpdate() {
@@ -337,6 +337,15 @@ public class IndustrialPanelBuilderTests {
   now = 100; Assert.That(cache.Get(E(1), Build), Is.SameAs(first));
   Assert.That(cache.Get(E(2), Build), Is.Not.SameAs(first));
   now = 400; cache.Get(E(2), Build); Assert.That(builds, Is.EqualTo(3));
+ }
+ [Test] public void PanelCacheRebuildsRightAfterAnAppliedAction() {
+  long now = 0; int builds = 0;
+  var cache = new IndustrialPanelCache(250, () => now);
+  AreaPanelDocument Build() { builds++; return new AreaPanelDocument(); }
+  cache.Get(E(1), Build);
+  cache.Invalidate();
+  cache.Get(E(1), Build);
+  Assert.That(builds, Is.EqualTo(2), "an applied contract edit is visible within the same interval");
  }
  private sealed class NoStore : IAreaAnchorStore {
   public readonly Dictionary<Entity, IReadOnlyList<AreaAnchorLink>> Links = new();
