@@ -39,6 +39,9 @@ namespace CS2AreaSystem.Core.Settings
             Option(entries, nameof(AreaSystemSettings.AllowManagedAreaOverlap),
                 ja ? "管理エリア同士の重なりを許可" : "Allow managed areas to overlap",
                 ja ? "オンにすると管理エリア同士の重なりは警告になり、そのまま完成できます。オフにするとゲーム標準どおりエラーになります。ゲーム標準のエリアとの重なり、購入していないタイル、不正な形状は常にエラーです。" : "When on, overlaps between management areas are warnings and can be completed. When off they remain native errors. Overlaps with vanilla areas, unpurchased tiles and invalid shapes remain blocking errors.");
+            Option(entries, nameof(AreaSystemSettings.EnableParkCoverageModifier),
+                ja ? "パークのサービス範囲補正を有効にする" : "Enable Park coverage modifier",
+                ja ? "オンにすると、検証済みの補正によりアクティブな管理パークが所有する対象建物のサービス範囲の容量と強さを予算に応じて90%～110%へ調整します。オフにすると補正値を元へ戻し、バニラの値だけを使用します。範囲の距離は変更しません。" : "When on, the verified modifier scales coverage capacity and strength for eligible buildings owned by an Active managed Park from 90% to 110% according to its budget. Turning this off restores tracked native values and leaves vanilla coverage in control. Coverage range is never changed.");
             Option(entries, nameof(AreaSystemSettings.ResetToDefaults),
                 ja ? "設定を初期値に戻す" : "Reset settings to defaults",
                 ja ? "このMODの設定をすべて初期値に戻します。" : "Restores every setting of this mod to its default value.");

@@ -11,6 +11,7 @@ namespace CS2AreaSystem.Core.Settings
         AreaPanelSide PanelSide { get; }
         bool ConfirmAreaDeletion { get; }
         bool AllowManagedAreaOverlap { get; }
+        bool EnableParkCoverageModifier { get; }
     }
     public sealed class AreaSettingsDefaults : IAreaSettings
     {
@@ -20,6 +21,7 @@ namespace CS2AreaSystem.Core.Settings
         public AreaPanelSide PanelSide => AreaPanelSide.Right;
         public bool ConfirmAreaDeletion => true;
         public bool AllowManagedAreaOverlap => true;
+        public bool EnableParkCoverageModifier => true;
     }
     // Live settings used by systems; falls back to defaults before OnLoad, after OnDispose and in tests.
     public static class AreaSettings
@@ -42,6 +44,7 @@ namespace CS2AreaSystem.Core.Settings
         [SettingsUISection(MainTab, InterfaceGroup)] public AreaPanelSide PanelSide { get; set; }
         [SettingsUISection(MainTab, InterfaceGroup)] public bool ConfirmAreaDeletion { get; set; }
         [SettingsUISection(MainTab, GameplayGroup)] public bool AllowManagedAreaOverlap { get; set; }
+        [SettingsUISection(MainTab, GameplayGroup)] public bool EnableParkCoverageModifier { get; set; }
         [SettingsUISection(MainTab, ResetGroup)]
         [SettingsUIButton]
         [SettingsUIConfirmation]
@@ -54,6 +57,7 @@ namespace CS2AreaSystem.Core.Settings
             PanelSide = defaults.PanelSide;
             ConfirmAreaDeletion = defaults.ConfirmAreaDeletion;
             AllowManagedAreaOverlap = defaults.AllowManagedAreaOverlap;
+            EnableParkCoverageModifier = defaults.EnableParkCoverageModifier;
         }
     }
 }
