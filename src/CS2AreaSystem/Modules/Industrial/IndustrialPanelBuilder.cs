@@ -34,13 +34,28 @@ namespace CS2AreaSystem.Modules.Industrial
         public bool SupportAvailable, HasSupport;
         public IndustrialSupportState Support;
         public IndustrialSupportStage? SupportPending;
+        // Phase 3 D1: the contract module is registered and this Area has contract storage; saved contracts (bounded) with
+        // their advisory evaluation; the runtime draft and the currently offered destinations/resources.
+        public bool ContractsAvailable;
+        public IReadOnlyList<IndustrialSupplyContractRow> ContractRows = Array.Empty<IndustrialSupplyContractRow>();
+        public IndustrialSupplyContractDraft ContractDraft = new IndustrialSupplyContractDraft();
+        public IReadOnlyList<AreaPanelOption> ContractDestinations = Array.Empty<AreaPanelOption>(), ContractResources = Array.Empty<AreaPanelOption>();
+        // More live destinations exist than the bounded select can offer.
+        public bool ContractDestinationsTruncated;
+    }
+    // One saved contract as shown: DestinationName is null when the destination is not a live Industrial Area.
+    public sealed class IndustrialSupplyContractRow
+    {
+        public IndustrialSupplyContract Contract;
+        public string DestinationName;
+        public IndustrialSupplyContractEvaluation Evaluation;
     }
     // Builds the seven Industrial tabs (design §16) through the module-neutral panel contract. Pure and read-only: the only
     // item with an action is the diagnostic focus button (camera only); unavailable data is never rendered as zero.
     public static class IndustrialPanelBuilder
     {
         public const string P = "CS2AS.Industrial.";
-        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress", "comparison", "companies", "support" };
+        public static readonly string[] Tabs = { "overview", "production", "logistics", "employment", "progress", "comparison", "companies", "support", "contracts" };
         public static readonly string[] Components = { "Production", "Logistics", "Employment", "Efficiency" };
         public static readonly string[] Statuses = { "Unavailable", "NotApplicable", "WarmingUp", "Stale" };
         public static readonly string[] XpReasons = { "Suspended", "Stale", "NoOperatingProducer", "InsufficientInputs", "DailyCap", "AlreadySettled" };
@@ -60,7 +75,79 @@ namespace CS2AreaSystem.Modules.Industrial
                 new AreaPanelTabData { Id = "progress", LabelKey = "CS2AS.Tab.Progress", Items = Progress(model) },
                 new AreaPanelTabData { Id = "comparison", LabelKey = "CS2AS.Tab.Comparison", Items = Comparison(model) },
                 new AreaPanelTabData { Id = "companies", LabelKey = "CS2AS.Tab.Companies", Items = Companies(model) },
-                new AreaPanelTabData { Id = "support", LabelKey = "CS2AS.Tab.Support", Items = Support(model) } } };
+                new AreaPanelTabData { Id = "support", LabelKey = "CS2AS.Tab.Support", Items = Support(model) },
+                new AreaPanelTabData { Id = "contracts", LabelKey = "CS2AS.Tab.Contracts", Items = Contracts(model) } } };
+        }
+        public static readonly string[] ContractKeys = { "Tip", "Unavailable", "Destination", "Resource", "Target", "Target.Tip", "Create", "Cap", "Empty", "Status", "Status.Tip",
+            "SourceCapacity", "DestinationNeed", "Potential", "Potential.Tip", "Disable", "Enable", "Remove", "DestinationMissing", "DestinationsTruncated" };
+        // Phase 3 D1: advisory supply contracts. Configuration plus estimates from both Areas' existing observations only;
+        // nothing here moves goods. Unknown estimates are never shown as 0 and partial ones are shown as lower bounds.
+        private static List<AreaPanelItem> Contracts(IndustrialPanelModel m)
+        {
+            var items = new List<AreaPanelItem> { new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "contracts.tip", LabelKey = P + "Contracts.Tip" } };
+            if (!m.ContractsAvailable) { items.Add(Warning("contracts.unavailable", P + "Contracts.Unavailable")); return items; }
+            var draft = m.ContractDraft ?? new IndustrialSupplyContractDraft();
+            var destinations = m.ContractDestinations ?? Array.Empty<AreaPanelOption>();
+            var resources = m.ContractResources ?? Array.Empty<AreaPanelOption>();
+            var rows = m.ContractRows ?? Array.Empty<IndustrialSupplyContractRow>();
+            string destination = draft.Destination == 0 ? null : draft.Destination.ToString(Invariant), resource = draft.Resource == 0 ? null : draft.Resource.ToString(Invariant);
+            items.Add(Select("contracts.draft.destination", P + "Contracts.Destination", IndustrialSupplyContractActions.DraftDestination, destination, destinations));
+            if (m.ContractDestinationsTruncated) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "contracts.destinations.truncated", LabelKey = P + "Contracts.DestinationsTruncated" });
+            items.Add(Select("contracts.draft.resource", P + "Contracts.Resource", IndustrialSupplyContractActions.DraftResource, resource, resources));
+            items.Add(TargetSlider("contracts.draft.target", IndustrialSupplyContractActions.DraftTarget, draft.TargetPerDay));
+            bool existing = false;
+            foreach (var row in rows) if (row?.Contract.DestinationStableId == draft.Destination && row.Contract.Resource == draft.Resource) { existing = true; break; }
+            bool full = rows.Count >= IndustrialSupplyContractModel.MaxContracts;
+            bool offered = destination != null && resource != null && Offered(destinations, destination) && Offered(resources, resource);
+            items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = "contracts.create", LabelKey = P + "Contracts.Create", Action = IndustrialSupplyContractActions.Create,
+                Disabled = !offered || (full && !existing) });
+            if (full) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "contracts.cap", LabelKey = P + "Contracts.Cap" });
+            int shown = 0;
+            var ids = new HashSet<int>();
+            foreach (var row in rows)
+            {
+                // A corrupted duplicate id is shown once; actions address the first match, so removing it reveals the next.
+                if (row == null || shown >= IndustrialSupplyContractModel.MaxContracts || !ids.Add(row.Contract.ContractId)) continue;
+                shown++;
+                var c = row.Contract;
+                string id = "contract." + c.ContractId.ToString(Invariant) + ".", contractId = c.ContractId.ToString(Invariant);
+                var status = row.Evaluation?.Status ?? IndustrialSupplyContractStatus.Unknown;
+                string name = ResourceName(c.Resource);
+                items.Add(Row(id + "resource", name == null ? P + "Contracts.Resource" : "Resources.TITLE[" + name + "]", row.DestinationName,
+                    row.DestinationName == null ? P + "Contracts.DestinationMissing" : null));
+                items.Add(Row(id + "status", P + "Contracts.Status", valueKey: P + "Contracts.Status." + status, tooltip: P + "Contracts.Status.Tip"));
+                if (status != IndustrialSupplyContractStatus.Invalid && status != IndustrialSupplyContractStatus.Disabled)
+                {
+                    bool partial = status == IndustrialSupplyContractStatus.PartialData, stale = row.Evaluation?.Stale == true;
+                    items.Add(Estimate(id + "capacity", P + "Contracts.SourceCapacity", row.Evaluation?.SourceCapacityPerDay, partial, stale, null));
+                    items.Add(Estimate(id + "need", P + "Contracts.DestinationNeed", row.Evaluation?.DestinationNeedPerDay, partial, stale, null));
+                    items.Add(Estimate(id + "potential", P + "Contracts.Potential", row.Evaluation?.PotentialPerDay, partial, stale, P + "Contracts.Potential.Tip"));
+                }
+                items.Add(TargetSlider(id + "target", IndustrialSupplyContractActions.TargetPrefix + contractId, c.TargetPerDay));
+                items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = id + "toggle", LabelKey = P + (c.Enabled ? "Contracts.Disable" : "Contracts.Enable"),
+                    Action = IndustrialSupplyContractActions.Toggle, Value = contractId });
+                // Always removable, including contracts whose destination was deleted.
+                items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = id + "remove", LabelKey = P + "Contracts.Remove", Action = IndustrialSupplyContractActions.Remove, Value = contractId });
+            }
+            if (shown == 0) items.Add(Row("contracts.empty", P + "Contracts.Empty"));
+            return items;
+        }
+        private static AreaPanelItem Select(string id, string label, string action, string value, IReadOnlyList<AreaPanelOption> options) =>
+            new AreaPanelItem { Kind = AreaPanelItemKind.Select, Id = id, LabelKey = label, Action = action, Value = value, Options = options, Disabled = options.Count == 0 };
+        private static AreaPanelItem TargetSlider(string id, string action, int target)
+        {
+            int value = IndustrialSupplyContractModel.NormalizeTarget(target);
+            return new AreaPanelItem { Kind = AreaPanelItemKind.Slider, Id = id, LabelKey = P + "Contracts.Target", Action = action, NumericValue = value,
+                Min = IndustrialSupplyContractModel.MinTargetPerDay, Max = IndustrialSupplyContractModel.MaxTargetPerDay, Step = IndustrialSupplyContractModel.TargetStep,
+                Value = Number(value) + " /d", TooltipKey = P + "Contracts.Target.Tip" };
+        }
+        private static AreaPanelItem Estimate(string id, string label, double? value, bool partial, bool stale, string tooltip) =>
+            value.HasValue ? Row(id, label, (partial ? "≥" : "") + Number(value.Value) + " /d", tooltip: partial ? P + "PartialData" : stale ? P + "Status.Stale" : tooltip)
+                : Row(id, label, valueKey: P + "Status.Unavailable", tooltip: tooltip);
+        private static bool Offered(IReadOnlyList<AreaPanelOption> options, string value)
+        {
+            foreach (var o in options) if (o != null && o.Value == value) return true;
+            return false;
         }
         public static readonly string[] SupportStages = { "None", "Requested", "Settled", "Crediting" };
         // Phase 2 C4: the per-company daily support setting and its auditable accounting. The slider exists only while the
@@ -135,6 +222,9 @@ namespace CS2AreaSystem.Modules.Industrial
             foreach (var key in new[] { "Tip", "Unavailable", "PerCompany", "PerCompany.Tip", "Off", "Receivers", "Receivers.Tip", "DailyRequest", "DailyRequest.Tip", "Pending",
                 "LifetimeRequested", "LifetimeSettled", "LifetimeSettled.Tip", "LifetimeCredited", "LifetimeUnallocated", "LifetimeUnallocated.Tip" }) yield return P + "Support." + key;
             foreach (var stage in SupportStages) yield return P + "Support.Stage." + stage;
+            yield return "CS2AS.Tab.Contracts";
+            foreach (var key in ContractKeys) yield return P + "Contracts." + key;
+            foreach (var status in Enum.GetNames(typeof(IndustrialSupplyContractStatus))) yield return P + "Contracts.Status." + status;
             foreach (var key in new[] { "Tip", "Name", "Unnamed", "Ownership", "Owner", "Automatic", "Manual", "Invalid", "Assign", "Clear", "Empty" }) yield return P + "Company." + key;
             foreach(var key in new[]{"Tip","Area","Trend","Empty"})yield return P+"Comparison."+key;
             for (int level = IndustrialProgressionModel.MinLevel; level <= IndustrialProgressionModel.MaxLevel; level++) yield return P + "LevelName." + level;
@@ -393,6 +483,7 @@ namespace CS2AreaSystem.Modules.Industrial
         private long builtAt;
         private AreaPanelDocument document;
         public IndustrialPanelCache(long intervalMilliseconds, Func<long> clockMilliseconds) { this.intervalMilliseconds = intervalMilliseconds; this.clockMilliseconds = clockMilliseconds; }
+        public void Invalidate() => document = null;
         public AreaPanelDocument Get(Unity.Entities.Entity key, Func<AreaPanelDocument> build)
         {
             long now = clockMilliseconds();

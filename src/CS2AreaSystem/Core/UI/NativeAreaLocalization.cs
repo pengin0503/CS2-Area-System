@@ -71,6 +71,9 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };
             entries["CS2AS.UI.Met"] = ja ? "達成" : "Met";
+            // Generic select stepper (Phase 3 D1).
+            entries["CS2AS.UI.Previous"] = ja ? "前へ" : "Previous";
+            entries["CS2AS.UI.Next"] = ja ? "次へ" : "Next";
             entries["CS2AS.UI.NotMet"] = ja ? "未達成" : "Not met";
             // Runtime trend rows (Wave A1): direction label + signed change since the previous hourly sample.
             entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.Up] = ja ? "前回比 上昇" : "vs previous: rising";

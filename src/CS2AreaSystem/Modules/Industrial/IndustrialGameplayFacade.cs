@@ -6,8 +6,8 @@ using CS2AreaSystem.Core.Modules;
 using Unity.Entities;
 namespace CS2AreaSystem.Modules.Industrial
 {
-    // Industrial panel boundary: diagnostic focus, module-owned company assignment buffers and the support setting
-    // (written by IndustrialSupportSystem). HQ assignment, Edit and Delete stay in Core's guarded generic actions.
+    // Industrial panel boundary: diagnostic focus, module-owned company assignment buffers, the support setting
+    // (written by IndustrialSupportSystem) and the advisory supply contract configuration (Phase 3 D1). HQ assignment, Edit and Delete stay in Core's guarded generic actions.
     public static class IndustrialGameplayFacade
     {
         public const string FocusDiagnosticTarget = "focusDiagnosticTarget";
@@ -17,12 +17,14 @@ namespace CS2AreaSystem.Modules.Industrial
         // Core already checked the stable ID and live selection. Never modifies simulation state.
         public static bool HandleAction(Entity area, string action, string value, in AreaPanelContext context)
         {
-            if (action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment && action != SetSupportPerCompany) return false;
+            bool contract = IndustrialSupplyContractActions.IsContractAction(action);
+            if (action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment && action != SetSupportPerCompany && !contract) return false;
             if (context.World == null) return false;
             var entities = context.Entities;
             if (!entities.Exists(area) || entities.HasComponent<Game.Common.Deleted>(area) || !entities.HasComponent<ManagedAreaStableId>(area) ||
                 !entities.HasComponent<ManagedArea>(area) || entities.GetComponentData<ManagedArea>(area).TypeId != (int)AreaTypeId.Industrial) return false;
             if (action == SetSupportPerCompany) return HandleSupport(area, value, context);
+            if (contract) return HandleContract(area, action, value, context);
             var runtime = context.World.GetExistingSystemManaged<IndustrialRuntimeSystem>();
             ulong areaId = entities.GetComponentData<ManagedAreaStableId>(area).Value;
             if (runtime == null || !runtime.Store.TryGet(areaId, out var snapshot)) return false;
@@ -48,6 +50,59 @@ namespace CS2AreaSystem.Modules.Industrial
             var services = context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
             if (support == null || services == null || services.IsQuarantined(area)) return false;
             return support.TrySetPerCompany(area, value);
+        }
+        // Phase 3 D1: only this Area's own saved contract configuration (and its runtime draft) changes. Destinations must be
+        // live, non-quarantined Industrial Areas and resources must be observed outputs of this Area at the time of the click.
+        private static bool HandleContract(Entity area, string action, string value, in AreaPanelContext context)
+        {
+            var entities = context.Entities;
+            var system = context.World.GetExistingSystemManaged<IndustrialSupplyContractSystem>();
+            var runtime = context.World.GetExistingSystemManaged<IndustrialRuntimeSystem>();
+            var services = context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
+            if (system == null || !system.Enabled || runtime == null || !runtime.Ready || services == null || services.IsQuarantined(area)) return false;
+            ulong areaId = entities.GetComponentData<ManagedAreaStableId>(area).Value;
+            var areas = new List<IndustrialAreaRef>(); runtime.CollectAreas(areas);
+            var live = new HashSet<ulong>();
+            foreach (var other in areas)
+                if (IsLiveIndustrial(other, entities) && !services.IsQuarantined(other.Area)) live.Add(other.StableId);
+            runtime.Store.TryGet(areaId, out var snapshot);
+            var outputs = new HashSet<ulong>();
+            if (snapshot?.Current != null) foreach (var total in snapshot.Current.Resources) outputs.Add(total.Resource);
+            return system.TryApplyAction(area, areaId, action, value, live.Contains, outputs.Contains);
+        }
+        private static bool IsLiveIndustrial(in IndustrialAreaRef other, EntityManager entities) =>
+            entities.Exists(other.Area) && !entities.HasComponent<Game.Common.Deleted>(other.Area) && entities.HasComponent<ManagedArea>(other.Area) &&
+            entities.GetComponentData<ManagedArea>(other.Area).TypeId == (int)AreaTypeId.Industrial && entities.HasComponent<ManagedAreaStableId>(other.Area) &&
+            entities.GetComponentData<ManagedAreaStableId>(other.Area).Value == other.StableId;
+        // Contracts tab read model; Unavailable (ContractsAvailable false) when the module or this Area's storage is missing.
+        private static void ReadContracts(IndustrialPanelModel model, Entity area, IndustrialRuntimeSystem runtime, AreaCoreServicesSystem services, Game.UI.NameSystem names,
+            List<IndustrialAreaRef> areas, in AreaPanelContext context)
+        {
+            var entities = context.Entities;
+            var system = context.World.GetExistingSystemManaged<IndustrialSupplyContractSystem>();
+            if (system == null || !system.Enabled || services == null || !entities.HasComponent<IndustrialSupplyContractState>(area) || !entities.HasBuffer<IndustrialSupplyContract>(area)) return;
+            var rows = new List<IndustrialSupplyContractArea>(areas.Count);
+            foreach (var other in areas)
+            {
+                if (!IsLiveIndustrial(other, entities)) continue;
+                runtime.Store.TryGet(other.StableId, out var snapshot);
+                var lifecycle = entities.GetComponentData<ManagedArea>(other.Area).State;
+                bool quarantined = services.IsQuarantined(other.Area);
+                rows.Add(new IndustrialSupplyContractArea { StableId = other.StableId, Name = names?.GetRenderedLabelName(other.Area), Selectable = !quarantined,
+                    Side = quarantined || snapshot == null ? default : new IndustrialSupplySide(snapshot.Current, snapshot.Paused || lifecycle != AreaLifecycleState.Active) });
+            }
+            var buffer = entities.GetBuffer<IndustrialSupplyContract>(area, true);
+            var contracts = new List<IndustrialSupplyContract>(Math.Min(buffer.Length, IndustrialSupplyContractModel.MaxContracts));
+            for (int i = 0; i < buffer.Length && i < IndustrialSupplyContractModel.MaxContracts; i++) contracts.Add(buffer[i]);
+            var sourceSide = new IndustrialSupplySide(model.Current, model.Paused || model.Lifecycle != AreaLifecycleState.Active);
+            IndustrialSupplyContractView.Fill(model, model.StableId, contracts, sourceSide, rows, system.Cache, system.Draft(model.StableId));
+        }
+        // Contracts are a separate module: a read failure shows the Contracts tab as unavailable, never the whole panel.
+        private static void TryReadContracts(IndustrialPanelModel model, Entity area, IndustrialRuntimeSystem runtime, AreaCoreServicesSystem services, Game.UI.NameSystem names,
+            List<IndustrialAreaRef> areas, in AreaPanelContext context)
+        {
+            try { ReadContracts(model, area, runtime, services, names, areas, context); }
+            catch (Exception error) { model.ContractsAvailable = false; Mod.Log.Error(error, "Industrial supply contracts could not be read; the Contracts tab is unavailable"); }
         }
         public static bool TryFocus(IndustrialObservationResult current, string key, ulong areaId, Func<Entity, bool> isLive, AreaMembershipIndex membership, Action<Entity> focus, IndustrialCompanyAssignmentIndex assignments = null)
         {
@@ -171,6 +226,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     var managed=entities.GetComponentData<ManagedArea>(other.Area);
                     sources.Add(new IndustrialComparisonSource{StableId=other.StableId,TypeId=managed.TypeId,Lifecycle=managed.State,Snapshot=otherSnapshot,Name=names?.GetRenderedLabelName(other.Area)});
                 }
+                TryReadContracts(model, area, runtime, services, names, areas, context);
                 model.Comparison=IndustrialAreaComparison.Build(sources,runtime.TryGetClock(out var comparisonClock)?comparisonClock.GameHours(runtime.SimulationFrame):(double?)null);
             }
             var inputs = IndustrialProgressionSystem.BuildInputs(model.Current, model.State);

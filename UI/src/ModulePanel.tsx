@@ -47,6 +47,7 @@ function Item({item,text,send}:ItemProps){
  case 'warning':return <div role="alert" className={styles.warning} title={tooltip}>{text(item.labelKey)}{item.value?` ${item.value}`:''}</div>;
  case 'note':return <p role="note" className={styles.note}>{text(item.labelKey)}</p>;
  case 'slider':return <SliderItem item={item} text={text} send={send}/>;
+ case 'select':return <SelectItem item={item} text={text} send={send}/>;
  case 'button':return <div className={styles.actions}><Button variant="flat" disabled={item.disabled} onSelect={()=>{if(!item.disabled)send(item.action,item.value??'');}}>{text(item.labelKey)}</Button></div>;
  default:return null;
  }
@@ -77,5 +78,27 @@ function SliderItem({item,text,send}:ItemProps){
     <Button variant="flat" disabled={item.disabled} onSelect={()=>{if(!item.disabled)commit(localRef.current-step);}}>-</Button>
     <Button variant="flat" disabled={item.disabled} onSelect={()=>{if(!item.disabled)commit(localRef.current+step);}}>+</Button>
    </div>}
+ </div>;
+}
+// Bounded select rendered as a previous/next stepper with cs2/ui buttons only (no undocumented vanilla dropdown API).
+// The chosen option value goes through the guarded moduleAction; C# re-validates it against the live state.
+function SelectItem({item,text,send}:ItemProps){
+ const {InfoRow}=vanilla();
+ const options=(item.options??[]).slice(0,64);
+ const index=options.findIndex(option=>option.value===item.value);
+ const current=index>=0?options[index]:null;
+ const label=current?(current.labelKey?text(current.labelKey):current.label??current.value):'—';
+ const enabled=!item.disabled&&options.length>0;
+ const step=(delta:number)=>{
+  if(!enabled)return;
+  const next=index<0?(delta>0?0:options.length-1):(index+delta+options.length)%options.length;
+  send(item.action,options[next].value);
+ };
+ return <div className={styles.slider}>
+  <InfoRow left={text(item.labelKey)} right={label} tooltip={item.tooltipKey?text(item.tooltipKey):undefined}/>
+  <div className={styles.actions}>
+   <Button variant="flat" disabled={!enabled} onSelect={()=>step(-1)}>{text('CS2AS.UI.Previous')}</Button>
+   <Button variant="flat" disabled={!enabled} onSelect={()=>step(1)}>{text('CS2AS.UI.Next')}</Button>
+  </div>
  </div>;
 }

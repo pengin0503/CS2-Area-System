@@ -42,6 +42,7 @@ namespace CS2AreaSystem
             var park = RegisterParkSystems(updateSystem, finance);
             var industrial = RegisterIndustrialSystems(updateSystem);
             RegisterIndustrialSupport(updateSystem, finance, industrial);
+            RegisterIndustrialSupplyContracts(updateSystem, industrial);
             RegisterParkEvents(updateSystem, finance, park);
             RegisterParkCoverageModifier(updateSystem, park);
             RegisterLocalization();
@@ -195,6 +196,20 @@ namespace CS2AreaSystem
                 support.Complete();
             }
             catch (System.Exception error) { support.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
+        }
+        // Advisory supply contracts (Phase 3 D1) only read Industrial observations and keep runtime drafts/evaluations; their
+        // saved configuration is created by Industrial gameplay's state initializer. A failure leaves the saved contracts
+        // untouched and the Contracts tab unavailable; nothing in vanilla trade, routing, prices or demand is affected.
+        private static void RegisterIndustrialSupplyContracts(UpdateSystem updateSystem, ModuleRegistration industrial)
+        {
+            if (!ModuleRegistration.Requires(industrial, "Industrial supply contracts", message => Log.Error(message))) return;
+            var contracts = new ModuleRegistration("Industrial supply contracts", typeof(CS2AreaSystem.Modules.Industrial.IndustrialSupplyContractSystem));
+            try
+            {
+                updateSystem.UpdateAfter<CS2AreaSystem.Modules.Industrial.IndustrialSupplyContractSystem, CS2AreaSystem.Modules.Industrial.IndustrialRuntimeSystem>(SystemUpdatePhase.ModificationEnd); contracts.Step();
+                contracts.Complete();
+            }
+            catch (System.Exception error) { contracts.Fail(error, type => Disable(updateSystem, type), ReportRegistrationFailure); }
         }
         // Registered systems cannot be removed from UpdateSystem; a disabled system is skipped by ComponentSystemBase.Update.
         private static void Disable(UpdateSystem updateSystem, System.Type type)

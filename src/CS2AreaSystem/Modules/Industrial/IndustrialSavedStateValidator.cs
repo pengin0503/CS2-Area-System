@@ -31,5 +31,22 @@ namespace CS2AreaSystem.Modules.Industrial
             if (state.LifetimeRequested != long.MaxValue && state.LifetimeSettled != long.MaxValue && state.LifetimeSettled > state.LifetimeRequested)
                 report.Invalid("IndustrialSupportState.LifetimeSettled", state.LifetimeSettled);
         }
+        // Phase 3 D1: contracts are advisory configuration, so an impossible entry only warns. It stays visible as Invalid
+        // and removable instead of quarantining the Area's authoritative progress and finance.
+        public static void ValidateContracts(System.Collections.Generic.IReadOnlyList<IndustrialSupplyContract> contracts, in IndustrialSupplyContractState state,
+            ulong source, AreaSavedStateReport report)
+        {
+            if (contracts.Count > IndustrialSupplyContractModel.MaxContracts) report.Warning("IndustrialSupplyContract.Count", contracts.Count);
+            var ids = new System.Collections.Generic.HashSet<int>();
+            int maxId = 0;
+            foreach (var c in contracts)
+            {
+                if (c.ContractId <= 0 || !ids.Add(c.ContractId)) report.Warning("IndustrialSupplyContract.ContractId", c.ContractId);
+                if (c.ContractId > maxId) maxId = c.ContractId;
+                if (!IndustrialSupplyContractModel.IsValidResource(c.Resource)) report.Warning("IndustrialSupplyContract.Resource", c.Resource);
+                if (!IndustrialSupplyContractModel.IsValidDestination(source, c.DestinationStableId)) report.Warning("IndustrialSupplyContract.DestinationStableId", c.DestinationStableId);
+            }
+            if (state.NextContractId <= maxId) report.Warning("IndustrialSupplyContractState.NextContractId", state.NextContractId);
+        }
     }
 }

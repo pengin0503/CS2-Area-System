@@ -179,7 +179,7 @@ public class ModSystemOrderTests {
     [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
     [TestCase(SystemUpdatePhase.ToolUpdate, "AreaLabelSystem")]
-    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaBuiltInContentSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem")]
+    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaBuiltInContentSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem,IndustrialSupplyContractSystem")]
     [TestCase(SystemUpdatePhase.GameSimulation, "ParkCoverageModifierSystem,AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,IndustrialSupportSystem,ParkEventSystem,AreaFinanceSystem")]
     [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem,IndustrialSupportSaveSystem,ParkHistorySaveSystem,IndustrialHistorySaveSystem,ParkCoverageModifierSaveSystem")]
     [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]

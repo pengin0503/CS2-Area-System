@@ -1867,6 +1867,230 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "contracts",
+          "labelKey": "CS2AS.Tab.Contracts",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "contracts.tip",
+              "labelKey": "CS2AS.Industrial.Contracts.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "select",
+              "id": "contracts.draft.destination",
+              "labelKey": "CS2AS.Industrial.Contracts.Destination",
+              "value": "43",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": "contractDraftDestination",
+              "options": [
+                {
+                  "__Type": "CS2AreaSystem.AreaPanelOption",
+                  "value": "43",
+                  "label": "Paused Industry",
+                  "labelKey": null
+                },
+                {
+                  "__Type": "CS2AreaSystem.AreaPanelOption",
+                  "value": "44",
+                  "label": "Harbor Works",
+                  "labelKey": null
+                }
+              ]
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "select",
+              "id": "contracts.draft.resource",
+              "labelKey": "CS2AS.Industrial.Contracts.Resource",
+              "value": "128",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": "contractDraftResource",
+              "options": [
+                {
+                  "__Type": "CS2AreaSystem.AreaPanelOption",
+                  "value": "128",
+                  "label": null,
+                  "labelKey": "Resources.TITLE[Timber]"
+                }
+              ]
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "slider",
+              "id": "contracts.draft.target",
+              "labelKey": "CS2AS.Industrial.Contracts.Target",
+              "value": "1,500 /d",
+              "valueKey": null,
+              "numericValue": 1500,
+              "min": 50,
+              "max": 50000,
+              "step": 50,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Contracts.Target.Tip",
+              "action": "contractDraftTarget"
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "button",
+              "id": "contracts.create",
+              "labelKey": "CS2AS.Industrial.Contracts.Create",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": "contractCreate"
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "contract.5.resource",
+              "labelKey": "Resources.TITLE[Timber]",
+              "value": "Harbor Works",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "contract.5.status",
+              "labelKey": "CS2AS.Industrial.Contracts.Status",
+              "value": null,
+              "valueKey": "CS2AS.Industrial.Contracts.Status.Constrained",
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Contracts.Status.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "contract.5.capacity",
+              "labelKey": "CS2AS.Industrial.Contracts.SourceCapacity",
+              "value": "1,500 /d",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "contract.5.need",
+              "labelKey": "CS2AS.Industrial.Contracts.DestinationNeed",
+              "value": "800 /d",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "row",
+              "id": "contract.5.potential",
+              "labelKey": "CS2AS.Industrial.Contracts.Potential",
+              "value": "800 /d",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Contracts.Potential.Tip",
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "slider",
+              "id": "contract.5.target",
+              "labelKey": "CS2AS.Industrial.Contracts.Target",
+              "value": "1,000 /d",
+              "valueKey": null,
+              "numericValue": 1000,
+              "min": 50,
+              "max": 50000,
+              "step": 50,
+              "disabled": false,
+              "tooltipKey": "CS2AS.Industrial.Contracts.Target.Tip",
+              "action": "contractTarget.5"
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "button",
+              "id": "contract.5.toggle",
+              "labelKey": "CS2AS.Industrial.Contracts.Disable",
+              "value": "5",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": "contractToggle"
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "button",
+              "id": "contract.5.remove",
+              "labelKey": "CS2AS.Industrial.Contracts.Remove",
+              "value": "5",
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": "contractRemove"
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -2431,6 +2655,43 @@
               "kind": "warning",
               "id": "support.unavailable",
               "labelKey": "CS2AS.Industrial.Support.Unavailable",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "contracts",
+          "labelKey": "CS2AS.Tab.Contracts",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "contracts.tip",
+              "labelKey": "CS2AS.Industrial.Contracts.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "contracts.unavailable",
+              "labelKey": "CS2AS.Industrial.Contracts.Unavailable",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -3539,6 +3800,43 @@
               "kind": "warning",
               "id": "support.unavailable",
               "labelKey": "CS2AS.Industrial.Support.Unavailable",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "contracts",
+          "labelKey": "CS2AS.Tab.Contracts",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "contracts.tip",
+              "labelKey": "CS2AS.Industrial.Contracts.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "contracts.unavailable",
+              "labelKey": "CS2AS.Industrial.Contracts.Unavailable",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -4684,6 +4982,43 @@
               "kind": "warning",
               "id": "support.unavailable",
               "labelKey": "CS2AS.Industrial.Support.Unavailable",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "contracts",
+          "labelKey": "CS2AS.Tab.Contracts",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "contracts.tip",
+              "labelKey": "CS2AS.Industrial.Contracts.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "contracts.unavailable",
+              "labelKey": "CS2AS.Industrial.Contracts.Unavailable",
               "value": null,
               "valueKey": null,
               "numericValue": null,
@@ -6035,6 +6370,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "contracts",
+          "labelKey": "CS2AS.Tab.Contracts",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "contracts.tip",
+              "labelKey": "CS2AS.Industrial.Contracts.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "contracts.unavailable",
+              "labelKey": "CS2AS.Industrial.Contracts.Unavailable",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -7090,6 +7462,43 @@
               "action": null
             }
           ]
+        },
+        {
+          "__Type": "CS2AreaSystem.AreaPanelTab",
+          "id": "contracts",
+          "labelKey": "CS2AS.Tab.Contracts",
+          "items": [
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "note",
+              "id": "contracts.tip",
+              "labelKey": "CS2AS.Industrial.Contracts.Tip",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            },
+            {
+              "__Type": "CS2AreaSystem.AreaPanelItem",
+              "kind": "warning",
+              "id": "contracts.unavailable",
+              "labelKey": "CS2AS.Industrial.Contracts.Unavailable",
+              "value": null,
+              "valueKey": null,
+              "numericValue": null,
+              "min": null,
+              "max": null,
+              "step": null,
+              "disabled": false,
+              "tooltipKey": null,
+              "action": null
+            }
+          ]
         }
       ],
       "moduleShowsProgress": true,
@@ -7150,6 +7559,35 @@
     "CS2AS.Industrial.Comparison.Empty": "No Industrial Areas to compare",
     "CS2AS.Industrial.Comparison.Tip": "Managed Industrial Areas only. Current Performance sorts first; stale results are advisory and do not affect gameplay.",
     "CS2AS.Industrial.Comparison.Trend": "Performance: latest vs previous hour",
+    "CS2AS.Industrial.Contracts.Cap": "This Area has the maximum of 32 contracts. Remove one to add a new destination and resource; existing ones can still be updated.",
+    "CS2AS.Industrial.Contracts.Create": "Add or update contract",
+    "CS2AS.Industrial.Contracts.Destination": "Destination Area",
+    "CS2AS.Industrial.Contracts.DestinationMissing": "Destination Area no longer exists",
+    "CS2AS.Industrial.Contracts.DestinationNeed": "Observed need at destination",
+    "CS2AS.Industrial.Contracts.DestinationsTruncated": "Only the first 64 Industrial Areas are offered as destinations.",
+    "CS2AS.Industrial.Contracts.Disable": "Disable",
+    "CS2AS.Industrial.Contracts.Empty": "No supply contracts. Choose a destination Area and a resource this Area produces.",
+    "CS2AS.Industrial.Contracts.Enable": "Enable",
+    "CS2AS.Industrial.Contracts.Potential": "Estimated potential",
+    "CS2AS.Industrial.Contracts.Potential.Tip": "The smallest of the target, the observed output here and the observed need at the destination. An estimate, not a delivery.",
+    "CS2AS.Industrial.Contracts.Remove": "Remove contract",
+    "CS2AS.Industrial.Contracts.Resource": "Resource",
+    "CS2AS.Industrial.Contracts.SourceCapacity": "Observed output here",
+    "CS2AS.Industrial.Contracts.Status": "Estimate",
+    "CS2AS.Industrial.Contracts.Status.Available": "Target achievable",
+    "CS2AS.Industrial.Contracts.Status.Constrained": "Below target",
+    "CS2AS.Industrial.Contracts.Status.Disabled": "Disabled",
+    "CS2AS.Industrial.Contracts.Status.Invalid": "Invalid (destination missing or resource not allowed)",
+    "CS2AS.Industrial.Contracts.Status.NoObservedNeed": "The destination is not consuming the resource",
+    "CS2AS.Industrial.Contracts.Status.NoObservedSupply": "This Area is not producing the resource",
+    "CS2AS.Industrial.Contracts.Status.PartialData": "Partial data (values are lower bounds)",
+    "CS2AS.Industrial.Contracts.Status.Tip": "Derived from the latest observation of both Areas; never saved.",
+    "CS2AS.Industrial.Contracts.Status.Unavailable": "Neither Area handles this resource",
+    "CS2AS.Industrial.Contracts.Status.Unknown": "Waiting for current observations of both Areas",
+    "CS2AS.Industrial.Contracts.Target": "Target per day",
+    "CS2AS.Industrial.Contracts.Target.Tip": "50 to 50,000 units per in-game day in steps of 50. Used only to compare with the estimate.",
+    "CS2AS.Industrial.Contracts.Tip": "Advisory only: each contract compares this Area's observed output of a resource with another Industrial Area's observed consumption and shows an estimate. Nothing is shipped, rerouted or priced differently; vanilla trade is unchanged.",
+    "CS2AS.Industrial.Contracts.Unavailable": "Supply contracts are unavailable (the contract module or this Area's saved contracts failed to load). Saved contracts are kept unchanged.",
     "CS2AS.Industrial.DailyXp": "XP today",
     "CS2AS.Industrial.DailyXp.Tip": "At most 240 XP per game day.",
     "CS2AS.Industrial.Day.InsufficientCoverage": "Not counted: fewer than 18 observed hours",
@@ -7499,6 +7937,7 @@
     "CS2AS.Summary.TourismBoundaryOnly": "Boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
     "CS2AS.Tab.Companies": "Companies / Ownership",
     "CS2AS.Tab.Comparison": "Comparison",
+    "CS2AS.Tab.Contracts": "Supply contracts",
     "CS2AS.Tab.Employment": "Employment",
     "CS2AS.Tab.Events": "Events",
     "CS2AS.Tab.Finances": "Finances",
@@ -7538,9 +7977,11 @@
     "CS2AS.UI.Headquarters": "Headquarters",
     "CS2AS.UI.Level": "Level",
     "CS2AS.UI.Met": "Met",
+    "CS2AS.UI.Next": "Next",
     "CS2AS.UI.NoAreas": "No managed areas yet.",
     "CS2AS.UI.NotAssigned": "Not assigned",
     "CS2AS.UI.NotMet": "Not met",
+    "CS2AS.UI.Previous": "Previous",
     "CS2AS.UI.RemoveEntrance": "Remove",
     "CS2AS.UI.SelectAnchor": "Select an existing building inside this area.",
     "CS2AS.UI.SelectEntrance": "Click an AS_ParkGate building inside this area.",

@@ -11,7 +11,10 @@ export interface AreaSectionData {
 export interface AreaPanelItem {
  kind:string;id:string;labelKey:string;value:string|null;valueKey:string|null;numericValue:number|null;
  min:number|null;max:number|null;step:number|null;disabled:boolean;tooltipKey:string|null;action:string|null;
+ // Select items only (at most 64); value is the chosen option value.
+ options?:AreaPanelOption[];
 }
+export interface AreaPanelOption {value:string;label:string|null;labelKey:string|null;}
 export interface AreaPanelTab {id:string;labelKey:string;items?:AreaPanelItem[];}
 export interface AreaAnchor {key:string;name:string|null;valid?:boolean;}
 export interface AreaAnchorGroup {role:'Headquarters'|'Entrance';assignmentSupported:boolean;anchors:AreaAnchor[];}

@@ -119,19 +119,29 @@ const industrialFacade = read(`${industrialDir}/IndustrialGameplayFacade.cs`);
 check(!/SetComponentData|AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity/.test(industrialFacade), 'Industrial facade must stay read-only (no setters)');
 const industrialFacadeActions = [...industrialFacade.matchAll(/public const string (\w+)\s*=\s*"([^"]*)"/g)].map(m => m[2]);
 check(JSON.stringify(industrialFacadeActions) === JSON.stringify(['focusDiagnosticTarget', 'assignCompanyHere', 'clearCompanyAssignment', 'setSupportPerCompany']), 'Industrial facade must whitelist exactly focus, company assignment/removal and the C4 support setting');
-check(/if \(action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment && action != SetSupportPerCompany\) return false;/.test(industrialFacade), 'Industrial facade must reject actions outside the whitelist first');
+check(/bool contract = IndustrialSupplyContractActions\.IsContractAction\(action\);\s*if \(action != FocusDiagnosticTarget && action != AssignCompanyHere && action != ClearCompanyAssignment && action != SetSupportPerCompany && !contract\) return false;/.test(industrialFacade), 'Industrial facade must reject actions outside the whitelist first');
+// Phase 3 D1: contract actions are a closed set, routed to the enabled contract system (the only contract writer).
+const contractActionSource = read(`${industrialDir}/IndustrialSupplyContractActions.cs`);
+const contractActionNames = [...contractActionSource.matchAll(/(\w+) = "(contract[\w.]*)"/g)].map(m => m[2]);
+check(JSON.stringify(contractActionNames) === JSON.stringify(['contractDraftDestination', 'contractDraftResource', 'contractDraftTarget', 'contractCreate', 'contractTarget.', 'contractToggle', 'contractRemove']), 'Industrial contract actions must be exactly the draft, create, target, toggle and remove actions');
+check(/return system\.TryApplyAction\(area, areaId, action, value, live\.Contains, outputs\.Contains\);/.test(industrialFacade), 'Industrial contract actions must be applied by the contract system');
 // C4: the support setting is written only by the enabled support system, through the setting-only action helper.
 check(/if \(action == SetSupportPerCompany\) return HandleSupport\(area, value, context\);/.test(industrialFacade) && /return support\.TrySetPerCompany\(area, value\);/.test(industrialFacade), 'Industrial support setting must route through IndustrialSupportSystem');
 const supportSystem = read(`${industrialDir}/IndustrialSupportSystem.cs`);
 const supportSetter = supportSystem.slice(supportSystem.indexOf('internal bool TrySetPerCompany'), supportSystem.indexOf('// Live B2 resolution'));
 check(/if \(!Enabled \|\|/.test(supportSetter) && /IndustrialSupportActions\.TryApply\(true, true, value, ref state\)/.test(supportSetter), 'Industrial support setting must require the enabled module and change only the setting');
 const industrialModule = read(`${industrialDir}/IndustrialAreaModule.cs`);
-check(/HandleAction\([^)]*\)\s*=>\s*IndustrialGameplayFacade\.HandleAction\(area, action, value, context\);/.test(industrialModule), 'Industrial module must route actions only to the read-only facade');
+check(/HandleAction\([^)]*\)\s*\{\s*bool applied = IndustrialGameplayFacade\.HandleAction\(area, action, value, context\);\s*if \(applied\) panels\.Invalidate\(\);\s*return applied;\s*\}/.test(industrialModule), 'Industrial module must route actions only to the read-only facade');
 const panelBuilder = read(`${industrialDir}/IndustrialPanelBuilder.cs`);
-check((panelBuilder.match(/AreaPanelItemKind\.Slider/g) || []).length === 1 && /Kind = AreaPanelItemKind\.Slider, Id = "support\.perCompany"[^\n]*Action = IndustrialGameplayFacade\.SetSupportPerCompany/.test(panelBuilder), 'Industrial panel may emit only the C4 support slider');
+check((panelBuilder.match(/AreaPanelItemKind\.Slider/g) || []).length === 2 && /Kind = AreaPanelItemKind\.Slider, Id = "support\.perCompany"[^\n]*Action = IndustrialGameplayFacade\.SetSupportPerCompany/.test(panelBuilder) &&
+  /Kind = AreaPanelItemKind\.Slider, Id = id, LabelKey = P \+ "Contracts\.Target", Action = action/.test(panelBuilder), 'Industrial panel may emit only the C4 support slider and the D1 contract target sliders');
 const panelActions = [...panelBuilder.matchAll(/Action\s*=\s*([^,}]+)/g)].map(m => m[1].trim());
-check(panelActions.length === 4 && panelActions.every(action => ['IndustrialGameplayFacade.FocusDiagnosticTarget', 'IndustrialGameplayFacade.AssignCompanyHere', 'IndustrialGameplayFacade.ClearCompanyAssignment', 'IndustrialGameplayFacade.SetSupportPerCompany'].includes(action)), 'Industrial panel may emit only the whitelisted actions');
-check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 3, 'Industrial panel must emit only focus, assign and remove buttons');
+check(panelActions.length === 9 && panelActions.every(action => ['IndustrialGameplayFacade.FocusDiagnosticTarget', 'IndustrialGameplayFacade.AssignCompanyHere', 'IndustrialGameplayFacade.ClearCompanyAssignment', 'IndustrialGameplayFacade.SetSupportPerCompany',
+  'IndustrialSupplyContractActions.Create', 'IndustrialSupplyContractActions.Toggle', 'IndustrialSupplyContractActions.Remove', 'action'].includes(action)), 'Industrial panel may emit only the whitelisted actions');
+// The two `Action = action` helpers (Select, TargetSlider) receive only contract action constants.
+const helperActions = [...panelBuilder.matchAll(/(?:Select|TargetSlider)\((?:"[^"]*"|id \+ "target")(?:, P \+ "[^"]+")?, (IndustrialSupplyContractActions\.\w+(?: \+ contractId)?|[^,)]+)/g)].map(m => m[1]);
+check(helperActions.length === 4 && helperActions.every(action => /^IndustrialSupplyContractActions\.(DraftDestination|DraftResource|DraftTarget|TargetPrefix \+ contractId)$/.test(action)), 'Industrial contract selects/sliders may send only contract actions');
+check((panelBuilder.match(/AreaPanelItemKind\.Button/g) || []).length === 6, 'Industrial panel must emit only focus, assign, remove and the contract create/toggle/remove buttons');
 check(/GetBuffer<IndustrialCompanyAssignment>/.test(industrialFacade), 'assignment persistence must use only the module-owned buffer');
 check(/candidates.AssignmentRevision != assignments.Revision/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must reject stale revisions');
 check(/live.Building == candidate.Building/.test(read(`${industrialDir}/IndustrialCompanyAssignmentActions.cs`)), 'assignment actions must revalidate the exact rented building');
@@ -375,6 +385,17 @@ for (const source of ['ParkConnectivityModel.cs']) {
 }
 const connectivity = code('src/CS2AreaSystem/Modules/Park/ParkConnectivitySystem.cs');
 check(!/SetComponentData|SetBuffer|AddComponent|RemoveComponent|DestroyEntity|EntityCommandBuffer/.test(connectivity), 'Park connectivity must only read the vanilla network');
+
+// Phase 3 D1: supply contracts are advisory. Their sources never reference routing, transfers, buyers/sellers, prices,
+// demand or vehicles, and the only component they write is their own saved configuration.
+for (const source of ['IndustrialSupplyContract.cs', 'IndustrialSupplyContractModel.cs', 'IndustrialSupplyContractEvaluator.cs', 'IndustrialSupplyContractActions.cs',
+  'IndustrialSupplyContractSystem.cs', 'IndustrialSupplyContractView.cs']) {
+  const contract = code(`src/CS2AreaSystem/Modules/Industrial/${source}`);
+  check(!/Pathfind|PathFind|PathInformation|SetupQueue|TransferRequest|ResourceBuyer|ResourceSeller|TradeCost|Price|Demand|EconomyUtils|AddResources|Game\.Vehicles|Game\.Pathfind|Game\.Companies|Game\.Citizens/.test(contract), `${source}: supply contracts must not touch routing, transfers, prices, demand or companies`);
+  check(!/AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity|CreateEntity/.test(contract), `${source}: supply contracts must not make structural changes`);
+  for (const write of contract.matchAll(/SetComponentData(?:<(\w+)>)?\(([^,]+),\s*(\w+)\)/g)) check(write[3] === 'state' && /IndustrialSupplyContractState/.test(contract), `${source}: supply contracts may write only their own allocator`);
+  for (const write of contract.matchAll(/GetBuffer<(\w+)>\(/g)) check(write[1] === 'IndustrialSupplyContract', `${source}: supply contracts may open only their own buffer`);
+}
 
 // Phase 3 C2: exactly three AS-prefixed dedicated assets; exact ordinal identity, no display-name/substring/Foundation fallback.
 const builtInContract = read('docs/content/area-system-built-in-assets-contract.md');

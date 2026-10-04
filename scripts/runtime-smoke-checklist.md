@@ -238,3 +238,19 @@ or packaged. The cases below apply once it exists (`assets/industrial-reference-
 | D206 Deletion and regression | Bulldoze the factory: no errors; the company leaves through vanilla rules. Re-run Industrial v1/B2/C4 and D1 contracts with the factory present. | NOT RUN |
 
 Do not change these Results to PASS without direct game evidence.
+
+# Phase 3 D1 — Advisory Industrial Supply Contracts
+
+Status: **NOT RUN.** No in-game evidence exists yet. Contracts are advisory: they read the existing Industrial observations of two Areas and must never change shipments, routing, transfer requests, market prices, demand or any vanilla economy state.
+
+| Case | Procedure and expected result | Result |
+| --- | --- | --- |
+| D101 Create and edit | Open the Contracts tab of an active Industrial Area with an observed output. Pick a destination with Previous/Next, a resource and a target (50–50,000 in 50 steps), then Add. Repeat the same destination + resource: the existing contract is updated, not duplicated. Change target, Disable/Enable and Remove by contract; switch Areas mid-change; stale selection and quarantined Areas reject actions. | NOT RUN |
+| D102 Estimates | Compare Observed output here, Observed need at destination and Estimated potential with both Areas' Production tabs. Potential = min(target, output, need); Available/Constrained follow the target; Delayed or partial observations show "≥" lower bounds with Partial data; paused/suspended Areas show Waiting, never 0. | NOT RUN |
+| D103 No vanilla effect | With several enabled contracts, record cargo/truck traffic, company resources, trade, prices and demand over an in-game day and compare with the contracts disabled. No difference attributable to contracts; no new vehicles or routes. | NOT RUN |
+| D104 Deleted destination | Delete a destination Area (and recreate one in the same place). Its contracts show "Destination Area no longer exists" (Invalid), are never rebound to the new Area and stay removable. | NOT RUN |
+| D105 Save/load and cap | Save with enabled, disabled and invalid contracts; load. Configuration and next contract id survive; estimates are recomputed, not loaded. An older save without contract data loads with an empty list. Reach 32 contracts: new pairs are refused with the cap note, updates still work. | NOT RUN |
+| D106 Performance | With many Industrial Areas and 32 contracts on the selected Area, profile the selected panel: no per-frame re-evaluation while observations are unchanged; no whole-city scan added. | NOT RUN |
+| D107 Regression and UI | Re-run Industrial v1/B2 ownership/C4 support and Park C5/C6 with contracts present; en-US/ja-JP Contracts tab has no raw keys; a failed contract-module registration shows the unavailable warning while Industrial gameplay continues and saved contracts are kept. | NOT RUN |
+
+Do not change these Results to PASS without direct game evidence.
