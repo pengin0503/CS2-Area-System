@@ -270,10 +270,11 @@ namespace CS2AreaSystem.Modules.Industrial
             public void AddProgress(Entity area, ManagedAreaProgress progress) => entities.AddComponentData(area, progress);
             public bool HasSupport(Entity area) => entities.HasComponent<IndustrialSupportState>(area);
             public void AddSupport(Entity area, IndustrialSupportState state) => entities.AddComponentData(area, state);
-            public bool HasContracts(Entity area) => entities.HasComponent<IndustrialSupplyContractState>(area);
+            // Both parts are required; a missing part is added without replacing the other.
+            public bool HasContracts(Entity area) => entities.HasComponent<IndustrialSupplyContractState>(area) && entities.HasBuffer<IndustrialSupplyContract>(area);
             public void AddContracts(Entity area, IndustrialSupplyContractState state)
             {
-                entities.AddComponentData(area, state);
+                if (!entities.HasComponent<IndustrialSupplyContractState>(area)) entities.AddComponentData(area, state);
                 if (!entities.HasBuffer<IndustrialSupplyContract>(area)) entities.AddBuffer<IndustrialSupplyContract>(area);
             }
         }

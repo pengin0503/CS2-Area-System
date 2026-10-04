@@ -11024,6 +11024,7 @@
     "CS2AS.Industrial.Contracts.Destination": "Destination Area",
     "CS2AS.Industrial.Contracts.DestinationMissing": "Destination Area no longer exists",
     "CS2AS.Industrial.Contracts.DestinationNeed": "Observed need at destination",
+    "CS2AS.Industrial.Contracts.DestinationsTruncated": "Only the first 64 Industrial Areas are offered as destinations.",
     "CS2AS.Industrial.Contracts.Disable": "Disable",
     "CS2AS.Industrial.Contracts.Empty": "No supply contracts. Choose a destination Area and a resource this Area produces.",
     "CS2AS.Industrial.Contracts.Enable": "Enable",

@@ -62,6 +62,22 @@ public class IndustrialSupplyContractActionsTests
   Assert.That(f.Apply(IndustrialSupplyContractActions.Remove, "7"), Is.True, "a contract to a deleted destination stays removable");
   Assert.That(f.Contracts, Is.Empty);
  }
+ // Review fix: a saved contract with a corrupted id stays removable and toggleable by that id.
+ [TestCase(0)] [TestCase(-3)]
+ public void CorruptedIdsStayRemovable(int id) {
+  var f = new Fixture();
+  f.Contracts.Add(new IndustrialSupplyContract { SchemaVersion = 1, ContractId = id, DestinationStableId = North, Resource = (ulong)Resource.Timber, TargetPerDay = 1000, Enabled = true });
+  string text = id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+  Assert.That(f.Apply(IndustrialSupplyContractActions.Toggle, text), Is.True);
+  Assert.That(f.Apply(IndustrialSupplyContractActions.Remove, text), Is.True);
+  Assert.That(f.Contracts, Is.Empty);
+  Assert.That(f.Apply(IndustrialSupplyContractActions.Remove, "+-1"), Is.False);
+ }
+ [Test] public void CreateRevalidatesTheResourceAtCommitTime() {
+  var f = new Fixture(); f.Draft.Destination = North; f.Draft.Resource = (ulong)Resource.Grain;
+  Assert.That(f.Apply(IndustrialSupplyContractActions.Create, ""), Is.False, "the drafted resource is no longer an observed output");
+  Assert.That(f.Contracts, Is.Empty);
+ }
  [Test] public void UnknownActionsAreNotContractActions() {
   Assert.That(IndustrialSupplyContractActions.IsContractAction("setSupportPerCompany"), Is.False);
   Assert.That(IndustrialSupplyContractActions.IsContractAction(IndustrialSupplyContractActions.TargetPrefix + "3"), Is.True);

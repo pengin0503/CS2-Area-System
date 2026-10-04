@@ -15,6 +15,8 @@ namespace CS2AreaSystem.Modules.Industrial
     {
         public int ContractId;
         public IndustrialSupplyContractStatus Status;
+        // A side published a delayed cycle: values cover a longer window and are shown as stale, not as lower bounds.
+        public bool Stale;
         // Units/day; null when not known. With PartialData they cover only what was observed.
         public double? SourceCapacityPerDay, DestinationNeedPerDay, PotentialPerDay;
     }
@@ -24,12 +26,13 @@ namespace CS2AreaSystem.Modules.Industrial
             IndustrialSupplySide destinationSide)
         {
             var e = new IndustrialSupplyContractEvaluation { ContractId = contract.ContractId };
-            if (!destinationLive || !IndustrialSupplyContractModel.IsValidDestination(source, contract.DestinationStableId) ||
+            if (contract.ContractId <= 0 || !destinationLive || !IndustrialSupplyContractModel.IsValidDestination(source, contract.DestinationStableId) ||
                 !IndustrialSupplyContractModel.IsValidResource(contract.Resource)) { e.Status = IndustrialSupplyContractStatus.Invalid; return e; }
             if (!contract.Enabled) { e.Status = IndustrialSupplyContractStatus.Disabled; return e; }
             var src = sourceSide.Result; var dst = destinationSide.Result;
             if (src == null || dst == null || sourceSide.Stale || destinationSide.Stale || !src.Active || !dst.Active) { e.Status = IndustrialSupplyContractStatus.Unknown; return e; }
-            bool partial = src.Delayed || src.FailedReads > 0 || dst.Delayed || dst.FailedReads > 0;
+            bool partial = src.FailedReads > 0 || dst.FailedReads > 0;
+            e.Stale = src.Delayed || dst.Delayed;
             // Source capacity: the observed output rate of the contract resource.
             double capacity = 0; bool supplies = false, capacityKnown = true;
             foreach (var total in src.Resources)
@@ -38,6 +41,9 @@ namespace CS2AreaSystem.Modules.Industrial
                 supplies = true;
                 if (Finite(total.ActualPerDay) && total.ActualPerDay >= 0) capacity += total.ActualPerDay; else { capacityKnown = false; partial = true; }
             }
+            // Resource totals count only measured producers; an unmeasured producer of the resource makes capacity a lower bound.
+            foreach (var p in src.Processes)
+                if (p != null && p.Process.Output == contract.Resource && p.MeasuredCompanies < p.Companies) { supplies = true; partial = true; }
             // Destination need: each observed recipe consuming the resource, scaled from its actual output by recipe amounts.
             double need = 0; bool consumes = false, needKnown = true;
             foreach (var p in dst.Processes)

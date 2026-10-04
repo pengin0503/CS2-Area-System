@@ -39,8 +39,8 @@ namespace CS2AreaSystem.Modules.Industrial
                     if (!TryTarget(value, out int target) || draft.TargetPerDay == target) return false;
                     draft.TargetPerDay = target; return true;
                 case Create:
-                    // The destination may have been deleted since it was drafted.
-                    if (!IndustrialSupplyContractModel.IsValidDestination(source, draft.Destination) || !isLiveDestination(draft.Destination)) return false;
+                    // The destination may have been deleted, and the resource may no longer be produced, since they were drafted.
+                    if (!IndustrialSupplyContractModel.IsValidDestination(source, draft.Destination) || !isLiveDestination(draft.Destination) || !isOfferedResource(draft.Resource)) return false;
                     var edit = IndustrialSupplyContractModel.Upsert(contracts, ref state, source, draft.Destination, draft.Resource, draft.TargetPerDay, out _);
                     contractsChanged = edit == IndustrialSupplyContractEdit.Created || edit == IndustrialSupplyContractEdit.Updated;
                     return contractsChanged;
@@ -57,8 +57,9 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         private static bool TryId(string value, out ulong id) =>
             ulong.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out id) && id != 0;
+        // Any saved id, including a corrupted zero/negative one, so such a contract stays removable; the model matches it exactly.
         private static bool TryContractId(string value, out int id) =>
-            int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out id) && id > 0;
+            int.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out id);
         // Slider values arrive as invariant decimal text; non-finite or unparsable text is rejected, never clamped.
         private static bool TryTarget(string value, out int target)
         {

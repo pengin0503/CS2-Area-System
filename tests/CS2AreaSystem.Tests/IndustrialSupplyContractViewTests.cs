@@ -25,6 +25,10 @@ public class IndustrialSupplyContractViewTests
   Assert.That(model.ContractDestinations.Take(2).Select(o => (o.Value, o.Label)), Is.EqualTo(new[] { ("20", "North"), ("40", "40") }), "unnamed Areas show their id");
   Assert.That(model.ContractDestinations.Any(o => o.Value == "10" || o.Value == "30"), Is.False);
   Assert.That(model.ContractsAvailable, Is.True);
+  Assert.That(model.ContractDestinationsTruncated, Is.True);
+  var few = new IndustrialPanelModel();
+  IndustrialSupplyContractView.Fill(few, Source, Array.Empty<IndustrialSupplyContract>(), default, new[] { Area(20) }, new IndustrialSupplyContractCache(), new IndustrialSupplyContractDraft());
+  Assert.That(few.ContractDestinationsTruncated, Is.False);
  }
  [Test] public void ResourcesAreTheSourcesObservedValidOutputs() {
   var model = new IndustrialPanelModel();

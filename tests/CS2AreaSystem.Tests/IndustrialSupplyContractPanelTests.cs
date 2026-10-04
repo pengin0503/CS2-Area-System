@@ -89,13 +89,27 @@ public class IndustrialSupplyContractPanelTests
   var items = Tab(m);
   Assert.That(items.Select(i => i.LabelKey), Is.EqualTo(new[] { P + "Contracts.Tip", P + "Contracts.Unavailable" }));
  }
+ [Test] public void DelayedEstimatesAreMarkedStaleAndDuplicateIdsRenderOnce() {
+  var delayed = Row(Contract(5), IndustrialSupplyContractStatus.Constrained); delayed.Evaluation.Stale = true;
+  var items = Tab(Model(delayed, Row(Contract(5, destination: 30), IndustrialSupplyContractStatus.Unknown)));
+  Assert.That(Item(items, "contract.5.potential").TooltipKey, Is.EqualTo(P + "Status.Stale"));
+  Assert.That(Item(items, "contract.5.potential").Value, Is.EqualTo("800 /d"), "a delayed cycle is not a lower bound");
+  Assert.That(items.Select(i => i.Id).Distinct().Count(), Is.EqualTo(items.Count), "a corrupted duplicate id is shown once (removing it reveals the next)");
+ }
+ [Test] public void ATruncatedDestinationListSaysSo() {
+  var m = Model(); m.ContractDestinationsTruncated = true;
+  Assert.That(Tab(m).Any(i => i.LabelKey == P + "Contracts.DestinationsTruncated"), Is.True);
+  Assert.That(Tab(Model()).Any(i => i.LabelKey == P + "Contracts.DestinationsTruncated"), Is.False);
+ }
  [TestCase("en-US")] [TestCase("ja-JP")]
  public void EveryContractKeyIsLocalizedAndListed(string locale) {
   var entries = CS2AreaSystem.Core.UI.NativeAreaLocalization.Entries(locale);
   var all = IndustrialPanelBuilder.AllKeys().ToHashSet();
   var unavailable = Model(); unavailable.ContractsAvailable = false;
   var rows = Enumerable.Range(1, IndustrialSupplyContractModel.MaxContracts).Select(i => Row(Contract(i, destination: 100 + (ulong)i), (IndustrialSupplyContractStatus)(i % 9))).ToArray();
-  foreach (var m in new[] { Model(Row(Contract(5), IndustrialSupplyContractStatus.Constrained), Row(Contract(6, enabled: false), IndustrialSupplyContractStatus.Disabled)), unavailable, Model(rows), Model() })
+  var truncated = Model(); truncated.ContractDestinationsTruncated = true;
+  var stale = Row(Contract(7), IndustrialSupplyContractStatus.Available); stale.Evaluation.Stale = true;
+  foreach (var m in new[] { Model(Row(Contract(5), IndustrialSupplyContractStatus.Constrained), Row(Contract(6, enabled: false), IndustrialSupplyContractStatus.Disabled), stale), unavailable, Model(rows), Model(), truncated })
    foreach (var item in Tab(m)) {
     foreach (var key in new[] { item.LabelKey, item.ValueKey, item.TooltipKey }.Where(k => k != null && !k.StartsWith("Resources.TITLE[")))
      { Assert.That(entries.ContainsKey(key!), Is.True, locale + " is missing " + key); Assert.That(all, Does.Contain(key), key); }
@@ -129,6 +143,10 @@ public class IndustrialSupplyContractLifecycleTests
   var order = ModSystemOrderTests.Schedule(Game.SystemUpdatePhase.ModificationEnd);
   Assert.That(order.IndexOf(typeof(IndustrialSupplyContractSystem)), Is.GreaterThan(order.IndexOf(typeof(IndustrialRuntimeSystem))));
   Assert.That(IndustrialSupportSourceGuardTests.Source("Mod.cs"), Does.Contain("\"Industrial supply contracts\""));
+ }
+ [Test] public void AContractReadFailureOnlyDisablesTheContractsTab() {
+  var facade = IndustrialSupportSourceGuardTests.Source("Modules/Industrial/IndustrialGameplayFacade.cs");
+  Assert.That(facade, Does.Contain("catch (Exception error) { model.ContractsAvailable = false;"));
  }
  [Test] public void OnlyTheEnabledContractSystemWritesContracts() {
   var facade = IndustrialSupportSourceGuardTests.Source("Modules/Industrial/IndustrialGameplayFacade.cs");

@@ -26,14 +26,17 @@ namespace CS2AreaSystem.Modules.Industrial
             model.ContractDraft = draft;
             var byId = new Dictionary<ulong, IndustrialSupplyContractArea>(areas.Count);
             var destinations = new List<AreaPanelOption>();
+            bool truncated = false;
             foreach (var area in areas)
             {
                 if (area.StableId == 0 || byId.ContainsKey(area.StableId)) continue;
                 byId[area.StableId] = area;
-                if (area.Selectable && IndustrialSupplyContractModel.IsValidDestination(source, area.StableId) && destinations.Count < AreaPanelOption.MaxOptions)
-                    destinations.Add(new AreaPanelOption { Value = area.StableId.ToString(Invariant), Label = Label(area) });
+                if (!area.Selectable || !IndustrialSupplyContractModel.IsValidDestination(source, area.StableId)) continue;
+                if (destinations.Count < AreaPanelOption.MaxOptions) destinations.Add(new AreaPanelOption { Value = area.StableId.ToString(Invariant), Label = Label(area) });
+                else truncated = true;
             }
             model.ContractDestinations = destinations;
+            model.ContractDestinationsTruncated = truncated;
             var resources = new List<AreaPanelOption>();
             var seen = new HashSet<ulong>();
             if (sourceSide.Result != null)

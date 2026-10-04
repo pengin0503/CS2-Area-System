@@ -40,6 +40,4 @@ public class AreaPanelSelectTests
   var d = Select(3); d.Options = d.Options!.Select((o, i) => i == 2 ? new AreaPanelOption { Value = o.Value, LabelKey = "M.Other" } : o).ToArray();
   Assert.That(AreaPanelDocument.Equivalent(a, new AreaPanelDocument { Tabs = new[] { new AreaPanelTabData { Id = "t", Items = new[] { d } } } }), Is.False);
  }
- [TestCase("b", true)] [TestCase("v2", true)] [TestCase("zzz", false)] [TestCase(null, false)]
- public void OffersOnlyRenderedOptionValues(string? value, bool offered) => Assert.That(AreaPanelOption.Offers(Select(3), value), Is.EqualTo(offered));
 }

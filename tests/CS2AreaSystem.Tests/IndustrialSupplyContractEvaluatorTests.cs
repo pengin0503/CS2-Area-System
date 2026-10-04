@@ -46,10 +46,36 @@ public class IndustrialSupplyContractEvaluatorTests
    Assert.That(e.PotentialPerDay, Is.Null); Assert.That(e.SourceCapacityPerDay, Is.Null); Assert.That(e.DestinationNeedPerDay, Is.Null);
   }
  }
- [Test] public void DelayedFailedOrPartiallyMeasuredObservationIsPartialData() {
-  Assert.That(Eval(Contract(), SourceResult(delayed: true), DestinationResult()).Status, Is.EqualTo(IndustrialSupplyContractStatus.PartialData));
+ // A delayed cycle covers a longer window but is not under-counted: its values stay plain estimates, marked stale.
+ [Test] public void DelayedObservationIsStaleNotALowerBound() {
+  foreach (var e in new[] { Eval(Contract(), SourceResult(delayed: true), DestinationResult()), Eval(Contract(), SourceResult(), DestinationResult(delayed: true)) }) {
+   Assert.That(e.Status, Is.EqualTo(IndustrialSupplyContractStatus.Constrained));
+   Assert.That(e.Stale, Is.True);
+  }
+  Assert.That(Eval(Contract(), SourceResult(), DestinationResult()).Stale, Is.False);
+ }
+ // Review fix: the source's resource totals count only measured producers, so an unmeasured producer of the resource
+ // makes the capacity a lower bound and never "no supply".
+ [Test] public void UnmeasuredSourceProducersMakeTheCapacityPartial() {
+  var unmeasured = SourceResult(-1);
+  unmeasured.Processes.Add(new IndustrialProcessSummary { Process = new IndustrialProcessKey(Wood, 1, 0, 0, Timber, 1), Companies = 1, MeasuredCompanies = 0 });
+  var e = Eval(Contract(), unmeasured, DestinationResult());
+  Assert.That(e.Status, Is.EqualTo(IndustrialSupplyContractStatus.PartialData), "a producer just moved in: unknown, not 'not producing'");
+  var some = SourceResult(600);
+  some.Processes.Add(new IndustrialProcessSummary { Process = new IndustrialProcessKey(Wood, 1, 0, 0, Timber, 1), Companies = 3, MeasuredCompanies = 2, ActualOutputPerDay = 600 });
+  Assert.That(Eval(Contract(), some, DestinationResult()).Status, Is.EqualTo(IndustrialSupplyContractStatus.PartialData));
+  var other = SourceResult(-1);
+  other.Processes.Add(new IndustrialProcessSummary { Process = new IndustrialProcessKey(Wood, 1, 0, 0, Paper, 1), Companies = 1, MeasuredCompanies = 0 });
+  Assert.That(Eval(Contract(), other, DestinationResult()).Status, Is.EqualTo(IndustrialSupplyContractStatus.NoObservedSupply), "an unmeasured producer of another resource");
+ }
+ [Test] public void CorruptedContractIdsAreInvalid() {
+  var c = Contract(); c.ContractId = 0;
+  Assert.That(Eval(c, SourceResult(), DestinationResult()).Status, Is.EqualTo(IndustrialSupplyContractStatus.Invalid));
+  c.ContractId = -4;
+  Assert.That(Eval(c, SourceResult(), DestinationResult()).Status, Is.EqualTo(IndustrialSupplyContractStatus.Invalid));
+ }
+ [Test] public void FailedOrPartiallyMeasuredObservationIsPartialData() {
   Assert.That(Eval(Contract(), SourceResult(failedReads: 1), DestinationResult()).Status, Is.EqualTo(IndustrialSupplyContractStatus.PartialData));
-  Assert.That(Eval(Contract(), SourceResult(), DestinationResult(delayed: true)).Status, Is.EqualTo(IndustrialSupplyContractStatus.PartialData));
   var partial = Eval(Contract(), SourceResult(), DestinationResult(400, companies: 3, measured: 2));
   Assert.That(partial.Status, Is.EqualTo(IndustrialSupplyContractStatus.PartialData));
   Assert.That(partial.DestinationNeedPerDay, Is.EqualTo(800), "the measured part is shown as an estimate, not as a full value");

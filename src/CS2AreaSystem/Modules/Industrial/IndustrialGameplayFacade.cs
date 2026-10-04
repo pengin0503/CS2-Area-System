@@ -97,6 +97,13 @@ namespace CS2AreaSystem.Modules.Industrial
             var sourceSide = new IndustrialSupplySide(model.Current, model.Paused || model.Lifecycle != AreaLifecycleState.Active);
             IndustrialSupplyContractView.Fill(model, model.StableId, contracts, sourceSide, rows, system.Cache, system.Draft(model.StableId));
         }
+        // Contracts are a separate module: a read failure shows the Contracts tab as unavailable, never the whole panel.
+        private static void TryReadContracts(IndustrialPanelModel model, Entity area, IndustrialRuntimeSystem runtime, AreaCoreServicesSystem services, Game.UI.NameSystem names,
+            List<IndustrialAreaRef> areas, in AreaPanelContext context)
+        {
+            try { ReadContracts(model, area, runtime, services, names, areas, context); }
+            catch (Exception error) { model.ContractsAvailable = false; Mod.Log.Error(error, "Industrial supply contracts could not be read; the Contracts tab is unavailable"); }
+        }
         public static bool TryFocus(IndustrialObservationResult current, string key, ulong areaId, Func<Entity, bool> isLive, AreaMembershipIndex membership, Action<Entity> focus, IndustrialCompanyAssignmentIndex assignments = null)
         {
             if (focus == null || !TryResolveFocusTarget(current, key, areaId, isLive, membership, out var target, assignments)) return false;
@@ -219,7 +226,7 @@ namespace CS2AreaSystem.Modules.Industrial
                     var managed=entities.GetComponentData<ManagedArea>(other.Area);
                     sources.Add(new IndustrialComparisonSource{StableId=other.StableId,TypeId=managed.TypeId,Lifecycle=managed.State,Snapshot=otherSnapshot,Name=names?.GetRenderedLabelName(other.Area)});
                 }
-                ReadContracts(model, area, runtime, services, names, areas, context);
+                TryReadContracts(model, area, runtime, services, names, areas, context);
                 model.Comparison=IndustrialAreaComparison.Build(sources,runtime.TryGetClock(out var comparisonClock)?comparisonClock.GameHours(runtime.SimulationFrame):(double?)null);
             }
             var inputs = IndustrialProgressionSystem.BuildInputs(model.Current, model.State);

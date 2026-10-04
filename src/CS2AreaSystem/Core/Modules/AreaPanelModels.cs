@@ -12,20 +12,14 @@ namespace CS2AreaSystem.Core.Modules
         // Bounded choice (Options); the module re-validates the chosen value when its Action arrives.
         public const string Select = "select";
     }
-    // One option of a select item: Value is sent back; LabelKey (localized) wins over the preformatted Label.
+    // One option of a select item: Value is sent back; LabelKey (localized) wins over the preformatted Label. Core does not
+    // check a received value against the options; the module re-validates it against live state.
     public sealed class AreaPanelOption
     {
         public const int MaxOptions = 64;
         public string Value { get; set; }
         public string Label { get; set; }
         public string LabelKey { get; set; }
-        // True when the value is one of the options the item renders (within the bound).
-        public static bool Offers(AreaPanelItem item, string value)
-        {
-            if (item?.Options == null || value == null) return false;
-            for (int i = 0; i < item.Options.Count && i < MaxOptions; i++) if (item.Options[i]?.Value == value) return true;
-            return false;
-        }
         internal static bool Equivalent(IReadOnlyList<AreaPanelOption> a, IReadOnlyList<AreaPanelOption> b)
         {
             if (ReferenceEquals(a, b)) return true;

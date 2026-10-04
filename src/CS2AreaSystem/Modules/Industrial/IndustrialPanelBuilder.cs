@@ -39,6 +39,8 @@ namespace CS2AreaSystem.Modules.Industrial
         public IReadOnlyList<IndustrialSupplyContractRow> ContractRows = Array.Empty<IndustrialSupplyContractRow>();
         public IndustrialSupplyContractDraft ContractDraft = new IndustrialSupplyContractDraft();
         public IReadOnlyList<AreaPanelOption> ContractDestinations = Array.Empty<AreaPanelOption>(), ContractResources = Array.Empty<AreaPanelOption>();
+        // More live destinations exist than the bounded select can offer.
+        public bool ContractDestinationsTruncated;
     }
     // One saved contract as shown: DestinationName is null when the destination is not a live Industrial Area.
     public sealed class IndustrialSupplyContractRow
@@ -76,7 +78,7 @@ namespace CS2AreaSystem.Modules.Industrial
                 new AreaPanelTabData { Id = "contracts", LabelKey = "CS2AS.Tab.Contracts", Items = Contracts(model) } } };
         }
         public static readonly string[] ContractKeys = { "Tip", "Unavailable", "Destination", "Resource", "Target", "Target.Tip", "Create", "Cap", "Empty", "Status", "Status.Tip",
-            "SourceCapacity", "DestinationNeed", "Potential", "Potential.Tip", "Disable", "Enable", "Remove", "DestinationMissing" };
+            "SourceCapacity", "DestinationNeed", "Potential", "Potential.Tip", "Disable", "Enable", "Remove", "DestinationMissing", "DestinationsTruncated" };
         // Phase 3 D1: advisory supply contracts. Configuration plus estimates from both Areas' existing observations only;
         // nothing here moves goods. Unknown estimates are never shown as 0 and partial ones are shown as lower bounds.
         private static List<AreaPanelItem> Contracts(IndustrialPanelModel m)
@@ -89,6 +91,7 @@ namespace CS2AreaSystem.Modules.Industrial
             var rows = m.ContractRows ?? Array.Empty<IndustrialSupplyContractRow>();
             string destination = draft.Destination == 0 ? null : draft.Destination.ToString(Invariant), resource = draft.Resource == 0 ? null : draft.Resource.ToString(Invariant);
             items.Add(Select("contracts.draft.destination", P + "Contracts.Destination", IndustrialSupplyContractActions.DraftDestination, destination, destinations));
+            if (m.ContractDestinationsTruncated) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "contracts.destinations.truncated", LabelKey = P + "Contracts.DestinationsTruncated" });
             items.Add(Select("contracts.draft.resource", P + "Contracts.Resource", IndustrialSupplyContractActions.DraftResource, resource, resources));
             items.Add(TargetSlider("contracts.draft.target", IndustrialSupplyContractActions.DraftTarget, draft.TargetPerDay));
             bool existing = false;
@@ -99,9 +102,11 @@ namespace CS2AreaSystem.Modules.Industrial
                 Disabled = !offered || (full && !existing) });
             if (full) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Note, Id = "contracts.cap", LabelKey = P + "Contracts.Cap" });
             int shown = 0;
+            var ids = new HashSet<int>();
             foreach (var row in rows)
             {
-                if (row == null || shown >= IndustrialSupplyContractModel.MaxContracts) continue;
+                // A corrupted duplicate id is shown once; actions address the first match, so removing it reveals the next.
+                if (row == null || shown >= IndustrialSupplyContractModel.MaxContracts || !ids.Add(row.Contract.ContractId)) continue;
                 shown++;
                 var c = row.Contract;
                 string id = "contract." + c.ContractId.ToString(Invariant) + ".", contractId = c.ContractId.ToString(Invariant);
@@ -112,10 +117,10 @@ namespace CS2AreaSystem.Modules.Industrial
                 items.Add(Row(id + "status", P + "Contracts.Status", valueKey: P + "Contracts.Status." + status, tooltip: P + "Contracts.Status.Tip"));
                 if (status != IndustrialSupplyContractStatus.Invalid && status != IndustrialSupplyContractStatus.Disabled)
                 {
-                    bool partial = status == IndustrialSupplyContractStatus.PartialData;
-                    items.Add(Estimate(id + "capacity", P + "Contracts.SourceCapacity", row.Evaluation?.SourceCapacityPerDay, partial, null));
-                    items.Add(Estimate(id + "need", P + "Contracts.DestinationNeed", row.Evaluation?.DestinationNeedPerDay, partial, null));
-                    items.Add(Estimate(id + "potential", P + "Contracts.Potential", row.Evaluation?.PotentialPerDay, partial, P + "Contracts.Potential.Tip"));
+                    bool partial = status == IndustrialSupplyContractStatus.PartialData, stale = row.Evaluation?.Stale == true;
+                    items.Add(Estimate(id + "capacity", P + "Contracts.SourceCapacity", row.Evaluation?.SourceCapacityPerDay, partial, stale, null));
+                    items.Add(Estimate(id + "need", P + "Contracts.DestinationNeed", row.Evaluation?.DestinationNeedPerDay, partial, stale, null));
+                    items.Add(Estimate(id + "potential", P + "Contracts.Potential", row.Evaluation?.PotentialPerDay, partial, stale, P + "Contracts.Potential.Tip"));
                 }
                 items.Add(TargetSlider(id + "target", IndustrialSupplyContractActions.TargetPrefix + contractId, c.TargetPerDay));
                 items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Button, Id = id + "toggle", LabelKey = P + (c.Enabled ? "Contracts.Disable" : "Contracts.Enable"),
@@ -135,8 +140,8 @@ namespace CS2AreaSystem.Modules.Industrial
                 Min = IndustrialSupplyContractModel.MinTargetPerDay, Max = IndustrialSupplyContractModel.MaxTargetPerDay, Step = IndustrialSupplyContractModel.TargetStep,
                 Value = Number(value) + " /d", TooltipKey = P + "Contracts.Target.Tip" };
         }
-        private static AreaPanelItem Estimate(string id, string label, double? value, bool partial, string tooltip) =>
-            value.HasValue ? Row(id, label, (partial ? "≥" : "") + Number(value.Value) + " /d", tooltip: partial ? P + "PartialData" : tooltip)
+        private static AreaPanelItem Estimate(string id, string label, double? value, bool partial, bool stale, string tooltip) =>
+            value.HasValue ? Row(id, label, (partial ? "≥" : "") + Number(value.Value) + " /d", tooltip: partial ? P + "PartialData" : stale ? P + "Status.Stale" : tooltip)
                 : Row(id, label, valueKey: P + "Status.Unavailable", tooltip: tooltip);
         private static bool Offered(IReadOnlyList<AreaPanelOption> options, string value)
         {
