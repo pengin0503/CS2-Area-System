@@ -57,6 +57,32 @@ for (const [name, requirements] of Object.entries(skillRequirements)) {
     check(requirement.test(text), `${p}: missing workflow requirement ${requirement}`);
 }
 
+const archives = [
+  ['2026-09-30-area-system-core-implementation.md', 'a0176200ec6cb5de73959a44062563fd66e39c03', 'area-core-execution-record.md'],
+  ['2026-09-30-park-area-v1-implementation.md', '2d6cca5ab9dbc6c73044fb271764dfbf42c5642d', 'park-area-v1-execution-record.md'],
+  ['2026-10-01-industrial-area-v1-implementation.md', 'aa703b244d011aaeea4e4d68fb250ffc072ddd3a', 'industrial-area-v1-execution-record.md'],
+  ['2026-10-02-foundation-phase1-implementation.md', 'df7cdda4ed9d5003da2dd3bae3070f899c4e0511', 'foundation-phase1-execution-record.md']
+];
+for (const [name, sha, record] of archives) {
+  const oldPath = `docs/superpowers/plans/${name}`;
+  const archivePath = `docs/superpowers/plans/archive/${name}`;
+  check(exists(archivePath), `${archivePath}: archive is missing`);
+  check(!exists(oldPath), `${oldPath}: completed plan must leave the active directory`);
+  if (exists(archivePath)) {
+    const bytes = fs.readFileSync(path.join(root, archivePath));
+    const actual = crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
+    check(actual === sha, `${archivePath}: approved plan bytes changed`);
+  }
+  const text = read(`docs/verification/${record}`);
+  check(text.includes(`superpowers/plans/archive/${name}`), `${record}: must point to the archive`);
+  check(!text.includes(`superpowers/plans/${name}`), `${record}: stale active-plan reference`);
+  if (record !== 'foundation-phase1-execution-record.md') {
+    const offline = read('scripts/test-offline-contracts.mjs');
+    check(offline.includes(archivePath), `offline contracts: must use ${archivePath}`);
+    check(!offline.includes(oldPath), `offline contracts: stale path ${oldPath}`);
+  }
+}
+
 // Validate every exposed repository path, not just the representative subset.
 for (const p of guidancePaths) {
   for (const match of read(p).matchAll(/`((?:docs|src|tests|scripts|UI|\.claude)\/[^`\s]+|CLAUDE\.md)`/g))

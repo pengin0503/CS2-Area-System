@@ -1,6 +1,6 @@
 # Park Area v1 execution record — 2026-09-30
 
-Native / executing-plans in one session; no per-task implementer subagents. Base: `main` at `1b16e5b` (spec + plan commits on top of `9275438`). Spec `docs/superpowers/specs/2026-09-30-park-area-v1-design.md` and plan `docs/superpowers/plans/2026-09-30-park-area-v1-implementation.md` were read in full and not modified.
+Native / executing-plans in one session; no per-task implementer subagents. Base: `main` at `1b16e5b` (spec + plan commits on top of `9275438`). Spec `docs/superpowers/specs/2026-09-30-park-area-v1-design.md` and plan `docs/superpowers/plans/archive/2026-09-30-park-area-v1-implementation.md` were read in full and not modified.
 
 ## Environment
 
