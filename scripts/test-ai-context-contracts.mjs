@@ -37,6 +37,26 @@ check(/fixtures\/lockfile.*only.*directly relevant UI contract\/dependency/i.tes
 for (const item of ['UI/package-lock.json', 'UI/src/__fixtures__/', 'archived plans', 'verification history'])
   check(claude.split(/\r?\n/).some(line => line.includes(item) && /on-demand/i.test(line)), `CLAUDE.md: ${item} must be on-demand context`);
 
+const skillRequirements = {
+  'issue-fix': [/superpowers:systematic-debugging/, /superpowers:test-driven-development/, /scope isolation/i, /superpowers:verification-before-completion/],
+  implementation: [/approved spec\/implementation plan/i, /targeted domain maps.*before broader exploration/i],
+  verification: [/evidence before success claims/i, /product failures.*environment\/tool failures/i]
+};
+for (const [name, requirements] of Object.entries(skillRequirements)) {
+  const p = `.claude/skills/${name}/SKILL.md`;
+  guidancePaths.push(p);
+  const text = read(p);
+  check(exists(p), `${p}: required Skill is missing`);
+  const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  check(Boolean(frontmatter), `${p}: must start with YAML frontmatter`);
+  check(new RegExp(`^name: ${name}$`, 'm').test(frontmatter?.[1] ?? ''), `${p}: name must match its directory`);
+  check(/^description: (?!['"]?\s*['"]?\s*$).+$/m.test(frontmatter?.[1] ?? ''), `${p}: non-empty description is required`);
+  check(lines(text) <= 120, `${p}: must stay at or below 120 lines`);
+  check(text.includes('docs/ai-context/INDEX.md'), `${p}: must route through the context index`);
+  for (const requirement of requirements)
+    check(requirement.test(text), `${p}: missing workflow requirement ${requirement}`);
+}
+
 // Validate every exposed repository path, not just the representative subset.
 for (const p of guidancePaths) {
   for (const match of read(p).matchAll(/`((?:docs|src|tests|scripts|UI|\.claude)\/[^`\s]+|CLAUDE\.md)`/g))
