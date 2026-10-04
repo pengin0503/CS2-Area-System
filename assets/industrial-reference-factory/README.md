@@ -20,20 +20,24 @@ content provider registers it as `IndustrialProducer`. When it is absent, nothin
 
 1. Main menu → Editor → **Asset Importer**. Use a project root whose folder is `AS_FurnitureFactory`.
 2. Prefab Preset: **Signature Building**. The preset creates a `BuildingPrefab` with `SignatureBuilding` (default zone
-   `Office High`) and `BuildingProperties` (default manufactured `Software`).
+   `Office High`) and `BuildingProperties` (default manufactured `Software`, space multiplier `6`), in the UI group
+   `SignaturesOffice`. Move it to an industrial signature UI group, and set the space multiplier on purpose, because it
+   sizes the workplaces.
 3. In `SignatureBuilding`, set **Zone Type** to a vanilla Industrial manufacturing zone. It must not be an office zone: the
    zone's `ZoneData` must be `AreaType.Industrial` without `ZoneFlags.Office`.
 4. In `BuildingProperties`:
    - **Allowed Manufactured** = `Furniture` only;
-   - **Allowed Input**, **Allowed Sold** and **Allowed Stored** empty;
+   - **Allowed Input**, **Allowed Sold** and **Allowed Stored** empty (a non-empty Allowed Input is rejected by the content
+     check);
    - **Residential Properties** 0.
-5. Do not add any company, process or resource data: the game places a vanilla Furniture company.
+5. Do not add any company, process or resource data: only a vanilla Furniture company can rent the building.
 
 ## Package and ship (NOT RUN)
 
 Package with `AS_FurnitureFactory` as the main asset, so the package is `AS_FurnitureFactory.cok`. Alternatively, include
 it in the C2 `AS_*.cok` package. Copy it to `assets/area-system/package/`, where the existing `DeployAreaContent` target
-ships every `AS_*.cok`.
+ships every `AS_*.cok`. The target's missing-content error ignores `AS_FurnitureFactory.cok`, so the factory package never
+stands in for the C2 package.
 
 ## Checks before release
 

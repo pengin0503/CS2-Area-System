@@ -96,7 +96,7 @@ streetlights and other scenery available as vanilla props are not modeled.
 
 | Prefab name (exact, ordinal) | Semantic (Allow) | Extra check |
 | --- | --- | --- |
-| `AS_FurnitureFactory` | `IndustrialProducer` | Industrial non-office signature building manufacturing only `Furniture` (`docs/verification/custom-factory-process-contract.md`) |
+| `AS_FurnitureFactory` | `IndustrialProducer` | Industrial non-office signature building manufacturing only `Furniture`, with the empty (= all) Allowed Input (`docs/verification/custom-factory-process-contract.md`) |
 
 Optional content uses the same provider, prefab type and `AS_*.cok` source rule. It is never an anchor, is never reported as
 missing, and a prefab that fails its extra check is rejected with no role.

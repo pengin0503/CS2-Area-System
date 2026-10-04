@@ -409,6 +409,8 @@ check(/SUPERSEDED = "CS2_AS_ParkHeadquarters\.zip"/.test(prepare) && prepare.inc
   }
   const contentSystem = code('src/CS2AreaSystem/Core/Semantics/AreaBuiltInContentSystem.cs');
   check(!/SetComponentData|AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity|CreateEntity/.test(contentSystem), 'built-in content discovery must only read prefabs');
+  check(/<AreaContentPackages Include="[^"]*AS_\*\.cok" Exclude="[^"]*AS_FurnitureFactory\.cok" \/>/.test(csproj),
+    'the optional factory package must not satisfy the required C2 content-package check');
 }
 
 if (failures.length) {

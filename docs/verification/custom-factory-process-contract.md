@@ -9,8 +9,8 @@ Tests: `tests/CS2AreaSystem.Tests/CustomFactoryProcessContractTests.cs`
 ## Decision
 
 The reference factory **does not author an `IndustrialProcessData` recipe**. It is an Industrial signature building whose
-only manufactured resource is vanilla `Resource.Furniture`. The game places a vanilla Furniture processing company in it,
-and that company's own `IndustrialProcessData` is the recipe that runs and that Area System observes.
+only manufactured resource is vanilla `Resource.Furniture`. Only a vanilla Furniture processing company can rent it, and
+that company's own `IndustrialProcessData` is the recipe that runs and that Area System observes.
 
 | Item | Value |
 | --- | --- |
@@ -33,10 +33,18 @@ Read in the decompiled `CS2-All-Managed-1.6.2f1-fix.zip` (`Game.dll`):
   `Timber` produces only `Furniture` (`Resource.Timber => (product & Resource.Furniture) != 0`). No other material's mask contains
   `Furniture`. So Furniture is a manufactured good made from Timber alone. Wood → Timber is the only other relationship that
   involves either resource.
-- **How a building gets a company.** `Game.Simulation.PropertyProcessingSystem` (`PropertyProcessingJob`), for a building with `Signature`:
-  - it walks the industrial company prefabs (`ArchetypeData` + `IndustrialCompanyData` + `IndustrialProcessData`, excluding `StorageCompanyData`);
-  - it creates the first company whose `m_Output.m_Resource == BuildingPropertyData.m_AllowedManufactured`, and
-    (`m_AllowedInput == EconomyUtils.GetAllResources()` or `m_AllowedInput == m_Input1 | m_Input2`).
+- **How a building gets a company.** Two vanilla steps:
+  - `Game.Simulation.PropertyProcessingSystem` (`PropertyProcessingJob`), for a building with `Signature`, walks the industrial
+    company prefabs (`ArchetypeData` + `IndustrialCompanyData` + `IndustrialProcessData`, excluding `StorageCompanyData`) and
+    creates one free company of the first prefab whose `m_Output.m_Resource == BuildingPropertyData.m_AllowedManufactured` and
+    (`m_AllowedInput == EconomyUtils.GetAllResources()` or `m_AllowedInput == m_Input1 | m_Input2`). It does not move that
+    company in; it only puts the building on the market (`PropertyOnMarket`).
+  - The tenant is chosen by the industrial find-property flow (`Game.Buildings.PropertyUtils.CompanyFindPropertyJob`), which
+    adds `5000` to the score of any `Signature` property. `IndustrialSpawnSystem` also spawns demand companies more readily
+    while empty signature buildings exist. So any Furniture company may win the building, not necessarily the one created above.
+  - What every possible tenant shares: `PropertyUtils.PropertyAllowsResource` admits a company only when its output is in
+    `m_AllowedManufactured` and its inputs are all in `m_AllowedInput`. With manufactured = Furniture only and the empty
+    (= all) input list, the tenant is always a vanilla Furniture processing company running its own recipe.
 - **Defaults.** `Game.Prefabs.BuildingProperties.GetPropertyData` maps `m_AllowedInput` to
   `EconomyUtils.GetResources(list, GetAllResources())`, so an empty list means any input. The manufactured, sold and stored
   lists map to `Resource.NoResource` when empty. The `IndustrialProperty` archetype (and no `OfficeProperty`/`ExtractorProperty`)
@@ -57,6 +65,8 @@ Every load, the built-in content provider registers `AS_FurnitureFactory` as `In
 loaded prefab entity satisfies this contract:
 
 - `BuildingPropertyData.m_AllowedManufactured == Furniture`;
+- `BuildingPropertyData.m_AllowedInput == EconomyUtils.GetAllResources()` (the empty list). A narrowed list that leaves out
+  Timber would leave the building empty for ever, and an explicit list may not match the company recipe, so both are rejected;
 - no sold or stored resources and no residential properties;
 - `SignatureBuildingData` is present;
 - the `SpawnableBuildingData.m_ZonePrefab` zone is Industrial and not Office.
@@ -68,7 +78,7 @@ The factory is optional content: its absence never suspends an Area and never wa
 
 The following are **NOT RUN**:
 - that a vanilla Furniture company prefab exists in the loaded game data, and its amounts;
-- that the game places it in the factory;
+- that such a company actually moves into the factory;
 - the asset import and packaging themselves.
 
 These are in-game checks (D201–D206 in `scripts/runtime-smoke-checklist.md`).

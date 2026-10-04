@@ -37,7 +37,7 @@ namespace CS2AreaSystem.Core.Semantics
                 LastResult = provider.Refresh(services.Semantics, candidates);
                 if (LastResult.Missing != AreaAssetSemantic.None || LastResult.Rejected > 0)
                     Mod.Log.Warn("Area System content: registered " + LastResult.Registered + "; missing " + LastResult.Missing + "; rejected exact-name candidates " +
-                        LastResult.Rejected + ". Missing roles keep their Areas Suspended; no fallback is used.");
+                        LastResult.Rejected + (LastResult.Missing != AreaAssetSemantic.None ? ". Missing roles keep their Areas Suspended; no fallback is used." : ". No Area role is missing."));
                 else Mod.Log.Info("Area System content: registered " + LastResult.Registered + ".");
             }
             catch (System.Exception error)
@@ -56,7 +56,7 @@ namespace CS2AreaSystem.Core.Semantics
             if (EntityManager.HasComponent<BuildingPropertyData>(entity))
             {
                 var property = EntityManager.GetComponentData<BuildingPropertyData>(entity);
-                facts.HasProperty = true; facts.Manufactured = (ulong)property.m_AllowedManufactured; facts.Sold = (ulong)property.m_AllowedSold;
+                facts.HasProperty = true; facts.Input = (ulong)property.m_AllowedInput; facts.Manufactured = (ulong)property.m_AllowedManufactured; facts.Sold = (ulong)property.m_AllowedSold;
                 facts.Stored = (ulong)property.m_AllowedStored; facts.Residential = property.m_ResidentialProperties;
             }
             facts.Signature = EntityManager.HasComponent<SignatureBuildingData>(entity);
@@ -82,7 +82,7 @@ namespace CS2AreaSystem.Core.Semantics
                 asset.RequiredManufactured != 0 ? ReadBuilding(entity) : null);
             candidates.Add(candidate);
             if (candidate.Building != null)
-                Mod.Log.Info("Area System content facts " + candidate.PrefabName + " manufactured=" + candidate.Building.Manufactured + " sold=" + candidate.Building.Sold +
+                Mod.Log.Info("Area System content facts " + candidate.PrefabName + " input=" + candidate.Building.Input + " manufactured=" + candidate.Building.Manufactured + " sold=" + candidate.Building.Sold +
                     " stored=" + candidate.Building.Stored + " signature=" + candidate.Building.Signature + " industrialZone=" + candidate.Building.IndustrialZone + " officeZone=" + candidate.Building.OfficeZone);
             Mod.Log.Info("Area System content candidate " + candidate.PrefabType + ":" + candidate.PrefabName + " packaged=" + candidate.Packaged +
                 " builtIn=" + candidate.BuiltIn + " package=" + (candidate.PackageName ?? "<none>"));

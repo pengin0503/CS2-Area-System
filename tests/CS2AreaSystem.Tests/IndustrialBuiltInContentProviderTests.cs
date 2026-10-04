@@ -9,7 +9,7 @@ namespace CS2AreaSystem.Tests;
 public class IndustrialBuiltInContentProviderTests
 {
  private static Entity E(int index, int version = 1) => new() { Index = index, Version = version };
- private static AreaBuiltInBuildingFacts Matching() => new() { HasProperty = true, Manufactured = (ulong)Resource.Furniture, Signature = true, IndustrialZone = true };
+ private static AreaBuiltInBuildingFacts Matching() => new() { HasProperty = true, Input = (ulong)EconomyUtils.GetAllResources(), Manufactured = (ulong)Resource.Furniture, Signature = true, IndustrialZone = true };
  private static AreaBuiltInPrefabCandidate Factory(AreaBuiltInBuildingFacts? facts, int version = 1, string name = IndustrialReferenceFactoryContract.PrefabName) =>
   new(E(40, version), AreaBuiltInAssetContract.PrefabType, name, true, false, "AS_FurnitureFactory.cok", facts);
  private static AreaBuiltInPrefabCandidate[] RequiredThree() => new[] {
@@ -51,6 +51,8 @@ public class IndustrialBuiltInContentProviderTests
   yield return new TestCaseData(With(f => f.HasProperty = false)).SetName("NoBuildingProperties");
   yield return new TestCaseData(With(f => f.Manufactured = (ulong)Resource.Paper)).SetName("OtherResource");
   yield return new TestCaseData(With(f => f.Manufactured = (ulong)(Resource.Furniture | Resource.Paper))).SetName("ExtraResource");
+  yield return new TestCaseData(With(f => f.Input = (ulong)Resource.Wood)).SetName("NarrowedInputExcludesTimber");
+  yield return new TestCaseData(With(f => f.Input = (ulong)Resource.Timber)).SetName("ExplicitInputInsteadOfEmptyList");
   yield return new TestCaseData(With(f => f.Sold = (ulong)Resource.Furniture)).SetName("Sells");
   yield return new TestCaseData(With(f => f.Stored = (ulong)Resource.Timber)).SetName("Stores");
   yield return new TestCaseData(With(f => f.Residential = 4)).SetName("Residential");

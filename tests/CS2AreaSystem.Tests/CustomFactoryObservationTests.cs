@@ -17,7 +17,7 @@ public class CustomFactoryObservationTests
  private static AreaAssetSemanticRegistry Registry() {
   var registry = new AreaAssetSemanticRegistry();
   new AreaBuiltInContentSemanticProvider().Refresh(registry, new[] { new AreaBuiltInPrefabCandidate(FactoryPrefab, "BuildingPrefab", IndustrialReferenceFactoryContract.PrefabName, true, false,
-   "AS_FurnitureFactory.cok", new AreaBuiltInBuildingFacts { HasProperty = true, Manufactured = (ulong)Resource.Furniture, Signature = true, IndustrialZone = true }) });
+   "AS_FurnitureFactory.cok", new AreaBuiltInBuildingFacts { HasProperty = true, Input = (ulong)EconomyUtils.GetAllResources(), Manufactured = (ulong)Resource.Furniture, Signature = true, IndustrialZone = true }) });
   return registry;
  }
  private static AreaMembershipIndex Membership(Entity building) {

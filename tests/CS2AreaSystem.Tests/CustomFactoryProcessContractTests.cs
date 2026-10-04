@@ -46,6 +46,7 @@ public class CustomFactoryProcessContractTests
   Field<BuildingProperties>("m_AllowedInput", typeof(ResourceInEditor[]));
   Field<BuildingProperties>("m_AllowedSold", typeof(ResourceInEditor[]));
   Field<BuildingProperties>("m_AllowedStored", typeof(ResourceInEditor[]));
+  Field<BuildingPropertyData>("m_AllowedInput", typeof(Resource));
   Field<BuildingPropertyData>("m_AllowedManufactured", typeof(Resource));
   Field<BuildingPropertyData>("m_AllowedSold", typeof(Resource));
   Field<BuildingPropertyData>("m_AllowedStored", typeof(Resource));
@@ -60,6 +61,5 @@ public class CustomFactoryProcessContractTests
   Field<IndustrialProcessData>("m_Output", typeof(ResourceStack));
   Field<ProcessingCompany>("process", typeof(IndustrialProcess));
   Assert.That(typeof(SignatureBuildingData).IsValueType, Is.True);
-  Assert.That(typeof(BuildingPrefab).IsAssignableFrom(typeof(BuildingPrefab)), Is.True);
  }
 }

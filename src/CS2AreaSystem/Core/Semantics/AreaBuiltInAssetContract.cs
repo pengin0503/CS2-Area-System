@@ -15,7 +15,7 @@ namespace CS2AreaSystem.Core.Semantics
     public sealed class AreaBuiltInBuildingFacts
     {
         public bool HasProperty;
-        public ulong Manufactured, Sold, Stored;
+        public ulong Input, Manufactured, Sold, Stored;
         public int Residential;
         public bool Signature, IndustrialZone, OfficeZone;
     }
@@ -53,11 +53,14 @@ namespace CS2AreaSystem.Core.Semantics
                     if (string.Equals(candidate.PrefabName, prefabName, StringComparison.Ordinal)) { asset = candidate; return true; }
             return false;
         }
-        // A content asset with a manufacturing contract must be what vanilla PropertyProcessingSystem fills with exactly one
-        // vanilla processing company: an Industrial (non-office) signature building manufacturing only that resource, selling,
-        // storing and housing nothing. Assets without such a contract (the C2 anchors) are identified by name/source only.
+        // A content asset with a manufacturing contract must be a property only vanilla processing companies of that resource
+        // can rent (PropertyUtils.PropertyAllowsResource) and for which PropertyProcessingSystem creates one: an Industrial
+        // (non-office) signature building manufacturing only that resource, with the empty Allowed Input list (= all
+        // resources, so no recipe input is excluded), selling, storing and housing nothing. Assets without such a contract
+        // (the C2 anchors) are identified by name/source only.
         public static bool Matches(in AreaBuiltInAsset asset, AreaBuiltInBuildingFacts facts) =>
-            asset.RequiredManufactured == 0 || (facts != null && facts.HasProperty && facts.Manufactured == asset.RequiredManufactured && facts.Sold == 0 &&
+            asset.RequiredManufactured == 0 || (facts != null && facts.HasProperty && facts.Input == (ulong)Game.Economy.EconomyUtils.GetAllResources() &&
+            facts.Manufactured == asset.RequiredManufactured && facts.Sold == 0 &&
             facts.Stored == 0 && facts.Residential == 0 && facts.Signature && facts.IndustrialZone && !facts.OfficeZone);
         // The editor names a package after its main asset (PackageHelper/PdxAssetUploadHandle), so any Area System package
         // is "AS_<main asset>.cok". Base-game/DLC databases and unpackaged local prefabs never qualify.
