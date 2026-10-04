@@ -310,31 +310,14 @@ namespace CS2AreaSystem.Core.UI
                 return false;
             }
         }
-        private bool TryDerivedAnchorForUI(Entity area, IAreaAnchorPolicy policy, AreaAnchorRole role, out int? count, out string status)
-        {
-            count = 0; status = null;
-            if (!(policy is IAreaDerivedAnchorPolicy derived)) return false;
-            try {
-                var result = derived.TryGetDerivedAnchor(area, role, new Core.Modules.AreaActivationContext(World, EntityManager), out count, out status);
-                services.Failures.Recovered(area, "UI.DerivedAnchor." + role);
-                return result;
-            }
-            catch (Exception error) {
-                services.Failures.Report(area, "UI.DerivedAnchor." + role, error, "Area module derived anchor unavailable for managed area " + area);
-                count = 0; status = null; return false;
-            }
-        }
         private System.Collections.Generic.IReadOnlyList<AreaAnchorGroupView> BuildAnchorGroups(Entity area, IAreaAnchorPolicy policy, System.Collections.Generic.IReadOnlyList<AreaAnchorRole> roles)
         {
             if (policy == null || roles == null || roles.Count == 0) return System.Array.Empty<AreaAnchorGroupView>();
             var groups = new System.Collections.Generic.List<AreaAnchorGroupView>();
             foreach(var role in roles) {
                 var links = services.Anchors.GetAnchorLinks(area, role);
-                var group=new AreaAnchorGroupView { Role = role.ToString(), AssignmentSupported = CanAssignAnchorForUI(area, policy, role),
-                    Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link => new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })) };
-                if(TryDerivedAnchorForUI(area, policy, role, out var count, out var status))
-                {group.DerivedCount=count;group.DerivedStatusKey=status;}
-                groups.Add(group);
+                groups.Add(new AreaAnchorGroupView { Role = role.ToString(), AssignmentSupported = CanAssignAnchorForUI(area, policy, role),
+                    Anchors = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(links, link => new AreaAnchorView { Key = AreaAnchorLinkKey.Format(link.Anchor), Name = link.Exists ? names.GetRenderedLabelName(link.Anchor) : null, Valid = link.Valid })) });
             }
             return groups;
         }

@@ -1,6 +1,6 @@
 # Area Core — Cities: Skylines II 1.6.2f1 runtime verification
 
-**Current activation rules:** Foundation + Phase 1 supersedes earlier Park leisure-building Entrance and Industrial factory-HQ instructions below. Use the Foundation activation cases for all other checks: Park Maintenance Headquarters **and** dedicated Path crossing (or registered Entrance); Industrial office Headquarters. Earlier dated v1 scenarios remain regression references, with these prerequisites substituted. C1 also supersedes the old unsaved-trend assumption.
+**Current activation rules:** Phase 3 C2 supersedes the Foundation + Phase 1 anchor rules and every earlier Park Entrance / Industrial HQ instruction below: a Park needs an `AS_ParkHeadquarters` Headquarters **and** an `AS_ParkGate` Entrance; an Industrial Area needs an `AS_IndustrialHeadquarters` Headquarters. Park Maintenance, office buildings and dedicated Path crossings no longer activate anything. Earlier dated scenarios (including Foundation F01–F07 and P07's Entrance work bound) remain regression references with these prerequisites substituted; the path-crossing cases are retired. C1 also supersedes the old unsaved-trend assumption.
 
 Status: **PASS — user-confirmed 2026-10-04.** The user reports every in-game item in this section was completed on Cities: Skylines II 1.6.2f1 and behaved normally. Exact local save/build metadata was not supplied in this chat; automated/API evidence remains separate.
 
@@ -207,6 +207,37 @@ Status: **PASS — user-confirmed 2026-10-04.** All C601–C606 release-gate cas
 | C604 Save/load | With the modifier active, save; inspect the save in a mod-less game: vanilla coverage values (no residue). Load with the mod: no doubled factor; the factor returns only after the next native Park pass. After any save (including autosave) vanilla coverage shows until the next native pass (≤1024 frames); this is expected. | PASS (user-confirmed 2026-10-04) |
 | C605 Ownership and deletion | Move the shared building's primary owner to the other Park (or suspend the owner): the old factor stays at most until the next native pass (≤1024 frames) and is gone after it and the new owner's factor applies only to a fresh baseline. Delete or destroy a modified building and delete a Park: no errors, no stale writes. | PASS (user-confirmed 2026-10-04) |
 | C606 Regression and UI | Re-run Park finance, Quality/Progression, the C5 festival and Industrial C4 support with the modifier on; en-US/ja-JP Finances tab has no raw keys; a failed coverage-module registration leaves Park gameplay running. | PASS (user-confirmed 2026-10-04) |
+
+# Phase 3 C2 — Dedicated Area System headquarters and gate assets
+
+Status: **NOT RUN.** Automated tests cover the exact-identifier contract, provider ownership, activation matrix, content-missing summaries and old-save link preservation; none of the cases below has been performed in game. Importing, authoring the Gate passage and packaging the three assets (see `assets/area-system/README.md`) is a prerequisite and has not been done either. Do not release C2 before the `AS_*.cok` package exists and these cases pass.
+
+| Case | Procedure and expected result | Result |
+| --- | --- | --- |
+| C201 Package discovery | Install the packaged assets and load a city. The log lists `AS_ParkHeadquarters`, `AS_ParkGate` and `AS_IndustrialHeadquarters` as registered with no rejected/missing warning; all three appear in the asset menu and can be placed. | NOT RUN |
+| C202 Park activation matrix | In a Park Area test: nothing; `AS_ParkHeadquarters` only; `AS_ParkGate` only; both. Try a Park Maintenance building, a park/leisure building and a building outside the area as HQ/Entrance. Expected: Only both dedicated assets activate; every other candidate is rejected and the assignment stays pending. The summary names the missing asset. | NOT RUN |
+| C203 Industrial activation | Assign `AS_IndustrialHeadquarters`; try an office, factory, warehouse and the Park HQ asset. Vacate nearby companies. Expected: Only `AS_IndustrialHeadquarters` is accepted; Production/Logistics never count it; the Area stays Active. | NOT RUN |
+| C204 Anchor lifecycle | Delete, move outside the boundary and replace each required anchor; then reassign it. Expected: The Area suspends with the matching summary and reactivates on reassignment; Level/XP, finance, policies and history are unchanged. | NOT RUN |
+| C205 Gate passage | Connect external pedestrian Paths to both ends of `AS_ParkGate`'s authored passage. Expected: Citizens can walk continuously through the gate. No pathfinding hook exists in code; visitors are not forced through the gate. | NOT RUN |
+| C206 Old saves | Load a save with a Foundation office HQ, a Park Maintenance HQ and a Park that relied on a Path entrance. Expected: Areas load Suspended; old links are listed as "Not eligible" with Remove; nothing is auto-converted. StableId, Level/XP, finance, history, policies and Industrial company ownership survive. Assigning the dedicated assets reactivates the same Areas. | NOT RUN |
+| C207 Missing content | Deploy with `-p:AllowMissingAreaContent=true` (a normal deploy fails without the package) and load without the asset package; then reinstall it and reload. Expected: No crash; Areas are Suspended with the "asset not installed" summary/warnings; no vanilla or Path fallback is accepted. After reinstalling, the prefabs are rediscovered and can be assigned. | NOT RUN |
+| C208 Model rule and UI | Inspect the placed models; check en-US/ja-JP selected panels, assignment hints and asset descriptions. Expected: Models carry only building-fixed details (see the known streetlight/bollard limitation in `assets/area-system/README.md`). No raw keys and no Park Maintenance/office/path-entrance wording remain. | NOT RUN |
+
+# Phase 3 D2 — Reference Factory (existing vanilla resources)
+
+Status: **NOT RUN / BLOCKED.** No factory source model was supplied, so `AS_FurnitureFactory` has not been authored, imported
+or packaged. The cases below apply once it exists (`assets/industrial-reference-factory/README.md`).
+
+| Case | Procedure and expected result | Result |
+| --- | --- | --- |
+| D201 Import and contract | Import with the Signature Building preset: Industrial non-office zone, Allowed Manufactured = Furniture only, Allowed Input empty, nothing sold/stored/residential, building-fixed model elements only. After loading a city the log shows `Area System content facts AS_FurnitureFactory input=2199023255551 manufactured=512 ... signature=True industrialZone=True officeZone=False` and no rejection. | NOT RUN |
+| D202 Vanilla company and process | Place the factory inside an Industrial Area. A vanilla Furniture company moves in (not necessarily the one `PropertyProcessingSystem` created); its recipe (inputs and amounts) is the vanilla one; company resources (Timber in, Furniture out) change through vanilla trade only. | NOT RUN |
+| D203 Observation | Production tab: the process row shows the vanilla recipe and measured rate, Furniture appears in resource rows, bottlenecks and comparison behave as for a vanilla Furniture factory. A vacant factory counts as a producer facility without invented output. | NOT RUN |
+| D204 Overlap and manual ownership | Put the factory in two overlapping Industrial Areas and assign its company manually to the non-primary Area: production, jobs and support follow the resolved owner exactly as for vanilla companies. | NOT RUN |
+| D205 Save/load, removal, mismatch | Save/load with the factory placed: nothing about the prefab is saved by Area System and it is rediscovered. Remove the package and load: the factory is gone, Areas, vanilla companies and observation are unaffected, and no missing-content warning names it. Re-import with a different manufactured resource, or with a non-empty Allowed Input: the content warning reports a rejected candidate (and no missing role) and no role is granted. | NOT RUN |
+| D206 Deletion and regression | Bulldoze the factory: no errors; the company leaves through vanilla rules. Re-run Industrial v1/B2/C4 and D1 contracts with the factory present. | NOT RUN |
+
+Do not change these Results to PASS without direct game evidence.
 
 # Phase 3 D1 — Advisory Industrial Supply Contracts
 

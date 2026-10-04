@@ -27,13 +27,17 @@ const industrial:AreaSectionData={stableId:'9007199254740993',typeKey:'CS2AS.Typ
 const row=(label:string)=>screen.getAllByRole('row').find(r=>r.firstElementChild?.textContent===label)!;
 afterEach(()=>{env.trigger.mockClear();env.registryFails=false;resetVanillaCache();});
 describe('managed area selected-info section',()=>{
- it('presents HQ and derived entrances independently with role-scoped actions',()=>{
-  const groups=[{role:'Headquarters' as const,assignmentSupported:true,anchors:[{key:'20.1',name:'Old HQ',valid:false}],derivedCount:null,derivedStatusKey:null},
-   {role:'Entrance' as const,assignmentSupported:false,anchors:[{key:'30.1',name:'Legacy entrance',valid:false}],derivedCount:2,derivedStatusKey:'CS2AS.UI.PathEntrancesComplete'}];
+ // Phase 3 C2: old links stay visible and removable, both dedicated roles are assignable, and no path-derived row remains.
+ it('presents HQ and gate entrances independently with role-scoped actions',()=>{
+  const groups=[{role:'Headquarters' as const,assignmentSupported:true,anchors:[{key:'20.1',name:'Old HQ',valid:false}]},
+   {role:'Entrance' as const,assignmentSupported:true,anchors:[{key:'30.1',name:'Legacy entrance',valid:false}]}];
   render(<AreaInfoSection {...industrial} anchorGroups={groups}/>);
   expect(screen.getByText('Legacy entrance')).toBeInTheDocument();
   expect(screen.getByText('Old HQ')).toBeInTheDocument();
-  expect(screen.queryByRole('button',{name:'Assign entrance'})).toBeNull();
+  expect(screen.queryByText(/path entrances/i)).toBeNull();
+  expect(screen.queryByText('CS2AS.UI.PathEntrances')).toBeNull();
+  fireEvent.click(screen.getByRole('button',{name:'Assign entrance'}));
+  expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','assignAnchor',industrial.stableId,'Entrance');
   fireEvent.click(screen.getByRole('button',{name:'Assign headquarters'}));
   expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','assignAnchor',industrial.stableId,'Headquarters');
   fireEvent.click(screen.getAllByRole('button',{name:'Remove'})[1]);

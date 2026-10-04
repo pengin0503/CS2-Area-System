@@ -35,4 +35,15 @@ public class AreaAssetSemanticRegistryTests
   r.UnregisterProvider("good");Assert.That(r.HasRegisteredAllow(AreaAssetSemantic.IndustrialHeadquarters),Is.False);
   Assert.That(r.Resolve(Prefab,AreaAssetSemantic.IndustrialHeadquarters,false),Is.False);
  }
+ [Test] public void ProviderAllowIsReportedPerProviderIndependentlyOfPrecedence() {
+  var r=new AreaAssetSemanticRegistry();
+  r.Register("own",Prefab,new(AreaAssetSemantic.ParkEntrance,AreaAssetSemantic.None,0));
+  r.Register("other",Prefab,new(AreaAssetSemantic.None,AreaAssetSemantic.ParkEntrance,9));
+  Assert.That(r.HasProviderAllow("own",Prefab,AreaAssetSemantic.ParkEntrance),Is.True);
+  Assert.That(r.HasProviderAllow("own",AreaAssetSemantic.ParkEntrance),Is.True);
+  Assert.That(r.HasProviderAllow("other",Prefab,AreaAssetSemantic.ParkEntrance),Is.False);
+  Assert.That(r.HasProviderAllow("own",Prefab,AreaAssetSemantic.ParkHeadquarters),Is.False);
+  Assert.That(r.HasProviderAllow(null,AreaAssetSemantic.ParkEntrance),Is.False);
+  r.UnregisterProvider("own");Assert.That(r.HasProviderAllow("own",AreaAssetSemantic.ParkEntrance),Is.False);
+ }
 }

@@ -7,7 +7,8 @@ using CS2AreaSystem.Core.Modules;
 using Game.Economy;
 namespace CS2AreaSystem.Modules.Industrial
 {
-    public enum IndustrialHeadquartersState : byte { Missing, Valid, Invalid }
+    // ContentMissing (Phase 3 C2): the AS_IndustrialHeadquarters package is not installed, so no Headquarters can be assigned.
+    public enum IndustrialHeadquartersState : byte { Missing, Valid, Invalid, ContentMissing }
     // Read model for one selected Industrial Area, assembled only while the panel is built.
     public sealed class IndustrialPanelModel
     {
@@ -61,7 +62,7 @@ namespace CS2AreaSystem.Modules.Industrial
         public static readonly string[] DayReasons = { "Qualified", "InsufficientCoverage", "LowAverage" };
         public static readonly string[] Checks = { "Experience", "Performance", "ActiveFacilities", "Employees", "Logistics", "Production", "LogisticsRoute",
             "PrestigeLogistics", "PrestigeEmployment", "PrestigeEfficiency", "PrestigeOutputs", "PrestigeStreak" };
-        public static readonly string[] Warnings = { "HeadquartersRequired", "HeadquartersInvalid", "Paused", "Delayed", "Observing", "ReadFailures" };
+        public static readonly string[] Warnings = { "HeadquartersRequired", "HeadquartersInvalid", "HeadquartersContentMissing", "Paused", "Delayed", "Observing", "ReadFailures" };
         public static readonly string[] Notes = { "Sampled", "NoPlacementBonus", "ExternalCargo", "OfficesExcluded", "NoBuff", "Prestige", "HqHealth", "Overlap" };
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
         public static AreaPanelDocument Build(IndustrialPanelModel model)
@@ -241,8 +242,8 @@ namespace CS2AreaSystem.Modules.Industrial
             foreach (var k in new[] { "Level", "Experience", "Calculating", "PartialData", "ObservedHours", "ActiveFacilities", "EmployeesJobs", "LastUpdate", "LastUpdate.Tip",
                 "OverlapMembers", "Extractors", "Processors", "Producers", "RawActivity", "RawActivity.Tip", "MeaningfulOutputs", "StorageFacilities", "StorageUtilization",
                 "CargoFacilities", "Jobs", "Employees", "Vacancies", "ProducerJobs", "SupportJobs", "NextLevel", "MaxLevel", "HourlyXp", "HourlyXp.Tip", "DailyXp", "DailyXp.Tip",
-                "StreakDays", "DayAverage", "DayHours", "LastDay", "LastDay.Tip", "Headquarters", "Hq.Valid", "Hq.Invalid", "Hq.Missing", "Resource.Tip", "Bottlenecks.None",
-                "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid",
+                "StreakDays", "DayAverage", "DayHours", "LastDay", "LastDay.Tip", "Headquarters", "Hq.Valid", "Hq.Invalid", "Hq.Missing", "Hq.ContentMissing", "Resource.Tip", "Bottlenecks.None",
+                "Summary.Active", "Summary.HeadquartersRequired", "Summary.HeadquartersInvalid", "Summary.HeadquartersContentMissing",
                 "Process.Input", "Process.Output", "Process.Companies", "Process.ActualPerDay", "Process.Tip", "FocusTarget", "FocusTarget.Tip" })
                 yield return P + k;
             foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
@@ -297,6 +298,7 @@ namespace CS2AreaSystem.Modules.Industrial
         {
             if (m.Headquarters == IndustrialHeadquartersState.Missing && m.Lifecycle != AreaLifecycleState.Active) items.Add(Warning("warning.hq", P + "Warning.HeadquartersRequired"));
             else if (m.Headquarters == IndustrialHeadquartersState.Invalid && m.Lifecycle != AreaLifecycleState.Active) items.Add(Warning("warning.hq", P + "Warning.HeadquartersInvalid"));
+            else if (m.Headquarters == IndustrialHeadquartersState.ContentMissing && m.Lifecycle != AreaLifecycleState.Active) items.Add(Warning("warning.hq", P + "Warning.HeadquartersContentMissing"));
             if (m.Current != null && (m.Paused || m.Lifecycle != AreaLifecycleState.Active)) items.Add(Warning("warning.paused", P + "Warning.Paused"));
             else if (m.Current != null && m.Current.Delayed) items.Add(Warning("warning.delayed", P + "Warning.Delayed", Hours(m.Current.EndHours - m.Current.StartHours)));
             if (m.Current == null && m.Lifecycle == AreaLifecycleState.Active) items.Add(Warning("warning.observing", P + "Warning.Observing"));

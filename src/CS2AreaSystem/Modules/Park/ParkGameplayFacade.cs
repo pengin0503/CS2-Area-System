@@ -21,6 +21,8 @@ namespace CS2AreaSystem.Modules.Park
         public ParkPromotionResult Promotion;
         public bool HasState;
         public ParkHeadquartersState Headquarters;
+        // Phase 3 C2: state of the assigned AS_ParkGate Entrance anchors, read live like the Headquarters.
+        public ParkHeadquartersState Entrance;
         public ParkPolicyEffects Policies;
         public ParkWhatIfCandidates? Preview;
         // Phase 2 C5 events: module availability, saved state/history, the start decision with its cost, a pending request.
@@ -35,7 +37,8 @@ namespace CS2AreaSystem.Modules.Park
         public bool CoverageActive;
         public int CoverageBuildings;
     }
-    public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid }
+    // ContentMissing (Phase 3 C2): the role's AS_ package is not installed, so nothing can be assigned to it.
+    public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid, ContentMissing }
     // Boundary between the module UI and Park gameplay: selected-Park reads and the only validated setters.
     // Entrance add/remove stays in Core's guarded anchor actions. No policies or XP/level setters exist.
     // FocusDiagnosticTarget is read-only (camera focus on a landscape diagnostic target) and never reaches the setters.
@@ -98,9 +101,8 @@ namespace CS2AreaSystem.Modules.Park
             var services=context.World.GetExistingSystemManaged<AreaCoreServicesSystem>();
             ulong id=entities.GetComponentData<ManagedAreaStableId>(area).Value;
             var connectivity=snapshot.Connectivity;
-            long entranceRevision=runtime.Entrances.TryGet(id,out var evidence)?evidence.Revision:-1;
             if(services!=null && connectivity!=null && connectivity.MembershipRevision==runtime.Membership.GetAreaRevision(id) &&
-                connectivity.EntranceRevision==entranceRevision && connectivity.SemanticRevision==services.Semantics.Revision &&
+                connectivity.AnchorRevision==unchecked((long)services.Anchors.Revision) && connectivity.SemanticRevision==services.Semantics.Revision &&
                 ParkConnectivityFocus.TryFocus(connectivity,key,e=>services.IsValidEntity(e)&&runtime.Membership.GetMembers(id).Contains(e)&&
                     ParkFacilityClassifier.IsVisitRelevant(ParkFacilityReader.ReadCore(e,entities,false),services.Semantics),context.Focus))return true;
             return TryFocus(snapshot.Landscape, key, e => StandalonePosition(entities, e), new ParkPolygon(ParkGeometry.Triangles(entities, area)), context.Focus);
@@ -140,8 +142,8 @@ namespace CS2AreaSystem.Modules.Park
             model.State = model.HasState ? entities.GetComponentData<ParkAreaState>(area) : ParkAreaState.CreateDefault();
             var runtime = context.World?.GetExistingSystemManaged<ParkRuntimeSystem>();
             var core=context.World?.GetExistingSystemManaged<AreaCoreServicesSystem>();
-            if(core!=null)model.Headquarters=core.Anchors.HasValidAnchor(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Valid:
-                core.Anchors.HasLinks(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing;
+            if(core!=null)model.Headquarters=ParkActivationSummary.State(core.Anchors,core.Semantics,area,Core.Anchors.AreaAnchorRole.Headquarters);
+            if(core!=null)model.Entrance=ParkActivationSummary.State(core.Anchors,core.Semantics,area,Core.Anchors.AreaAnchorRole.Entrance);
             if (runtime != null)
             {
                 model.Frame = runtime.SimulationFrame;

@@ -12,11 +12,12 @@ namespace CS2AreaSystem.Modules.Park
     public partial class ParkConnectivitySystem : GameSystemBase
     {
         public const int EdgesPerUpdate=4096,MaxTargets=4096;
+        public const uint RefreshFrames=ParkRuntimeSystem.FramesPerDay/8;
         private ParkRuntimeSystem runtime;private AreaCoreServicesSystem services;private EntityQuery changedNets,changedAreas;
         private readonly List<ParkAreaRef> parks=new List<ParkAreaRef>();
         private readonly Dictionary<ulong,Entry> entries=new Dictionary<ulong,Entry>();
         private int generation=-1,updates;private ActiveScan current;
-        private sealed class Entry {public Entity Area;public ulong Members;public long Entrance,Semantics,Anchors;public uint Frame;public readonly ParkConnectivityEpoch Epoch=new ParkConnectivityEpoch();public bool Dirty=true;}
+        private sealed class Entry {public Entity Area;public ulong Members;public long Semantics,Anchors;public uint Frame;public readonly ParkConnectivityEpoch Epoch=new ParkConnectivityEpoch();public bool Dirty=true;}
         private sealed class ActiveScan {public ulong Id;public long Revision;public ParkConnectivityScan Graph;}
         public int LastWork { get; private set; }
         protected override void OnCreate()
@@ -34,10 +35,9 @@ namespace CS2AreaSystem.Modules.Park
             bool netChanged=!changedNets.IsEmptyIgnoreFilter;uint frame=runtime.SimulationFrame;
             foreach(var pair in entries) {
                 var e=pair.Value;ulong members=runtime.Membership.GetAreaRevision(pair.Key);
-                long entrances=runtime.Entrances.TryGet(pair.Key,out var evidence)?evidence.Revision:-1;
                 long semantics=services.Semantics.Revision,anchors=unchecked((long)services.Anchors.Revision);
-                if(netChanged||!changedAreas.IsEmptyIgnoreFilter||members!=e.Members||entrances!=e.Entrance||semantics!=e.Semantics||anchors!=e.Anchors||!e.Dirty&&current?.Id!=pair.Key&&unchecked(frame-e.Frame)>=ParkEntranceSystem.RefreshFrames) {
-                    e.Members=members;e.Entrance=entrances;e.Semantics=semantics;e.Anchors=anchors;e.Epoch.Invalidate();e.Dirty=true;
+                if(netChanged||!changedAreas.IsEmptyIgnoreFilter||members!=e.Members||semantics!=e.Semantics||anchors!=e.Anchors||!e.Dirty&&current?.Id!=pair.Key&&unchecked(frame-e.Frame)>=RefreshFrames) {
+                    e.Members=members;e.Semantics=semantics;e.Anchors=anchors;e.Epoch.Invalidate();e.Dirty=true;
                     runtime.Store.GetOrCreate(pair.Key,e.Area).Connectivity=e.Epoch.Current;
                 }
             }
@@ -50,7 +50,7 @@ namespace CS2AreaSystem.Modules.Park
             try {
                 scan.Graph.Step(EdgesPerUpdate);LastWork=scan.Graph.LastWork;
                 if(!entries.TryGetValue(scan.Id,out var entry))return;
-                var result=scan.Graph.Snapshot();result.Frame=frame;result.MembershipRevision=entry.Members;result.EntranceRevision=entry.Entrance;result.SemanticRevision=entry.Semantics;
+                var result=scan.Graph.Snapshot();result.Frame=frame;result.MembershipRevision=entry.Members;result.AnchorRevision=entry.Anchors;result.SemanticRevision=entry.Semantics;
                 if(entry.Epoch.TryPublish(scan.Revision,result))runtime.Store.GetOrCreate(scan.Id,entry.Area).Connectivity=result;
                 if(scan.Graph.Done){entry.Dirty=false;entry.Frame=frame;current=null;services.Failures.Recovered(entry.Area,"Park.Connectivity");}
             }catch(Exception error){current=null;if(entries.TryGetValue(scan.Id,out var entry)){entry.Dirty=false;entry.Frame=frame;entry.Epoch.Invalidate();runtime.Store.GetOrCreate(scan.Id,entry.Area).Connectivity=entry.Epoch.Current;services.Failures.Report(entry.Area,"Park.Connectivity",error,"Park connectivity scan failed; no disconnected result assumed");}}
@@ -64,7 +64,7 @@ namespace CS2AreaSystem.Modules.Park
         private ActiveScan Begin(ulong id,Entry entry)
         {
             var seeds=new List<Entity>();
-            if(runtime.Entrances.TryGet(id,out var evidence)&&evidence.Status==ParkEntranceEvidenceStatus.Complete)seeds.AddRange(evidence.Points.Select(p=>p.Edge));
+            // Phase 3 C2: connectivity starts only from valid assigned AS_ParkGate anchors (their road/path attachment).
             foreach(var entrance in services.Anchors.GetValidAnchors(entry.Area,AreaAnchorRole.Entrance).Take(ParkConnectivityScan.MaxEdges))seeds.Add(Road(entrance));
             var targets=new List<(Entity,Entity)>();int visited=0;
             foreach(var member in runtime.Membership.GetMembers(id).Take(MaxTargets+1)) {

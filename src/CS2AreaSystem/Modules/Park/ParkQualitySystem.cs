@@ -55,9 +55,6 @@ namespace CS2AreaSystem.Modules.Park
                 positions.Clear();
                 foreach (var entrance in entrances)
                     if (EntityManager.HasComponent<Transform>(entrance)) { var p = EntityManager.GetComponentData<Transform>(entrance).m_Position; positions.Add((p.x, p.z)); }
-                runtime.Entrances.TryGet(park.StableId,out var entranceEvidence);
-                var access=ParkEntranceAccess.Positions(positions,entranceEvidence);positions.Clear();positions.AddRange(access);
-                snapshot.EntranceEvidence=entranceEvidence;
                 members.Clear();
                 bool primaryForAll = true;
                 var index = runtime.Membership;
@@ -68,7 +65,7 @@ namespace CS2AreaSystem.Modules.Park
                         if (relation.AreaStableId == park.StableId && !relation.IsPrimaryForType && ParkFacilityClassifier.IsVisitRelevant(members[members.Count - 1],services.Semantics)) primaryForAll = false;
                 }
                 snapshot.Facilities = ParkFacilitySnapshot.Build(members,services.Semantics);
-                snapshot.EntranceCount = entrances.Count + (entranceEvidence?.Count ?? 0);
+                snapshot.EntranceCount = entrances.Count;
                 int level = EntityManager.HasComponent<ManagedAreaProgress>(park.Area) ? ParkProgressionModel.NormalizeLevel(EntityManager.GetComponentData<ManagedAreaProgress>(park.Area).Level) : 1;
                 float budget = EntityManager.HasComponent<ManagedAreaSettings>(park.Area) ? EntityManager.GetComponentData<ManagedAreaSettings>(park.Area).BudgetMultiplier : ParkFinanceModel.DefaultBudget;
                 uint frame = runtime.SimulationFrame;
