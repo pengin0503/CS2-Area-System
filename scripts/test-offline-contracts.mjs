@@ -372,6 +372,18 @@ for (const source of ['ParkPathEntranceDetector.cs', 'ParkEntranceEvidence.cs', 
 const connectivity = code('src/CS2AreaSystem/Modules/Park/ParkConnectivitySystem.cs');
 check(!/SetComponentData|SetBuffer|AddComponent|RemoveComponent|DestroyEntity|EntityCommandBuffer/.test(connectivity), 'Park connectivity must only read the vanilla network');
 
+// Phase 3 C2: exactly three AS-prefixed dedicated assets; exact ordinal identity, no display-name/substring/Foundation fallback.
+const builtInContract = read('docs/content/area-system-built-in-assets-contract.md');
+const builtInCode = code('src/CS2AreaSystem/Core/Semantics/AreaBuiltInAssetContract.cs');
+const builtInIds = [...builtInCode.matchAll(/new AreaBuiltInAsset\("([^"]+)",\s*AreaAssetSemantic\.(\w+)\)/g)].map(m=>`${m[1]}=${m[2]}`).join(',');
+check(builtInIds==='AS_ParkHeadquarters=ParkHeadquarters,AS_IndustrialHeadquarters=IndustrialHeadquarters,AS_ParkGate=ParkEntrance',
+  `C2 built-in assets must be exactly the three AS-prefixed prefabs mapped to their roles (found ${builtInIds})`);
+check(/StringComparison\.Ordinal\)/.test(builtInCode) && !/IgnoreCase|ToLower|ToUpper|\.Contains\(|Localiz|DisplayName/.test(builtInCode),
+  'C2 built-in asset identity must be exact ordinal, never case-folded, substring or display-name based');
+for (const id of ['AS_AreaSystemAssets','CS2AreaSystem.BuiltInContent','AS_ParkHeadquarters','AS_IndustrialHeadquarters','AS_ParkGate','CS2_AS_IndustrialHeadquarters.zip','CS2_AS_ParkSet_HQ_Gate.zip'])
+  check(builtInContract.includes('`'+id+'`'), `C2 asset contract must name ${id}`);
+check(/`CS2_AS_ParkHeadquarters\.zip` is a superseded copy and is not a C2 source/.test(builtInContract), 'C2 asset contract must exclude the superseded standalone Park HQ archive');
+
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);
   for (const failure of failures) console.error(` - ${failure}`);
