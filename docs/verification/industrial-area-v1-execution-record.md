@@ -198,3 +198,49 @@ API compilation and unit tests do not show that the mod is ready to play.
 **PASS — user-confirmed.** The user reports all Industrial v1, Phase 2 B2 manual-company-assignment and Phase 2 C4 support-payment in-game checks completed on Cities: Skylines II 1.6.2f1 and behaved normally. The original NOT RUN statements above remain as implementation-time history; they are not rewritten as automated evidence. Exact local save/build metadata was not supplied in this chat.
 
 Runtime-confirmation Issue #43 was closed as completed. The Phase 3 D1/D2 plans may rely on the verified Phase 2 ownership/support baseline.
+
+## Phase 3 D1 advisory supply contracts — execution record 2026-10-04
+
+The execution-time latest `main` was `108bf47`, with the baseline test realignment `de997d3` on top. Branch: `claude/project-thread-3jfpsi-d1`. D1 is a separate review/release-risk boundary and does not depend on C2.
+- Plan: `2026-10-02-phase3-industrial-supply-contracts-implementation.md`. Followed with Superpowers executing-plans, inline, with one fresh-context whole-branch reviewer at the end.
+- Scope: D1 only. Contracts are advisory: they read the existing observations of two Industrial Areas and write only their own saved configuration. There is no pathfinding, routing, transfer-request, price, demand, company or vehicle access.
+
+### Task evidence
+
+| Task | Commit | Evidence |
+| --- | --- | --- |
+| 1 Persistence | `6a22ff5` | `IndustrialSupplyContract` buffer and `IndustrialSupplyContractState` allocator, both schema 1. Up to 32 contracts per source Area. Targets 50–50,000 in steps of 50. Monotonic ids that never wrap. Saved-state problems only warn. |
+| 2 Evaluator | `e482938` | Capacity is the source's observed output. Need is each destination recipe's actual output × input/output amounts. Potential = min(target, capacity, need). Unknown/stale values are null, never 0. RED was shown after the fact (the implementation came first), by temporarily removing the file. |
+| 3 Select control and actions | `48ef338`, `954a030` | Core `select` kind bounded to 64 options, rendered as a Previous/Next stepper with cs2/ui buttons only. Strict action parsing; every value is re-validated against live state; existing contracts are addressed by id. |
+| 4 Contracts tab | `a6848a2` | Contracts tab, exact-input evaluation cache, storage initialization, the separately registered "Industrial supply contracts" module after `IndustrialRuntimeSystem`, and the contract system as the only writer. |
+| 5 Guards and checklist | `d3507f5` | Offline guard: the D1 sources reference no routing, transfer, price, demand, company or vehicle API, make no structural change and write only their own buffer/allocator (a mutation run failed as expected). Runtime cases D101–D107. |
+| Review fixes | `7e4d7c3` | Found by the fresh reviewer. The source-capacity and corrupted-id fixes were shown RED → GREEN. |
+
+The review fixes in `7e4d7c3`:
+- An unmeasured source producer of the resource makes the capacity a lower bound instead of "not producing" or a plain 0.
+- A delayed cycle is a stale estimate, not a lower bound.
+- A corrupted id (≤ 0) is Invalid and stays removable, and a duplicate id renders once.
+- Create re-checks the drafted resource.
+- A read failure disables only the Contracts tab.
+
+### Final verification (head `7e4d7c3`)
+
+Tools: .NET SDK 8.0.131, PowerShell 7.4.6, Node 22.22.0, and the supplied 1.6.2f1 managed and toolchain references.
+
+| Command | Result |
+| --- | --- |
+| `pwsh -NoProfile -File scripts/verify.ps1 -ApiCheck` | **PASS**, exit 0. Guards, offline and AI-context contracts, NUnit **1333/1333**, Vitest **116/116**, UI build. |
+| `dotnet build src/CS2AreaSystem/CS2AreaSystem.csproj -p:AreaApiCheck=true -c Release` | **PASS**, 0 warnings / 0 errors. |
+| `git diff --check` | **PASS**. |
+
+### Runtime
+
+The following are **NOT RUN**:
+- in-game cases D101–D107;
+- a real save/load;
+- live profiling.
+
+### Rulings and limits
+
+- **A saved allocator at `int.MaxValue` rejects new contracts** rather than wrapping ids. This is reachable only from a corrupted save. Existing contracts stay editable and removable.
+- **Destinations are limited to the first 64 live Industrial Areas** (the select bound), and the tab says when the list is truncated.
