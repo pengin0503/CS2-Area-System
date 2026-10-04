@@ -222,3 +222,19 @@ Status: **NOT RUN.** Automated tests cover the exact-identifier contract, provid
 | C206 Old saves | Load a save with a Foundation office HQ, a Park Maintenance HQ and a Park that relied on a Path entrance. Expected: Areas load Suspended; old links are listed as "Not eligible" with Remove; nothing is auto-converted. StableId, Level/XP, finance, history, policies and Industrial company ownership survive. Assigning the dedicated assets reactivates the same Areas. | NOT RUN |
 | C207 Missing content | Deploy with `-p:AllowMissingAreaContent=true` (a normal deploy fails without the package) and load without the asset package; then reinstall it and reload. Expected: No crash; Areas are Suspended with the "asset not installed" summary/warnings; no vanilla or Path fallback is accepted. After reinstalling, the prefabs are rediscovered and can be assigned. | NOT RUN |
 | C208 Model rule and UI | Inspect the placed models; check en-US/ja-JP selected panels, assignment hints and asset descriptions. Expected: Models carry only building-fixed details (see the known streetlight/bollard limitation in `assets/area-system/README.md`). No raw keys and no Park Maintenance/office/path-entrance wording remain. | NOT RUN |
+
+# Phase 3 D2 — Reference Factory (existing vanilla resources)
+
+Status: **NOT RUN / BLOCKED.** No factory source model was supplied, so `AS_FurnitureFactory` has not been authored, imported
+or packaged. The cases below apply once it exists (`assets/industrial-reference-factory/README.md`).
+
+| Case | Procedure and expected result | Result |
+| --- | --- | --- |
+| D201 Import and contract | Import with the Signature Building preset: Industrial non-office zone, Allowed Manufactured = Furniture only, nothing sold/stored/residential, building-fixed model elements only. After loading a city the log shows `Area System content facts AS_FurnitureFactory manufactured=512 ... signature=True industrialZone=True officeZone=False` and no rejection. | NOT RUN |
+| D202 Vanilla company and process | Place the factory inside an Industrial Area. A vanilla Furniture company moves in; its recipe (inputs and amounts) is the vanilla one; company resources (Timber in, Furniture out) change through vanilla trade only. | NOT RUN |
+| D203 Observation | Production tab: the process row shows the vanilla recipe and measured rate, Furniture appears in resource rows, bottlenecks and comparison behave as for a vanilla Furniture factory. A vacant factory counts as a producer facility without invented output. | NOT RUN |
+| D204 Overlap and manual ownership | Put the factory in two overlapping Industrial Areas and assign its company manually to the non-primary Area: production, jobs and support follow the resolved owner exactly as for vanilla companies. | NOT RUN |
+| D205 Save/load, removal, mismatch | Save/load with the factory placed: nothing about the prefab is saved by Area System and it is rediscovered. Remove the package and load: the factory is gone, Areas, vanilla companies and observation are unaffected, and no missing-content warning names it. Re-import with a different manufactured resource: the content warning reports a rejected candidate and no role is granted. | NOT RUN |
+| D206 Deletion and regression | Bulldoze the factory: no errors; the company leaves through vanilla rules. Re-run Industrial v1/B2/C4 and D1 contracts with the factory present. | NOT RUN |
+
+Do not change these Results to PASS without direct game evidence.
