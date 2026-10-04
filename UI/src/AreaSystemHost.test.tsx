@@ -26,13 +26,15 @@ describe('area system floating host',()=>{
  it('guides an anchor assignment while a building is selected and can cancel it',()=>{
   binding.pending={stableId:'7',name:'Harbor Industry',role:'Headquarters'};render(<AreaSystemHost/>);
   expect(screen.getByRole('status')).toHaveTextContent('Harbor Industry');
-  expect(screen.getByRole('status')).toHaveTextContent('office');
+  expect(screen.getByRole('status')).toHaveTextContent('AS_IndustrialHeadquarters');
   fireEvent.click(screen.getByRole('button',{name:'Cancel assignment'}));
   expect(binding.trigger).toHaveBeenCalledWith('cs2AreaSystem','cancelAnchorAssignment','7');
  });
- it('tells a Park user that its headquarters is Park Maintenance',()=>{
+ // Phase 3 C2: the hint names the dedicated assets; Park Maintenance and offices are retired.
+ it('tells a Park user that its headquarters is AS_ParkHeadquarters',()=>{
   binding.pending={stableId:'8',name:'Central Park',role:'Headquarters'};render(<AreaSystemHost/>);
-  expect(screen.getByRole('status')).toHaveTextContent('Park Maintenance');
+  expect(screen.getByRole('status')).toHaveTextContent('AS_ParkHeadquarters');
+  expect(screen.getByRole('status')).not.toHaveTextContent('Park Maintenance');
  });
  it('places the host on the side chosen in the options',()=>{binding.listAvailable=true;const view=render(<AreaSystemHost/>);expect(view.container.firstElementChild!.className).not.toMatch(/left/);binding.panelSide='left';view.rerender(<AreaSystemHost/>);expect(view.container.firstElementChild!.className).toMatch(/left/);});
  it('binding failure stays local without simulation mutations',()=>{const consoleError=vi.spyOn(console,'error').mockImplementation(()=>{});binding.fail=true;render(<AreaSystemHost/>);expect(screen.queryByRole('button')).toBeNull();expect(binding.trigger).not.toHaveBeenCalled();consoleError.mockRestore();});

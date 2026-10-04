@@ -354,23 +354,47 @@ check(tryBlocks.length >= 3, 'policy and finance registrations must each be isol
 const requirements = read('docs/verification/area-core-requirements.md');
 check(!requirements.includes('Main is unchanged; all implementation commits are on feat/area-core'), 'verification docs must describe the current merged repository state');
 
-const entranceSystem = code('src/CS2AreaSystem/Modules/Park/ParkEntranceSystem.cs');
-const entranceEvidence = code('src/CS2AreaSystem/Modules/Park/ParkEntranceEvidence.cs');
-check(entranceSystem.includes('HasComponent<PathwayData>'), 'automatic Park entrance classification must use PathwayData');
-check(!/ISerializable|IBufferElementData|IComponentData/.test(entranceEvidence), 'path entrance evidence must remain runtime-only');
-check(!/Pathfind|Citizen|GetEntityQuery\([^;]*ReadOnly<Game.Net.Edge>/s.test(entranceSystem.split('private ParkNetPage ReadPage')[1]??''), 'entrance query must be spatial, with no citizen/pathfinding changes');
-check(/UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem,\s*CS2AreaSystem.Core.Anchors.AreaActivationSystem>/.test(mod), 'Park entrances must update before activation');
+// Phase 3 C2: the derived dedicated-Path Entrance is retired; only an assigned AS_ParkGate is an Entrance and no pathfinding is hooked.
+for (const retired of ['ParkEntranceSystem.cs','ParkEntranceEvidence.cs','ParkPathEntranceDetector.cs'])
+  check(!fs.existsSync(filePath(`src/CS2AreaSystem/Modules/Park/${retired}`)), `${retired}: the Foundation path-Entrance fallback must stay removed after C2`);
+check(!/ParkEntranceSystem|PathEntrance/.test(mod), 'Mod.cs must not schedule the retired path-Entrance system');
+const parkModuleCode = code('src/CS2AreaSystem/Modules/Park/ParkAreaModule.cs');
+check(/HasValidAnchor\(area,AreaAnchorRole\.Headquarters\)\s*&&\s*Anchors\.HasValidAnchor\(area,AreaAnchorRole\.Entrance\)/.test(parkModuleCode), 'Park activation must require a valid Headquarters and a valid Entrance anchor');
+for (const [source, retired] of [['Modules/Park/ParkFacilityClassifier.cs','traits.HasParkMaintenance)'],['Modules/Industrial/IndustrialFacilityClassifier.cs','traits.HasOfficeProperty)']])
+  check(!code(`src/CS2AreaSystem/${source}`).includes(retired) && code(`src/CS2AreaSystem/${source}`).includes('AreaBuiltInAssetContract.Qualifies('), `${source}: Headquarters must come only from the dedicated AS_ asset, with no Foundation default`);
+for (const source of walk('src').filter(p=>p.endsWith('.cs') && !/[\\/](bin|obj)[\\/]/.test(p)))
+  if (/\b(PathfindSetupSystem|PathfindQueueSystem|SetupPathfind|PathfindTargetSeeker)\b|PathfindParameters/.test(read(source))) failures.push(`${source}: Area System must not hook citizen pathfinding`);
 
 // Foundation + Phase 1: derived network diagnostics cannot become authoritative save data.
 for (const module of ['Park', 'Industrial']) {
   const history = code(`src/CS2AreaSystem/Modules/${module}/${module}HistoryEntry.cs`);
   check(!/\bEntity\b|\bGame\.Net\b/.test(history), `${module} hourly history must not serialize runtime entity identities`);
 }
-for (const source of ['ParkPathEntranceDetector.cs', 'ParkEntranceEvidence.cs', 'ParkConnectivityModel.cs']) {
+for (const source of ['ParkConnectivityModel.cs']) {
   check(!/ISerializable|\bSerialize\s*\(/.test(code(`src/CS2AreaSystem/Modules/Park/${source}`)), `${source}: derived path evidence must remain runtime-only`);
 }
 const connectivity = code('src/CS2AreaSystem/Modules/Park/ParkConnectivitySystem.cs');
 check(!/SetComponentData|SetBuffer|AddComponent|RemoveComponent|DestroyEntity|EntityCommandBuffer/.test(connectivity), 'Park connectivity must only read the vanilla network');
+
+// Phase 3 C2: exactly three AS-prefixed dedicated assets; exact ordinal identity, no display-name/substring/Foundation fallback.
+const builtInContract = read('docs/content/area-system-built-in-assets-contract.md');
+const builtInCode = code('src/CS2AreaSystem/Core/Semantics/AreaBuiltInAssetContract.cs');
+const builtInIds = [...builtInCode.matchAll(/new AreaBuiltInAsset\("([^"]+)",\s*AreaAssetSemantic\.(\w+)\)/g)].map(m=>`${m[1]}=${m[2]}`).join(',');
+check(builtInIds==='AS_ParkHeadquarters=ParkHeadquarters,AS_IndustrialHeadquarters=IndustrialHeadquarters,AS_ParkGate=ParkEntrance',
+  `C2 built-in assets must be exactly the three AS-prefixed prefabs mapped to their roles (found ${builtInIds})`);
+check(/StringComparison\.Ordinal\)/.test(builtInCode) && !/IgnoreCase|ToLower|ToUpper|\.Contains\(|Localiz|DisplayName/.test(builtInCode),
+  'C2 built-in asset identity must be exact ordinal, never case-folded, substring or display-name based');
+for (const id of ['AS_AreaSystemAssets','CS2AreaSystem.BuiltInContent','AS_ParkHeadquarters','AS_IndustrialHeadquarters','AS_ParkGate','CS2_AS_IndustrialHeadquarters.zip','CS2_AS_ParkSet_HQ_Gate.zip'])
+  check(builtInContract.includes('`'+id+'`'), `C2 asset contract must name ${id}`);
+check(/`CS2_AS_ParkHeadquarters\.zip` is a superseded copy and is not a C2 source/.test(builtInContract), 'C2 asset contract must exclude the superseded standalone Park HQ archive');
+const csproj = read('src/CS2AreaSystem/CS2AreaSystem.csproj');
+check(/<Target Name="DeployAreaContent" AfterTargets="DeployWIP"[\s\S]*assets\/area-system\/package\/AS_\*\.cok[\s\S]*<Error Condition="'@\(AreaContentPackages\)' == '' And '\$\(AllowMissingAreaContent\)' != 'true'"/.test(csproj),
+  'official build must ship AS_*.cok content packages and fail (not substitute) when they are missing');
+check(/<Warning Condition="'@\(AreaContentPackages\)' == '' And '\$\(AllowMissingAreaContent\)' == 'true'"/.test(csproj),
+  'only an explicit AllowMissingAreaContent=true build (runtime case C207) may deploy without the content package');
+const prepare = read('scripts/prepare_area_system_assets.py');
+check(/SUPERSEDED = "CS2_AS_ParkHeadquarters\.zip"/.test(prepare) && prepare.includes('30b4138e2ce7b8c57a89ec783a57f5bf3ee4a233f2ce8beff01203c0ca14b1a3') &&
+  prepare.includes('b4e0d3c249552c3b8922000c93a53b7a17198745e1748bd1ef445e1e4852d175'), 'asset preparation must pin both archive hashes and refuse the superseded archive');
 
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);

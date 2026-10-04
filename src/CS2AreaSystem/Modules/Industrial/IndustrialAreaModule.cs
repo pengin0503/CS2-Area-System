@@ -21,23 +21,29 @@ namespace CS2AreaSystem.Modules.Industrial
         public IndustrialAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, IndustrialFacilityTraits> readTraits = null,AreaAssetSemanticRegistry semantics=null)
             : base(AreaTypeId.Industrial, anchors, AreaAnchorRole.Headquarters)
         { this.readTraits = readTraits ?? IndustrialFacilityReader.ReadAnchor;this.semantics=semantics; }
-        // Headquarters is an office member building; production/logistics observations remain separate.
+        // Phase 3 C2: Headquarters is the dedicated AS_IndustrialHeadquarters building; production/logistics observations remain separate.
+        public override bool CanAssignAnchor(Entity area, AreaAnchorRole role, EntityManager entities) =>
+            role == AreaAnchorRole.Headquarters && (semantics == null || AreaBuiltInAssetContract.IsContentPresent(semantics, AreaAssetSemantic.IndustrialHeadquarters));
         public override bool AcceptsAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities)
         {
             if (role != AreaAnchorRole.Headquarters) return false;
             try { return IndustrialFacilityClassifier.IsHeadquartersEligible(readTraits(anchor, entities),semantics); }
             catch (Exception) { return false; }
         }
-        // Revalidate static office evidence, including legacy links; vacancy/health do not affect OfficeProperty.
+        // Revalidates every saved link (legacy office links included) against the dedicated-asset rule; tenant vacancy/health never matter.
         public bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => AcceptsAnchor(area, anchor, role, entities);
+        // Phase 3 C2: without the installed AS_IndustrialHeadquarters package no link can be valid, so that is reported first.
         public IndustrialHeadquartersState HeadquartersState(Entity area) =>
-            ValidateActivation(area, default) ? IndustrialHeadquartersState.Valid : Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
+            ValidateActivation(area, default) ? IndustrialHeadquartersState.Valid :
+            semantics != null && !AreaBuiltInAssetContract.IsContentPresent(semantics, AreaAssetSemantic.IndustrialHeadquarters) ? IndustrialHeadquartersState.ContentMissing :
+            Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
         public override string BuildSummary(Entity area, in AreaPanelContext context)
         {
             switch (HeadquartersState(area))
             {
                 case IndustrialHeadquartersState.Valid: return IndustrialPanelBuilder.P + "Summary.Active";
                 case IndustrialHeadquartersState.Invalid: return IndustrialPanelBuilder.P + "Summary.HeadquartersInvalid";
+                case IndustrialHeadquartersState.ContentMissing: return IndustrialPanelBuilder.P + "Summary.HeadquartersContentMissing";
                 default: return IndustrialPanelBuilder.P + "Summary.HeadquartersRequired";
             }
         }

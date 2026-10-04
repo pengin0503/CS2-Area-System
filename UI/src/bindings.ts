@@ -14,7 +14,7 @@ export interface AreaPanelItem {
 }
 export interface AreaPanelTab {id:string;labelKey:string;items?:AreaPanelItem[];}
 export interface AreaAnchor {key:string;name:string|null;valid?:boolean;}
-export interface AreaAnchorGroup {role:'Headquarters'|'Entrance';assignmentSupported:boolean;anchors:AreaAnchor[];derivedCount:number|null;derivedStatusKey:string|null;}
+export interface AreaAnchorGroup {role:'Headquarters'|'Entrance';assignmentSupported:boolean;anchors:AreaAnchor[];}
 // One policy of the selected Area, written by CS2AreaSystem.Core.UI.AreaPolicyView. Every flag is decided in C#.
 export interface AreaPolicyData {
  policyId:number;nameKey:string;descriptionKey:string;icon:string|null;minLevel:number;desiredEnabled:boolean;effective:boolean;

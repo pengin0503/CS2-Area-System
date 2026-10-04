@@ -15,7 +15,7 @@ namespace CS2AreaSystem.Modules.Park
     {
         public ParkConnectivityStatus Status;
         public int Connected,Total,UnknownTargets,Traversed;
-        public uint Frame;public ulong MembershipRevision;public long EntranceRevision,SemanticRevision;
+        public uint Frame;public ulong MembershipRevision;public long AnchorRevision,SemanticRevision;
         public IReadOnlyList<Entity> DisconnectedTargets=Array.Empty<Entity>();
     }
     // Read-only BFS over the public node/edge graph. Both edge reads and neighbor reads consume the budget;

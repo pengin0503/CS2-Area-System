@@ -19,11 +19,6 @@ namespace CS2AreaSystem.Core.Anchors
     {
         bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities);
     }
-    // Optional runtime evidence presentation; Core need not know which module or network creates it.
-    public interface IAreaDerivedAnchorPolicy
-    {
-        bool TryGetDerivedAnchor(Entity area, AreaAnchorRole role, in Modules.AreaActivationContext context, out int? count, out string statusKey);
-    }
     public static class AreaAnchorEligibility
     {
         public static bool AllowsRole(IAreaAnchorPolicy policy, Entity area, AreaAnchorRole role, EntityManager entities, bool existing) =>

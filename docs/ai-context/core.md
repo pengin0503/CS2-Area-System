@@ -9,6 +9,7 @@ Scope: shared area lifecycle, membership, module interfaces, finance, serializat
 - Core spec: `docs/superpowers/specs/2026-09-30-area-system-core-design.md`.
 - For policy tasks: `docs/superpowers/specs/2026-10-01-area-policy-system-design.md`.
 - For later Headquarters/history boundaries: `docs/superpowers/specs/2026-10-02-headquarters-entrance-and-post-wave-a-roadmap-design.md`.
+- Dedicated Headquarters/Gate assets (Phase 3 C2): `docs/content/area-system-built-in-assets-contract.md` and `src/CS2AreaSystem/Core/Semantics/AreaBuiltInAssetContract.cs`.
 - Shared implementation: `src/CS2AreaSystem/Core/`; choose the affected file before reading a directory.
 - UI payload boundary: `src/CS2AreaSystem/Core/Modules/AreaPanelModels.cs` and `src/CS2AreaSystem/Core/UI/AreaManagementUISystem.cs`.
 

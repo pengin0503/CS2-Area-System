@@ -76,23 +76,34 @@ public class IndustrialHeadquartersPolicyTests {
   public void Write(Entity area, IReadOnlyList<AreaAnchorLink> links) => Values[area] = links.ToArray();
  }
  private static readonly Entity area = new() { Index = 10, Version = 1 }, factory = new() { Index = 30, Version = 1 }, office = new() { Index = 40, Version = 1 };
- [Test] public void InitialAssignmentAcceptsOfficesAndRejectsLegacyIndustrialAndReaderFailures() {
-  var traits = new Dictionary<Entity, IndustrialFacilityTraits> { [factory] = new IndustrialFacilityTraits { IsBuilding = true, ManufacturesGoods = true },
-   [office] = new IndustrialFacilityTraits { IsBuilding = true, HasOfficeProperty = true, HasOfficeCompany = true, HasWorkplaces = true } };
-  IAreaAnchorPolicy policy = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => traits[e]);
-  Assert.That(policy.AcceptsAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.False);
-  Assert.That(policy.AcceptsAnchor(area, office, AreaAnchorRole.Headquarters, default), Is.True, "ordinary office");
-  Assert.That(policy.AcceptsAnchor(area, factory, AreaAnchorRole.Entrance, default), Is.False, "Industrial has no Entrance role");
-  IAreaAnchorPolicy failing = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => throw new InvalidOperationException("reader"));
-  Assert.That(failing.AcceptsAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.False);
+ private static readonly Entity hqPrefab = new() { Index = 90, Version = 1 }, hq = new() { Index = 50, Version = 1 };
+ private static CS2AreaSystem.Core.Semantics.AreaAssetSemanticRegistry Registry() {
+  var r = new CS2AreaSystem.Core.Semantics.AreaAssetSemanticRegistry();
+  new CS2AreaSystem.Core.Semantics.AreaBuiltInContentSemanticProvider().Refresh(r, new[] { new CS2AreaSystem.Core.Semantics.AreaBuiltInPrefabCandidate(hqPrefab, "BuildingPrefab", "AS_IndustrialHeadquarters", true, false, "AS_IndustrialHeadquarters.cok") });
+  return r;
  }
- [Test] public void AcceptedOfficeStaysValidThroughVacancyButLegacyFactoryBecomesInvalid() {
+ // Phase 3 C2: initial assignment accepts only AS_IndustrialHeadquarters; offices, legacy industrial buildings and reader failures are rejected.
+ [Test] public void InitialAssignmentAcceptsOnlyTheDedicatedHeadquarters() {
+  var traits = new Dictionary<Entity, IndustrialFacilityTraits> { [factory] = new IndustrialFacilityTraits { IsBuilding = true, ManufacturesGoods = true },
+   [office] = new IndustrialFacilityTraits { IsBuilding = true, HasOfficeProperty = true, HasOfficeCompany = true, HasWorkplaces = true },
+   [hq] = new IndustrialFacilityTraits { IsBuilding = true, Prefab = hqPrefab } };
+  IAreaAnchorPolicy policy = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => traits[e], Registry());
+  Assert.That(policy.AcceptsAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.False);
+  Assert.That(policy.AcceptsAnchor(area, office, AreaAnchorRole.Headquarters, default), Is.False, "ordinary office is retired");
+  Assert.That(policy.AcceptsAnchor(area, hq, AreaAnchorRole.Headquarters, default), Is.True);
+  Assert.That(policy.AcceptsAnchor(area, hq, AreaAnchorRole.Entrance, default), Is.False, "Industrial has no Entrance role");
+  IAreaAnchorPolicy failing = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => throw new InvalidOperationException("reader"), Registry());
+  Assert.That(failing.AcceptsAnchor(area, hq, AreaAnchorRole.Headquarters, default), Is.False);
+ }
+ // A saved Foundation office link stays visible but invalid; the dedicated HQ stays valid through vacancy (static prefab identity).
+ [Test] public void SavedOfficeLinkBecomesInvalidWhileTheDedicatedHeadquartersSurvivesVacancy() {
   int reads = 0;
-  var module = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => { reads++; return new IndustrialFacilityTraits{IsBuilding=true,HasOfficeProperty=e==office}; });
+  var module = new IndustrialAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true), (e, _) => { reads++; return new IndustrialFacilityTraits{IsBuilding=true,HasOfficeProperty=e==office,Prefab=e==hq?hqPrefab:Entity.Null}; }, Registry());
   IAreaExistingAnchorPolicy existing = module;
   Assert.That(existing.AcceptsExistingAnchor(area, factory, AreaAnchorRole.Headquarters, default), Is.False);
   Assert.That(existing.AcceptsExistingAnchor(area, factory, AreaAnchorRole.Entrance, default), Is.False);
-  Assert.That(existing.AcceptsExistingAnchor(area, office, AreaAnchorRole.Headquarters, default), Is.True);
-  Assert.That(reads, Is.EqualTo(2), "static OfficeProperty is revalidated without requiring a tenant");
+  Assert.That(existing.AcceptsExistingAnchor(area, office, AreaAnchorRole.Headquarters, default), Is.False, "Foundation office HQ is not converted");
+  Assert.That(existing.AcceptsExistingAnchor(area, hq, AreaAnchorRole.Headquarters, default), Is.True);
+  Assert.That(reads, Is.EqualTo(3), "prefab identity is revalidated without requiring a tenant");
  }
 }

@@ -50,8 +50,9 @@ namespace CS2AreaSystem.Modules.Industrial
             Add(P+"Comparison.Trend","Performance: latest vs previous hour","Performance：前の時間との比較");
             Add(P+"Comparison.Empty","No Industrial Areas to compare","比較できる産業エリアがありません");
             Add(P + "Summary.Active", "Active. Metrics come from the real companies inside this area, observed once per game hour.", "稼働中。指標はエリア内の実際の企業を1ゲーム時間ごとに観測した値です。");
-            Add(P + "Summary.HeadquartersRequired", "Assign an office building inside this area as the headquarters to activate it.", "エリア内のオフィス建物を本部に割り当てると稼働します。");
-            Add(P + "Summary.HeadquartersInvalid", "Suspended: the headquarters building was removed or is no longer inside this area. Assign a new headquarters; Level and XP are kept.", "停止中：本部の建物が撤去されたか、エリア外になりました。新しい本部を割り当ててください。レベルと経験値は保持されます。");
+            Add(P + "Summary.HeadquartersRequired", "Assign an AS_IndustrialHeadquarters building inside this area as the headquarters to activate it.", "エリア内の AS_IndustrialHeadquarters を本部に割り当てると稼働します。");
+            Add(P + "Summary.HeadquartersInvalid", "Suspended: the headquarters was removed, is no longer inside this area or no longer qualifies. Assign an AS_IndustrialHeadquarters building; Level and XP are kept.", "停止中：本部が撤去されたか、エリア外になったか、条件を満たさなくなりました。AS_IndustrialHeadquarters を割り当ててください。レベルと経験値は保持されます。");
+            Add(P + "Summary.HeadquartersContentMissing", "Suspended: the AS_IndustrialHeadquarters asset is not installed, so no headquarters can be assigned. Level and XP are kept.", "停止中：AS_IndustrialHeadquarters アセットがインストールされていないため、本部を割り当てられません。レベルと経験値は保持されます。");
             Add(P + "LevelName.1", "Local Industry", "地域産業");
             Add(P + "LevelName.2", "Industrial District", "産業地区");
             Add(P + "LevelName.3", "Production Hub", "生産拠点");
@@ -61,8 +62,9 @@ namespace CS2AreaSystem.Modules.Industrial
             Add(P + "Experience", "Experience", "経験値");
             Add(P + "Headquarters", "Headquarters", "本部");
             Add(P + "Hq.Valid", "Assigned", "割り当て済み");
-            Add(P + "Hq.Invalid", "Removed or outside the area", "撤去済み・エリア外");
+            Add(P + "Hq.Invalid", "Removed, outside the area or not eligible", "撤去済み・エリア外・対象外");
             Add(P + "Hq.Missing", "Not assigned", "未割り当て");
+            Add(P + "Hq.ContentMissing", "Asset not installed", "アセット未インストール");
             Add(P + "Calculating", "Waiting for the first hourly observation…", "最初の1時間ごとの観測を待っています…");
             Add(P + "PartialData", "Partial data (observed / eligible)", "一部のデータ（観測数 / 対象数）");
             Add(P + "ObservedHours", "Observed game hours", "観測済みゲーム時間");
@@ -106,8 +108,9 @@ namespace CS2AreaSystem.Modules.Industrial
             Add(P + "OverlapMembers", "Overlapping buildings counted by another Industrial Area", "他の産業エリアで集計される重複建物");
             Add(P + "LastUpdate", "Last observation (game day, time)", "最終観測（ゲーム日・時刻）");
             Add(P + "LastUpdate.Tip", "Start of the last completed hourly observation.", "直近に完了した1時間ごとの観測の開始時刻。");
-            Add(P + "Warning.HeadquartersRequired", "No headquarters: the area is suspended and earns no XP.", "本部がありません。エリアは停止中で経験値は得られません。");
-            Add(P + "Warning.HeadquartersInvalid", "The headquarters building is gone or outside the area: suspended.", "本部の建物がないか、エリア外です。停止中です。");
+            Add(P + "Warning.HeadquartersRequired", "No AS_IndustrialHeadquarters headquarters: the area is suspended and earns no XP.", "AS_IndustrialHeadquarters の本部がありません。エリアは停止中で経験値は得られません。");
+            Add(P + "Warning.HeadquartersInvalid", "The headquarters is gone, outside the area or no longer qualifies: suspended.", "本部がないか、エリア外か、条件を満たさなくなりました。停止中です。");
+            Add(P + "Warning.HeadquartersContentMissing", "AS_IndustrialHeadquarters asset not installed: the area stays suspended and earns no XP.", "AS_IndustrialHeadquarters アセットが未インストールのため、エリアは停止中で経験値は得られません。");
             Add(P + "Warning.Paused", "Suspended: the values below are the last observation and are paused.", "停止中：以下は前回の観測値で、更新は停止しています。");
             Add(P + "Warning.Delayed", "The last observation took longer than one game hour; it counts for no XP or coverage.", "前回の観測が1ゲーム時間を超えたため、経験値や観測時間には含まれません。");
             Add(P + "Warning.Observing", "Observing real companies. Scores appear after the first hourly observation.", "実際の企業を観測中です。最初の1時間ごとの観測後に表示されます。");

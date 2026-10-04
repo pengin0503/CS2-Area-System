@@ -26,9 +26,10 @@ namespace CS2AreaSystem.Modules.Industrial
                 roles |= IndustrialFacilityRole.SupportingWorkplace;
             return roles;
         }
-        // Stable building evidence survives tenant vacancy. Company presence alone never qualifies.
+        // Phase 3 C2: only the registered AS_IndustrialHeadquarters prefab qualifies (static prefab identity, so tenant vacancy
+        // never matters). Ordinary offices are retired with no fallback.
         public static bool IsHeadquartersEligible(in IndustrialFacilityTraits traits,AreaAssetSemanticRegistry registry=null) => traits.IsBuilding &&
-            (registry?.Resolve(traits.Prefab,AreaAssetSemantic.IndustrialHeadquarters,traits.HasOfficeProperty)??traits.HasOfficeProperty);
+            AreaBuiltInAssetContract.Qualifies(registry,traits.Prefab,AreaAssetSemantic.IndustrialHeadquarters);
     }
     public static class IndustrialFacilityReader
     {

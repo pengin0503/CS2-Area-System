@@ -31,10 +31,10 @@ namespace CS2AreaSystem
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicyBootstrapSystem, CS2AreaSystem.Core.Persistence.AreaLoadCoordinatorSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<AreaMembershipSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd);
-            // Entrance evidence is an activation requirement, independently of finance/gameplay registration.
-            try { updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkEntranceSystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
-            catch (System.Exception error) { Log.Error(error, "Park entrance detection unavailable; no derived entrance is assumed."); }
-            try { updateSystem.UpdateAfter<CS2AreaSystem.Modules.Park.ParkConnectivitySystem, CS2AreaSystem.Modules.Park.ParkEntranceSystem>(SystemUpdatePhase.ModificationEnd); }
+            // Phase 3 C2: the dedicated Headquarters/Gate prefabs are the only anchor sources; without this system no Area activates.
+            try { updateSystem.UpdateBefore<CS2AreaSystem.Core.Semantics.AreaBuiltInContentSystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
+            catch (System.Exception error) { Log.Error(error, "Area System content discovery unavailable; dedicated Headquarters/Gate roles stay unregistered."); }
+            try { updateSystem.UpdateBefore<CS2AreaSystem.Modules.Park.ParkConnectivitySystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Park connectivity diagnostics unavailable; no pathfinding is changed."); }
             try { updateSystem.UpdateAfter<CS2AreaSystem.Core.Policies.AreaPolicySystem, CS2AreaSystem.Core.Anchors.AreaActivationSystem>(SystemUpdatePhase.ModificationEnd); }
             catch (System.Exception error) { Log.Error(error, "Area policy runtime unavailable; Area Core and modules remain registered."); }

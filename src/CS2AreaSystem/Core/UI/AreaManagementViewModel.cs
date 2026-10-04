@@ -83,14 +83,13 @@ namespace CS2AreaSystem.Core.UI
     }
     public sealed class AreaAnchorGroupView
     {
-        public string Role, DerivedStatusKey;
+        public string Role;
         public bool AssignmentSupported;
         public IReadOnlyList<AreaAnchorView> Anchors = new AreaAnchorView[0];
-        public int? DerivedCount;
         public static bool Equivalent(AreaAnchorGroupView a, AreaAnchorGroupView b)
         {
             if (ReferenceEquals(a, b)) return true;
-            if (a == null || b == null || a.Role != b.Role || a.AssignmentSupported != b.AssignmentSupported || a.DerivedCount != b.DerivedCount || a.DerivedStatusKey != b.DerivedStatusKey || a.Anchors.Count != b.Anchors.Count) return false;
+            if (a == null || b == null || a.Role != b.Role || a.AssignmentSupported != b.AssignmentSupported || a.Anchors.Count != b.Anchors.Count) return false;
             for (int i=0;i<a.Anchors.Count;i++) if (a.Anchors[i].Key != b.Anchors[i].Key || a.Anchors[i].Name != b.Anchors[i].Name || a.Anchors[i].Valid != b.Anchors[i].Valid) return false;
             return true;
         }
@@ -99,8 +98,6 @@ namespace CS2AreaSystem.Core.UI
             writer.TypeBegin("CS2AreaSystem.AreaAnchorGroupView");
             writer.PropertyName("role"); writer.Write(Role);
             writer.PropertyName("assignmentSupported"); writer.Write(AssignmentSupported);
-            writer.PropertyName("derivedCount"); if(DerivedCount.HasValue) writer.Write(DerivedCount.Value); else writer.WriteNull();
-            writer.PropertyName("derivedStatusKey"); if(DerivedStatusKey != null) writer.Write(DerivedStatusKey); else writer.WriteNull();
             writer.PropertyName("anchors"); writer.ArrayBegin((uint)Anchors.Count);
             foreach(var anchor in Anchors) {
                 writer.TypeBegin("CS2AreaSystem.AreaAnchorView");

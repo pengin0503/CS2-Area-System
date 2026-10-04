@@ -41,6 +41,17 @@ namespace CS2AreaSystem.Core.Semantics
         {
             lock(gate){foreach(var prefab in patches.Keys)if(TryWinner(prefab,semantic,out var winner)&&(winner.Allow&semantic)!=0)return true;return false;}
         }
+        // True when the named provider's own patch for this prefab allows the semantic (independently of precedence).
+        public bool HasProviderAllow(string providerId,Entity prefab,AreaAssetSemantic semantic)
+        {
+            if(providerId==null)return false;
+            lock(gate)return patches.TryGetValue(prefab,out var providers)&&providers.TryGetValue(providerId,out var patch)&&(patch.Allow&semantic)!=0;
+        }
+        public bool HasProviderAllow(string providerId,AreaAssetSemantic semantic)
+        {
+            if(providerId==null)return false;
+            lock(gate){foreach(var providers in patches.Values)if(providers.TryGetValue(providerId,out var patch)&&(patch.Allow&semantic)!=0)return true;return false;}
+        }
         private bool TryWinner(Entity prefab,AreaAssetSemantic semantic,out AreaAssetSemanticPatch winner)
         {
             winner=default;int bit=(int)semantic;if(bit<=0||(bit&(bit-1))!=0||(semantic&~Known)!=0)return false;
