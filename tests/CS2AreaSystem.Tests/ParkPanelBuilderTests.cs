@@ -327,7 +327,7 @@ public class ParkCoveragePanelTests {
  [Test] public void TheFacadeReadsTheFactorFromBudgetAndPolicyFundingForActiveParksOnly() {
   var facade = IndustrialSupportSourceGuardTests.Source("Modules/Park/ParkGameplayFacade.cs");
   Assert.That(facade, Does.Contain("ParkCoverageModifierModel.Factor(model.Budget, model.Policies.ManagementFundingMultiplier)"));
-  Assert.That(facade, Does.Contain("model.CoverageActive = coverage != null && coverage.Enabled;"));
+  Assert.That(facade, Does.Contain("model.CoverageActive = coverage != null && coverage.Enabled && AreaSettings.Current.EnableParkCoverageModifier;"));
   Assert.That(facade.IndexOf("ParkCoverageModifierModel.Factor("), Is.GreaterThan(facade.IndexOf("model.Policies=")), "policies are read first");
  }
  [TestCase("en-US")] [TestCase("ja-JP")]
