@@ -382,6 +382,17 @@ for (const source of ['ParkPathEntranceDetector.cs', 'ParkEntranceEvidence.cs', 
 const connectivity = code('src/CS2AreaSystem/Modules/Park/ParkConnectivitySystem.cs');
 check(!/SetComponentData|SetBuffer|AddComponent|RemoveComponent|DestroyEntity|EntityCommandBuffer/.test(connectivity), 'Park connectivity must only read the vanilla network');
 
+// Phase 3 D1: supply contracts are advisory. Their sources never reference routing, transfers, buyers/sellers, prices,
+// demand or vehicles, and the only component they write is their own saved configuration.
+for (const source of ['IndustrialSupplyContract.cs', 'IndustrialSupplyContractModel.cs', 'IndustrialSupplyContractEvaluator.cs', 'IndustrialSupplyContractActions.cs',
+  'IndustrialSupplyContractSystem.cs', 'IndustrialSupplyContractView.cs']) {
+  const contract = code(`src/CS2AreaSystem/Modules/Industrial/${source}`);
+  check(!/Pathfind|PathFind|PathInformation|SetupQueue|TransferRequest|ResourceBuyer|ResourceSeller|TradeCost|Price|Demand|EconomyUtils|AddResources|Game\.Vehicles|Game\.Pathfind|Game\.Companies|Game\.Citizens/.test(contract), `${source}: supply contracts must not touch routing, transfers, prices, demand or companies`);
+  check(!/AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity|CreateEntity/.test(contract), `${source}: supply contracts must not make structural changes`);
+  for (const write of contract.matchAll(/SetComponentData(?:<(\w+)>)?\(([^,]+),\s*(\w+)\)/g)) check(write[3] === 'state' && /IndustrialSupplyContractState/.test(contract), `${source}: supply contracts may write only their own allocator`);
+  for (const write of contract.matchAll(/GetBuffer<(\w+)>\(/g)) check(write[1] === 'IndustrialSupplyContract', `${source}: supply contracts may open only their own buffer`);
+}
+
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);
   for (const failure of failures) console.error(` - ${failure}`);
