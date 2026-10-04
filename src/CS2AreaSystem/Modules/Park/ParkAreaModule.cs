@@ -21,8 +21,11 @@ namespace CS2AreaSystem.Modules.Park
         public ParkAreaModule(AreaAnchorService anchors, Func<Entity, EntityManager, ParkFacilityTraits> readTraits = null, AreaAssetSemanticRegistry semantics=null)
             : base(AreaTypeId.Park, anchors, AreaAnchorRole.Headquarters, AreaAnchorRole.Entrance)
         { this.readTraits = readTraits ?? ParkFacilityReader.ReadAnchor; this.semantics=semantics; }
-        // Phase 3 C2: Headquarters accepts only AS_ParkHeadquarters and Entrance only AS_ParkGate (see AcceptsAnchor).
-        public override bool CanAssignAnchor(Entity area, AreaAnchorRole role, EntityManager entities) => role == AreaAnchorRole.Headquarters || role == AreaAnchorRole.Entrance;
+        // Phase 3 C2: Headquarters accepts only AS_ParkHeadquarters and Entrance only AS_ParkGate (see AcceptsAnchor). A role
+        // whose AS_ package is not installed offers no pick mode, since no building could be accepted.
+        public override bool CanAssignAnchor(Entity area, AreaAnchorRole role, EntityManager entities) =>
+            (role == AreaAnchorRole.Headquarters || role == AreaAnchorRole.Entrance) &&
+            (semantics == null || AreaBuiltInAssetContract.IsContentPresent(semantics, role == AreaAnchorRole.Headquarters ? AreaAssetSemantic.ParkHeadquarters : AreaAssetSemantic.ParkEntrance));
         public override bool ValidateActivation(Entity area, in AreaActivationContext context) =>
             Anchors.HasValidAnchor(area,AreaAnchorRole.Headquarters) && Anchors.HasValidAnchor(area,AreaAnchorRole.Entrance);
         public override string BuildSummary(Entity area, in AreaPanelContext context) =>

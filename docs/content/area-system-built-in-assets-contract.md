@@ -9,7 +9,7 @@ Code: `src/CS2AreaSystem/Core/Semantics/AreaBuiltInAssetContract.cs`
 
 | Item | Value |
 | --- | --- |
-| Content package logical ID | `AS_AreaSystemAssets` |
+| Content package logical ID | `AS_AreaSystemAssets` (the Asset Importer project root; not a file name: the editor names each `.cok` after its main asset, e.g. `AS_ParkHeadquarters.cok`) |
 | Semantic provider ID | `CS2AreaSystem.BuiltInContent` |
 | Prefab type | `BuildingPrefab` (normal placeable building) |
 | Owned identifier prefix | `AS_` (every Area System-owned model/prefab identifier) |

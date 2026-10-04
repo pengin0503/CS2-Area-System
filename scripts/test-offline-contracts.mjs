@@ -388,8 +388,10 @@ for (const id of ['AS_AreaSystemAssets','CS2AreaSystem.BuiltInContent','AS_ParkH
   check(builtInContract.includes('`'+id+'`'), `C2 asset contract must name ${id}`);
 check(/`CS2_AS_ParkHeadquarters\.zip` is a superseded copy and is not a C2 source/.test(builtInContract), 'C2 asset contract must exclude the superseded standalone Park HQ archive');
 const csproj = read('src/CS2AreaSystem/CS2AreaSystem.csproj');
-check(/<Target Name="DeployAreaContent" AfterTargets="DeployWIP"[\s\S]*assets\/area-system\/package\/AS_\*\.cok[\s\S]*<Warning Condition="'@\(AreaContentPackages\)' == ''"/.test(csproj),
-  'official build must ship AS_*.cok content packages and warn (not substitute) when they are missing');
+check(/<Target Name="DeployAreaContent" AfterTargets="DeployWIP"[\s\S]*assets\/area-system\/package\/AS_\*\.cok[\s\S]*<Error Condition="'@\(AreaContentPackages\)' == '' And '\$\(AllowMissingAreaContent\)' != 'true'"/.test(csproj),
+  'official build must ship AS_*.cok content packages and fail (not substitute) when they are missing');
+check(/<Warning Condition="'@\(AreaContentPackages\)' == '' And '\$\(AllowMissingAreaContent\)' == 'true'"/.test(csproj),
+  'only an explicit AllowMissingAreaContent=true build (runtime case C207) may deploy without the content package');
 const prepare = read('scripts/prepare_area_system_assets.py');
 check(/SUPERSEDED = "CS2_AS_ParkHeadquarters\.zip"/.test(prepare) && prepare.includes('30b4138e2ce7b8c57a89ec783a57f5bf3ee4a233f2ce8beff01203c0ca14b1a3') &&
   prepare.includes('b4e0d3c249552c3b8922000c93a53b7a17198745e1748bd1ef445e1e4852d175'), 'asset preparation must pin both archive hashes and refuse the superseded archive');

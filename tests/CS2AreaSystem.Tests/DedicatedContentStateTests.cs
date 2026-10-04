@@ -101,6 +101,27 @@ public class DedicatedContentStateTests
   Assert.That(keys, Does.Not.Contain("CS2AS.Park.Warning.NoEntrance"), "the gate cannot be placed until its package is installed");
   Assert.That(keys, Does.Not.Contain("CS2AS.Park.Warning.HeadquartersRequired"));
  }
+ // Quality also runs for Suspended Parks, so the gate-package warning must replace its generic NoEntrance as well.
+ [Test] public void GateContentWarningReplacesQualityNoEntrance() {
+  var m = ParkPanelBuilderTests.Model(quality: true, entrances: 0); m.Lifecycle = AreaLifecycleState.Suspended;
+  m.Headquarters = ParkHeadquartersState.Valid; m.Entrance = ParkHeadquartersState.ContentMissing;
+  Assert.That(m.Runtime!.Quality, Is.Not.Null);
+  Assert.That(m.Runtime.Quality!.Warnings, Does.Contain("CS2AS.Park.Warning.NoEntrance"), "precondition: Quality reports no entrance");
+  var keys = ParkPanelBuilder.Build(m).Tabs[0].Items.Select(i => i.LabelKey).ToList();
+  Assert.That(keys, Does.Contain("CS2AS.Park.Warning.GateContentMissing"));
+  Assert.That(keys, Does.Not.Contain("CS2AS.Park.Warning.NoEntrance"));
+  Assert.That(keys.Count(k => k == "CS2AS.Park.Warning.GateContentMissing"), Is.EqualTo(1));
+ }
+ // A role whose package is missing offers no pick mode that cannot succeed; without a registry nothing is claimed.
+ [Test] public void AssignmentIsOfferedOnlyForRolesWhoseContentIsInstalled() {
+  var (park, _, _) = Park(Registry(gate: false));
+  Assert.That(park.CanAssignAnchor(Area, AreaAnchorRole.Headquarters, default), Is.True);
+  Assert.That(park.CanAssignAnchor(Area, AreaAnchorRole.Entrance, default), Is.False);
+  var (industrial, _) = Industrial(Registry(industrialHq: false));
+  Assert.That(industrial.CanAssignAnchor(Area, AreaAnchorRole.Headquarters, default), Is.False);
+  Assert.That(Industrial(Registry()).industrial.CanAssignAnchor(Area, AreaAnchorRole.Headquarters, default), Is.True);
+  Assert.That(new ParkAreaModule(new AreaAnchorService(new Store(), e => true, (a, e, r) => true)).CanAssignAnchor(Area, AreaAnchorRole.Entrance, default), Is.True);
+ }
  [Test] public void IndustrialPanelShowsMissingContent() {
   var m = new IndustrialPanelModel { Lifecycle = AreaLifecycleState.Suspended, Headquarters = IndustrialHeadquartersState.ContentMissing };
   var items = IndustrialPanelBuilder.Build(m).Tabs[0].Items;

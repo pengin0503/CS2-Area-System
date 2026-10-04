@@ -8,7 +8,8 @@ public class FoundationIntegrationTests
  [TestCase(false,false,false,false,"BothRequired")][TestCase(true,false,true,false,"EntranceRequired")][TestCase(false,true,false,true,"HeadquartersRequired")][TestCase(true,true,true,true,"Active")]
  [TestCase(false,true,true,false,"HeadquartersInvalid")][TestCase(true,false,true,true,"EntranceInvalid")][TestCase(false,false,true,true,"BothRequired")]
  public void MissingRequirementsHaveDistinctSummaries(bool hq,bool entrance,bool hqLinked,bool entranceLinked,string suffix) {
-  Assert.That(ParkActivationSummary.Key(hq,hqLinked,entrance,entranceLinked),Is.EqualTo("CS2AS.Park.Summary."+suffix));
+  static ParkHeadquartersState S(bool valid,bool linked)=>valid?ParkHeadquartersState.Valid:linked?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing;
+  Assert.That(ParkActivationSummary.Key(S(hq,hqLinked),S(entrance,entranceLinked)),Is.EqualTo("CS2AS.Park.Summary."+suffix));
  }
  [Test] public void PanelShowsInvalidHeadquartersWithoutLosingProgressOrFinance() {
   var m=ParkPanelBuilderTests.Model(level:4,quality:false);m.Lifecycle=AreaLifecycleState.Suspended;m.Headquarters=ParkHeadquartersState.Invalid;

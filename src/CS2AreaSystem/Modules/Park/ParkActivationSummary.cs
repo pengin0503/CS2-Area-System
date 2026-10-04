@@ -8,9 +8,6 @@ namespace CS2AreaSystem.Modules.Park
     // package is not installed is reported as missing content first, because nothing can be assigned until it is.
     public static class ParkActivationSummary
     {
-        public static string Key(bool headquarters,bool headquartersLinked,bool entrance,bool entranceLinked) =>
-            Key(headquarters?ParkHeadquartersState.Valid:headquartersLinked?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing,
-                entrance?ParkHeadquartersState.Valid:entranceLinked?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing);
         public static string Key(ParkHeadquartersState headquarters,ParkHeadquartersState entrance)
         {
             const string P="CS2AS.Park.Summary.";

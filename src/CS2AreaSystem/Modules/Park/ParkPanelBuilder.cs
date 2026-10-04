@@ -88,9 +88,14 @@ namespace CS2AreaSystem.Modules.Park
                 items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Warning,Id="warning.hq",LabelKey=P+"Warning.Headquarters"+(model.Headquarters==ParkHeadquartersState.Invalid?"Invalid":
                     model.Headquarters==ParkHeadquartersState.ContentMissing?"ContentMissing":"Required")});
             var warnings = q?.Warnings ?? new List<string>();
-            // Phase 3 C2: before Quality runs, a missing/invalid AS_ParkGate is known from the live Entrance anchors; a missing gate package is named instead.
-            if (q == null && model.Lifecycle != AreaLifecycleState.Active && model.Entrance == ParkHeadquartersState.ContentMissing)
-                warnings = new List<string> { P + "Warning.GateContentMissing" };
+            // Phase 3 C2: before Quality runs, a missing/invalid AS_ParkGate is known from the live Entrance anchors. A missing
+            // gate package replaces the generic NoEntrance, also once Quality (which runs for Suspended Parks) has reported it.
+            if (model.Lifecycle != AreaLifecycleState.Active && model.Entrance == ParkHeadquartersState.ContentMissing)
+            {
+                var replaced = new List<string> { P + "Warning.GateContentMissing" };
+                foreach (var warning in warnings) if (warning != P + "Warning.NoEntrance" && warning != P + "Warning.GateContentMissing") replaced.Add(warning);
+                warnings = replaced;
+            }
             else if (q == null && model.Lifecycle != AreaLifecycleState.Active && (model.Entrance == ParkHeadquartersState.Missing || model.Entrance == ParkHeadquartersState.Invalid))
                 warnings = new List<string> { P + "Warning.NoEntrance" };
             foreach (var warning in warnings) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "warning." + warning, LabelKey = warning });

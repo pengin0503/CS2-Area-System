@@ -36,7 +36,7 @@ AS_AreaSystemAssets/
   manifest.json
 ```
 
-Known source limitations (not changed by the script; fix in the authoring source if the editor exposes them):
+Pre-packaging blockers (not changed by the script). Do not package or ship until both are resolved in the authoring source:
 
 - FBX-internal node names and embedded texture paths still carry the authoring names (`ParkAreaHQ01_4x3`, `ParkGate01_2x1`,
   `IndustrialAreaHQ01_5x4`, `/home/claude/cs2hq/...`). Binary FBX strings are length-prefixed, so they are not patched here.
@@ -44,7 +44,7 @@ Known source limitations (not changed by the script; fix in the authoring source
   identifier uses the old names, otherwise re-export from the authoring source with the `AS_` names.
 - The source README states that the Headquarters meshes include streetlights in their emissive set and that the Gate
   includes four path bollards. Under the project model rule these replaceable props should be removed from the meshes and
-  placed as vanilla props instead.
+  placed as vanilla props instead. The supplied archives cannot satisfy this rule as they are.
 
 ## 2. Import in the 1.6.2f1 editor (in game; NOT RUN in this repository)
 
@@ -80,3 +80,9 @@ gate, and nothing collides with the gate posts. Area System adds no pathfinding 
    ParadoxMods asset databases index `.cok` files in mod folders, and `GameManager.LoadPrefabs` loads their prefabs at boot.
 4. At load, Area System logs which required prefabs it registered. Missing content is reported in the Area panel and nothing is
    substituted.
+
+## Release gate
+
+C2 has no fallback, so a mod deployed without `AS_*.cok` suspends every Park and Industrial Area. A deploying build
+(`DeployAreaContent`) therefore fails when `assets/area-system/package/AS_*.cok` is missing. Only the missing-content
+runtime case C207 may deploy without it, with `-p:AllowMissingAreaContent=true` (a warning instead of the error).

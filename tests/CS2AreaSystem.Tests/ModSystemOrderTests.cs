@@ -31,7 +31,7 @@ public class ModSystemOrderTests {
         Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Semantics.AreaBuiltInContentSystem)),Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem))));
         Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Semantics.AreaBuiltInContentSystem)),Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkConnectivitySystem))));
     }
-    private static readonly List<UpdateSystemCall> Vanilla =UpdateSystemCallReader.Read(typeof(SystemOrder));
+    private static readonly List<UpdateSystemCall> Vanilla = UpdateSystemCallReader.Read(typeof(SystemOrder));
     private static readonly List<UpdateSystemCall> ModCalls = UpdateSystemCallReader.Read(typeof(Mod));
     private static UpdateSystemCall VanillaRegistration<T>() => Vanilla.Single(c => c.System == typeof(T));
     private static readonly List<UpdateSystemCall> ModExecution = UpdateSystemCallReader.ReadExecution(typeof(Mod).GetMethod(nameof(Mod.OnLoad))!);
