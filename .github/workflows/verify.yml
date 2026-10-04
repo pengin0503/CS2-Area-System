@@ -31,6 +31,8 @@ jobs:
         run: npm run build
       - name: Offline contracts
         run: node scripts/test-offline-contracts.mjs
+      - name: AI context contracts
+        run: node scripts/test-ai-context-contracts.mjs
       - name: Source guards
         shell: pwsh
         run: ./scripts/verify-source.ps1

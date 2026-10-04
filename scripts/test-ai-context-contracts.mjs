@@ -83,6 +83,9 @@ for (const [name, sha, record] of archives) {
   }
 }
 
+check(/^\s*& node "\$PSScriptRoot\/test-ai-context-contracts\.mjs"\s*\r?\n\s*if \(\$LASTEXITCODE -ne 0\) \{ exit \$LASTEXITCODE \}/m.test(read('scripts/verify.ps1')), 'verify.ps1: must run AI context contracts and propagate failure');
+check(/^\s*run: node scripts\/test-ai-context-contracts\.mjs\s*$/m.test(read('.github/workflows/verify.yml')), 'verify.yml: must run AI context contracts');
+
 // Validate every exposed repository path, not just the representative subset.
 for (const p of guidancePaths) {
   for (const match of read(p).matchAll(/`((?:docs|src|tests|scripts|UI|\.claude)\/[^`\s]+|CLAUDE\.md)`/g))

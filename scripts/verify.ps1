@@ -8,6 +8,8 @@ try {
     & "$PSScriptRoot/test-build-contract.ps1"
     & node "$PSScriptRoot/test-offline-contracts.mjs"
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    & node "$PSScriptRoot/test-ai-context-contracts.mjs"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $buildArgs = @('-c', 'Debug')
     if ($ApiCheck) { $buildArgs += '-p:AreaApiCheck=true' }
     & dotnet test tests/CS2AreaSystem.Tests/CS2AreaSystem.Tests.csproj @buildArgs
