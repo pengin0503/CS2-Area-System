@@ -21,7 +21,15 @@ public class ModSystemOrderTests {
         Assert.That(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkEntranceSystem)),Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem))));
         Assert.That(ModCalls.Count(c=>c.System==typeof(CS2AreaSystem.Modules.Park.ParkEntranceSystem)),Is.EqualTo(1));
     }
-    private static readonly List<UpdateSystemCall> Vanilla = UpdateSystemCallReader.Read(typeof(SystemOrder));
+    // Phase 3 C2: dedicated asset semantics are rediscovered before activation evaluates any anchor.
+    [Test] public void BuiltInContentRegistersBeforeActivation() {
+        var order=Schedule(SystemUpdatePhase.ModificationEnd);
+        Assert.That(ModCalls.Count(c=>c.System==typeof(CS2AreaSystem.Core.Semantics.AreaBuiltInContentSystem)),Is.EqualTo(1));
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Semantics.AreaBuiltInContentSystem)),Is.GreaterThanOrEqualTo(0));
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Semantics.AreaBuiltInContentSystem)),Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Core.Anchors.AreaActivationSystem))));
+        Assert.That(order.IndexOf(typeof(CS2AreaSystem.Core.Semantics.AreaBuiltInContentSystem)),Is.LessThan(order.IndexOf(typeof(CS2AreaSystem.Modules.Park.ParkConnectivitySystem))));
+    }
+    private static readonly List<UpdateSystemCall> Vanilla =UpdateSystemCallReader.Read(typeof(SystemOrder));
     private static readonly List<UpdateSystemCall> ModCalls = UpdateSystemCallReader.Read(typeof(Mod));
     private static UpdateSystemCall VanillaRegistration<T>() => Vanilla.Single(c => c.System == typeof(T));
     private static readonly List<UpdateSystemCall> ModExecution = UpdateSystemCallReader.ReadExecution(typeof(Mod).GetMethod(nameof(Mod.OnLoad))!);
@@ -169,7 +177,7 @@ public class ModSystemOrderTests {
     [TestCase(SystemUpdatePhase.PrefabUpdate, "AreaPrefabRegistrationSystem")]
     [TestCase(SystemUpdatePhase.PreTool, "ManagedAreaToolGuardSystem")]
     [TestCase(SystemUpdatePhase.ToolUpdate, "AreaLabelSystem")]
-    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,ParkEntranceSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem")]
+    [TestCase(SystemUpdatePhase.ModificationEnd, "ManagedAreaOverlapSystem,ManagedAreaLifecycleSystem,AreaPlacementSystem,AreaLoadCoordinatorSystem,AreaPolicyBootstrapSystem,AreaMembershipSystem,AreaBuiltInContentSystem,ParkEntranceSystem,ParkConnectivitySystem,AreaActivationSystem,AreaPolicySystem,ParkRuntimeSystem,ParkHistorySystem,ParkLandscapeSystem,IndustrialRuntimeSystem,IndustrialHistorySystem")]
     [TestCase(SystemUpdatePhase.GameSimulation, "ParkCoverageModifierSystem,AreaPolicyUpkeepSystem,ParkVisitSystem,ParkQualitySystem,ParkFinanceSystem,ParkProgressionSystem,IndustrialPolicyEffectSystem,IndustrialObservationSystem,IndustrialProgressionSystem,IndustrialSupportSystem,ParkEventSystem,AreaFinanceSystem")]
     [TestCase(SystemUpdatePhase.Serialize, "ParkFinanceSaveSystem,AreaFinanceSaveSystem,IndustrialSupportSaveSystem,ParkHistorySaveSystem,IndustrialHistorySaveSystem,ParkCoverageModifierSaveSystem")]
     [TestCase(SystemUpdatePhase.UIUpdate, "AreaToolbarUnlockSystem,AreaManagementUISystem,AreaBudgetBindingSystem")]

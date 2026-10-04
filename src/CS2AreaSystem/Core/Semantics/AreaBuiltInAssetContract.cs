@@ -36,5 +36,12 @@ namespace CS2AreaSystem.Core.Semantics
         public static bool IsOwnedSource(bool packaged, bool builtIn, string packageName) =>
             packaged && !builtIn && packageName != null && packageName.Length > OwnedPrefix.Length + PackageExtension.Length &&
             packageName.StartsWith(OwnedPrefix, StringComparison.Ordinal) && packageName.EndsWith(PackageExtension, StringComparison.Ordinal);
+        // A dedicated anchor needs this provider's own Allow; another provider cannot grant the role, while normal registry
+        // precedence (for example a higher-priority Deny) still applies.
+        public static bool Qualifies(AreaAssetSemanticRegistry registry, Unity.Entities.Entity prefab, AreaAssetSemantic semantic) =>
+            registry != null && (semantic & RequiredSemantics) == semantic && semantic != AreaAssetSemantic.None &&
+            registry.HasProviderAllow(ProviderId, prefab, semantic) && registry.Resolve(prefab, semantic, false);
+        public static bool IsContentPresent(AreaAssetSemanticRegistry registry, AreaAssetSemantic semantic) =>
+            registry != null && registry.HasProviderAllow(ProviderId, semantic);
     }
 }
