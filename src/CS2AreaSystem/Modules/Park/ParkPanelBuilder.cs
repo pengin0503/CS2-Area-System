@@ -36,6 +36,9 @@ namespace CS2AreaSystem.Modules.Park
             foreach (var t in RuntimeTrendPresentation.Keys) yield return t;
             foreach (var d in ParkLandscapeDiagnostics.Keys) if (d != ParkLandscapeDiagnostics.Cluttered) { yield return P + "Diagnostic." + d; yield return P + "Diagnostic." + d + ".Tip"; }
             yield return P + "FocusTarget"; yield return P + "FocusTarget.Tip";
+            foreach (var key in new[] { "HeadquartersRequired", "HeadquartersInvalid", "HeadquartersContentMissing", "GateContentMissing" }) yield return P + "Warning." + key;
+            foreach (var key in new[] { "Active", "BothRequired", "HeadquartersRequired", "HeadquartersInvalid", "EntranceRequired", "EntranceInvalid",
+                "ContentMissing", "HeadquartersContentMissing", "GateContentMissing" }) yield return P + "Summary." + key;
             foreach(var key in new[]{"Status","Unknown","Partial","Complete","Reachable","Unattached","Disconnected"}) yield return P+"Connectivity."+key;
             foreach(var key in new[]{"Budget","Fee","Cost","Coverage","Maintenance","Value","Net","Tip"})yield return P+"Preview."+key;
             foreach (var key in EventKeys) yield return P + "Events." + key;
@@ -81,11 +84,14 @@ namespace CS2AreaSystem.Modules.Park
             items.Add(Row("activeVisitors", P + "ActiveVisitors", Number(model.Runtime?.ActiveVisitors ?? 0)));
             items.Add(Row("recentVisitors", P + "RecentVisitors", Number(Recent(model.Runtime, r => r.RecentVisitors, model.Frame)), tooltip: P + "Recent.Tip"));
             items.Add(Row("entrances", P + "Entrances", Number(model.Runtime?.EntranceCount ?? 0)));
-            if(model.Lifecycle!=AreaLifecycleState.Active&&(model.Headquarters==ParkHeadquartersState.Missing||model.Headquarters==ParkHeadquartersState.Invalid))
-                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Warning,Id="warning.hq",LabelKey=P+"Warning.Headquarters"+(model.Headquarters==ParkHeadquartersState.Invalid?"Invalid":"Required")});
+            if(model.Lifecycle!=AreaLifecycleState.Active&&(model.Headquarters==ParkHeadquartersState.Missing||model.Headquarters==ParkHeadquartersState.Invalid||model.Headquarters==ParkHeadquartersState.ContentMissing))
+                items.Add(new AreaPanelItem{Kind=AreaPanelItemKind.Warning,Id="warning.hq",LabelKey=P+"Warning.Headquarters"+(model.Headquarters==ParkHeadquartersState.Invalid?"Invalid":
+                    model.Headquarters==ParkHeadquartersState.ContentMissing?"ContentMissing":"Required")});
             var warnings = q?.Warnings ?? new List<string>();
-            // Phase 3 C2: before Quality runs, a missing/invalid AS_ParkGate is known from the live Entrance anchors.
-            if (q == null && model.Lifecycle != AreaLifecycleState.Active && (model.Entrance == ParkHeadquartersState.Missing || model.Entrance == ParkHeadquartersState.Invalid))
+            // Phase 3 C2: before Quality runs, a missing/invalid AS_ParkGate is known from the live Entrance anchors; a missing gate package is named instead.
+            if (q == null && model.Lifecycle != AreaLifecycleState.Active && model.Entrance == ParkHeadquartersState.ContentMissing)
+                warnings = new List<string> { P + "Warning.GateContentMissing" };
+            else if (q == null && model.Lifecycle != AreaLifecycleState.Active && (model.Entrance == ParkHeadquartersState.Missing || model.Entrance == ParkHeadquartersState.Invalid))
                 warnings = new List<string> { P + "Warning.NoEntrance" };
             foreach (var warning in warnings) items.Add(new AreaPanelItem { Kind = AreaPanelItemKind.Warning, Id = "warning." + warning, LabelKey = warning });
             if (q?.NextActionKey != null) items.Add(Row("nextAction", P + "NextAction", valueKey: q.NextActionKey));

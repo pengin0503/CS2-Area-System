@@ -75,7 +75,10 @@ public class DedicatedAnchorCutoverTests
   var assembly = typeof(ParkAreaModule).Assembly;
   foreach (var retired in new[] { "ParkEntranceSystem", "ParkPathEntranceDetector", "ParkEntranceEvidence", "ParkEntranceEvidenceStore", "ParkEntranceScan", "ParkEntranceAccess" })
    Assert.That(assembly.GetType("CS2AreaSystem.Modules.Park." + retired), Is.Null, retired);
-  Assert.That(typeof(ParkAreaModule).GetInterfaces(), Does.Not.Contain(typeof(IAreaDerivedAnchorPolicy)));
+  // Task 5: the derived-anchor presentation hook and its "Detected path entrances" UI rows are retired with it.
+  Assert.That(assembly.GetType("CS2AreaSystem.Core.Anchors.IAreaDerivedAnchorPolicy"), Is.Null);
+  Assert.That(typeof(CS2AreaSystem.Core.UI.AreaAnchorGroupView).GetField("DerivedCount"), Is.Null);
+  Assert.That(typeof(CS2AreaSystem.Core.UI.AreaAnchorGroupView).GetField("DerivedStatusKey"), Is.Null);
   foreach (var source in new[] { "Modules/Park/ParkAreaModule.cs", "Modules/Park/ParkQualitySystem.cs", "Modules/Park/ParkConnectivitySystem.cs", "Modules/Park/ParkRuntimeSystem.cs",
    "Modules/Park/ParkRuntimeSnapshot.cs", "Modules/Park/ParkGameplayFacade.cs", "Modules/Park/ParkPanelBuilder.cs", "Mod.cs" })
    Assert.That(IndustrialSupportSourceGuardTests.Source(source), Does.Not.Match(@"ParkEntrance(System|Evidence|Access|Scan)|PathEntrance|PathwayData"), source);

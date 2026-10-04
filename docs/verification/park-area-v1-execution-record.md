@@ -145,3 +145,11 @@ Runtime: **NOT RUN.** The release gate C601–C606 in [the smoke checklist](../.
 **PASS — user-confirmed.** The user reports all Park v1, Phase 2 C5 Festival and Phase 2 C6 coverage-modifier in-game checks completed on Cities: Skylines II 1.6.2f1 and behaved normally. The original NOT RUN statements above remain as implementation-time history; they are not rewritten as automated evidence. Exact local save/build metadata was not supplied in this chat.
 
 Runtime-confirmation Issues #30, #50, #53 and #55 were closed as completed. C6 is therefore release-eligible; the readiness branch opens `ParkCoverageModifierGate.RuntimeVerified` and adds an Options off switch.
+
+## Phase 3 C2 dedicated-asset cutover — 2026-10-04
+
+Runtime: **NOT RUN.** Phase 3 C2 replaces the Park Maintenance Headquarters and path-derived Entrance evidence with `AS_ParkHeadquarters` + `AS_ParkGate` explicit anchors; the path-entrance scan and its "Detected path entrances" UI row are removed. Implementation-time automated evidence only; the in-game cases are C201–C208 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md). The earlier PASS addendum above covers the pre-C2 rules and is not carried over to C2.
+
+- Old Park Maintenance HQ / Entrance links are kept, shown as invalid/removable and never converted; the Area is Suspended until the dedicated asset is assigned. Automated: `DedicatedContentStateTests`, `DedicatedAnchorCutoverTests`.
+- Without the installed asset package the summary and warnings say which `AS_` asset is not installed.
+- No serialized schema changed (`AreaAnchorLink` v1, `ParkAreaState` v1 are unchanged).

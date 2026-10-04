@@ -18,8 +18,8 @@ namespace CS2AreaSystem.Core.UI
                 ["Services.DESCRIPTION[" + menu + "]"] = ja ? "公園・産業・観光の管理エリアを作成します。管理境界は既存の建物や道路を消しません。" : "Create Park, Industrial and Tourism management areas. Boundaries never clear existing buildings or roads.",
                 ["SubServices.NAME[" + category + "]"] = ja ? "エリアの種類" : "Area Types",
                 ["Assets.SUB_SERVICE_DESCRIPTION[" + category + "]"] = ja ? "作成する管理エリアの種類を選びます。" : "Choose the kind of management area to draw.",
-                ["Assets.DESCRIPTION[CS2AS.ParkArea]"] = ja ? "公園エリアの境界を描きます。エリア内の公園整備施設の本部と、境界を横断する専用歩道の入口がそろうと稼働します。" : "Draw a Park Area boundary. It requires a Park Maintenance headquarters and a dedicated pedestrian path crossing the boundary.",
-                ["Assets.DESCRIPTION[CS2AS.IndustrialArea]"] = ja ? "産業エリアの境界を描きます。エリア内のオフィス建物を本部に割り当てると稼働します。" : "Draw an Industrial Area boundary. It becomes active once an office building inside it is assigned as the headquarters.",
+                ["Assets.DESCRIPTION[CS2AS.ParkArea]"] = ja ? "公園エリアの境界を描きます。エリア内の AS_ParkHeadquarters を本部に、AS_ParkGate を入口に指定すると稼働します。" : "Draw a Park Area boundary. It becomes active once an AS_ParkHeadquarters building inside it is assigned as headquarters and an AS_ParkGate building as entrance.",
+                ["Assets.DESCRIPTION[CS2AS.IndustrialArea]"] = ja ? "産業エリアの境界を描きます。エリア内の AS_IndustrialHeadquarters を本部に割り当てると稼働します。" : "Draw an Industrial Area boundary. It becomes active once an AS_IndustrialHeadquarters building inside it is assigned as the headquarters.",
                 ["Assets.DESCRIPTION[CS2AS.TourismArea]"] = ja ? "観光エリアは現在、境界のみです。観光のゲームプレイ機能（観測・評価・進行）は未実装で、今後の更新で追加予定です。" : "Tourism is currently a boundary only. No tourism gameplay (observations, scoring or progression) is implemented; it is planned for a future update.",
                 ["Assets.NAME[CS2AS.ParkArea]"] = ja ? "公園エリア" : "Park Area",
                 ["Assets.NAME[CS2AS.IndustrialArea]"] = ja ? "産業エリア" : "Industrial Area",
@@ -65,15 +65,12 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.AnchorRemoved"] = ja ? "撤去された建物" : "Building removed",
                 ["CS2AS.UI.ChangeEntrance"] = ja ? "入口を変更" : "Change entrance",
                 ["CS2AS.UI.ChangeHeadquarters"] = ja ? "本部を変更" : "Change headquarters",
-                ["CS2AS.UI.SelectEntrance"] = ja ? "このエリア内の登録済み入口アセットをクリックしてください。" : "Click an explicitly registered entrance building inside this area.",
-                ["CS2AS.UI.SelectHeadquarters"] = ja ? "このエリア内の本部候補をクリックしてください。公園は公園整備施設、工業はオフィス建物を使用します。" : "Click an eligible headquarters inside this area: Park Maintenance for a Park, or an office building for an Industrial Area.",
+                ["CS2AS.UI.SelectEntrance"] = ja ? "このエリア内の AS_ParkGate をクリックしてください。" : "Click an AS_ParkGate building inside this area.",
+                ["CS2AS.UI.SelectHeadquarters"] = ja ? "このエリア内の本部をクリックしてください。公園は AS_ParkHeadquarters、産業は AS_IndustrialHeadquarters を使用します。" : "Click a headquarters inside this area: AS_ParkHeadquarters for a Park, or AS_IndustrialHeadquarters for an Industrial Area.",
                 ["CS2AS.UI.AreaList"] = ja ? "管理エリア一覧" : "Managed areas",
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };
             entries["CS2AS.UI.Met"] = ja ? "達成" : "Met";
-            entries["CS2AS.UI.PathEntrances"] = ja ? "検出された歩道入口" : "Detected path entrances";
-            entries["CS2AS.UI.PathEntrancesComplete"] = ja ? "専用歩道の境界横断を確認済み" : "Dedicated path boundary crossings checked";
-            entries["CS2AS.UI.PathEntrancesUnknown"] = ja ? "歩道入口を調査中" : "Path entrances pending scan";
             entries["CS2AS.UI.NotMet"] = ja ? "未達成" : "Not met";
             // Runtime trend rows (Wave A1): direction label + signed change since the previous hourly sample.
             entries[CS2AreaSystem.Core.Diagnostics.RuntimeTrendPresentation.Up] = ja ? "前回比 上昇" : "vs previous: rising";

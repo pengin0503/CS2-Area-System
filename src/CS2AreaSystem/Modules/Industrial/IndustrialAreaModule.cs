@@ -30,14 +30,18 @@ namespace CS2AreaSystem.Modules.Industrial
         }
         // Revalidate static office evidence, including legacy links; vacancy/health do not affect OfficeProperty.
         public bool AcceptsExistingAnchor(Entity area, Entity anchor, AreaAnchorRole role, EntityManager entities) => AcceptsAnchor(area, anchor, role, entities);
+        // Phase 3 C2: without the installed AS_IndustrialHeadquarters package no link can be valid, so that is reported first.
         public IndustrialHeadquartersState HeadquartersState(Entity area) =>
-            ValidateActivation(area, default) ? IndustrialHeadquartersState.Valid : Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
+            ValidateActivation(area, default) ? IndustrialHeadquartersState.Valid :
+            semantics != null && !AreaBuiltInAssetContract.IsContentPresent(semantics, AreaAssetSemantic.IndustrialHeadquarters) ? IndustrialHeadquartersState.ContentMissing :
+            Anchors.HasLinks(area, AreaAnchorRole.Headquarters) ? IndustrialHeadquartersState.Invalid : IndustrialHeadquartersState.Missing;
         public override string BuildSummary(Entity area, in AreaPanelContext context)
         {
             switch (HeadquartersState(area))
             {
                 case IndustrialHeadquartersState.Valid: return IndustrialPanelBuilder.P + "Summary.Active";
                 case IndustrialHeadquartersState.Invalid: return IndustrialPanelBuilder.P + "Summary.HeadquartersInvalid";
+                case IndustrialHeadquartersState.ContentMissing: return IndustrialPanelBuilder.P + "Summary.HeadquartersContentMissing";
                 default: return IndustrialPanelBuilder.P + "Summary.HeadquartersRequired";
             }
         }

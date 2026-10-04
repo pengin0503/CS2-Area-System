@@ -3,13 +3,15 @@ using CS2AreaSystem.Core.UI;
 using NUnit.Framework;
 namespace CS2AreaSystem.Tests;
 public class AreaManagementViewModelTests {
-    [Test] public void GroupsSerializeIndependentAssignmentAndDerivedEvidenceAndInvalidateTheView() {
+    // Phase 3 C2: groups carry only explicit anchors; the derived path-entrance fields are retired from the payload.
+    [Test] public void GroupsSerializeIndependentAssignmentAndInvalidateTheView() {
         var a=View();a.AnchorGroups=new[]{new AreaAnchorGroupView{Role="Headquarters",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="1.1",Valid=false}}},
-            new AreaAnchorGroupView{Role="Entrance",AssignmentSupported=false,DerivedCount=2,DerivedStatusKey="CS2AS.UI.PathEntrancesComplete"}};
+            new AreaAnchorGroupView{Role="Entrance",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="2.1",Name="Gate",Valid=true}}}};
         var writer=new Support.RecordingJsonWriter();writer.MapBegin(0);a.WriteProperties(writer);writer.MapEnd();var json=writer.Parse();
-        Assert.That(json.GetProperty("anchorGroups")[1].GetProperty("derivedCount").GetInt32(),Is.EqualTo(2));
-        Assert.That(json.GetProperty("anchorGroups")[1].GetProperty("assignmentSupported").GetBoolean(),Is.False);
-        var b=View();b.AnchorGroups=new[]{new AreaAnchorGroupView{Role="Entrance",DerivedCount=3}};
+        Assert.That(json.GetProperty("anchorGroups")[1].GetProperty("assignmentSupported").GetBoolean(),Is.True);
+        Assert.That(json.GetProperty("anchorGroups")[1].TryGetProperty("derivedCount",out _),Is.False);
+        Assert.That(json.GetProperty("anchorGroups")[1].TryGetProperty("derivedStatusKey",out _),Is.False);
+        var b=View();b.AnchorGroups=new[]{a.AnchorGroups[0],new AreaAnchorGroupView{Role="Entrance",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="2.1",Name="Gate",Valid=false}}}};
         Assert.That(AreaManagementViewModel.Equivalent(a,b),Is.False);
     }
     private static AreaManagementViewModel View() => new() {

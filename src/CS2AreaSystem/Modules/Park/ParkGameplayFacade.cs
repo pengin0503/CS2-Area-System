@@ -37,7 +37,8 @@ namespace CS2AreaSystem.Modules.Park
         public bool CoverageActive;
         public int CoverageBuildings;
     }
-    public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid }
+    // ContentMissing (Phase 3 C2): the role's AS_ package is not installed, so nothing can be assigned to it.
+    public enum ParkHeadquartersState : byte { Unknown, Missing, Valid, Invalid, ContentMissing }
     // Boundary between the module UI and Park gameplay: selected-Park reads and the only validated setters.
     // Entrance add/remove stays in Core's guarded anchor actions. No policies or XP/level setters exist.
     // FocusDiagnosticTarget is read-only (camera focus on a landscape diagnostic target) and never reaches the setters.
@@ -141,10 +142,8 @@ namespace CS2AreaSystem.Modules.Park
             model.State = model.HasState ? entities.GetComponentData<ParkAreaState>(area) : ParkAreaState.CreateDefault();
             var runtime = context.World?.GetExistingSystemManaged<ParkRuntimeSystem>();
             var core=context.World?.GetExistingSystemManaged<AreaCoreServicesSystem>();
-            if(core!=null)model.Headquarters=core.Anchors.HasValidAnchor(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Valid:
-                core.Anchors.HasLinks(area,Core.Anchors.AreaAnchorRole.Headquarters)?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing;
-            if(core!=null)model.Entrance=core.Anchors.HasValidAnchor(area,Core.Anchors.AreaAnchorRole.Entrance)?ParkHeadquartersState.Valid:
-                core.Anchors.HasLinks(area,Core.Anchors.AreaAnchorRole.Entrance)?ParkHeadquartersState.Invalid:ParkHeadquartersState.Missing;
+            if(core!=null)model.Headquarters=ParkActivationSummary.State(core.Anchors,core.Semantics,area,Core.Anchors.AreaAnchorRole.Headquarters);
+            if(core!=null)model.Entrance=ParkActivationSummary.State(core.Anchors,core.Semantics,area,Core.Anchors.AreaAnchorRole.Entrance);
             if (runtime != null)
             {
                 model.Frame = runtime.SimulationFrame;

@@ -7,11 +7,13 @@ namespace CS2AreaSystem.Tests;
 // Generates the UI fixture from the real C# section payload so the React Park tests cannot drift from
 // ParkPanelBuilder. Set UPDATE_UI_FIXTURES=1 to rewrite it; otherwise a stale committed fixture fails.
 public class ParkPanelFixtureTests {
- [Test] public void FoundationFixtureIncludesBothRolesAndAutomaticPathEvidence() {
+ // Phase 3 C2: both roles are explicit, assignable dedicated anchors; no automatic path evidence is presented.
+ [Test] public void FoundationFixtureIncludesBothAssignableDedicatedRoles() {
   using var json=System.Text.Json.JsonDocument.Parse(Generate());
   var groups=json.RootElement.GetProperty("sections").GetProperty("foundation").GetProperty("anchorGroups");
   Assert.That(groups.EnumerateArray().Select(g=>g.GetProperty("role").GetString()),Is.EqualTo(new[]{"Headquarters","Entrance"}));
-  Assert.That(groups[1].GetProperty("derivedCount").GetInt32(),Is.EqualTo(2));
+  Assert.That(groups.EnumerateArray().All(g=>g.GetProperty("assignmentSupported").GetBoolean()),Is.True);
+  Assert.That(groups[1].TryGetProperty("derivedCount",out _),Is.False);
  }
  private static string FixturePath => Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../../UI/src/__fixtures__/park-panel.json"));
  private static void Section(RecordingJsonWriter writer, string name, ParkPanelModel model, bool entrances = true) {
@@ -30,8 +32,8 @@ public class ParkPanelFixtureTests {
   foundation.Runtime.Connectivity=new(){Status=ParkConnectivityStatus.Complete,Connected=1,Total=2,DisconnectedTargets=new[]{ParkPanelBuilderTests.Prop}};
   var foundationView=new AreaManagementViewModel{StableId="42",TypeKey="CS2AS.Type.Park",State="CS2AS.State.Active",Summary="CS2AS.Park.Summary.Active",Panel=ParkPanelBuilder.Build(foundation),
    AnchorGroups=new[]{
-    new AreaAnchorGroupView{Role="Headquarters",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="29.1",Name="Park Maintenance",Valid=true}}},
-    new AreaAnchorGroupView{Role="Entrance",AssignmentSupported=false,DerivedCount=2,DerivedStatusKey="CS2AS.Park.Entrance.Derived",Anchors=Array.Empty<AreaAnchorView>()}}};
+    new AreaAnchorGroupView{Role="Headquarters",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="29.1",Name="Area System Park Headquarters",Valid=true}}},
+    new AreaAnchorGroupView{Role="Entrance",AssignmentSupported=true,Anchors=new[]{new AreaAnchorView{Key="31.1",Name="Area System Park Gate",Valid=true}}}}};
   writer.PropertyName("foundation");writer.MapBegin(0);foundationView.WriteProperties(writer);writer.MapEnd();
   Section(writer, "level1", ParkPanelBuilderTests.Model(level: 1));
   Section(writer, "level2", ParkPanelBuilderTests.Model(level: 2, primary: false));

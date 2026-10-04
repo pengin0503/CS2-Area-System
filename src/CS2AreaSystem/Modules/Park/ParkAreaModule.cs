@@ -26,8 +26,8 @@ namespace CS2AreaSystem.Modules.Park
         public override bool ValidateActivation(Entity area, in AreaActivationContext context) =>
             Anchors.HasValidAnchor(area,AreaAnchorRole.Headquarters) && Anchors.HasValidAnchor(area,AreaAnchorRole.Entrance);
         public override string BuildSummary(Entity area, in AreaPanelContext context) =>
-            ParkActivationSummary.Key(Anchors.HasValidAnchor(area,AreaAnchorRole.Headquarters),Anchors.HasLinks(area,AreaAnchorRole.Headquarters),
-                Anchors.HasValidAnchor(area,AreaAnchorRole.Entrance),Anchors.HasLinks(area,AreaAnchorRole.Entrance));
+            ParkActivationSummary.Key(ParkActivationSummary.State(Anchors,semantics,area,AreaAnchorRole.Headquarters),
+                ParkActivationSummary.State(Anchors,semantics,area,AreaAnchorRole.Entrance));
         public override AreaPanelDocument BuildPanel(Entity area, in AreaPanelContext context)
         {
             var captured = context;

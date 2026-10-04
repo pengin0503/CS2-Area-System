@@ -198,3 +198,11 @@ API compilation and unit tests do not show that the mod is ready to play.
 **PASS — user-confirmed.** The user reports all Industrial v1, Phase 2 B2 manual-company-assignment and Phase 2 C4 support-payment in-game checks completed on Cities: Skylines II 1.6.2f1 and behaved normally. The original NOT RUN statements above remain as implementation-time history; they are not rewritten as automated evidence. Exact local save/build metadata was not supplied in this chat.
 
 Runtime-confirmation Issue #43 was closed as completed. The Phase 3 D1/D2 plans may rely on the verified Phase 2 ownership/support baseline.
+
+## Phase 3 C2 dedicated-asset cutover — 2026-10-04
+
+Runtime: **NOT RUN.** Phase 3 C2 replaces the Foundation office Headquarters with the `AS_IndustrialHeadquarters` explicit anchor. Implementation-time automated evidence only; the in-game cases are C201–C208 in [the smoke checklist](../../scripts/runtime-smoke-checklist.md). The earlier PASS addendum above covers the pre-C2 rules and is not carried over to C2.
+
+- Old office HQ links are kept, shown as invalid/removable and never converted; the Area is Suspended until the dedicated asset is assigned. Automated: `DedicatedContentStateTests`, `DedicatedAnchorCutoverTests`.
+- Without the installed asset package the summary and warnings say which `AS_` asset is not installed.
+- No serialized schema changed (`AreaAnchorLink` v1, `IndustrialAreaState` v1 are unchanged).
