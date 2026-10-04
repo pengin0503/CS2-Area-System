@@ -37,7 +37,7 @@ namespace CS2AreaSystem.Core.Semantics
                 LastResult = provider.Refresh(services.Semantics, candidates);
                 if (LastResult.Missing != AreaAssetSemantic.None || LastResult.Rejected > 0)
                     Mod.Log.Warn("Area System content: registered " + LastResult.Registered + "; missing " + LastResult.Missing + "; rejected exact-name candidates " +
-                        LastResult.Rejected + ". Missing roles keep their Areas Suspended; no fallback is used.");
+                        LastResult.Rejected + (LastResult.Missing != AreaAssetSemantic.None ? ". Missing roles keep their Areas Suspended; no fallback is used." : ". No Area role is missing."));
                 else Mod.Log.Info("Area System content: registered " + LastResult.Registered + ".");
             }
             catch (System.Exception error)
@@ -48,14 +48,42 @@ namespace CS2AreaSystem.Core.Semantics
                 Mod.Log.Error(error, "Area System content discovery failed; dedicated Headquarters/Gate roles are unavailable");
             }
         }
+        // Phase 3 D2: the effective runtime prefab data vanilla PropertyProcessingSystem reads (BuildingPropertyData, Signature,
+        // the signature zone's ZoneData), so a re-imported asset that no longer matches its contract is rejected.
+        private AreaBuiltInBuildingFacts ReadBuilding(Entity entity)
+        {
+            var facts = new AreaBuiltInBuildingFacts();
+            if (EntityManager.HasComponent<BuildingPropertyData>(entity))
+            {
+                var property = EntityManager.GetComponentData<BuildingPropertyData>(entity);
+                facts.HasProperty = true; facts.Input = (ulong)property.m_AllowedInput; facts.Manufactured = (ulong)property.m_AllowedManufactured; facts.Sold = (ulong)property.m_AllowedSold;
+                facts.Stored = (ulong)property.m_AllowedStored; facts.Residential = property.m_ResidentialProperties;
+            }
+            facts.Signature = EntityManager.HasComponent<SignatureBuildingData>(entity);
+            if (EntityManager.HasComponent<SpawnableBuildingData>(entity))
+            {
+                var zone = EntityManager.GetComponentData<SpawnableBuildingData>(entity).m_ZonePrefab;
+                if (zone != Entity.Null && EntityManager.HasComponent<ZoneData>(zone))
+                {
+                    var data = EntityManager.GetComponentData<ZoneData>(zone);
+                    facts.IndustrialZone = data.m_AreaType == Game.Zones.AreaType.Industrial;
+                    facts.OfficeZone = (data.m_ZoneFlags & ZoneFlags.Office) != 0;
+                }
+            }
+            return facts;
+        }
         private void Collect(Entity entity)
         {
             if (!prefabs.TryGetPrefab<PrefabBase>(entity, out var prefab) || prefab == null) return;
             // Only exact identifiers are inspected further; every other building prefab is skipped without reading its asset.
-            if (!AreaBuiltInAssetContract.TryGetSemantic(prefab.name, out _)) return;
+            if (!AreaBuiltInAssetContract.TryGetAsset(prefab.name, out var asset)) return;
             var meta = prefab.asset != null ? prefab.asset.GetMeta() : default;
-            var candidate = new AreaBuiltInPrefabCandidate(entity, prefab.GetType().Name, prefab.name, prefab.asset != null && meta.packaged, prefab.isBuiltin, meta.packageName);
+            var candidate = new AreaBuiltInPrefabCandidate(entity, prefab.GetType().Name, prefab.name, prefab.asset != null && meta.packaged, prefab.isBuiltin, meta.packageName,
+                asset.RequiredManufactured != 0 ? ReadBuilding(entity) : null);
             candidates.Add(candidate);
+            if (candidate.Building != null)
+                Mod.Log.Info("Area System content facts " + candidate.PrefabName + " input=" + candidate.Building.Input + " manufactured=" + candidate.Building.Manufactured + " sold=" + candidate.Building.Sold +
+                    " stored=" + candidate.Building.Stored + " signature=" + candidate.Building.Signature + " industrialZone=" + candidate.Building.IndustrialZone + " officeZone=" + candidate.Building.OfficeZone);
             Mod.Log.Info("Area System content candidate " + candidate.PrefabType + ":" + candidate.PrefabName + " packaged=" + candidate.Packaged +
                 " builtIn=" + candidate.BuiltIn + " package=" + (candidate.PackageName ?? "<none>"));
         }

@@ -58,11 +58,15 @@
   <!-- Phase 3 C2: the editor-built Area System content package(s) ship inside the mod folder, which the User and ParadoxMods
        asset databases index (assets/area-system/README.md). Missing content is never substituted: C2 has no fallback, so a
        deployment without it would suspend every Park/Industrial Area. Only -p:AllowMissingAreaContent=true (runtime case
-       C207) deploys without it, with a warning. -->
+       C207) deploys without it, with a warning. Phase 3 D2: the optional factory package never satisfies that requirement on
+       its own; it only ships next to the C2 package. -->
   <Target Name="DeployAreaContent" AfterTargets="DeployWIP" Condition="'$(NeedBuild)' == 'true'">
-    <ItemGroup><AreaContentPackages Include="$(MSBuildProjectDirectory)/../../assets/area-system/package/AS_*.cok" /></ItemGroup>
+    <ItemGroup>
+      <AreaContentPackages Include="$(MSBuildProjectDirectory)/../../assets/area-system/package/AS_*.cok" Exclude="$(MSBuildProjectDirectory)/../../assets/area-system/package/AS_FurnitureFactory.cok" />
+      <AreaOptionalContentPackages Include="$(MSBuildProjectDirectory)/../../assets/area-system/package/AS_FurnitureFactory.cok" Condition="Exists('$(MSBuildProjectDirectory)/../../assets/area-system/package/AS_FurnitureFactory.cok')" />
+    </ItemGroup>
     <Error Condition="'@(AreaContentPackages)' == '' And '$(AllowMissingAreaContent)' != 'true'" Text="Area System content package missing (assets/area-system/package/AS_*.cok). Without it every Park/Industrial Area stays Suspended. Build the package (assets/area-system/README.md) or pass -p:AllowMissingAreaContent=true for the missing-content runtime test only." />
     <Warning Condition="'@(AreaContentPackages)' == '' And '$(AllowMissingAreaContent)' == 'true'" Text="Area System content package missing (AllowMissingAreaContent=true). Park/Industrial Headquarters and Park Gate stay unavailable; Areas remain Suspended." />
-    <Copy SourceFiles="@(AreaContentPackages)" DestinationFolder="$(DeployDir)" />
+    <Copy SourceFiles="@(AreaContentPackages);@(AreaOptionalContentPackages)" DestinationFolder="$(DeployDir)" />
   </Target>
 </Project>

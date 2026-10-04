@@ -396,6 +396,23 @@ const prepare = read('scripts/prepare_area_system_assets.py');
 check(/SUPERSEDED = "CS2_AS_ParkHeadquarters\.zip"/.test(prepare) && prepare.includes('30b4138e2ce7b8c57a89ec783a57f5bf3ee4a233f2ce8beff01203c0ca14b1a3') &&
   prepare.includes('b4e0d3c249552c3b8922000c93a53b7a17198745e1748bd1ef445e1e4852d175'), 'asset preparation must pin both archive hashes and refuse the superseded archive');
 
+// Phase 3 D2: custom factory content uses existing vanilla resources only and has no special case in observation/scoring.
+{
+  const sources = walk('src').filter(p => p.endsWith('.cs') && !/[\\/](bin|obj)[\\/]/.test(p));
+  const contractFiles = ['src/CS2AreaSystem/Modules/Industrial/IndustrialReferenceFactoryContract.cs', 'src/CS2AreaSystem/Core/Semantics/AreaBuiltInAssetContract.cs'];
+  for (const source of sources) {
+    const text = code(source);
+    check(!/\benum\s+Resource\b|\benum\s+ResourceInEditor\b/.test(text), `${source}: no new Resource enum`);
+    check(!/Resource\)\s*\(?\s*1UL\s*<<\s*(4[1-9]|5\d|6[0-3])\b|Resource\.Last\s*<<|ResourceCount\s*[+*]/.test(text), `${source}: no Resource bit or economy-array extension`);
+    if (contractFiles.includes(source.replace(/\\/g, '/'))) continue;
+    check(!/AS_FurnitureFactory|IndustrialReferenceFactoryContract|Resource\.Furniture/.test(text), `${source}: the reference factory must not be special-cased outside its content contract`);
+  }
+  const contentSystem = code('src/CS2AreaSystem/Core/Semantics/AreaBuiltInContentSystem.cs');
+  check(!/SetComponentData|AddComponent|RemoveComponent|SetBuffer|AddBuffer|EntityCommandBuffer|DestroyEntity|CreateEntity/.test(contentSystem), 'built-in content discovery must only read prefabs');
+  check(/<AreaContentPackages Include="[^"]*AS_\*\.cok" Exclude="[^"]*AS_FurnitureFactory\.cok" \/>/.test(csproj),
+    'the optional factory package must not satisfy the required C2 content-package check');
+}
+
 if (failures.length) {
   console.error(`Offline contract checks failed (${failures.length}):`);
   for (const failure of failures) console.error(` - ${failure}`);

@@ -206,3 +206,54 @@ Runtime: **NOT RUN.** Phase 3 C2 replaces the Foundation office Headquarters wit
 - Old office HQ links are kept, shown as invalid/removable and never converted; the Area is Suspended until the dedicated asset is assigned. Automated: `DedicatedContentStateTests`, `DedicatedAnchorCutoverTests`.
 - Without the installed asset package the summary and warnings say which `AS_` asset is not installed.
 - No serialized schema changed (`AreaAnchorLink` v1, `IndustrialAreaState` v1 are unchanged).
+
+## Phase 3 D2 reference factory — execution record 2026-10-04
+
+The execution-time latest `main` was `108bf47`. Branch: `claude/project-thread-3jfpsi-d2`. It is stacked on the C2 branch,
+because the factory uses C2's built-in content provider `CS2AreaSystem.BuiltInContent`. D2 does not depend on D1.
+- Plan: `2026-10-02-phase3-custom-factory-content-implementation.md`. Followed with Superpowers executing-plans, inline,
+  with one fresh-context whole-branch reviewer at the end.
+- Scope: D2 only. There is no new `Resource`, no economy change and no score exception.
+
+### Decision (Task 1)
+
+No recipe is authored. `AS_FurnitureFactory` is an Industrial, non-office signature building that manufactures only
+vanilla Furniture. Only a vanilla Furniture company can rent it (`PropertyUtils.PropertyAllowsResource`): vanilla
+`PropertyProcessingSystem` creates one and the industrial find-property flow moves a tenant in, which need not be that
+same company. That company's own `IndustrialProcessData` is what runs and is observed. Vanilla `EconomyUtils.IsProducedFrom` makes Furniture from Timber
+alone. The company prefab's amounts are prefab data that are not in the supplied managed assemblies, so they are not pinned.
+Details are in `docs/verification/custom-factory-process-contract.md`.
+
+### Task evidence
+
+| Task | Commit | Evidence |
+| --- | --- | --- |
+| 1 Process contract | `7135d24` | API/pure-function tests on 1.6.2f1: Furniture is a single non-office, non-extractor bit made only from Timber; editor→runtime mapping; empty allowed input = any recipe; prefab field shapes. RED: missing contract type. |
+| 2 Content provider | `9fb8be4` | `AS_FurnitureFactory` is optional content of the shared provider and registered as `IndustrialProducer` only when the runtime prefab matches the contract (10 mismatch cases rejected); absent → nothing changes and nothing is reported missing; reload rebinds. RED: missing facts type. Asset authoring **BLOCKED** (no source model). |
+| 3 Generic observation | `92c2831` | Identical reads in the factory and a vanilla building give identical processes, resources, bottlenecks, scores and comparison; B2 manual ownership works. Proof over unchanged code, so GREEN from the start. |
+| 4 Guards and checklist | see `git log` (docs: verify custom factory) | Offline guard: no new `Resource`/`ResourceInEditor` enum, no Resource bits ≥ 41 or economy-array growth, no factory/Furniture reference outside the two contract files, read-only discovery (mutation runs failed as expected). Runtime cases D201–D206. |
+| Review fixes | see `git log` (fix: close D2 review findings) | The contract check now also requires `m_AllowedInput == GetAllResources()` (2 new mismatch cases, RED then GREEN). The optional factory package no longer satisfies the required C2 package check in `DeployAreaContent` (offline guard failed on the old target, passes on the new one). Company placement wording corrected (below). The content warning no longer claims an Area impact when only optional content is rejected. A tautological assertion was replaced by an `m_AllowedInput` field pin. |
+
+### Deviations from the plan
+
+- The plan's Task 2 named a separate `IndustrialBuiltInContentProvider.cs`. The factory is instead optional content of the
+  shared C2 provider (same provider id, as the plan's interface requires), plus the contract constants class.
+- The plan says the game places "the first" vanilla Furniture processing company. In 1.6.2f1, `PropertyProcessingSystem` only
+  creates that company; the tenant is chosen by `PropertyUtils.CompanyFindPropertyJob` (signature properties get +5000), so
+  any vanilla Furniture company may move in. The decision is unchanged, because `PropertyAllowsResource` admits only
+  Furniture companies with all inputs allowed. The approved plan is left as written.
+
+### Runtime
+
+The following are **NOT RUN**, and asset authoring is **BLOCKED**:
+- asset import and packaging;
+- in-game cases D201–D206.
+
+The first release cannot ship the reference factory until a model exists and these cases pass.
+
+### Verification (before review)
+
+| Command | Result |
+| --- | --- |
+| `pwsh -NoProfile -File scripts/verify.ps1 -ApiCheck` | **PASS**, exit 0. NUnit **1343/1343**, Vitest **113/113**, guards, UI build. |
+| `dotnet build src/CS2AreaSystem/CS2AreaSystem.csproj -p:AreaApiCheck=true -c Release` | **PASS**, 0 warnings / 0 errors. |
