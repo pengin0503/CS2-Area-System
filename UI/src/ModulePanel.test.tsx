@@ -73,6 +73,27 @@ describe('generic module panel items',()=>{
   expect(env.trigger).toHaveBeenCalledTimes(1);
   expect(env.trigger).toHaveBeenCalledWith('cs2AreaSystem','moduleAction','12','focusDiagnosticTarget','70.3');
  });
+ // Phase 3 D1: a bounded select steps through its options and sends the chosen option value.
+ it('select items cycle their options and send the chosen value; disabled or empty selects do nothing',()=>{
+  env.dict['M.Pick']='Destination';env.dict['M.Opt1']='North works';
+  const options=[{value:'a',label:'Harbor',labelKey:null},{value:'b',label:null,labelKey:'M.Opt1'},{value:'c',label:'Ridge',labelKey:null}];
+  const view=render(<ModulePanel stableId="7" items={[item({kind:'select',id:'p',labelKey:'M.Pick',action:'pick',value:'b',options})]}/>);
+  expect(row('Destination')).toHaveTextContent('North works');
+  fireEvent.click(screen.getByRole('button',{name:'Next'}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','7','pick','c');
+  fireEvent.click(screen.getByRole('button',{name:'Previous'}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','7','pick','a');
+  env.trigger.mockClear();
+  view.rerender(<ModulePanel stableId="7" items={[item({kind:'select',id:'p',labelKey:'M.Pick',action:'pick',value:null,options})]}/>);
+  expect(row('Destination')).toHaveTextContent('—');
+  fireEvent.click(screen.getByRole('button',{name:'Next'}));
+  expect(env.trigger).toHaveBeenLastCalledWith('cs2AreaSystem','moduleAction','7','pick','a');
+  env.trigger.mockClear();
+  view.rerender(<ModulePanel stableId="7" items={[item({kind:'select',id:'p',labelKey:'M.Pick',action:'pick',value:'a',options,disabled:true}),
+   item({kind:'select',id:'q',labelKey:'M.Pick',action:'pick',value:null,options:[]})]}/>);
+  for(const button of screen.getAllByRole('button'))fireEvent.click(button);
+  expect(env.trigger).not.toHaveBeenCalled();
+ });
  it('ignores unknown item kinds from newer modules',()=>{
   expect(()=>render(<ModulePanel stableId="7" items={[item({kind:'chart',id:'c'})]}/>)).not.toThrow();
  });

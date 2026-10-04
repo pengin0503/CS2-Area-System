@@ -71,6 +71,9 @@ namespace CS2AreaSystem.Core.UI
                 ["CS2AS.UI.NoAreas"] = ja ? "管理エリアはまだありません。" : "No managed areas yet."
             };
             entries["CS2AS.UI.Met"] = ja ? "達成" : "Met";
+            // Generic select stepper (Phase 3 D1).
+            entries["CS2AS.UI.Previous"] = ja ? "前へ" : "Previous";
+            entries["CS2AS.UI.Next"] = ja ? "次へ" : "Next";
             entries["CS2AS.UI.PathEntrances"] = ja ? "検出された歩道入口" : "Detected path entrances";
             entries["CS2AS.UI.PathEntrancesComplete"] = ja ? "専用歩道の境界横断を確認済み" : "Dedicated path boundary crossings checked";
             entries["CS2AS.UI.PathEntrancesUnknown"] = ja ? "歩道入口を調査中" : "Path entrances pending scan";

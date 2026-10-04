@@ -9,6 +9,31 @@ namespace CS2AreaSystem.Core.Modules
         public const string Row = "row", Bar = "bar", Warning = "warning", Note = "note", Slider = "slider", Button = "button";
         // Requirement row: Value is "current / required", NumericValue 1 when met and 0 when not.
         public const string Check = "check";
+        // Bounded choice (Options); the module re-validates the chosen value when its Action arrives.
+        public const string Select = "select";
+    }
+    // One option of a select item: Value is sent back; LabelKey (localized) wins over the preformatted Label.
+    public sealed class AreaPanelOption
+    {
+        public const int MaxOptions = 64;
+        public string Value { get; set; }
+        public string Label { get; set; }
+        public string LabelKey { get; set; }
+        // True when the value is one of the options the item renders (within the bound).
+        public static bool Offers(AreaPanelItem item, string value)
+        {
+            if (item?.Options == null || value == null) return false;
+            for (int i = 0; i < item.Options.Count && i < MaxOptions; i++) if (item.Options[i]?.Value == value) return true;
+            return false;
+        }
+        internal static bool Equivalent(IReadOnlyList<AreaPanelOption> a, IReadOnlyList<AreaPanelOption> b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a == null || b == null || a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++)
+                if (a[i]?.Value != b[i]?.Value || a[i]?.Label != b[i]?.Label || a[i]?.LabelKey != b[i]?.LabelKey) return false;
+            return true;
+        }
     }
     public sealed class AreaPanelItem
     {
@@ -26,10 +51,12 @@ namespace CS2AreaSystem.Core.Modules
         public string TooltipKey { get; set; }
         // Module action sent through the guarded moduleAction trigger (sliders send their new value).
         public string Action { get; set; }
+        // Select items only; other kinds leave it null and serialize no "options" property.
+        public IReadOnlyList<AreaPanelOption> Options { get; set; }
         internal static bool Equivalent(AreaPanelItem a, AreaPanelItem b) =>
             ReferenceEquals(a, b) || (a != null && b != null && a.Kind == b.Kind && a.Id == b.Id && a.LabelKey == b.LabelKey &&
             a.Value == b.Value && a.ValueKey == b.ValueKey && a.NumericValue == b.NumericValue && a.Min == b.Min && a.Max == b.Max &&
-            a.Step == b.Step && a.Disabled == b.Disabled && a.TooltipKey == b.TooltipKey && a.Action == b.Action);
+            a.Step == b.Step && a.Disabled == b.Disabled && a.TooltipKey == b.TooltipKey && a.Action == b.Action && AreaPanelOption.Equivalent(a.Options, b.Options));
         internal void Write(IJsonWriter writer)
         {
             writer.TypeBegin("CS2AreaSystem.AreaPanelItem");
@@ -45,6 +72,21 @@ namespace CS2AreaSystem.Core.Modules
             writer.PropertyName("disabled"); writer.Write(Disabled);
             writer.PropertyName("tooltipKey"); WriteString(writer, TooltipKey);
             writer.PropertyName("action"); WriteString(writer, Action);
+            if (Options != null)
+            {
+                int count = Math.Min(Options.Count, AreaPanelOption.MaxOptions);
+                writer.PropertyName("options"); writer.ArrayBegin((uint)count);
+                for (int i = 0; i < count; i++)
+                {
+                    var option = Options[i];
+                    writer.TypeBegin("CS2AreaSystem.AreaPanelOption");
+                    writer.PropertyName("value"); WriteString(writer, option?.Value);
+                    writer.PropertyName("label"); WriteString(writer, option?.Label);
+                    writer.PropertyName("labelKey"); WriteString(writer, option?.LabelKey);
+                    writer.TypeEnd();
+                }
+                writer.ArrayEnd();
+            }
             writer.TypeEnd();
         }
         private static void WriteString(IJsonWriter writer, string value) { if (value == null) writer.WriteNull(); else writer.Write(value); }
