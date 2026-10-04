@@ -1,6 +1,6 @@
 # Park coverage modifier — 1.6.2f1 native contract (Phase 2 C6, Task 1)
 
-Status: **API contract proven from the supplied 1.6.2f1 sources. Runtime behaviour NOT RUN.** This proof allows a production-disabled prototype only. It does not allow release (see "Release gate" below).
+Status: **API contract proven; runtime release gate PASS — user-confirmed 2026-10-04.** The user reports the C601–C606 in-game checks completed on Cities: Skylines II 1.6.2f1 and behaved normally. Exact local save/build metadata was not supplied in this chat.
 
 Sources: the supplied `CS2-All-Managed-1.6.2f1-fix` zip. `Game.dll` was decompiled whole-project with ilspycmd 9.1. Single types were decompiled from `Unity.Entities.dll` (Entities 1.3.10) and `Colossal.Core.dll`. Line numbers refer to that decompile.
 
@@ -138,11 +138,11 @@ All five properties are proven from the supplied sources:
 
 C6 is therefore **not BLOCKED** at the API level.
 
-It still ships as a **production-disabled prototype**. `ParkCoverageModifierGate.RuntimeVerified` is `false`, and in that state the writer system is never enabled. `Shutdown()` is the synchronous disable entry point. Any change that opens the gate must also wire a user-facing off switch to it, because nothing calls it while the gate is closed.
+The runtime release gate has passed. `ParkCoverageModifierGate.RuntimeVerified` is `true` on the readiness branch. The production UI exposes **Options → CS2 Area System → Enable Park coverage modifier**; turning it off restores tracked native values and suppresses subsequent modifier writes while leaving Park/Core running.
 
 ### Release gate
 
-Before the gate can be opened, the in-game checks in `scripts/runtime-smoke-checklist.md` (C6 section) must pass:
+The in-game checks in `scripts/runtime-smoke-checklist.md` (C6 section) were reported PASS on 2026-10-04:
 
 - enable;
 - change the budget;
@@ -151,4 +151,4 @@ Before the gate can be opened, the in-game checks in `scripts/runtime-smoke-chec
 - delete;
 - ownership overlap.
 
-These are **NOT RUN**. The C# contract tests pin shapes and orders; they cannot execute ECS jobs.
+All six cases are **PASS (user-confirmed 2026-10-04)**. The C# contract tests still provide separate shape/order evidence and do not themselves execute ECS jobs.
