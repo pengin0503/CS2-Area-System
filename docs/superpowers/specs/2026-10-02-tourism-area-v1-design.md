@@ -435,3 +435,27 @@ XPはゲーム時間単位で集計する。
 - https://github.com/DillonN/specialized-industrial-zones/blob/master/src/SpecializedIndustryZones/SpecializedZoningSystem.cs
 - https://github.com/Meapy/CS2-TourismOverhaul/blob/main/TourismOverhaul/Systems/HotelZoneSystem.cs
 - https://github.com/Meapy/CS2-TourismOverhaul/blob/main/TourismOverhaul/Systems/TouristTargetSearchSystem.cs
+
+## 16. 成立性調査の結果（2026-10-11、静的調査のみ）
+
+計画のC1・O1・A1のうち、ゲームを起動せずにできる範囲をGame.dll 1.6.2f1の逆コンパイルで調べた。詳細と根拠の行番号は次の文書にある。ゲーム内の試行はすべて NOT RUN。
+
+- [観光商業](../../verification/tourism-commercial-contracts.md)
+- [運営の判断点](../../verification/tourism-operation-effect-contracts.md)
+- [観測経路](../../verification/tourism-observation-contracts.md)
+
+要点:
+
+1. 観光商業（4〜5節）の派生ゾーン＋派生建物方式は、新築・レベルアップ・入居・保存の各経路で静的に成立する。建物の販売業種はゾーンの `ZoneProperties.m_AllowedSold` から決まり、レベルアップは同じゾーン型・同じ販売集合の中だけで行われる。
+2. 既存商業の敷地セルを変換すると `ZoneCheckSystem` がその建物を Condemned にする。4.3の「自動撤去しない」には、占有セルを変換しないことが必須。
+3. 観光指定解除（5節の条件8）は、バニラのレベルアップと同じ `UnderConstruction.m_NewPrefab` による同一Entityのprefab差し替えで静的には実現できる見込み。差し替え完了とセル書き戻しの順序はゲーム内で確認するまで成立扱いにしない。
+4. **6節の運営効果の「相対重み×倍率」は1.6.2f1のネイティブ判断に存在しない。** 観光客の目的地は経路探索の最小コストで決まり、コストを外から変える公開の入口が無い。公開ECSで成立し得るのは、判断の一部をMODが選んだエリア内の候補へ振り替える方式で、効果の意味が変わる。振替先が到達不能だと観光客が都市を去るネイティブ経路があり、MOD側の再探索が必須。
+5. 6.1「プロモーション」と6.3「宿泊誘導」は、ネイティブでは同じ1回の判断（`TouristFindTarget`）に重なる。未予約の世帯はほぼ必ずホテルを選ぶ。
+6. 7.2の客室定員は `LodgingProviderSystem.GetRoomCount` で建物prefabから計算できる。空室・宿泊中は世帯単位（1室＝1世帯）。
+7. 観光名所の訪問は世帯の会合で行われ、既存の公園と同じ `Leisure` 観測だけでは経路によって漏れる。
+
+ユーザー判断が必要な点:
+
+- 運営効果を「倍率」から「振替の割合」へ定義し直すか（4）。
+- プロモーションと宿泊誘導を統合するか、対象を分けるか（5）。
+- 観光指定解除で、prefab差し替えのゲーム内確認ができない場合の扱い（空きセルだけ戻す／解体させる）（3）。
