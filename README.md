@@ -1,47 +1,25 @@
-# CS2 Area System — Area Core, Park Area v1 and Industrial Area v1
+# CS2 Area System
 
-Targets Cities: Skylines II **1.6.2f1**. Area Core source implements Park, Industrial and Tourism management boundaries using native `AreaToolSystem`, `SpacePrefab` (an `AreaPrefab`) and native toolbar/asset-menu data. Areas never replace the vanilla simulation: Park and Industrial observe it, and Tourism is a boundary only.
+**日本語** | [English](README.en.md)
 
-`LotPrefab` is editor-only for native new-area drawing in 1.6.2f1. `SpacePrefab` initializes editable non-clearing geometry and passes the gameplay creation gate. An additive ECS system reuses public native validation helpers on updated managed previews: only permitted managed-area overlap errors become warnings, while invalid shapes, city limits and vanilla-area conflicts stay blocking. Neither `ToolSystem.ignoreErrors` nor native systems are replaced. Game-side runtime checks were reported fully completed and normal on Cities: Skylines II 1.6.2f1 on 2026-10-04; automated/API checks remain separate evidence.
+Cities: Skylines II 1.6.2f1向けに、公園・工業・観光の管理エリアを追加するMODです。公園と工業エリアはゲーム内の状況を観察します。観光は境界のみで、観光ゲームプレイは未実装です。
 
-## Run and required game verification
+## 使い方
 
-Use an official-toolchain build in a fresh 1.6.2f1 session. Open **Areas → Area Types**, select one of the three kinds and use native area controls. Completed areas are not selectable with the vanilla default tool, so open **Managed areas** (top right) and pick an area. The game's own selected-info panel opens, like for a district: its header shows and renames the area and offers locate, and the area section below shows type, status, entrance/headquarters and progress with Edit/Delete. For Industrial, assign an office building inside the area as Headquarters. For Park, assign a Park Maintenance facility as Headquarters and connect a dedicated pedestrian Path from outside to inside the boundary; both requirements must be met. Assignment shows a hint with Cancel until an eligible building is clicked. The Headquarters and Entrance groups are separate; explicit Entrance assignment is available only when a semantic provider registers an eligible gate asset. Tourism requires no anchor and is explicitly labeled boundary only: tourism gameplay is not implemented. Reassign facilities through the same flow. A management boundary does not place or clear normal city assets.
+公式ツールチェーンでビルドしたMODを有効にし、**Areas → Area Types** から種類を選んで範囲を描きます。作成後は右上の **Managed areas** からエリアを選びます。表示されるパネルで名前、位置、種類、状態、進捗を確認し、編集・削除できます。
 
-## Park Area v1
+- **公園**：エリア内のPark Maintenance施設を本部に指定し、境界外から内側に接続する専用の歩道Path、または対応する入口を用意すると有効になります。通常の道路歩道は自動入口に数えません。
+- **工業**：エリア内の通常のオフィスを本部に指定すると有効になります。
+- **観光**：境界の管理のみです。
 
-A Park activates with a valid Park Maintenance Headquarters **and** at least one entrance: a dedicated pedestrian Path crossing from outside to inside its boundary, or an explicitly registered Entrance building. Ordinary road sidewalks do not count as automatic entrances. Detected Path evidence is rebuilt after load and network/boundary edits; it does not force visitor routing. Old leisure/attraction Entrance links remain visible and removable but no longer activate a Park by themselves. The Park observes real vanilla leisure: citizens doing leisure at its park/leisure/attraction buildings become visits (residents and tourists separately). Overlapping Parks count a visit only in the Park with the smaller stable ID. Park Quality (0–100) combines Visitor Satisfaction 25%, Attractiveness 20%, Accessibility 15%, Variety 15%, Maintenance 15% and Comfort 10%; landscape (vegetation, rest amenities, decoration, lighting, footpaths) is analyzed inside the Park only, with diminishing returns for repeated objects. Visits and strong Quality earn XP; five levels (Local, Neighborhood, City, Major, Landmark Park) never demote. The Park budget (50–150%) pays an area-management cost from city money and drives Maintenance; from Level 2 an admission fee moves real household money to the city once per visit (never below zero). The selected-info panel shows Overview, Visitors, Finances, Landscape, Progress and Events tabs. A one-day Park Festival is available through Phase 2 C5 and changes only Park-owned capacity/satisfaction/visit-XP inputs after its Area Finance payment settles. Park gameplay still does not change citizens' destination choice, happiness, land value, demand or vanilla tourism. Available Area policies retain their existing effects and upkeep; unavailable policies remain locked. The React Park tests read `UI/src/__fixtures__/park-panel.json`, generated from the real C# payload by `ParkPanelFixtureTests`; after changing the Park panel or its strings, run the C# tests once with `UPDATE_UI_FIXTURES=1` and commit the updated fixture. Park runtime checks in [the smoke checklist](scripts/runtime-smoke-checklist.md) are **PASS (user-confirmed 2026-10-04)**.
+割当操作中は対象施設をクリックします。設定は **Options → CS2 Area System** にあり、重複の許可、パネル位置、削除確認などを変更できます。
 
-## Industrial Area v1
+## 公園と工業エリア
 
-An Industrial Area is drawn with the native area tool like the other types and stays **Suspended** until an ordinary office building inside it is assigned as its **headquarters** (no custom asset is needed). Factory, extractor, warehouse and cargo capability alone does not qualify; legacy links remain visible as invalid until replaced. Once accepted, the headquarters keeps the Area **Active** through tenant vacancy, bankruptcy or poor operating health; only demolition, leaving the boundary or removing the link suspends it, and reassignment keeps Level/XP. The Area observes the real vanilla companies inside it once per game hour (at most 128 building reads per update, round-robin over Areas, in a scheduled job): building membership remains geometric; each eligible company resolves to its valid manual Industrial owner, otherwise the geometric primary owner, and office/commercial companies are excluded, and nothing in the economy is modified. Four 0–100 components are shown with their availability: **Production** (65% productive activity — the game's own current production rate divided by the company's rate at full staff and 100% efficiency — 25% active producers, 10% output diversity), **Logistics** (50% input continuity, 50% output/dispatch continuity over the last six game hours, at least four observed hours per channel; warehouses or cargo terminals give no points by themselves), **Employment** (75% job fill, 25% staffing balance) and **Efficiency** (70% vanilla building efficiency, 30% vanilla profitability). Industrial Performance combines them 35/25/20/20 and up to three bottlenecks are listed with their evidence. Missing data is shown as unavailable, never as zero. Five permanent levels (Local Industry, Industrial District, Production Hub, Regional Industrial Center, Industrial Powerhouse) are earned with hourly XP (at most 10 per game hour and 240 per game day, no Area-size multiplier) plus facility/employee/score gates; Level never demotes and gives no production, cargo, efficiency, profitability, tax or demand bonus. Phase 2 C4 adds bounded daily Industrial support payments through Area Finance; only the amount actually settled can be credited to companies currently resolved to the Area. Existing available Area policies remain unchanged and unavailable policies stay locked. The selected-info panel shows Overview, Production, Logistics, Employment, Progress, Trends and Companies tabs; the React tests read `UI/src/__fixtures__/industrial-panel.json`, generated by `IndustrialPanelFixtureTests` (rerun the C# tests with `UPDATE_UI_FIXTURES=1` after changing the panel or its strings). Field semantics and the calculation examples are documented in [the observation contracts](docs/verification/industrial-observation-contracts.md) and [the score examples](docs/verification/industrial-score-examples.md). The Industrial runtime checks in [the smoke checklist](scripts/runtime-smoke-checklist.md) are **PASS (user-confirmed 2026-10-04)**.
+公園は来訪者、品質、景観、財政、進捗などを表示します。予算と入場料を設定でき、イベントも利用できます。来訪者数などの変化はゲームの状況に依存し、MODが市民の目的地を直接変更するものではありません。
 
-## Foundation + Phase 1
+工業エリアでは対象企業の生産、物流、雇用、効率、ボトルネックと進捗を表示します。データがない指標は0ではなく利用不可として示します。エリアのレベル自体は生産、効率、税や需要にボーナスを与えません。
 
-The Landscape tab adds read-only pedestrian connectivity diagnostics. A Complete scan can identify disconnected facilities and focus them; a Partial or Unknown scan does not declare a facility disconnected. The Finances tab offers budget/fee what-if estimates: candidate sliders do not change settings or money; only the explicit apply action changes the selected setting. Estimates hold current visitor volume and Quality constant and do not predict demand.
+## 検証とライセンス
 
-Park and Industrial retain up to **168 hourly history buckets** (seven game days) per Area, with the latest 24 seeded into runtime trends after load. Industrial Overview compares managed Industrial Areas using current metrics and marks suspended, delayed or old observations as stale. A versioned semantic registry lets providers explicitly register eligible mod asset roles; typed vanilla facts remain the default. These additions preserve existing policies, Level/XP, finance and primary ownership. Phase 2 B2 adds persistent manual company assignment/removal through Companies, including non-primary overlaps; deleted/moved/ineligible companies invalidate claims and duplicate valid claims select the smallest Area StableId. C4 Industrial support and C5 Park Festival are implemented. C6 Park coverage is release-enabled after runtime verification and can be disabled live in Options; it scales eligible Park-owned coverage capacity/strength only, never range. Phase 3 and Tourism gameplay are not yet implemented.
-
-Automated API builds are not playable MODs. The [Foundation + Phase 1 runtime checklist](scripts/runtime-smoke-checklist.md#foundation--phase-1--cities-skylines-ii-162f1-runtime-verification) is **PASS (user-confirmed 2026-10-04)**; automated/API verification remains a separate requirement for code changes.
-
-Behaviour options (initial expansion of the managed area list, camera focus, panel side, delete confirmation, whether managed areas may overlap) are in **Options → CS2 Area System**.
-
-The **Managed areas** selection button remains available when the initial-expansion option is off; the list starts collapsed and can be opened at any time. Changing the option applies once, and manual opening/closing is preserved until the option changes or a new session starts.
-
-The twelve Area Core runtime checks and the later module checks are **PASS (user-confirmed 2026-10-04)**. Exact local verification metadata was not supplied in this chat; future code changes still require their applicable automated and runtime gates.
-
-Unknown schema-v1 TypeIds retain their identity and become ModuleUnavailable. Unsupported binary component schemas are explicitly rejected before interpreting fields or overwriting a save. Membership is derived and is never serialized.
-
-Copied/adapted GPL-3.0 portions and exact destinations are recorded in [THIRD_PARTY.md](THIRD_PARTY.md).
-
-## License
-
-This project is licensed under **GPL-3.0-only**. See [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md) for third-party provenance. Game DLLs and media are not included.
-
-## 日本語
-
-CS2 Area SystemはCities: Skylines IIに管理エリアを追加するMODです。公園・工業エリアを設定し、専用パネルで状態や進捗を確認できます。観光エリアは境界のみで、観光ゲームプレイは未実装です。
-
-ゲーム内で **Areas → Area Types** から種類を選んで範囲を描き、右上の **Managed areas** から対象を選びます。工業エリアは範囲内のオフィスを本部に指定すると有効になります。公園はPark Maintenance施設を本部に指定し、境界外から内部へ専用の歩道Pathを接続するなど、入口も必要です。通常の道路歩道は自動入口として扱いません。
-
-公園では来訪者、品質、予算、入場料、景観と成長を確認できます。工業エリアでは企業の生産、物流、雇用、効率やボトルネックを観察できます。指標が使えない場合は0ではなく利用不可と表示します。工業レベル自体は生産や税にボーナスを与えません。動作設定は **Options → CS2 Area System** にあります。ゲーム1.6.2f1での確認状況は本文を参照してください。[ライセンス](LICENSE)。
+1.6.2f1でのゲーム内確認は2026年10月4日に正常との報告を受けています。別のゲーム版や他MODとの互換性は保証されません。GPL-3.0-only。[LICENSE](LICENSE) と [THIRD_PARTY.md](THIRD_PARTY.md) を参照してください。
