@@ -4,29 +4,6 @@ Targets Cities: Skylines II **1.6.2f1**. Area Core source implements Park, Indus
 
 `LotPrefab` is editor-only for native new-area drawing in 1.6.2f1. `SpacePrefab` initializes editable non-clearing geometry and passes the gameplay creation gate. An additive ECS system reuses public native validation helpers on updated managed previews: only permitted managed-area overlap errors become warnings, while invalid shapes, city limits and vanilla-area conflicts stay blocking. Neither `ToolSystem.ignoreErrors` nor native systems are replaced. Game-side runtime checks were reported fully completed and normal on Cities: Skylines II 1.6.2f1 on 2026-10-04; automated/API checks remain separate evidence.
 
-## Build and verification
-
-Install the official game Modding Toolchain and set its `CSII_*` environment variables. Game DLLs/toolchain/media are not bundled. Install Node 18+ and .NET SDK, then:
-
-```powershell
-cd UI
-npm ci
-cd ..
-./scripts/verify.ps1
-```
-
-Default mod build targets **net48**, imports official `Mod.props` / `Mod.targets`, runs Unity postprocessing, then deploys to the configured local Mods directory. UI dependencies are mandatory for deployment; the current UI is rebuilt and copied after the toolchain's clean deployment step.
-
-For portable unit/API checks using supplied game DLLs:
-
-```powershell
-./scripts/verify.ps1 -ApiCheck
-```
-
-This profile targets net8, uses the actual game references, and deliberately skips Unity analyzers/postprocessing/deployment. Its assembly is **not a playable build**. A net48 API compilation also checks framework compatibility; neither compilation proves in-game behavior.
-
-The [offline CI workflow](.github/workflows/verify.yml) runs on pushes to main and pull requests. It checks the UI tests/build, offline contracts, source guards and MSBuild output parser without game DLLs. C# tests and API compilation still require local game references and `./scripts/verify.ps1 -ApiCheck`; CI does not verify in-game behavior.
-
 ## Run and required game verification
 
 Use an official-toolchain build in a fresh 1.6.2f1 session. Open **Areas → Area Types**, select one of the three kinds and use native area controls. Completed areas are not selectable with the vanilla default tool, so open **Managed areas** (top right) and pick an area. The game's own selected-info panel opens, like for a district: its header shows and renames the area and offers locate, and the area section below shows type, status, entrance/headquarters and progress with Edit/Delete. For Industrial, assign an office building inside the area as Headquarters. For Park, assign a Park Maintenance facility as Headquarters and connect a dedicated pedestrian Path from outside to inside the boundary; both requirements must be met. Assignment shows a hint with Cancel until an eligible building is clicked. The Headquarters and Entrance groups are separate; explicit Entrance assignment is available only when a semantic provider registers an eligible gate asset. Tourism requires no anchor and is explicitly labeled boundary only: tourism gameplay is not implemented. Reassign facilities through the same flow. A management boundary does not place or clear normal city assets.
@@ -57,10 +34,14 @@ Unknown schema-v1 TypeIds retain their identity and become ModuleUnavailable. Un
 
 Copied/adapted GPL-3.0 portions and exact destinations are recorded in [THIRD_PARTY.md](THIRD_PARTY.md).
 
-## Current roadmap
-
-Phase 2 is at its release-completion boundary. The next implementation program is **Phase 3**, in this order: C2 dedicated `AS_ParkHeadquarters` / `AS_IndustrialHeadquarters` / `AS_ParkGate` content integration, D1 advisory Industrial Area supply contracts, then D2 custom factory content using verified existing resources. Tourism gameplay follows Phase 3.
-
 ## License
 
 This project is licensed under **GPL-3.0-only**. See [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md) for third-party provenance. Game DLLs and media are not included.
+
+## 日本語
+
+CS2 Area SystemはCities: Skylines IIに管理エリアを追加するMODです。公園・工業エリアを設定し、専用パネルで状態や進捗を確認できます。観光エリアは境界のみで、観光ゲームプレイは未実装です。
+
+ゲーム内で **Areas → Area Types** から種類を選んで範囲を描き、右上の **Managed areas** から対象を選びます。工業エリアは範囲内のオフィスを本部に指定すると有効になります。公園はPark Maintenance施設を本部に指定し、境界外から内部へ専用の歩道Pathを接続するなど、入口も必要です。通常の道路歩道は自動入口として扱いません。
+
+公園では来訪者、品質、予算、入場料、景観と成長を確認できます。工業エリアでは企業の生産、物流、雇用、効率やボトルネックを観察できます。指標が使えない場合は0ではなく利用不可と表示します。工業レベル自体は生産や税にボーナスを与えません。動作設定は **Options → CS2 Area System** にあります。ゲーム1.6.2f1での確認状況は本文を参照してください。[ライセンス](LICENSE)。
